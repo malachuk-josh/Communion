@@ -26,6 +26,12 @@ export default function RootLayout({
   const app = (
     <html lang="en">
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("communion.theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}',
+          }}
+        />
         <LanguageProvider>
           <div className="bg-scene" aria-hidden />
           <Nav />

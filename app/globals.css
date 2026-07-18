@@ -26,6 +26,71 @@ html {
   color-scheme: dark;
 }
 
+/* ---- light mode: warm almond parchment ---- */
+:root[data-theme="light"] {
+  --bg-0: #ede1c8;
+  --bg-1: #f7efdd;
+  --ink: #33281a;
+  --ink-dim: rgba(51, 40, 26, 0.68);
+  --ink-faint: rgba(51, 40, 26, 0.45);
+  --glass: rgba(255, 252, 243, 0.5);
+  --glass-strong: rgba(255, 252, 243, 0.72);
+  --glass-border: rgba(97, 74, 38, 0.18);
+  --glass-border-bright: rgba(97, 74, 38, 0.34);
+  --gold: #96691d;
+  --gold-soft: rgba(150, 105, 29, 0.14);
+  --violet: #5d4fc0;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="light"] .bg-scene {
+  background:
+    radial-gradient(52rem 36rem at 82% -8%, rgba(140, 110, 220, 0.12), transparent 62%),
+    radial-gradient(44rem 30rem at -12% 32%, rgba(196, 138, 48, 0.14), transparent 60%),
+    radial-gradient(40rem 34rem at 55% 118%, rgba(158, 120, 60, 0.16), transparent 65%),
+    radial-gradient(26rem 20rem at 30% 8%, rgba(255, 250, 238, 0.7), transparent 70%),
+    linear-gradient(160deg, var(--bg-1), var(--bg-0) 60%);
+}
+
+:root[data-theme="light"] .nav {
+  background: rgba(247, 240, 224, 0.7);
+}
+
+:root[data-theme="light"] .glass {
+  box-shadow:
+    0 14px 34px rgba(97, 74, 38, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  background: rgba(255, 253, 246, 0.65);
+}
+
+:root[data-theme="light"] select option {
+  background: var(--bg-1);
+}
+
+:root[data-theme="light"] .btn:hover {
+  background: rgba(255, 253, 246, 0.9);
+}
+
+:root[data-theme="light"] .modal-overlay {
+  background: rgba(74, 58, 30, 0.35);
+}
+
+:root[data-theme="light"] .invite-url {
+  background: rgba(97, 74, 38, 0.08);
+}
+
+:root[data-theme="light"] .error-text {
+  color: #a33d33;
+}
+
 body {
   font-family: var(--sans);
   background: var(--bg-0);
@@ -135,6 +200,27 @@ a {
 .lang-toggle button.active {
   background: var(--gold-soft);
   color: var(--gold);
+}
+
+.theme-toggle {
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.95rem;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: var(--glass-strong);
+  border-color: var(--glass-border-bright);
 }
 
 /* ---- glass primitives ---- */
