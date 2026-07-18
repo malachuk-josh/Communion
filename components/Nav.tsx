@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import AuthControls from "@/components/AuthControls";
 
 export default function Nav() {
   const pathname = usePathname();
@@ -70,6 +71,7 @@ export default function Nav() {
             ES
           </button>
         </div>
+        <AuthControls />
       </div>
     </nav>
   );

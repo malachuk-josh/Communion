@@ -72,6 +72,7 @@ const dictionaries = {
     "common.loading": "Loading…",
     "common.min": "min",
     "common.demoNotice": "Demo mode — sign-in and permanent storage activate once Clerk and Upstash are connected.",
+    "auth.signIn": "Sign in",
   },
   es: {
     "app.tagline": "Lee la Palabra. Congrégate en Su nombre.",
@@ -140,6 +141,7 @@ const dictionaries = {
     "common.loading": "Cargando…",
     "common.min": "min",
     "common.demoNotice": "Modo demo — el inicio de sesión y el almacenamiento permanente se activan al conectar Clerk y Upstash.",
+    "auth.signIn": "Iniciar sesión",
   },
 } as const;
 
