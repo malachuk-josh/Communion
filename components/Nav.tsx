@@ -17,7 +17,7 @@ export default function Nav() {
     pathname === "/" && position && positionBook
       ? `${lang === "es" ? positionBook.es : positionBook.en} ${position.chapter}`
       : null;
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   // the inline bootstrap script in the layout applies the saved theme before
   // paint; here we just sync React state with what it decided
