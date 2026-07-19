@@ -202,6 +202,17 @@ a {
   color: var(--gold);
 }
 
+.nav-passage {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 4px 14px;
+  white-space: nowrap;
+}
+
 .theme-toggle {
   border: 1px solid var(--glass-border);
   border-radius: 999px;

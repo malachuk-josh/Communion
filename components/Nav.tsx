@@ -4,11 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useReading } from "@/lib/reading";
+import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 
 export default function Nav() {
   const pathname = usePathname();
   const { lang, setLang, t } = useI18n();
+  const { position } = useReading();
+  const positionBook = position ? getBook(position.bookNr) : undefined;
+  const passage =
+    pathname === "/" && position && positionBook
+      ? `${lang === "es" ? positionBook.es : positionBook.en} ${position.chapter}`
+      : null;
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   // the inline bootstrap script in the layout applies the saved theme before
@@ -50,6 +58,7 @@ export default function Nav() {
             {t("nav.churches")}
           </Link>
         </div>
+        {passage && <span className="nav-passage">{passage}</span>}
         <button
           className="theme-toggle"
           onClick={toggleTheme}

@@ -9,6 +9,7 @@ import {
   type ChapterData,
 } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
+import { useReading } from "@/lib/reading";
 
 const DEFAULT_BOOK = 43; // John
 
@@ -37,6 +38,12 @@ export default function Reader() {
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
+  const { setPosition } = useReading();
+
+  // keep the sticky header's passage indicator in sync
+  useEffect(() => {
+    setPosition({ bookNr, chapter });
+  }, [bookNr, chapter, setPosition]);
 
   // restore last reading position and text size
   useEffect(() => {

@@ -7,7 +7,7 @@ export type Lang = "en" | "es";
 const dictionaries = {
   en: {
     "app.tagline": "Read the Word. Gather in His name.",
-    "nav.reader": "Reader",
+    "nav.reader": "The Word",
     "nav.churches": "Churches",
     "reader.book": "Book",
     "reader.chapter": "Chapter",
@@ -86,7 +86,7 @@ const dictionaries = {
   },
   es: {
     "app.tagline": "Lee la Palabra. Congrégate en Su nombre.",
-    "nav.reader": "Lectura",
+    "nav.reader": "La Palabra",
     "nav.churches": "Iglesias",
     "reader.book": "Libro",
     "reader.chapter": "Capítulo",

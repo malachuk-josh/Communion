@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LanguageProvider } from "@/lib/i18n";
+import { ReadingProvider } from "@/lib/reading";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
@@ -33,9 +34,11 @@ export default function RootLayout({
           }}
         />
         <LanguageProvider>
-          <div className="bg-scene" aria-hidden />
-          <Nav />
-          <main className="page">{children}</main>
+          <ReadingProvider>
+            <div className="bg-scene" aria-hidden />
+            <Nav />
+            <main className="page">{children}</main>
+          </ReadingProvider>
         </LanguageProvider>
       </body>
     </html>
