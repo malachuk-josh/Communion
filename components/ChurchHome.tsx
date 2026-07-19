@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import MonthGrid from "@/components/MonthGrid";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
 const TEMPLATES: { type: SessionType; emoji: string; duration: number }[] = [
@@ -74,6 +75,17 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           </span>
         ))}
       </div>
+
+      {church.events.length > 0 && (
+        <MonthGrid
+          events={church.events}
+          onPick={(eventId) =>
+            document
+              .getElementById(`event-${eventId}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+        />
+      )}
 
       <div className="section-head">
         <h2>{t("churches.upcoming")}</h2>
@@ -167,7 +179,7 @@ function SessionCard({
   };
 
   return (
-    <div className="glass session">
+    <div className="glass session" id={`event-${event.id}`}>
       <span className="session-icon">{EMOJI[event.type]}</span>
       <div className="session-body">
         <h3>{event.title}</h3>
@@ -222,17 +234,45 @@ function InviteModal({
   churchName: string;
   onClose: () => void;
 }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [serverEmail, setServerEmail] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentTo, setSentTo] = useState("");
+  const [emailError, setEmailError] = useState(false);
 
   useEffect(() => {
-    api<{ url: string }>(`/api/churches/${churchId}/invites`, {
-      method: "POST",
-    })
-      .then((res) => setUrl(res.url))
+    api<{ url: string; emailEnabled: boolean }>(
+      `/api/churches/${churchId}/invites`,
+      { method: "POST" }
+    )
+      .then((res) => {
+        setUrl(res.url);
+        setServerEmail(res.emailEnabled);
+      })
       .catch(() => setUrl(""));
   }, [churchId]);
+
+  const sendInviteEmail = async () => {
+    const to = emailTo.trim();
+    if (!to || sending) return;
+    setSending(true);
+    setEmailError(false);
+    try {
+      await api(`/api/churches/${churchId}/invites`, {
+        method: "POST",
+        body: { email: to, lang },
+      });
+      setSentTo(to);
+      setEmailTo("");
+    } catch {
+      setEmailError(true);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const copy = async () => {
     await navigator.clipboard.writeText(url);
@@ -280,9 +320,36 @@ function InviteModal({
               <button className="btn btn-primary" onClick={copy}>
                 🔗 {copied ? t("churches.copied") : t("churches.copyLink")}
               </button>
-              <button className="btn" onClick={email}>
-                ✉️ {t("churches.emailInvite")}
-              </button>
+              {serverEmail ? (
+                <div className="email-invite-row">
+                  <input
+                    type="email"
+                    value={emailTo}
+                    onChange={(e) => setEmailTo(e.target.value)}
+                    placeholder={t("churches.emailPlaceholder")}
+                    maxLength={120}
+                  />
+                  <button
+                    className="btn"
+                    onClick={sendInviteEmail}
+                    disabled={!emailTo.trim() || sending}
+                  >
+                    ✉️ {t("churches.sendEmail")}
+                  </button>
+                  {sentTo && !emailError && (
+                    <p className="email-sent">
+                      ✓ {t("churches.emailSent")} — {sentTo}
+                    </p>
+                  )}
+                  {emailError && (
+                    <p className="error-text">{t("reader.error")}</p>
+                  )}
+                </div>
+              ) : (
+                <button className="btn" onClick={email}>
+                  ✉️ {t("churches.emailInvite")}
+                </button>
+              )}
               <button className="btn" onClick={messenger}>
                 💬 {t("churches.messenger")}
               </button>

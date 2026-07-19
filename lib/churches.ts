@@ -217,6 +217,7 @@ export async function createEvent(
   });
   await kv.hset(keys.eventRsvps(event.id), { [userId]: "going" });
   await kv.zadd(keys.churchEvents(churchId), event.startsAt, event.id);
+  await kv.zadd(keys.allEvents, event.startsAt, event.id);
   return event;
 }
 
@@ -232,6 +233,7 @@ export async function deleteEvent(
   const allowed = role && (raw.createdBy === userId || role === "founder");
   if (!allowed) return false;
   await kv.zrem(keys.churchEvents(raw.churchId), eventId);
+  await kv.zrem(keys.allEvents, eventId);
   await kv.del(keys.event(eventId));
   await kv.del(keys.eventRsvps(eventId));
   return true;

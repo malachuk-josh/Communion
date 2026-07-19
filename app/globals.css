@@ -686,6 +686,84 @@ mark {
   margin-top: 2px;
 }
 
+/* ---- month grid ---- */
+.month-grid {
+  margin-bottom: 18px;
+}
+
+.month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.month-title {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gold);
+  text-transform: capitalize;
+}
+
+.month-cells {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.dow {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+
+.day {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 2px;
+  gap: 2px;
+}
+
+.day.today {
+  border-color: var(--glass-border-bright);
+  color: var(--ink);
+}
+
+.day.has-events {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.day-dots {
+  font-size: 0.68rem;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+/* ---- email invite ---- */
+.email-invite-row {
+  display: grid;
+  gap: 8px;
+}
+
+.email-sent {
+  font-size: 0.84rem;
+  color: var(--gold);
+}
+
 /* ---- modal ---- */
 .modal-overlay {
   position: fixed;
