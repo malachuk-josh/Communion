@@ -7,7 +7,9 @@ import { Redis } from "@upstash/redis";
 export interface KV {
   hgetall(key: string): Promise<Record<string, string> | null>;
   hset(key: string, value: Record<string, string | number>): Promise<void>;
+  hdel(key: string, field: string): Promise<void>;
   sadd(key: string, member: string): Promise<void>;
+  srem(key: string, member: string): Promise<void>;
   smembers(key: string): Promise<string[]>;
   zadd(key: string, score: number, member: string): Promise<void>;
   zrangebyscore(key: string, min: number, max: number): Promise<string[]>;
@@ -44,8 +46,14 @@ function upstashKV(redis: Redis): KV {
     async hset(key, value) {
       await redis.hset(key, value);
     },
+    async hdel(key, field) {
+      await redis.hdel(key, field);
+    },
     async sadd(key, member) {
       await redis.sadd(key, member);
+    },
+    async srem(key, member) {
+      await redis.srem(key, member);
     },
     async smembers(key) {
       return redis.smembers(key);
@@ -110,10 +118,16 @@ function memoryKV(): KV {
       for (const [k, v] of Object.entries(value)) existing[k] = String(v);
       store.hashes.set(key, existing);
     },
+    async hdel(key, field) {
+      delete store.hashes.get(key)?.[field];
+    },
     async sadd(key, member) {
       const set = store.sets.get(key) ?? new Set<string>();
       set.add(member);
       store.sets.set(key, set);
+    },
+    async srem(key, member) {
+      store.sets.get(key)?.delete(member);
     },
     async smembers(key) {
       return [...(store.sets.get(key) ?? [])];

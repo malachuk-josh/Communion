@@ -753,6 +753,21 @@ mark {
   letter-spacing: -1px;
 }
 
+.session-tools {
+  display: flex;
+  gap: 6px;
+}
+
+.title-edit {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.passage-link {
+  color: var(--gold);
+  border-bottom: 1px dotted var(--gold);
+}
+
 /* ---- email invite ---- */
 .email-invite-row {
   display: grid;

@@ -221,6 +221,84 @@ export async function createEvent(
   return event;
 }
 
+/** Founder-only: rename the church or update its description. */
+export async function updateChurch(
+  churchId: string,
+  userId: string,
+  patch: { name?: string; description?: string }
+): Promise<boolean> {
+  const role = await getRole(churchId, userId);
+  if (role !== "founder") return false;
+  const updates: Record<string, string> = {};
+  const name = patch.name?.trim();
+  if (name) updates.name = name.slice(0, 80);
+  if (patch.description !== undefined) {
+    updates.description = patch.description.trim().slice(0, 300);
+  }
+  if (Object.keys(updates).length === 0) return false;
+  await db().hset(keys.church(churchId), updates);
+  return true;
+}
+
+/** Members may leave; the founder stays (the church would be orphaned). */
+export async function leaveChurch(
+  churchId: string,
+  userId: string
+): Promise<"left" | "founder" | "not_member"> {
+  const role = await getRole(churchId, userId);
+  if (!role) return "not_member";
+  if (role === "founder") return "founder";
+  const kv = db();
+  await kv.hdel(keys.churchMembers(churchId), userId);
+  await kv.srem(keys.userChurches(userId), churchId);
+  return "left";
+}
+
+/** Creator or church founder may edit a session. */
+export async function updateEvent(
+  eventId: string,
+  userId: string,
+  patch: {
+    type?: SessionType;
+    title?: string;
+    startsAt?: number;
+    durationMin?: number;
+    passageRef?: string;
+    meetingUrl?: string;
+  }
+): Promise<boolean> {
+  const kv = db();
+  const raw = await kv.hgetall(keys.event(eventId));
+  if (!raw?.churchId) return false;
+  const role = await getRole(raw.churchId, userId);
+  const allowed = role && (raw.createdBy === userId || role === "founder");
+  if (!allowed) return false;
+
+  const updates: Record<string, string | number> = {};
+  if (patch.type && isSessionType(patch.type)) updates.type = patch.type;
+  const title = patch.title?.trim();
+  if (title) updates.title = title.slice(0, 120);
+  if (Number.isFinite(patch.startsAt)) updates.startsAt = patch.startsAt!;
+  if (Number.isFinite(patch.durationMin)) {
+    updates.durationMin = Math.min(Math.max(patch.durationMin!, 5), 24 * 60);
+  }
+  if (patch.passageRef !== undefined) {
+    updates.passageRef = patch.passageRef.trim().slice(0, 80);
+  }
+  if (patch.meetingUrl !== undefined) {
+    updates.meetingUrl = patch.meetingUrl.trim().slice(0, 300);
+  }
+  if (Object.keys(updates).length === 0) return false;
+
+  await kv.hset(keys.event(eventId), updates);
+  if (updates.startsAt !== undefined) {
+    const score = Number(updates.startsAt);
+    await kv.zadd(keys.churchEvents(raw.churchId), score, eventId);
+    await kv.zadd(keys.allEvents, score, eventId);
+  }
+  return true;
+}
+
 /** Creator or church founder may cancel a session. */
 export async function deleteEvent(
   eventId: string,

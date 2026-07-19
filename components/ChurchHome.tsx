@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
@@ -24,11 +27,14 @@ const EMOJI: Record<SessionType, string> = {
 
 export default function ChurchHome({ churchId }: { churchId: string }) {
   const { lang, t } = useI18n();
+  const router = useRouter();
   const [church, setChurch] = useState<ChurchDetail | null>(null);
   const [myUserId, setMyUserId] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<WorshipEvent | null>(null);
+  const [showEditChurch, setShowEditChurch] = useState(false);
 
   const load = useCallback(() => {
     api<{ church: ChurchDetail; myUserId: string }>(`/api/churches/${churchId}`)
@@ -48,9 +54,32 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
     return <p className="skeleton">{t("common.loading")}</p>;
   }
 
+  const leave = async () => {
+    if (!window.confirm(t("churches.leaveConfirm"))) return;
+    try {
+      await api(`/api/churches/${churchId}/leave`, { method: "POST" });
+      router.push("/churches");
+    } catch {
+      // transient — stay put
+    }
+  };
+
   return (
     <div>
-      <h1 className="page-title">{church.name}</h1>
+      <h1 className="page-title">
+        {church.name}
+        {church.myRole === "founder" && (
+          <button
+            type="button"
+            className="rsvp-btn title-edit"
+            onClick={() => setShowEditChurch(true)}
+            aria-label={t("churches.editChurch")}
+            title={t("churches.editChurch")}
+          >
+            ✎
+          </button>
+        )}
+      </h1>
       <blockquote className="founding-verse">
         {t("verse.matthew")}
         <cite>{t("verse.matthewRef")}</cite>
@@ -74,6 +103,11 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
             )}
           </span>
         ))}
+        {church.myRole === "member" && (
+          <button type="button" className="rsvp-btn" onClick={leave}>
+            {t("churches.leave")}
+          </button>
+        )}
       </div>
 
       {church.events.length > 0 && (
@@ -108,6 +142,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
             canCancel={
               event.createdBy === myUserId || church.myRole === "founder"
             }
+            onEdit={() => setEditingEvent(event)}
             onChanged={load}
           />
         ))
@@ -116,12 +151,29 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
       {showInvite && (
         <InviteModal churchId={churchId} churchName={church.name} onClose={() => setShowInvite(false)} />
       )}
-      {showSchedule && (
+      {(showSchedule || editingEvent) && (
         <ScheduleModal
           churchId={churchId}
-          onClose={() => setShowSchedule(false)}
+          initial={editingEvent ?? undefined}
+          onClose={() => {
+            setShowSchedule(false);
+            setEditingEvent(null);
+          }}
           onCreated={() => {
             setShowSchedule(false);
+            setEditingEvent(null);
+            load();
+          }}
+        />
+      )}
+      {showEditChurch && (
+        <EditChurchModal
+          churchId={churchId}
+          initialName={church.name}
+          initialDescription={church.description}
+          onClose={() => setShowEditChurch(false)}
+          onSaved={() => {
+            setShowEditChurch(false);
             load();
           }}
         />
@@ -130,15 +182,91 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
   );
 }
 
+function EditChurchModal({
+  churchId,
+  initialName,
+  initialDescription,
+  onClose,
+  onSaved,
+}: {
+  churchId: string;
+  initialName: string;
+  initialDescription: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useI18n();
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const save = async () => {
+    if (!name.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/churches/${churchId}`, {
+        method: "PATCH",
+        body: { name, description },
+      });
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="glass modal" onClick={(e) => e.stopPropagation()}>
+        <h2>{t("churches.editChurch")}</h2>
+        <label className="field">
+          <span>{t("churches.name")}</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={80}
+            autoFocus
+          />
+        </label>
+        <label className="field">
+          <span>{t("churches.description")}</span>
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={300}
+          />
+        </label>
+        {error && <p className="error-text">{error}</p>}
+        <div className="modal-actions">
+          <button className="btn" onClick={onClose}>
+            {t("session.cancel")}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={save}
+            disabled={!name.trim() || busy}
+          >
+            {t("common.save")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SessionCard({
   event,
   myUserId,
   canCancel,
+  onEdit,
   onChanged,
 }: {
   event: WorshipEvent;
   myUserId: string;
   canCancel: boolean;
+  onEdit: () => void;
   onChanged: () => void;
 }) {
   const { lang, t } = useI18n();
@@ -185,7 +313,23 @@ function SessionCard({
         <h3>{event.title}</h3>
         <p className="session-meta">
           {when} · {event.durationMin} {t("common.min")}
-          {event.passageRef && <> · {event.passageRef}</>}
+          {event.passageRef &&
+            (() => {
+              const parsed = parsePassage(event.passageRef);
+              return parsed ? (
+                <>
+                  {" · "}
+                  <Link
+                    href={`/?b=${parsed.bookNr}&c=${parsed.chapter}`}
+                    className="passage-link"
+                  >
+                    📖 {event.passageRef}
+                  </Link>
+                </>
+              ) : (
+                <> · {event.passageRef}</>
+              );
+            })()}
           {event.meetingUrl && (
             <>
               {" · "}
@@ -211,15 +355,26 @@ function SessionCard({
         </div>
       </div>
       {canCancel && (
-        <button
-          type="button"
-          className="rsvp-btn"
-          onClick={cancelSession}
-          aria-label={t("session.cancelSession")}
-          title={t("session.cancelSession")}
-        >
-          ✕
-        </button>
+        <span className="session-tools">
+          <button
+            type="button"
+            className="rsvp-btn"
+            onClick={onEdit}
+            aria-label={t("session.edit")}
+            title={t("session.edit")}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className="rsvp-btn"
+            onClick={cancelSession}
+            aria-label={t("session.cancelSession")}
+            title={t("session.cancelSession")}
+          >
+            ✕
+          </button>
+        </span>
       )}
     </div>
   );
@@ -373,22 +528,33 @@ function InviteModal({
   );
 }
 
+const toLocalInput = (ts: number) => {
+  const d = new Date(ts - new Date(ts).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
+};
+
 function ScheduleModal({
   churchId,
+  initial,
   onClose,
   onCreated,
 }: {
   churchId: string;
+  initial?: WorshipEvent;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const { t } = useI18n();
-  const [type, setType] = useState<SessionType>("bible_study");
-  const [title, setTitle] = useState(t("session.bible_study"));
-  const [when, setWhen] = useState("");
-  const [duration, setDuration] = useState(60);
-  const [passageRef, setPassageRef] = useState("");
-  const [meetingUrl, setMeetingUrl] = useState("");
+  const [type, setType] = useState<SessionType>(initial?.type ?? "bible_study");
+  const [title, setTitle] = useState(
+    initial?.title ?? t("session.bible_study")
+  );
+  const [when, setWhen] = useState(
+    initial ? toLocalInput(initial.startsAt) : ""
+  );
+  const [duration, setDuration] = useState(initial?.durationMin ?? 60);
+  const [passageRef, setPassageRef] = useState(initial?.passageRef ?? "");
+  const [meetingUrl, setMeetingUrl] = useState(initial?.meetingUrl ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -402,18 +568,23 @@ function ScheduleModal({
     if (!title.trim() || !when || busy) return;
     setBusy(true);
     setError("");
+    const body = {
+      type,
+      title,
+      startsAt: new Date(when).getTime(),
+      durationMin: duration,
+      passageRef,
+      meetingUrl,
+    };
     try {
-      await api(`/api/churches/${churchId}/events`, {
-        method: "POST",
-        body: {
-          type,
-          title,
-          startsAt: new Date(when).getTime(),
-          durationMin: duration,
-          passageRef,
-          meetingUrl,
-        },
-      });
+      if (initial) {
+        await api(`/api/events/${initial.id}`, { method: "PATCH", body });
+      } else {
+        await api(`/api/churches/${churchId}/events`, {
+          method: "POST",
+          body,
+        });
+      }
       onCreated();
     } catch (e) {
       setError((e as Error).message);
@@ -424,7 +595,7 @@ function ScheduleModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="glass modal" onClick={(e) => e.stopPropagation()}>
-        <h2>{t("churches.schedule")}</h2>
+        <h2>{t(initial ? "session.edit" : "churches.schedule")}</h2>
         <p style={{ color: "var(--ink-dim)", fontSize: "0.9rem", marginBottom: 10 }}>
           {t("session.type")}
         </p>
@@ -501,7 +672,7 @@ function ScheduleModal({
             onClick={create}
             disabled={!title.trim() || !when || busy}
           >
-            {t("session.create")}
+            {t(initial ? "common.save" : "session.create")}
           </button>
         </div>
       </div>

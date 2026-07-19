@@ -24,11 +24,18 @@ interface SearchResult {
   text: string;
 }
 
-export default function Reader() {
+export default function Reader({
+  initialBook,
+  initialChapter,
+}: {
+  initialBook?: number;
+  initialChapter?: number;
+} = {}) {
   const { lang, t } = useI18n();
+  const deepLinked = initialBook !== undefined;
   const [translation, setTranslation] = useState(DEFAULT_TRANSLATION);
-  const [bookNr, setBookNr] = useState(DEFAULT_BOOK);
-  const [chapter, setChapter] = useState(1);
+  const [bookNr, setBookNr] = useState(initialBook ?? DEFAULT_BOOK);
+  const [chapter, setChapter] = useState(initialChapter ?? 1);
   const [data, setData] = useState<ChapterData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -55,8 +62,11 @@ export default function Reader() {
         if (TRANSLATIONS.some((tr) => tr.id === saved.translation)) {
           setTranslation(saved.translation);
         }
-        setBookNr(saved.bookNr);
-        setChapter(saved.chapter);
+        // a deep link (?b=&c=) outranks the remembered reading position
+        if (!deepLinked) {
+          setBookNr(saved.bookNr);
+          setChapter(saved.chapter);
+        }
       }
       const savedScale = Number(
         window.localStorage.getItem("communion.textScale")
