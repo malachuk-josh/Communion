@@ -220,6 +220,23 @@ export async function createEvent(
   return event;
 }
 
+/** Creator or church founder may cancel a session. */
+export async function deleteEvent(
+  eventId: string,
+  userId: string
+): Promise<boolean> {
+  const kv = db();
+  const raw = await kv.hgetall(keys.event(eventId));
+  if (!raw?.churchId) return false;
+  const role = await getRole(raw.churchId, userId);
+  const allowed = role && (raw.createdBy === userId || role === "founder");
+  if (!allowed) return false;
+  await kv.zrem(keys.churchEvents(raw.churchId), eventId);
+  await kv.del(keys.event(eventId));
+  await kv.del(keys.eventRsvps(eventId));
+  return true;
+}
+
 export async function setRsvp(
   eventId: string,
   userId: string,

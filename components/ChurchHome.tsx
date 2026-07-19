@@ -93,6 +93,9 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
             key={event.id}
             event={event}
             myUserId={myUserId}
+            canCancel={
+              event.createdBy === myUserId || church.myRole === "founder"
+            }
             onChanged={load}
           />
         ))
@@ -118,10 +121,12 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
 function SessionCard({
   event,
   myUserId,
+  canCancel,
   onChanged,
 }: {
   event: WorshipEvent;
   myUserId: string;
+  canCancel: boolean;
   onChanged: () => void;
 }) {
   const { lang, t } = useI18n();
@@ -145,6 +150,16 @@ function SessionCard({
         method: "POST",
         body: { status },
       });
+      onChanged();
+    } catch {
+      // transient — the next reload shows the truth
+    }
+  };
+
+  const cancelSession = async () => {
+    if (!window.confirm(t("session.cancelConfirm"))) return;
+    try {
+      await api(`/api/events/${event.id}`, { method: "DELETE" });
       onChanged();
     } catch {
       // transient — the next reload shows the truth
@@ -183,6 +198,17 @@ function SessionCard({
           </span>
         </div>
       </div>
+      {canCancel && (
+        <button
+          type="button"
+          className="rsvp-btn"
+          onClick={cancelSession}
+          aria-label={t("session.cancelSession")}
+          title={t("session.cancelSession")}
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }

@@ -11,8 +11,25 @@ export interface KV {
   smembers(key: string): Promise<string[]>;
   zadd(key: string, score: number, member: string): Promise<void>;
   zrangebyscore(key: string, min: number, max: number): Promise<string[]>;
+  zrem(key: string, member: string): Promise<void>;
   expire(key: string, seconds: number): Promise<void>;
   del(key: string): Promise<void>;
+}
+
+/**
+ * Dashboard-pasted env values often arrive with surrounding quotes, stray
+ * whitespace, or accidental duplicate lines. Reduce to the first clean line
+ * so a slightly mangled paste doesn't take down every request.
+ */
+function cleanEnv(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const firstLine = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (!firstLine) return undefined;
+  const unquoted = firstLine.replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim();
+  return unquoted || undefined;
 }
 
 function upstashKV(redis: Redis): KV {
@@ -38,6 +55,9 @@ function upstashKV(redis: Redis): KV {
     },
     async zrangebyscore(key, min, max) {
       return (await redis.zrange(key, min, max, { byScore: true })) as string[];
+    },
+    async zrem(key, member) {
+      await redis.zrem(key, member);
     },
     async expire(key, seconds) {
       await redis.expire(key, seconds);
@@ -111,6 +131,9 @@ function memoryKV(): KV {
         .sort((a, b) => a[1] - b[1])
         .map(([member]) => member);
     },
+    async zrem(key, member) {
+      store.zsets.get(key)?.delete(member);
+    },
     async expire(key, seconds) {
       store.expiries.set(key, Date.now() + seconds * 1000);
     },
@@ -127,8 +150,8 @@ let cached: KV | null = null;
 
 export function db(): KV {
   if (cached) return cached;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanEnv(process.env.UPSTASH_REDIS_REST_URL);
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   cached = url && token ? upstashKV(new Redis({ url, token })) : memoryKV();
   return cached;
 }
