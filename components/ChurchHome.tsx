@@ -393,6 +393,7 @@ function InviteModal({
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [serverEmail, setServerEmail] = useState(false);
+  const [messengerHint, setMessengerHint] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState("");
@@ -443,6 +444,18 @@ function InviteModal({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const messengerFallback = async () => {
+    // No Messenger app and no FB App ID for the Send Dialog: copy the link
+    // and open Messenger on the web so it can be pasted into a chat.
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessengerHint(true);
+    } catch {
+      // clipboard unavailable — the visible invite-url box still allows manual copy
+    }
+    window.open("https://www.messenger.com/", "_blank", "noopener");
+  };
+
   const messenger = () => {
     const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
     const link = encodeURIComponent(url);
@@ -451,10 +464,24 @@ function InviteModal({
         `https://www.facebook.com/dialog/send?app_id=${appId}&link=${link}&redirect_uri=${encodeURIComponent(window.location.origin)}`,
         "_blank"
       );
-    } else {
-      // Messenger deep link — opens the app on mobile
-      window.location.href = `fb-messenger://share?link=${link}`;
+      return;
     }
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (!isMobile) {
+      void messengerFallback();
+      return;
+    }
+    // Mobile: try the Messenger app deep link. If the app takes over, the
+    // page hides and we cancel the fallback; otherwise fall back after 1.6s.
+    const timer = setTimeout(() => void messengerFallback(), 1600);
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.hidden) clearTimeout(timer);
+      },
+      { once: true }
+    );
+    window.location.href = `fb-messenger://share?link=${link}`;
   };
 
   const nativeShare = () => {
@@ -508,6 +535,9 @@ function InviteModal({
               <button className="btn" onClick={messenger}>
                 💬 {t("churches.messenger")}
               </button>
+              {messengerHint && (
+                <p className="email-sent">✓ {t("churches.messengerCopied")}</p>
+              )}
               {typeof navigator !== "undefined" && "share" in navigator && (
                 <button className="btn" onClick={nativeShare}>
                   📤 {t("churches.share")}
