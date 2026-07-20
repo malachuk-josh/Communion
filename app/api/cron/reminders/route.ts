@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
 import { emailEnabled, reminderEmail, sendEmail } from "@/lib/email";
 
@@ -66,8 +67,27 @@ export async function GET(req: Request) {
       when,
       event.meetingUrl || undefined
     );
+    // attach an .ics so calendar apps recognize the session natively
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
+    const ics = buildIcs(
+      {
+        id: eventId,
+        churchId: event.churchId,
+        title: event.title ?? "Worship session",
+        startsAt: Number(event.startsAt),
+        durationMin: Number(event.durationMin) || 60,
+        passageRef: event.passageRef || undefined,
+        meetingUrl: event.meetingUrl || undefined,
+      },
+      church?.name ?? "your Church",
+      origin
+    );
+    const attachment = {
+      name: "session.ics",
+      contentBase64: Buffer.from(ics, "utf-8").toString("base64"),
+    };
     for (const to of emails) {
-      if (await sendEmail(to, message.subject, message.html)) sent++;
+      if (await sendEmail(to, message.subject, message.html, attachment)) sent++;
     }
     await kv.hset(keys.event(eventId), { remindedAt: now });
     reminded++;

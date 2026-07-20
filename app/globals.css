@@ -758,6 +758,44 @@ mark {
   gap: 6px;
 }
 
+.cal-row,
+.quick-create {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.quick-create {
+  margin: -4px 0 14px;
+}
+
+.cal-label {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.cal-link {
+  font-size: 0.8rem;
+  color: var(--gold);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 3px 11px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cal-link:hover {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.cal-hint {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  flex-basis: 100%;
+}
+
 .title-edit {
   margin-left: 10px;
   vertical-align: middle;

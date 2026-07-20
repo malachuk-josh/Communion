@@ -25,7 +25,8 @@ export function emailEnabled(): boolean {
 export async function sendEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  attachment?: { name: string; contentBase64: string }
 ): Promise<boolean> {
   const apiKey = cleanEnv(process.env.BREVO_API_KEY);
   const sender = cleanEnv(process.env.BREVO_SENDER_EMAIL);
@@ -43,6 +44,13 @@ export async function sendEmail(
         to: [{ email: to }],
         subject,
         htmlContent: html,
+        ...(attachment
+          ? {
+              attachment: [
+                { name: attachment.name, content: attachment.contentBase64 },
+              ],
+            }
+          : {}),
       }),
     });
     return res.ok;

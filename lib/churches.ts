@@ -221,6 +221,19 @@ export async function createEvent(
   return event;
 }
 
+/** Event plus its church name, gated on membership. */
+export async function getEventForMember(
+  eventId: string,
+  userId: string
+): Promise<{ event: WorshipEvent; churchName: string } | null> {
+  const event = await getEvent(eventId);
+  if (!event) return null;
+  const role = await getRole(event.churchId, userId);
+  if (!role) return null;
+  const church = await getChurch(event.churchId);
+  return { event, churchName: church?.name ?? "Church" };
+}
+
 /** Founder-only: rename the church or update its description. */
 export async function updateChurch(
   churchId: string,

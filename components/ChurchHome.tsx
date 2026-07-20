@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { api } from "@/lib/client";
+import { api, guestId } from "@/lib/client";
+import {
+  googleCalendarUrl,
+  outlookCalendarUrl,
+  teamsNewMeetingUrl,
+} from "@/lib/calendar";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
@@ -138,6 +143,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           <SessionCard
             key={event.id}
             event={event}
+            churchName={church.name}
             myUserId={myUserId}
             canCancel={
               event.createdBy === myUserId || church.myRole === "founder"
@@ -258,12 +264,14 @@ function EditChurchModal({
 
 function SessionCard({
   event,
+  churchName,
   myUserId,
   canCancel,
   onEdit,
   onChanged,
 }: {
   event: WorshipEvent;
+  churchName: string;
   myUserId: string;
   canCancel: boolean;
   onEdit: () => void;
@@ -352,6 +360,35 @@ function SessionCard({
           <span className="rsvp-count">
             {goingCount} {t("rsvp.going").toLowerCase()}
           </span>
+        </div>
+        <div className="cal-row">
+          <span className="cal-label">📅 {t("session.addToCalendar")}</span>
+          <a
+            className="cal-link"
+            target="_blank"
+            rel="noreferrer"
+            href={googleCalendarUrl(event, churchName, window.location.origin)}
+          >
+            Google
+          </a>
+          <a
+            className="cal-link"
+            target="_blank"
+            rel="noreferrer"
+            href={outlookCalendarUrl(event, churchName, window.location.origin)}
+          >
+            Outlook
+          </a>
+          <a
+            className="cal-link"
+            href={`/api/events/${event.id}/ics${
+              process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+                ? ""
+                : `?g=${guestId()}`
+            }`}
+          >
+            Apple (.ics)
+          </a>
         </div>
       </div>
       {canCancel && (
@@ -692,6 +729,32 @@ function ScheduleModal({
             maxLength={300}
           />
         </label>
+        {!meetingUrl.trim() && (
+          <div className="quick-create">
+            <span className="cal-label">{t("session.quickCreate")}</span>
+            <a
+              className="cal-link"
+              href="https://meet.google.com/new"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Google Meet
+            </a>
+            <a
+              className="cal-link"
+              href={teamsNewMeetingUrl(
+                title,
+                when ? new Date(when).getTime() : undefined,
+                duration
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Teams
+            </a>
+            <span className="cal-hint">{t("session.quickCreateHint")}</span>
+          </div>
+        )}
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>
