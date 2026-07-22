@@ -1,0 +1,86 @@
+"use client";
+
+// Pull-to-refresh for the installed (home screen) experience, where no
+// browser chrome exists. Pull down firmly from the top of the page: an
+// indicator follows the pull, arms at the threshold, and releasing
+// reloads the app. Purely additive — native scrolling is never blocked.
+
+import { useEffect, useRef, useState } from "react";
+
+const ARM_AT = 60; // scaled pull distance (~130px of finger travel)
+
+export default function PullToRefresh() {
+  const [pull, setPull] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const startY = useRef<number | null>(null);
+  const pullRef = useRef(0);
+
+  useEffect(() => {
+    const setPullBoth = (value: number) => {
+      pullRef.current = value;
+      setPull(value);
+    };
+
+    const onStart = (e: TouchEvent) => {
+      if (refreshing || window.scrollY > 0) return;
+      // pulls inside modals shouldn't refresh the app
+      const target = e.target as Element | null;
+      if (target?.closest?.(".modal-overlay")) return;
+      startY.current = e.touches[0].clientY;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (startY.current === null || refreshing) return;
+      if (window.scrollY > 0) {
+        startY.current = null;
+        setPullBoth(0);
+        return;
+      }
+      const delta = e.touches[0].clientY - startY.current;
+      setPullBoth(delta > 0 ? Math.min(delta * 0.45, 120) : 0);
+    };
+
+    const onEnd = () => {
+      if (startY.current === null) return;
+      startY.current = null;
+      if (pullRef.current >= ARM_AT) {
+        setRefreshing(true);
+        window.location.reload();
+      } else {
+        setPullBoth(0);
+      }
+    };
+
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    window.addEventListener("touchcancel", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onEnd);
+    };
+  }, [refreshing]);
+
+  const visible = pull > 8 || refreshing;
+  return (
+    <div
+      className={`ptr${pull >= ARM_AT || refreshing ? " armed" : ""}${
+        refreshing ? " refreshing" : ""
+      }`}
+      style={{
+        transform: `translate(-50%, ${(refreshing ? 70 : pull) - 56}px)`,
+        opacity: visible ? 1 : 0,
+      }}
+      aria-hidden
+    >
+      <span
+        className="ptr-icon"
+        style={refreshing ? undefined : { transform: `rotate(${pull * 3}deg)` }}
+      >
+        ↻
+      </span>
+    </div>
+  );
+}
