@@ -213,6 +213,35 @@ a {
   white-space: nowrap;
 }
 
+.pn-abbr {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  /* single-line header: the passage chip abbreviates and, at the extreme,
+     ellipsizes — nothing ever wraps controls onto a second row */
+  .nav-inner {
+    flex-wrap: nowrap;
+  }
+  .brand,
+  .theme-toggle,
+  .lang-toggle {
+    flex-shrink: 0;
+  }
+  .nav-passage {
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pn-full {
+    display: none;
+  }
+  .pn-abbr {
+    display: inline;
+  }
+}
+
 .theme-toggle {
   border: 1px solid var(--glass-border);
   border-radius: 999px;

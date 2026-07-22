@@ -15,10 +15,15 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light">("light");
 
   const positionBook = position ? getBook(position.bookNr) : undefined;
-  const passage =
-    pathname === "/" && position && positionBook
-      ? `${lang === "es" ? positionBook.es : positionBook.en} ${position.chapter}`
-      : null;
+  const bookName = positionBook
+    ? lang === "es"
+      ? positionBook.es
+      : positionBook.en
+    : "";
+  // compact form for narrow screens: "Deuteronomy" → "Deut."
+  const bookAbbr =
+    bookName.length > 8 ? `${bookName.slice(0, 4).trimEnd()}.` : bookName;
+  const showPassage = pathname === "/" && position && positionBook;
 
   // the inline bootstrap script in the layout applies the saved theme before
   // paint; here we just sync React state with what it decided
@@ -76,7 +81,12 @@ export default function Nav() {
               {t("nav.discover")}
             </Link>
           </div>
-          {passage && <span className="nav-passage">{passage}</span>}
+          {showPassage && (
+            <span className="nav-passage">
+              <span className="pn-full">{bookName}</span>
+              <span className="pn-abbr">{bookAbbr}</span> {position!.chapter}
+            </span>
+          )}
           <Link
             href="/settings"
             className={`theme-toggle settings-gear${isSettings ? " settings-active" : ""}`}
