@@ -6,6 +6,7 @@ import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
   getBook,
+  originalSourceFor,
   type ChapterData,
 } from "@/lib/bible";
 import { api } from "@/lib/client";
@@ -48,6 +49,18 @@ export default function Reader({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [originals, setOriginals] = useState(false);
+  const [origVerses, setOrigVerses] = useState<Record<number, string> | null>(
+    null
+  );
+  const [litVerses, setLitVerses] = useState<Record<number, string> | null>(
+    null
+  );
+  const [context, setContext] = useState<Record<
+    string,
+    Record<string, { practical: string; spiritual: string }>
+  > | null>(null);
+  const [contextOpen, setContextOpen] = useState(false);
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -86,6 +99,9 @@ export default function Reader({
       }
       if (window.localStorage.getItem("communion.studyMode") === "1") {
         setStudy(true);
+      }
+      if (window.localStorage.getItem("communion.originalsMode") === "1") {
+        setOriginals(true);
       }
     } catch {
       // corrupted storage — start fresh at the default passage
@@ -158,11 +174,69 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
+  // translation layer: original language + Young's literal English
+  useEffect(() => {
+    if (!study || !originals) return;
+    let cancelled = false;
+    setOrigVerses(null);
+    setLitVerses(null);
+    const toMap = (json: ChapterData) => {
+      const map: Record<number, string> = {};
+      for (const v of json.verses) map[v.verse] = v.text;
+      return map;
+    };
+    fetch(`/api/bible/${originalSourceFor(bookNr)}/${bookNr}/${chapter}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((json: ChapterData) => {
+        if (!cancelled) setOrigVerses(toMap(json));
+      })
+      .catch(() => {
+        if (!cancelled) setOrigVerses({});
+      });
+    fetch(`/api/bible/ylt/${bookNr}/${chapter}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((json: ChapterData) => {
+        if (!cancelled) setLitVerses(toMap(json));
+      })
+      .catch(() => {
+        if (!cancelled) setLitVerses({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, originals, bookNr, chapter]);
+
+  // chapter context (practical + spiritual), one static file per book
+  useEffect(() => {
+    if (!study) return;
+    let cancelled = false;
+    setContext(null);
+    fetch(`/context/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (!cancelled) setContext(json);
+      })
+      .catch(() => {
+        if (!cancelled) setContext({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, bookNr]);
+
   const toggleStudy = () => {
     const next = !study;
     setStudy(next);
     window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
   };
+
+  const toggleOriginals = () => {
+    const next = !originals;
+    setOriginals(next);
+    window.localStorage.setItem("communion.originalsMode", next ? "1" : "0");
+  };
+
+  const chapterContext = context?.[String(chapter)]?.[lang === "es" ? "es" : "en"];
 
   const startNote = (key: string) => {
     setNoteDraft(notes[key] ?? "");
@@ -404,6 +478,21 @@ export default function Reader({
             <span className="switch-knob" />
           </button>
         </div>
+        {study && (
+          <div className="field zoom-field">
+            <span>{t("reader.originals")}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={originals}
+              className={`switch${originals ? " on" : ""}`}
+              onClick={toggleOriginals}
+              aria-label={t("reader.originals")}
+            >
+              <span className="switch-knob" />
+            </button>
+          </div>
+        )}
         <div className="field zoom-field">
           <span>{t("reader.textSize")}</span>
           <div className="zoom-group">
@@ -459,7 +548,33 @@ export default function Reader({
                     <sup className="verse-num">{v.verse}</sup>
                     {v.text}
                   </p>
+                  {originals && origVerses && origVerses[v.verse] && (
+                    <p
+                      className="orig-line"
+                      dir={bookNr <= 39 ? "rtl" : "ltr"}
+                      lang={bookNr <= 39 ? "he" : "el"}
+                    >
+                      {origVerses[v.verse]}
+                    </p>
+                  )}
+                  {originals && litVerses && litVerses[v.verse] && (
+                    <p className="lit-line">
+                      <span className="lit-label">{t("reader.literalLabel")}</span>{" "}
+                      {litVerses[v.verse]}
+                    </p>
+                  )}
                   <span className="xref-chips">
+                    {chapterContext && (
+                      <button
+                        type="button"
+                        className="xref-chip ctx-chip"
+                        onClick={() => setContextOpen(true)}
+                        aria-label={t("reader.context")}
+                        title={t("reader.context")}
+                      >
+                        📜 {t("reader.context")}
+                      </button>
+                    )}
                     {refs?.map((ref, i) => (
                       <button
                         key={i}
@@ -556,6 +671,29 @@ export default function Reader({
           {t("reader.next")} →
         </button>
       </div>
+
+      {contextOpen && chapterContext && (
+        <div className="modal-overlay" onClick={() => setContextOpen(false)}>
+          <div className="glass modal" onClick={(e) => e.stopPropagation()}>
+            <h2>
+              📜 {bookName} {chapter} — {t("reader.context")}
+            </h2>
+            <div className="ctx-section">
+              <h3>🏺 {t("reader.ctxPractical")}</h3>
+              <p>{chapterContext.practical}</p>
+            </div>
+            <div className="ctx-section">
+              <h3>✨ {t("reader.ctxSpiritual")}</h3>
+              <p>{chapterContext.spiritual}</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setContextOpen(false)}>
+                {t("session.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

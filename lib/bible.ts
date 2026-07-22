@@ -21,6 +21,15 @@ export function isTranslation(id: string): boolean {
   return TRANSLATIONS.some((t) => t.id === id);
 }
 
+// Study-mode sources (not shown in the translation dropdown):
+// Hebrew OT, Greek NT, and Young's Literal Translation for the
+// direct-English line. All share KJV-aligned book numbering.
+export const STUDY_IDS = ["codex", "textusreceptus", "ylt"];
+
+export function originalSourceFor(bookNr: number): string {
+  return bookNr <= 39 ? "codex" : "textusreceptus";
+}
+
 export interface Book {
   nr: number; // getBible book number, 1–66
   en: string;

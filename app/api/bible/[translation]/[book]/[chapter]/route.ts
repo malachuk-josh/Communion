@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBook, isTranslation } from "@/lib/bible";
+import { STUDY_IDS, getBook, isTranslation } from "@/lib/bible";
 
 const GETBIBLE_BASE = "https://api.getbible.net/v2";
 
@@ -18,7 +18,7 @@ export async function GET(
   const bookMeta = getBook(bookNr);
 
   if (
-    !isTranslation(translation) ||
+    (!isTranslation(translation) && !STUDY_IDS.includes(translation)) ||
     !bookMeta ||
     !Number.isInteger(chapterNr) ||
     chapterNr < 1 ||

@@ -918,6 +918,51 @@ mark {
   border-color: var(--gold);
 }
 
+.orig-line {
+  margin: 8px 0 0 20px;
+  font-size: 1.05em;
+  line-height: 1.9;
+  color: var(--ink);
+  opacity: 0.92;
+}
+
+.lit-line {
+  margin: 4px 0 0 20px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--ink-dim);
+}
+
+.lit-label {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: var(--gold);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.ctx-section {
+  margin-bottom: 14px;
+}
+
+.ctx-section h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.02rem;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.ctx-section p {
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
 .verse-note {
   font-family: var(--sans);
   font-size: 0.82rem;
