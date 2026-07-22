@@ -1,35 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#faf4e2"/>
-      <stop offset="0.55" stop-color="#f2e8cf"/>
-      <stop offset="1" stop-color="#e6d7b4"/>
+      <stop offset="0" stop-color="#1c2148"/>
+      <stop offset="0.55" stop-color="#12152e"/>
+      <stop offset="1" stop-color="#0b0d1a"/>
     </linearGradient>
     <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#e5b45b" stop-opacity="0.5"/>
+      <stop offset="0" stop-color="#e5b45b" stop-opacity="0.55"/>
       <stop offset="0.55" stop-color="#e5b45b" stop-opacity="0.18"/>
       <stop offset="1" stop-color="#e5b45b" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="warm" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#fffdf5" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#fffdf5" stop-opacity="0"/>
+    <radialGradient id="violet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8b7ff0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8b7ff0" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#cf9a35"/>
-      <stop offset="1" stop-color="#8f6118"/>
+      <stop offset="0" stop-color="#f2c878"/>
+      <stop offset="1" stop-color="#c98f2e"/>
     </linearGradient>
     <linearGradient id="pageL" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#f3ead4"/>
-      <stop offset="1" stop-color="#fffdf6"/>
+      <stop offset="0" stop-color="#e9e1cb"/>
+      <stop offset="1" stop-color="#faf6ea"/>
     </linearGradient>
     <linearGradient id="pageR" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#fffdf6"/>
-      <stop offset="1" stop-color="#f3ead4"/>
+      <stop offset="0" stop-color="#faf6ea"/>
+      <stop offset="1" stop-color="#e9e1cb"/>
     </linearGradient>
   </defs>
 
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <circle cx="330" cy="140" r="380" fill="url(#warm)"/>
+  <circle cx="800" cy="180" r="360" fill="url(#violet)"/>
   <circle cx="512" cy="420" r="330" fill="url(#halo)"/>
 
   <!-- cross -->
@@ -44,7 +44,7 @@
            C 600 770, 718 764, 806 800
            L 806 578
            C 718 542, 600 548, 512 596 Z"
-        fill="#a0752a"/>
+        fill="#b98a35"/>
   <!-- pages -->
   <path d="M512 610
            C 430 566, 322 560, 244 592
@@ -57,9 +57,9 @@
            C 702 744, 594 750, 512 794 Z"
         fill="url(#pageR)"/>
   <!-- spine light -->
-  <path d="M512 610 L 512 794" stroke="#96691d" stroke-width="10" stroke-linecap="round"/>
+  <path d="M512 610 L 512 794" stroke="#c98f2e" stroke-width="10" stroke-linecap="round"/>
   <!-- faint text lines -->
-  <g stroke="#a8946b" stroke-width="9" stroke-linecap="round" opacity="0.6">
+  <g stroke="#b9ad8f" stroke-width="9" stroke-linecap="round" opacity="0.55">
     <path d="M292 632 C 356 610, 420 612, 472 634"/>
     <path d="M292 676 C 356 654, 420 656, 472 678"/>
     <path d="M292 720 C 356 698, 420 700, 472 722"/>
