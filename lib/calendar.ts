@@ -69,6 +69,33 @@ export function outlookCalendarUrl(
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
 }
 
+/**
+ * Google Calendar event template for a session that doesn't exist yet —
+ * used by the schedule modal's Meet flow. Google attaches a Meet link on
+ * save and emails every guest a real invite.
+ */
+export function googleEventTemplateUrl(opts: {
+  title: string;
+  startsAt?: number;
+  durationMin?: number;
+  details?: string;
+  guests?: string[];
+}): string {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: opts.title,
+  });
+  if (opts.startsAt && Number.isFinite(opts.startsAt)) {
+    const end = opts.startsAt + (opts.durationMin ?? 60) * 60 * 1000;
+    params.set("dates", `${icsDate(opts.startsAt)}/${icsDate(end)}`);
+  }
+  if (opts.details) params.set("details", opts.details);
+  if (opts.guests && opts.guests.length > 0) {
+    params.set("add", opts.guests.join(","));
+  }
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 /** Teams' "new meeting" deep link, prefilled with subject and time. */
 export function teamsNewMeetingUrl(
   title: string,

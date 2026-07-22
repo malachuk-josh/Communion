@@ -796,6 +796,44 @@ mark {
   flex-basis: 100%;
 }
 
+.member-pick {
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: -6px 0 14px;
+}
+
+.member-pick-list {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.member-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.9rem;
+  padding: 3px 0;
+  cursor: pointer;
+}
+
+.member-pick-row.disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.member-pick-row em {
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+
+.member-pick-row input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--gold);
+}
+
 .title-edit {
   margin-left: 10px;
   vertical-align: middle;

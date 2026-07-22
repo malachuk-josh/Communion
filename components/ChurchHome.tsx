@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { api, guestId } from "@/lib/client";
 import {
   googleCalendarUrl,
+  googleEventTemplateUrl,
   outlookCalendarUrl,
-  teamsNewMeetingUrl,
 } from "@/lib/calendar";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
@@ -160,6 +160,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
       {(showSchedule || editingEvent) && (
         <ScheduleModal
           churchId={churchId}
+          churchName={church.name}
           initial={editingEvent ?? undefined}
           onClose={() => {
             setShowSchedule(false);
@@ -600,13 +601,21 @@ const toLocalInput = (ts: number) => {
   return d.toISOString().slice(0, 16);
 };
 
+interface PickMember {
+  userId: string;
+  displayName: string;
+  email: string | null;
+}
+
 function ScheduleModal({
   churchId,
+  churchName,
   initial,
   onClose,
   onCreated,
 }: {
   churchId: string;
+  churchName: string;
   initial?: WorshipEvent;
   onClose: () => void;
   onCreated: () => void;
@@ -624,6 +633,36 @@ function ScheduleModal({
   const [meetingUrl, setMeetingUrl] = useState(initial?.meetingUrl ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [meetOpen, setMeetOpen] = useState(false);
+  const [pickerMembers, setPickerMembers] = useState<PickMember[] | null>(null);
+  const [guests, setGuests] = useState<Set<string>>(new Set());
+
+  const toggleMeet = () => {
+    setMeetOpen((open) => !open);
+    if (pickerMembers === null) {
+      api<{ members: PickMember[] }>(`/api/churches/${churchId}/emails`)
+        .then((res) => {
+          setPickerMembers(res.members);
+          setGuests(
+            new Set(
+              res.members
+                .map((m) => m.email)
+                .filter((e): e is string => !!e)
+            )
+          );
+        })
+        .catch(() => setPickerMembers([]));
+    }
+  };
+
+  const toggleGuest = (email: string) => {
+    setGuests((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  };
 
   const pick = (template: (typeof TEMPLATES)[number]) => {
     setType(template.type);
@@ -732,27 +771,64 @@ function ScheduleModal({
         {!meetingUrl.trim() && (
           <div className="quick-create">
             <span className="cal-label">{t("session.quickCreate")}</span>
-            <a
-              className="cal-link"
-              href="https://meet.google.com/new"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Google Meet
-            </a>
-            <a
-              className="cal-link"
-              href={teamsNewMeetingUrl(
-                title,
-                when ? new Date(when).getTime() : undefined,
-                duration
-              )}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Teams
-            </a>
-            <span className="cal-hint">{t("session.quickCreateHint")}</span>
+            <button type="button" className="cal-link" onClick={toggleMeet}>
+              🎥 Google Meet {meetOpen ? "▴" : "▾"}
+            </button>
+          </div>
+        )}
+        {meetOpen && !meetingUrl.trim() && (
+          <div className="member-pick">
+            <p className="cal-label">{t("session.pickMembers")}</p>
+            {pickerMembers === null ? (
+              <p className="skeleton" style={{ padding: "10px 0" }}>
+                {t("common.loading")}
+              </p>
+            ) : (
+              <div className="member-pick-list">
+                {pickerMembers.map((m) => (
+                  <label
+                    key={m.userId}
+                    className={`member-pick-row${m.email ? "" : " disabled"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={!m.email}
+                      checked={!!m.email && guests.has(m.email)}
+                      onChange={() => m.email && toggleGuest(m.email)}
+                    />
+                    <span>{m.displayName}</span>
+                    {!m.email && <em>({t("session.noEmail")})</em>}
+                  </label>
+                ))}
+              </div>
+            )}
+            <div className="invite-actions" style={{ marginTop: 8 }}>
+              <a
+                className="btn btn-sm btn-primary"
+                target="_blank"
+                rel="noreferrer"
+                href={googleEventTemplateUrl({
+                  title: `${title} — ${churchName}`,
+                  startsAt: when ? new Date(when).getTime() : undefined,
+                  durationMin: duration,
+                  details:
+                    `${churchName} — Communion` +
+                    (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
+                  guests: [...guests],
+                })}
+              >
+                📅 {t("session.googleInvite")}
+              </a>
+              <a
+                className="btn btn-sm"
+                target="_blank"
+                rel="noreferrer"
+                href="https://meet.google.com/new"
+              >
+                ⚡ {t("session.instantMeet")}
+              </a>
+            </div>
+            <p className="cal-hint">{t("session.meetPickHint")}</p>
           </div>
         )}
         {error && <p className="error-text">{error}</p>}
