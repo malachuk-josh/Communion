@@ -42,6 +42,8 @@ export default function Reader({
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1);
+  const [study, setStudy] = useState(false);
+  const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -78,6 +80,9 @@ export default function Reader({
       if (savedScale >= SCALE_MIN && savedScale <= SCALE_MAX) {
         setScale(savedScale);
       }
+      if (window.localStorage.getItem("communion.studyMode") === "1") {
+        setStudy(true);
+      }
     } catch {
       // corrupted storage — start fresh at the default passage
     }
@@ -111,6 +116,44 @@ export default function Reader({
       });
     return () => controller.abort();
   }, [translation, bookNr, chapter]);
+
+  // study mode: load the KJV-keyed cross-reference set for the open book.
+  // The same keys apply to every translation sharing KJV versification.
+  useEffect(() => {
+    if (!study) return;
+    let cancelled = false;
+    setXrefs(null);
+    fetch(`/xref/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json: Record<string, number[][]>) => {
+        if (!cancelled) setXrefs(json);
+      })
+      .catch(() => {
+        if (!cancelled) setXrefs({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, bookNr]);
+
+  const toggleStudy = () => {
+    const next = !study;
+    setStudy(next);
+    window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
+  };
+
+  const jumpToRef = (ref: number[]) => {
+    setBookNr(ref[0]);
+    setChapter(ref[1]);
+    setHighlightVerse(ref[2]);
+  };
+
+  const refChipLabel = (ref: number[]) => {
+    const refBook = getBook(ref[0]);
+    if (!refBook) return "";
+    const name = lang === "es" ? refBook.es : refBook.en;
+    return `${name} ${ref[1]}:${ref[2]}${ref[3] ? `–${ref[3]}` : ""}`;
+  };
 
   // after a search jump, bring the target verse into view
   useEffect(() => {
@@ -303,6 +346,19 @@ export default function Reader({
           </select>
         </label>
         <div className="field zoom-field">
+          <span>{t("reader.study")}</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={study}
+            className={`switch${study ? " on" : ""}`}
+            onClick={toggleStudy}
+            aria-label={t("reader.study")}
+          >
+            <span className="switch-knob" />
+          </button>
+        </div>
+        <div className="field zoom-field">
           <span>{t("reader.textSize")}</span>
           <div className="zoom-group">
             <button
@@ -329,7 +385,7 @@ export default function Reader({
       </div>
 
       <article
-        className="glass card scripture"
+        className={`glass card scripture${study ? " study" : ""}`}
         style={{ fontSize: `calc(1.12rem * ${scale})` }}
       >
         <h2>
@@ -339,6 +395,40 @@ export default function Reader({
           <p className="skeleton">{t("reader.loading")}</p>
         ) : error || !data ? (
           <p className="error-text">{t("reader.error")}</p>
+        ) : study ? (
+          <div className="study-verses">
+            {data.verses.map((v) => {
+              const refs = xrefs?.[`${chapter}:${v.verse}`];
+              return (
+                <div
+                  key={v.verse}
+                  id={`v-${v.verse}`}
+                  className={`verse-block${
+                    highlightVerse === v.verse ? " verse-highlight" : ""
+                  }`}
+                >
+                  <p>
+                    <sup className="verse-num">{v.verse}</sup>
+                    {v.text}
+                  </p>
+                  {refs && refs.length > 0 && (
+                    <span className="xref-chips">
+                      {refs.map((ref, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className="xref-chip"
+                          onClick={() => jumpToRef(ref)}
+                        >
+                          {refChipLabel(ref)}
+                        </button>
+                      ))}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <p>
             {data.verses.map((v) => (

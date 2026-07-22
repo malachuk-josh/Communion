@@ -32,6 +32,11 @@
 | i18n | English + Spanish (UI), multi-translation Scripture |
 | First deliverable | Self-contained Claude Artifact (MVP), then migrated here |
 
+## Data Credits
+
+- Scripture text: public-domain translations served via [getBible](https://getbible.net) (KJV, ASV, WEB, Reina Valera 1909)
+- Cross-references (Study Mode): [OpenBible.info](https://www.openbible.info/labs/cross-references/) cross-reference dataset, CC-BY, keyed to KJV versification
+
 ## Project Status
 
 🚧 **Pre-MVP.** A Claude Cowork session is producing the initial artifact MVP (reader + glass UI + language/translation toggles + auth/storage stubs). This repo holds the spec and will receive the production build-out.
