@@ -285,6 +285,10 @@ a {
   .nav-links {
     display: none;
   }
+  /* the bottom nav already has a Settings tab on mobile */
+  .settings-gear {
+    display: none;
+  }
   .page {
     padding-bottom: 130px;
   }
@@ -832,6 +836,42 @@ mark {
 .xref-chip:hover {
   border-color: var(--gold);
   background: var(--gold-soft);
+}
+
+.note-chip.has-note {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+}
+
+.verse-note {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  background: var(--gold-soft);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 10px 10px 0;
+  padding: 8px 12px;
+  margin: 8px 0 0 20px;
+  cursor: pointer;
+  white-space: pre-wrap;
+}
+
+.note-edit {
+  margin: 8px 0 0 20px;
+  font-family: var(--sans);
+}
+
+.note-edit textarea {
+  font-size: 0.88rem;
+  resize: vertical;
+}
+
+.note-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 6px;
 }
 
 .skeleton {

@@ -177,6 +177,8 @@ export const keys = {
   user: (userId: string) => `user:${userId}`,
   userChurches: (userId: string) => `user:${userId}:churches`,
   userPlans: (userId: string) => `user:${userId}:plans`,
+  userNotes: (userId: string, bookNr: number) =>
+    `user:${userId}:notes:${bookNr}`,
   church: (churchId: string) => `church:${churchId}`,
   churchMembers: (churchId: string) => `church:${churchId}:members`,
   churchEvents: (churchId: string) => `church:${churchId}:events`,

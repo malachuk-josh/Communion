@@ -8,6 +8,7 @@ import {
   getBook,
   type ChapterData,
 } from "@/lib/bible";
+import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 
@@ -44,6 +45,9 @@ export default function Reader({
   const [scale, setScale] = useState(1);
   const [study, setStudy] = useState(false);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -136,10 +140,52 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
+  // study mode: load this user's notes for the open book
+  useEffect(() => {
+    if (!study) return;
+    let cancelled = false;
+    setNotes({});
+    setEditingNote(null);
+    api<{ notes: Record<string, string> }>(`/api/notes/${bookNr}`)
+      .then((res) => {
+        if (!cancelled) setNotes(res.notes);
+      })
+      .catch(() => {
+        // signed-out — notes stay local-less until sign-in
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, bookNr]);
+
   const toggleStudy = () => {
     const next = !study;
     setStudy(next);
     window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
+  };
+
+  const startNote = (key: string) => {
+    setNoteDraft(notes[key] ?? "");
+    setEditingNote(key);
+  };
+
+  const saveNote = async (key: string) => {
+    const text = noteDraft.trim();
+    setNotes((prev) => {
+      const next = { ...prev };
+      if (text) next[key] = text;
+      else delete next[key];
+      return next;
+    });
+    setEditingNote(null);
+    try {
+      await api(`/api/notes/${bookNr}`, {
+        method: "POST",
+        body: { ref: key, text },
+      });
+    } catch {
+      // offline/unauthenticated — the optimistic note stays for this session
+    }
   };
 
   const jumpToRef = (ref: number[]) => {
@@ -398,7 +444,9 @@ export default function Reader({
         ) : study ? (
           <div className="study-verses">
             {data.verses.map((v) => {
-              const refs = xrefs?.[`${chapter}:${v.verse}`];
+              const key = `${chapter}:${v.verse}`;
+              const refs = xrefs?.[key];
+              const note = notes[key];
               return (
                 <div
                   key={v.verse}
@@ -411,19 +459,64 @@ export default function Reader({
                     <sup className="verse-num">{v.verse}</sup>
                     {v.text}
                   </p>
-                  {refs && refs.length > 0 && (
-                    <span className="xref-chips">
-                      {refs.map((ref, i) => (
+                  <span className="xref-chips">
+                    {refs?.map((ref, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="xref-chip"
+                        onClick={() => jumpToRef(ref)}
+                      >
+                        {refChipLabel(ref)}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={`xref-chip note-chip${note ? " has-note" : ""}`}
+                      onClick={() => startNote(key)}
+                      aria-label={t("reader.addNote")}
+                      title={t("reader.addNote")}
+                    >
+                      📝
+                    </button>
+                  </span>
+                  {note && editingNote !== key && (
+                    <div
+                      className="verse-note"
+                      onClick={() => startNote(key)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {note}
+                    </div>
+                  )}
+                  {editingNote === key && (
+                    <div className="note-edit">
+                      <textarea
+                        value={noteDraft}
+                        onChange={(e) => setNoteDraft(e.target.value)}
+                        placeholder={t("reader.notePlaceholder")}
+                        maxLength={1000}
+                        rows={3}
+                        autoFocus
+                      />
+                      <div className="note-actions">
                         <button
-                          key={i}
                           type="button"
-                          className="xref-chip"
-                          onClick={() => jumpToRef(ref)}
+                          className="rsvp-btn"
+                          onClick={() => setEditingNote(null)}
                         >
-                          {refChipLabel(ref)}
+                          {t("session.cancel")}
                         </button>
-                      ))}
-                    </span>
+                        <button
+                          type="button"
+                          className="rsvp-btn active"
+                          onClick={() => saveNote(key)}
+                        >
+                          {t("common.save")}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               );

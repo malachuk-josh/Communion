@@ -59,6 +59,25 @@ export default function Settings() {
       <p className="subtitle">{t("settings.subtitle")}</p>
 
       <div className="section-head">
+        <h2>{t("settings.about")}</h2>
+      </div>
+      <div className="glass card about-card">
+        <blockquote className="founding-verse">
+          {t("verse.matthew")}
+          <cite>{t("verse.matthewRef")}</cite>
+        </blockquote>
+        <p>{t("about.p1")}</p>
+        <p>{t("about.p2")}</p>
+        <h3>{t("about.howTitle")}</h3>
+        <ol className="about-list">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <li key={n}>{t(`about.how${n}` as MessageKey)}</li>
+          ))}
+        </ol>
+        <p className="notice">{t("about.footer")}</p>
+      </div>
+
+      <div className="section-head">
         <h2>{t("settings.preferences")}</h2>
       </div>
       <div className="glass card">
@@ -143,25 +162,6 @@ export default function Settings() {
         ))
       )}
       <p className="notice">{t("settings.membersHint")}</p>
-
-      <div className="section-head">
-        <h2>{t("settings.about")}</h2>
-      </div>
-      <div className="glass card about-card">
-        <blockquote className="founding-verse">
-          {t("verse.matthew")}
-          <cite>{t("verse.matthewRef")}</cite>
-        </blockquote>
-        <p>{t("about.p1")}</p>
-        <p>{t("about.p2")}</p>
-        <h3>{t("about.howTitle")}</h3>
-        <ol className="about-list">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <li key={n}>{t(`about.how${n}` as MessageKey)}</li>
-          ))}
-        </ol>
-        <p className="notice">{t("about.footer")}</p>
-      </div>
     </div>
   );
 }

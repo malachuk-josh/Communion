@@ -79,7 +79,7 @@ export default function Nav() {
           {passage && <span className="nav-passage">{passage}</span>}
           <Link
             href="/settings"
-            className={`theme-toggle${isSettings ? " settings-active" : ""}`}
+            className={`theme-toggle settings-gear${isSettings ? " settings-active" : ""}`}
             aria-label={t("nav.settings")}
             title={t("nav.settings")}
           >
