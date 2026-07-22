@@ -10,7 +10,7 @@ type MyChurch = Church & { myRole: Role; memberCount: number };
 
 export default function Settings() {
   const { lang, setLang, t } = useI18n();
-  const [theme, setTheme] = useState<"dark" | "light">("light");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [churches, setChurches] = useState<MyChurch[] | null>(null);
 
   useEffect(() => {

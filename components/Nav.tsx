@@ -12,7 +12,7 @@ export default function Nav() {
   const pathname = usePathname();
   const { lang, t } = useI18n();
   const { position } = useReading();
-  const [theme, setTheme] = useState<"dark" | "light">("light");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const positionBook = position ? getBook(position.bookNr) : undefined;
   const bookName = positionBook

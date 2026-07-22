@@ -13,7 +13,9 @@ import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 
-const DEFAULT_BOOK = 43; // John
+const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
+const DEFAULT_CHAPTER = 18;
+const DEFAULT_VERSE = 20;
 
 const SCALE_MIN = 0.85;
 const SCALE_MAX = 1.75;
@@ -39,7 +41,7 @@ export default function Reader({
   const deepLinked = initialBook !== undefined;
   const [translation, setTranslation] = useState(DEFAULT_TRANSLATION);
   const [bookNr, setBookNr] = useState(initialBook ?? DEFAULT_BOOK);
-  const [chapter, setChapter] = useState(initialChapter ?? 1);
+  const [chapter, setChapter] = useState(initialChapter ?? DEFAULT_CHAPTER);
   const [data, setData] = useState<ChapterData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,9 @@ export default function Reader({
           setBookNr(saved.bookNr);
           setChapter(saved.chapter);
         }
+      } else if (!deepLinked) {
+        // first visit: land on the founding verse, gently highlighted
+        setHighlightVerse(DEFAULT_VERSE);
       }
       const savedScale = Number(
         window.localStorage.getItem("communion.textScale")
