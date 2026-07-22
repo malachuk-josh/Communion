@@ -23,6 +23,7 @@ export async function POST(
     durationMin?: number;
     passageRef?: string;
     meetingUrl?: string;
+    details?: string;
   } | null;
 
   const title = body?.title?.trim();
@@ -44,6 +45,7 @@ export async function POST(
     durationMin: Number(body.durationMin) || 60,
     passageRef: body.passageRef?.trim() || undefined,
     meetingUrl: body.meetingUrl?.trim() || undefined,
+    details: body.details?.trim() || undefined,
   });
   return NextResponse.json({ event }, { status: 201 });
 }

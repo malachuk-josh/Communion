@@ -8,6 +8,7 @@ export interface CalendarEvent {
   durationMin: number;
   passageRef?: string;
   meetingUrl?: string;
+  details?: string;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -31,6 +32,7 @@ function description(
   appUrl: string
 ): string {
   const lines = [`${churchName} — Communion`];
+  if (event.details) lines.push(event.details);
   if (event.passageRef) lines.push(`Passage: ${event.passageRef}`);
   if (event.meetingUrl) lines.push(`Join: ${event.meetingUrl}`);
   lines.push(`${appUrl}/churches/${event.churchId}`);

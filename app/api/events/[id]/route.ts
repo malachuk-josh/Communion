@@ -18,6 +18,7 @@ export async function PATCH(
     durationMin?: number;
     passageRef?: string;
     meetingUrl?: string;
+    details?: string;
   } | null;
   if (!body) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -34,6 +35,7 @@ export async function PATCH(
       body.durationMin === undefined ? undefined : Number(body.durationMin),
     passageRef: body.passageRef,
     meetingUrl: body.meetingUrl,
+    details: body.details,
   });
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

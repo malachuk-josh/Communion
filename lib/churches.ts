@@ -17,6 +17,7 @@ const SESSION_TYPES: SessionType[] = [
   "prayer",
   "communion",
   "praise_worship",
+  "fellowship",
   "custom",
 ];
 
@@ -121,6 +122,7 @@ async function getEvent(eventId: string): Promise<WorshipEvent | null> {
     durationMin: Number(raw.durationMin ?? 60),
     passageRef: raw.passageRef || undefined,
     meetingUrl: raw.meetingUrl || undefined,
+    details: raw.details || undefined,
     createdBy: raw.createdBy ?? "",
     createdAt: Number(raw.createdAt ?? 0),
     rsvps,
@@ -188,6 +190,7 @@ export async function createEvent(
     durationMin: number;
     passageRef?: string;
     meetingUrl?: string;
+    details?: string;
   }
 ): Promise<WorshipEvent> {
   const kv = db();
@@ -200,6 +203,7 @@ export async function createEvent(
     durationMin: Math.min(Math.max(input.durationMin, 5), 24 * 60),
     passageRef: input.passageRef?.slice(0, 80),
     meetingUrl: input.meetingUrl?.slice(0, 300),
+    details: input.details?.slice(0, 200),
     createdBy: userId,
     createdAt: Date.now(),
     rsvps: { [userId]: "going" },
@@ -212,6 +216,7 @@ export async function createEvent(
     durationMin: event.durationMin,
     passageRef: event.passageRef ?? "",
     meetingUrl: event.meetingUrl ?? "",
+    details: event.details ?? "",
     createdBy: event.createdBy,
     createdAt: event.createdAt,
   });
@@ -278,6 +283,7 @@ export async function updateEvent(
     durationMin?: number;
     passageRef?: string;
     meetingUrl?: string;
+    details?: string;
   }
 ): Promise<boolean> {
   const kv = db();
@@ -300,6 +306,9 @@ export async function updateEvent(
   }
   if (patch.meetingUrl !== undefined) {
     updates.meetingUrl = patch.meetingUrl.trim().slice(0, 300);
+  }
+  if (patch.details !== undefined) {
+    updates.details = patch.details.trim().slice(0, 200);
   }
   if (Object.keys(updates).length === 0) return false;
 

@@ -5,6 +5,7 @@ export type SessionType =
   | "prayer"
   | "communion"
   | "praise_worship"
+  | "fellowship"
   | "custom";
 
 export type RsvpStatus = "going" | "maybe" | "no";
@@ -32,6 +33,8 @@ export interface WorshipEvent {
   durationMin: number;
   passageRef?: string;
   meetingUrl?: string;
+  /** Chosen gathering options, e.g. "Shared meal · Potluck — bring a dish" */
+  details?: string;
   createdBy: string;
   createdAt: number;
   rsvps: Record<string, RsvpStatus>;

@@ -896,6 +896,69 @@ mark {
   margin-bottom: 16px;
 }
 
+.steps {
+  display: flex;
+  gap: 8px;
+  margin: -8px 0 16px;
+}
+
+.step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.step-dot.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.modal-sub {
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.about-box {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.about-lead {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.about-emoji {
+  font-size: 1.35rem;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.toggle-row input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--gold);
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;

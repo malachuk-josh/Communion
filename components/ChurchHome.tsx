@@ -14,11 +14,18 @@ import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
-const TEMPLATES: { type: SessionType; emoji: string; duration: number }[] = [
-  { type: "bible_study", emoji: "📖", duration: 60 },
-  { type: "prayer", emoji: "🙏", duration: 30 },
-  { type: "communion", emoji: "🍞", duration: 45 },
-  { type: "praise_worship", emoji: "🎶", duration: 60 },
+const TEMPLATES: {
+  type: SessionType;
+  emoji: string;
+  duration: number;
+  choices?: number;
+  hasToggle?: boolean;
+}[] = [
+  { type: "bible_study", emoji: "📖", duration: 60, choices: 3, hasToggle: true },
+  { type: "prayer", emoji: "🙏", duration: 30, choices: 3, hasToggle: true },
+  { type: "communion", emoji: "🍞", duration: 45, choices: 2, hasToggle: true },
+  { type: "praise_worship", emoji: "🎶", duration: 60, choices: 3, hasToggle: true },
+  { type: "fellowship", emoji: "🤝", duration: 90, choices: 4, hasToggle: true },
   { type: "custom", emoji: "✨", duration: 60 },
 ];
 
@@ -27,6 +34,7 @@ const EMOJI: Record<SessionType, string> = {
   prayer: "🙏",
   communion: "🍞",
   praise_worship: "🎶",
+  fellowship: "🤝",
   custom: "✨",
 };
 
@@ -322,6 +330,7 @@ function SessionCard({
         <h3>{event.title}</h3>
         <p className="session-meta">
           {when} · {event.durationMin} {t("common.min")}
+          {event.details && <> · {event.details}</>}
           {event.passageRef &&
             (() => {
               const parsed = parsePassage(event.passageRef);
@@ -621,21 +630,44 @@ function ScheduleModal({
   onCreated: () => void;
 }) {
   const { t } = useI18n();
+  const [step, setStep] = useState(initial ? 3 : 1);
   const [type, setType] = useState<SessionType>(initial?.type ?? "bible_study");
-  const [title, setTitle] = useState(
-    initial?.title ?? t("session.bible_study")
-  );
+  const [title, setTitle] = useState(initial?.title ?? "");
   const [when, setWhen] = useState(
     initial ? toLocalInput(initial.startsAt) : ""
   );
   const [duration, setDuration] = useState(initial?.durationMin ?? 60);
   const [passageRef, setPassageRef] = useState(initial?.passageRef ?? "");
   const [meetingUrl, setMeetingUrl] = useState(initial?.meetingUrl ?? "");
+  const [optIndex, setOptIndex] = useState(0);
+  const [toggleOn, setToggleOn] = useState(false);
+  const [touchedPurpose, setTouchedPurpose] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [meetOpen, setMeetOpen] = useState(false);
   const [pickerMembers, setPickerMembers] = useState<PickMember[] | null>(null);
   const [guests, setGuests] = useState<Set<string>>(new Set());
+
+  const template = TEMPLATES.find((tpl) => tpl.type === type)!;
+  const tk = (suffix: string) => t(`session.${type}.${suffix}` as MessageKey);
+
+  const pick = (tpl: (typeof TEMPLATES)[number]) => {
+    setType(tpl.type);
+    setDuration(tpl.duration);
+    setTitle(t(`session.${tpl.type}` as MessageKey));
+    setOptIndex(0);
+    setToggleOn(false);
+    setTouchedPurpose(true);
+    setStep(2);
+  };
+
+  const buildDetails = (): string => {
+    if (initial && !touchedPurpose) return initial.details ?? "";
+    if (!template.choices) return "";
+    const parts = [t(`session.${type}.opt${optIndex + 1}` as MessageKey)];
+    if (template.hasToggle && toggleOn) parts.push(tk("toggle"));
+    return parts.join(" · ");
+  };
 
   const toggleMeet = () => {
     setMeetOpen((open) => !open);
@@ -645,9 +677,7 @@ function ScheduleModal({
           setPickerMembers(res.members);
           setGuests(
             new Set(
-              res.members
-                .map((m) => m.email)
-                .filter((e): e is string => !!e)
+              res.members.map((m) => m.email).filter((e): e is string => !!e)
             )
           );
         })
@@ -664,13 +694,7 @@ function ScheduleModal({
     });
   };
 
-  const pick = (template: (typeof TEMPLATES)[number]) => {
-    setType(template.type);
-    setDuration(template.duration);
-    setTitle(t(`session.${template.type}` as MessageKey));
-  };
-
-  const create = async () => {
+  const submit = async () => {
     if (!title.trim() || !when || busy) return;
     setBusy(true);
     setError("");
@@ -681,15 +705,13 @@ function ScheduleModal({
       durationMin: duration,
       passageRef,
       meetingUrl,
+      details: buildDetails(),
     };
     try {
       if (initial) {
         await api(`/api/events/${initial.id}`, { method: "PATCH", body });
       } else {
-        await api(`/api/churches/${churchId}/events`, {
-          method: "POST",
-          body,
-        });
+        await api(`/api/churches/${churchId}/events`, { method: "POST", body });
       }
       onCreated();
     } catch (e) {
@@ -702,148 +724,224 @@ function ScheduleModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="glass modal" onClick={(e) => e.stopPropagation()}>
         <h2>{t(initial ? "session.edit" : "churches.schedule")}</h2>
-        <p style={{ color: "var(--ink-dim)", fontSize: "0.9rem", marginBottom: 10 }}>
-          {t("session.type")}
-        </p>
-        <div className="type-grid">
-          {TEMPLATES.map((template) => (
-            <button
-              key={template.type}
-              className={`type-card${type === template.type ? " active" : ""}`}
-              onClick={() => pick(template)}
-            >
-              <span className="emoji">{template.emoji}</span>
-              <span className="name">
-                {t(`session.${template.type}` as MessageKey)}
-              </span>
-              <span className="desc">
-                {t(`session.${template.type}.desc` as MessageKey)}
-              </span>
-            </button>
+        <div className="steps" aria-hidden>
+          {[1, 2, 3].map((n) => (
+            <span key={n} className={`step-dot${step === n ? " active" : ""}`}>
+              {n}
+            </span>
           ))}
         </div>
-        <label className="field">
-          <span>{t("session.title")}</span>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={120}
-          />
-        </label>
-        <div className="form-row">
-          <label className="field">
-            <span>{t("session.when")}</span>
-            <input
-              type="datetime-local"
-              value={when}
-              onChange={(e) => setWhen(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>{t("session.duration")}</span>
-            <input
-              type="number"
-              min={5}
-              max={1440}
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-            />
-          </label>
-        </div>
-        <label className="field">
-          <span>{t("session.passage")}</span>
-          <input
-            value={passageRef}
-            onChange={(e) => setPassageRef(e.target.value)}
-            placeholder={t("session.passagePlaceholder")}
-            maxLength={80}
-          />
-        </label>
-        <label className="field">
-          <span>{t("session.meetingUrl")}</span>
-          <input
-            value={meetingUrl}
-            onChange={(e) => setMeetingUrl(e.target.value)}
-            placeholder={t("session.meetingUrlPlaceholder")}
-            maxLength={300}
-          />
-        </label>
-        {!meetingUrl.trim() && (
-          <div className="quick-create">
-            <span className="cal-label">{t("session.quickCreate")}</span>
-            <button type="button" className="cal-link" onClick={toggleMeet}>
-              🎥 Google Meet {meetOpen ? "▴" : "▾"}
-            </button>
-          </div>
+
+        {step === 1 && (
+          <>
+            <p className="modal-sub">{t("session.type")}</p>
+            <div className="type-grid">
+              {TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.type}
+                  className={`type-card${type === tpl.type ? " active" : ""}`}
+                  onClick={() => pick(tpl)}
+                >
+                  <span className="emoji">{tpl.emoji}</span>
+                  <span className="name">
+                    {t(`session.${tpl.type}` as MessageKey)}
+                  </span>
+                  <span className="desc">
+                    {t(`session.${tpl.type}.desc` as MessageKey)}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="modal-actions">
+              <button className="btn" onClick={onClose}>
+                {t("session.cancel")}
+              </button>
+            </div>
+          </>
         )}
-        {meetOpen && !meetingUrl.trim() && (
-          <div className="member-pick">
-            <p className="cal-label">{t("session.pickMembers")}</p>
-            {pickerMembers === null ? (
-              <p className="skeleton" style={{ padding: "10px 0" }}>
-                {t("common.loading")}
+
+        {step === 2 && (
+          <>
+            <div className="about-box">
+              <p className="about-lead">
+                <span className="about-emoji">{template.emoji}</span>
+                {tk("about")}
               </p>
-            ) : (
-              <div className="member-pick-list">
-                {pickerMembers.map((m) => (
-                  <label
-                    key={m.userId}
-                    className={`member-pick-row${m.email ? "" : " disabled"}`}
+              <blockquote className="founding-verse">
+                {tk("verse")}
+                <cite>{tk("verseRef")}</cite>
+              </blockquote>
+              {template.choices ? (
+                <label className="field">
+                  <span>{tk("optLabel")}</span>
+                  <select
+                    value={optIndex}
+                    onChange={(e) => {
+                      setOptIndex(Number(e.target.value));
+                      setTouchedPurpose(true);
+                    }}
                   >
-                    <input
-                      type="checkbox"
-                      disabled={!m.email}
-                      checked={!!m.email && guests.has(m.email)}
-                      onChange={() => m.email && toggleGuest(m.email)}
-                    />
-                    <span>{m.displayName}</span>
-                    {!m.email && <em>({t("session.noEmail")})</em>}
-                  </label>
-                ))}
+                    {Array.from({ length: template.choices }, (_, i) => (
+                      <option key={i} value={i}>
+                        {t(`session.${type}.opt${i + 1}` as MessageKey)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {template.hasToggle && (
+                <label className="toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={toggleOn}
+                    onChange={(e) => {
+                      setToggleOn(e.target.checked);
+                      setTouchedPurpose(true);
+                    }}
+                  />
+                  {tk("toggle")}
+                </label>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setStep(1)}>
+                {t("common.back")}
+              </button>
+              <button className="btn btn-primary" onClick={() => setStep(3)}>
+                {t("common.next")}
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <label className="field">
+              <span>{t("session.title")}</span>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={120}
+              />
+            </label>
+            <div className="form-row">
+              <label className="field">
+                <span>{t("session.when")}</span>
+                <input
+                  type="datetime-local"
+                  value={when}
+                  onChange={(e) => setWhen(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>{t("session.duration")}</span>
+                <input
+                  type="number"
+                  min={5}
+                  max={1440}
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                />
+              </label>
+            </div>
+            <label className="field">
+              <span>{t("session.passage")}</span>
+              <input
+                value={passageRef}
+                onChange={(e) => setPassageRef(e.target.value)}
+                placeholder={t("session.passagePlaceholder")}
+                maxLength={80}
+              />
+            </label>
+            <label className="field">
+              <span>{t("session.meetingUrl")}</span>
+              <input
+                value={meetingUrl}
+                onChange={(e) => setMeetingUrl(e.target.value)}
+                placeholder={t("session.meetingUrlPlaceholder")}
+                maxLength={300}
+              />
+            </label>
+            {!meetingUrl.trim() && (
+              <div className="quick-create">
+                <span className="cal-label">{t("session.quickCreate")}</span>
+                <button type="button" className="cal-link" onClick={toggleMeet}>
+                  🎥 Google Meet {meetOpen ? "▴" : "▾"}
+                </button>
               </div>
             )}
-            <div className="invite-actions" style={{ marginTop: 8 }}>
-              <a
-                className="btn btn-sm btn-primary"
-                target="_blank"
-                rel="noreferrer"
-                href={googleEventTemplateUrl({
-                  title: `${title} — ${churchName}`,
-                  startsAt: when ? new Date(when).getTime() : undefined,
-                  durationMin: duration,
-                  details:
-                    `${churchName} — Communion` +
-                    (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
-                  guests: [...guests],
-                })}
+            {meetOpen && !meetingUrl.trim() && (
+              <div className="member-pick">
+                <p className="cal-label">{t("session.pickMembers")}</p>
+                {pickerMembers === null ? (
+                  <p className="skeleton" style={{ padding: "10px 0" }}>
+                    {t("common.loading")}
+                  </p>
+                ) : (
+                  <div className="member-pick-list">
+                    {pickerMembers.map((m) => (
+                      <label
+                        key={m.userId}
+                        className={`member-pick-row${m.email ? "" : " disabled"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={!m.email}
+                          checked={!!m.email && guests.has(m.email)}
+                          onChange={() => m.email && toggleGuest(m.email)}
+                        />
+                        <span>{m.displayName}</span>
+                        {!m.email && <em>({t("session.noEmail")})</em>}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <div className="invite-actions" style={{ marginTop: 8 }}>
+                  <a
+                    className="btn btn-sm btn-primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    href={googleEventTemplateUrl({
+                      title: `${title} — ${churchName}`,
+                      startsAt: when ? new Date(when).getTime() : undefined,
+                      durationMin: duration,
+                      details:
+                        `${churchName} — Communion` +
+                        (passageRef.trim()
+                          ? `\nPassage: ${passageRef.trim()}`
+                          : ""),
+                      guests: [...guests],
+                    })}
+                  >
+                    📅 {t("session.googleInvite")}
+                  </a>
+                  <a
+                    className="btn btn-sm"
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://meet.google.com/new"
+                  >
+                    ⚡ {t("session.instantMeet")}
+                  </a>
+                </div>
+                <p className="cal-hint">{t("session.meetPickHint")}</p>
+              </div>
+            )}
+            {error && <p className="error-text">{error}</p>}
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setStep(2)}>
+                {t("common.back")}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={submit}
+                disabled={!title.trim() || !when || busy}
               >
-                📅 {t("session.googleInvite")}
-              </a>
-              <a
-                className="btn btn-sm"
-                target="_blank"
-                rel="noreferrer"
-                href="https://meet.google.com/new"
-              >
-                ⚡ {t("session.instantMeet")}
-              </a>
+                {t(initial ? "common.save" : "session.create")}
+              </button>
             </div>
-            <p className="cal-hint">{t("session.meetPickHint")}</p>
-          </div>
+          </>
         )}
-        {error && <p className="error-text">{error}</p>}
-        <div className="modal-actions">
-          <button className="btn" onClick={onClose}>
-            {t("session.cancel")}
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={create}
-            disabled={!title.trim() || !when || busy}
-          >
-            {t(initial ? "common.save" : "session.create")}
-          </button>
-        </div>
       </div>
     </div>
   );

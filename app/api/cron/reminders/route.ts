@@ -78,6 +78,7 @@ export async function GET(req: Request) {
         durationMin: Number(event.durationMin) || 60,
         passageRef: event.passageRef || undefined,
         meetingUrl: event.meetingUrl || undefined,
+        details: event.details || undefined,
       },
       church?.name ?? "your Church",
       origin

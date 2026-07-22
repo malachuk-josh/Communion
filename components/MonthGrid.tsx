@@ -9,6 +9,7 @@ const TYPE_DOT: Record<string, string> = {
   prayer: "🙏",
   communion: "🍞",
   praise_worship: "🎶",
+  fellowship: "🤝",
   custom: "✨",
 };
 
