@@ -27,9 +27,11 @@ interface SearchResult {
 export default function Reader({
   initialBook,
   initialChapter,
+  initialVerse,
 }: {
   initialBook?: number;
   initialChapter?: number;
+  initialVerse?: number;
 } = {}) {
   const { lang, t } = useI18n();
   const deepLinked = initialBook !== undefined;
@@ -40,7 +42,9 @@ export default function Reader({
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1);
-  const [highlightVerse, setHighlightVerse] = useState<number | null>(null);
+  const [highlightVerse, setHighlightVerse] = useState<number | null>(
+    initialVerse ?? null
+  );
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searchTotal, setSearchTotal] = useState(0);

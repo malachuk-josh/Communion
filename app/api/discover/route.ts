@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { listPublicChurches } from "@/lib/churches";
+import { listPublicChurches, listPublicGatherings } from "@/lib/churches";
 
-// Public directory of churches — visible to everyone, signed in or not.
+// Public directory of churches and upcoming public gatherings —
+// visible to everyone, signed in or not.
 export async function GET(req: Request) {
   const userId = await getUserId(req);
-  const churches = await listPublicChurches(userId);
-  return NextResponse.json({ churches });
+  const [churches, gatherings] = await Promise.all([
+    listPublicChurches(userId),
+    listPublicGatherings(),
+  ]);
+  return NextResponse.json({ churches, gatherings });
 }

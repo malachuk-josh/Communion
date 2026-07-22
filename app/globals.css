@@ -285,6 +285,109 @@ a {
   }
 }
 
+/* ---- verse of the day ---- */
+.votd {
+  text-align: center;
+  background:
+    radial-gradient(24rem 12rem at 50% -20%, var(--gold-soft), transparent 70%),
+    var(--glass);
+}
+
+.votd-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.votd-text {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+.votd-ref {
+  color: var(--gold);
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.votd-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---- topics & plans ---- */
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.topic-list {
+  display: grid;
+  gap: 8px;
+}
+
+.plan-card + .plan-card {
+  margin-top: 12px;
+}
+
+.plan-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.plan-head h3 {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.plan-count {
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+
+.plan-desc {
+  color: var(--ink-dim);
+  font-size: 0.87rem;
+  margin: 2px 0 10px;
+}
+
+.progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), #cf9339);
+  transition: width 0.4s ease;
+}
+
+.plan-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.gathering-row {
+  align-items: center;
+}
+
 /* ---- discover & requests ---- */
 .discover-head {
   display: flex;

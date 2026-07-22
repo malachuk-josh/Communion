@@ -180,6 +180,21 @@ export async function getChurchDetail(
   return detail;
 }
 
+/** Upcoming sessions from public churches — the community gatherings feed. */
+export async function listPublicGatherings(
+  limit = 20
+): Promise<(WorshipEvent & { churchName: string })[]> {
+  const ids = await db().smembers(keys.allChurches);
+  const all: (WorshipEvent & { churchName: string })[] = [];
+  for (const churchId of ids) {
+    const church = await getChurch(churchId);
+    if (!church || church.visibility === "private") continue;
+    const events = await getUpcomingEvents(churchId);
+    all.push(...events.map((e) => ({ ...e, churchName: church.name })));
+  }
+  return all.sort((a, b) => a.startsAt - b.startsAt).slice(0, limit);
+}
+
 /** Upcoming sessions across every church the user belongs to, soonest first. */
 export async function listUserEvents(
   userId: string
