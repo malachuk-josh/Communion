@@ -39,6 +39,7 @@ export async function createChurch(
     name: name.slice(0, 80),
     description: description.slice(0, 300),
     founderId: userId,
+    visibility: "public",
     createdAt: Date.now(),
   };
   const kv = db();
@@ -46,10 +47,12 @@ export async function createChurch(
     name: church.name,
     description: church.description,
     founderId: church.founderId,
+    visibility: church.visibility,
     createdAt: church.createdAt,
   });
   await kv.hset(keys.churchMembers(church.id), { [userId]: "founder" });
   await kv.sadd(keys.userChurches(userId), church.id);
+  await kv.sadd(keys.allChurches, church.id);
   return church;
 }
 
@@ -61,6 +64,7 @@ export async function getChurch(churchId: string): Promise<Church | null> {
     name: raw.name ?? "",
     description: raw.description ?? "",
     founderId: raw.founderId ?? "",
+    visibility: raw.visibility === "private" ? "private" : "public",
     createdAt: Number(raw.createdAt ?? 0),
   };
 }
@@ -143,17 +147,89 @@ async function getUpcomingEvents(churchId: string): Promise<WorshipEvent[]> {
 
 export async function getChurchDetail(
   churchId: string,
-  userId: string
+  userId: string | null
 ): Promise<ChurchDetail | null> {
-  const role = await getRole(churchId, userId);
-  if (!role) return null;
   const church = await getChurch(churchId);
   if (!church) return null;
+  const role = userId ? await getRole(churchId, userId) : null;
+
+  // non-member: public churches show a limited profile, private ones nothing
+  if (!role) {
+    if (church.visibility === "private") return null;
+    const members = await getMembers(churchId);
+    let requestPending = false;
+    if (userId) {
+      const requests = await db().hgetall(keys.churchRequests(churchId));
+      requestPending = !!requests?.[userId];
+    }
+    return { ...church, members, events: [], myRole: null, requestPending };
+  }
+
   const [members, events] = await Promise.all([
     getMembers(churchId),
     getUpcomingEvents(churchId),
   ]);
-  return { ...church, members, events, myRole: role };
+  const detail: ChurchDetail = { ...church, members, events, myRole: role };
+  if (role === "founder") {
+    const raw = (await db().hgetall(keys.churchRequests(churchId))) ?? {};
+    detail.requests = Object.entries(raw).map(([uid, name]) => ({
+      userId: uid,
+      displayName: name || "Believer",
+    }));
+  }
+  return detail;
+}
+
+export async function listPublicChurches(
+  userId: string | null
+): Promise<(Church & { memberCount: number; mine: boolean })[]> {
+  const kv = db();
+  const ids = await kv.smembers(keys.allChurches);
+  const churches = await Promise.all(
+    ids.map(async (id) => {
+      const church = await getChurch(id);
+      if (!church || church.visibility === "private") return null;
+      const members = (await kv.hgetall(keys.churchMembers(id))) ?? {};
+      return {
+        ...church,
+        memberCount: Object.keys(members).length,
+        mine: !!userId && userId in members,
+      };
+    })
+  );
+  return churches
+    .filter((c): c is Church & { memberCount: number; mine: boolean } => !!c)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** Ask to join a public church; the founder approves or declines. */
+export async function requestJoin(
+  churchId: string,
+  userId: string,
+  displayName: string
+): Promise<"ok" | "member" | "not_found"> {
+  const church = await getChurch(churchId);
+  if (!church || church.visibility === "private") return "not_found";
+  const role = await getRole(churchId, userId);
+  if (role) return "member";
+  await saveProfile(userId, displayName);
+  await db().hset(keys.churchRequests(churchId), { [userId]: displayName });
+  return "ok";
+}
+
+export async function resolveRequest(
+  churchId: string,
+  founderId: string,
+  requesterId: string,
+  approve: boolean
+): Promise<boolean> {
+  const role = await getRole(churchId, founderId);
+  if (role !== "founder") return false;
+  const requests = await db().hgetall(keys.churchRequests(churchId));
+  if (!requests?.[requesterId]) return false;
+  if (approve) await addMember(churchId, requesterId);
+  await db().hdel(keys.churchRequests(churchId), requesterId);
+  return true;
 }
 
 export async function createInvite(
@@ -243,7 +319,7 @@ export async function getEventForMember(
 export async function updateChurch(
   churchId: string,
   userId: string,
-  patch: { name?: string; description?: string }
+  patch: { name?: string; description?: string; visibility?: string }
 ): Promise<boolean> {
   const role = await getRole(churchId, userId);
   if (role !== "founder") return false;
@@ -252,6 +328,9 @@ export async function updateChurch(
   if (name) updates.name = name.slice(0, 80);
   if (patch.description !== undefined) {
     updates.description = patch.description.trim().slice(0, 300);
+  }
+  if (patch.visibility === "public" || patch.visibility === "private") {
+    updates.visibility = patch.visibility;
   }
   if (Object.keys(updates).length === 0) return false;
   await db().hset(keys.church(churchId), updates);

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { api, guestId } from "@/lib/client";
+import { SignInButton } from "@clerk/nextjs";
+import { api, getSavedName, guestId } from "@/lib/client";
 import {
   googleCalendarUrl,
   googleEventTemplateUrl,
@@ -38,6 +39,8 @@ const EMOJI: Record<SessionType, string> = {
   custom: "✨",
 };
 
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function ChurchHome({ churchId }: { churchId: string }) {
   const { lang, t } = useI18n();
   const router = useRouter();
@@ -48,6 +51,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
   const [showSchedule, setShowSchedule] = useState(false);
   const [editingEvent, setEditingEvent] = useState<WorshipEvent | null>(null);
   const [showEditChurch, setShowEditChurch] = useState(false);
+  const [requested, setRequested] = useState(false);
 
   const load = useCallback(() => {
     api<{ church: ChurchDetail; myUserId: string }>(`/api/churches/${churchId}`)
@@ -77,10 +81,42 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
     }
   };
 
+  const requestToJoin = async () => {
+    const displayName =
+      getSavedName() || window.prompt(t("churches.yourName")) || "";
+    try {
+      await api(`/api/churches/${churchId}/requests`, {
+        method: "POST",
+        body: { displayName },
+      });
+      setRequested(true);
+    } catch {
+      // already requested or transient — reload shows the truth
+      load();
+    }
+  };
+
+  const resolveRequest = async (requesterId: string, action: string) => {
+    try {
+      await api(`/api/churches/${churchId}/requests/${requesterId}`, {
+        method: "POST",
+        body: { action },
+      });
+      load();
+    } catch {
+      load();
+    }
+  };
+
+  const isMember = church.myRole !== null;
+
   return (
     <div>
       <h1 className="page-title">
         {church.name}
+        {church.visibility === "private" && (
+          <span className="chip private-chip">🔒 {t("churches.privateBadge")}</span>
+        )}
         {church.myRole === "founder" && (
           <button
             type="button"
@@ -103,9 +139,11 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
         <h2>
           {t("churches.members")} ({church.members.length})
         </h2>
-        <button className="btn btn-sm" onClick={() => setShowInvite(true)}>
-          ✉️ {t("churches.invite")}
-        </button>
+        {isMember && (
+          <button className="btn btn-sm" onClick={() => setShowInvite(true)}>
+            ✉️ {t("churches.invite")}
+          </button>
+        )}
       </div>
       <div className="chips">
         {church.members.map((m) => (
@@ -123,7 +161,57 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
         )}
       </div>
 
-      {church.events.length > 0 && (
+      {!isMember && (
+        <div className="glass card" style={{ textAlign: "center", marginTop: 22 }}>
+          {requested || church.requestPending ? (
+            <p className="email-sent">✓ {t("churches.requestSent")}</p>
+          ) : clerkEnabled && !myUserId ? (
+            <SignInButton mode="modal" forceRedirectUrl={`/churches/${churchId}`}>
+              <button className="btn btn-primary">
+                {t("churches.signInToRequest")}
+              </button>
+            </SignInButton>
+          ) : (
+            <button className="btn btn-primary" onClick={requestToJoin}>
+              🙏 {t("churches.requestJoin")}
+            </button>
+          )}
+        </div>
+      )}
+
+      {church.requests && church.requests.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>
+              {t("churches.joinRequests")} ({church.requests.length})
+            </h2>
+          </div>
+          {church.requests.map((r) => (
+            <div key={r.userId} className="glass session request-row">
+              <span className="session-icon">🙏</span>
+              <div className="session-body">
+                <h3>{r.displayName}</h3>
+              </div>
+              <span className="session-tools">
+                <button
+                  className="rsvp-btn active"
+                  onClick={() => resolveRequest(r.userId, "approve")}
+                >
+                  ✓ {t("churches.approve")}
+                </button>
+                <button
+                  className="rsvp-btn"
+                  onClick={() => resolveRequest(r.userId, "decline")}
+                >
+                  ✕ {t("churches.decline")}
+                </button>
+              </span>
+            </div>
+          ))}
+        </>
+      )}
+
+      {isMember && church.events.length > 0 && (
         <MonthGrid
           events={church.events}
           onPick={(eventId) =>
@@ -134,32 +222,36 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
         />
       )}
 
-      <div className="section-head">
-        <h2>{t("churches.upcoming")}</h2>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => setShowSchedule(true)}
-        >
-          ＋ {t("churches.schedule")}
-        </button>
-      </div>
+      {isMember && (
+        <>
+          <div className="section-head">
+            <h2>{t("churches.upcoming")}</h2>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => setShowSchedule(true)}
+            >
+              ＋ {t("churches.schedule")}
+            </button>
+          </div>
 
-      {church.events.length === 0 ? (
-        <div className="glass card empty">{t("churches.noSessions")}</div>
-      ) : (
-        church.events.map((event) => (
-          <SessionCard
-            key={event.id}
-            event={event}
-            churchName={church.name}
-            myUserId={myUserId}
-            canCancel={
-              event.createdBy === myUserId || church.myRole === "founder"
-            }
-            onEdit={() => setEditingEvent(event)}
-            onChanged={load}
-          />
-        ))
+          {church.events.length === 0 ? (
+            <div className="glass card empty">{t("churches.noSessions")}</div>
+          ) : (
+            church.events.map((event) => (
+              <SessionCard
+                key={event.id}
+                event={event}
+                churchName={church.name}
+                myUserId={myUserId}
+                canCancel={
+                  event.createdBy === myUserId || church.myRole === "founder"
+                }
+                onEdit={() => setEditingEvent(event)}
+                onChanged={load}
+              />
+            ))
+          )}
+        </>
       )}
 
       {showInvite && (
@@ -186,6 +278,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           churchId={churchId}
           initialName={church.name}
           initialDescription={church.description}
+          initialPrivate={church.visibility === "private"}
           onClose={() => setShowEditChurch(false)}
           onSaved={() => {
             setShowEditChurch(false);
@@ -201,18 +294,21 @@ function EditChurchModal({
   churchId,
   initialName,
   initialDescription,
+  initialPrivate,
   onClose,
   onSaved,
 }: {
   churchId: string;
   initialName: string;
   initialDescription: string;
+  initialPrivate: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
+  const [isPrivate, setIsPrivate] = useState(initialPrivate);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -223,7 +319,11 @@ function EditChurchModal({
     try {
       await api(`/api/churches/${churchId}`, {
         method: "PATCH",
-        body: { name, description },
+        body: {
+          name,
+          description,
+          visibility: isPrivate ? "private" : "public",
+        },
       });
       onSaved();
     } catch (e) {
@@ -252,6 +352,14 @@ function EditChurchModal({
             onChange={(e) => setDescription(e.target.value)}
             maxLength={300}
           />
+        </label>
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+          />
+          🔒 {t("churches.privateLabel")}
         </label>
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions">

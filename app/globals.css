@@ -234,6 +234,86 @@ a {
   border-color: var(--glass-border-bright);
 }
 
+/* ---- floating bottom nav (mobile) ---- */
+.bottom-nav {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 999px;
+}
+
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 82px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  transition: background 0.2s, color 0.2s;
+}
+
+.bottom-nav a .bn-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.bottom-nav a.active {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+@media (min-width: 640px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .nav-links {
+    display: none;
+  }
+  .page {
+    padding-bottom: 130px;
+  }
+}
+
+/* ---- discover & requests ---- */
+.discover-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.discover-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.mine-chip {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.private-chip {
+  font-size: 0.72rem;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+
+.request-row {
+  align-items: center;
+}
+
 /* ---- glass primitives ---- */
 .glass {
   background: var(--glass);

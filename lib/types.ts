@@ -10,11 +10,14 @@ export type SessionType =
 
 export type RsvpStatus = "going" | "maybe" | "no";
 
+export type Visibility = "public" | "private";
+
 export interface Church {
   id: string;
   name: string;
   description: string;
   founderId: string;
+  visibility: Visibility;
   createdAt: number;
 }
 
@@ -43,7 +46,17 @@ export interface WorshipEvent {
 export interface ChurchDetail extends Church {
   members: Member[];
   events: WorshipEvent[];
-  myRole: Role;
+  /** null → viewing a public church as a non-member */
+  myRole: Role | null;
+  /** non-members: whether this viewer already asked to join */
+  requestPending?: boolean;
+  /** founder only: open join requests */
+  requests?: { userId: string; displayName: string }[];
+}
+
+export interface DiscoverChurch extends Church {
+  memberCount: number;
+  mine: boolean;
 }
 
 export interface InviteInfo {

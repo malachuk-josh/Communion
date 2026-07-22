@@ -100,6 +100,23 @@ export function inviteEmail(
   };
 }
 
+export function requestEmail(
+  churchName: string,
+  requesterName: string,
+  url: string
+): { subject: string; html: string } {
+  return {
+    subject: `${requesterName} asked to join ${churchName}`,
+    html: shell(`
+      <p><strong>${requesterName}</strong> has asked to join
+      <strong>${churchName}</strong> on Communion.</p>
+      <p style="text-align:center;margin:24px 0">
+        <a href="${url}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Review the request</a>
+      </p>
+      <p style="font-size:13px;color:#8a7a5c"><strong>${requesterName}</strong> pidió unirse a ${churchName}.</p>`),
+  };
+}
+
 export function reminderEmail(
   churchName: string,
   title: string,

@@ -172,6 +172,8 @@ export function db(): KV {
 
 export const keys = {
   allEvents: "events:all",
+  allChurches: "churches:all",
+  churchRequests: (churchId: string) => `church:${churchId}:requests`,
   user: (userId: string) => `user:${userId}`,
   userChurches: (userId: string) => `user:${userId}:churches`,
   church: (churchId: string) => `church:${churchId}`,
