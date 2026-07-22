@@ -237,25 +237,30 @@ a {
 /* ---- floating bottom nav (mobile) ---- */
 .bottom-nav {
   position: fixed;
-  bottom: 14px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
   display: flex;
-  gap: 4px;
-  padding: 8px;
+  align-items: stretch;
+  gap: 2px;
+  padding: 7px;
   border-radius: 999px;
+  max-width: calc(100vw - 16px);
 }
 
 .bottom-nav a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 62px;
-  padding: 7px 8px;
-  border-radius: 999px;
+  justify-content: center;
+  gap: 3px;
+  min-width: 56px;
+  padding: 7px 9px;
+  border-radius: 16px;
   font-size: 0.64rem;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--ink-dim);
   transition: background 0.2s, color 0.2s;
 }
