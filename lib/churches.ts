@@ -180,6 +180,21 @@ export async function getChurchDetail(
   return detail;
 }
 
+/** Upcoming sessions across every church the user belongs to, soonest first. */
+export async function listUserEvents(
+  userId: string
+): Promise<(WorshipEvent & { churchName: string })[]> {
+  const churchIds = await db().smembers(keys.userChurches(userId));
+  const all: (WorshipEvent & { churchName: string })[] = [];
+  for (const churchId of churchIds) {
+    const church = await getChurch(churchId);
+    if (!church) continue;
+    const events = await getUpcomingEvents(churchId);
+    all.push(...events.map((e) => ({ ...e, churchName: church.name })));
+  }
+  return all.sort((a, b) => a.startsAt - b.startsAt);
+}
+
 export async function listPublicChurches(
   userId: string | null
 ): Promise<(Church & { memberCount: number; mine: boolean })[]> {

@@ -746,7 +746,6 @@ function ScheduleModal({
   );
   const [duration, setDuration] = useState(initial?.durationMin ?? 60);
   const [passageRef, setPassageRef] = useState(initial?.passageRef ?? "");
-  const [meetingUrl, setMeetingUrl] = useState(initial?.meetingUrl ?? "");
   const [optIndex, setOptIndex] = useState(0);
   const [toggleOn, setToggleOn] = useState(false);
   const [touchedPurpose, setTouchedPurpose] = useState(false);
@@ -812,7 +811,6 @@ function ScheduleModal({
       startsAt: new Date(when).getTime(),
       durationMin: duration,
       passageRef,
-      meetingUrl,
       details: buildDetails(),
     };
     try {
@@ -961,24 +959,13 @@ function ScheduleModal({
                 maxLength={80}
               />
             </label>
-            <label className="field">
-              <span>{t("session.meetingUrl")}</span>
-              <input
-                value={meetingUrl}
-                onChange={(e) => setMeetingUrl(e.target.value)}
-                placeholder={t("session.meetingUrlPlaceholder")}
-                maxLength={300}
-              />
-            </label>
-            {!meetingUrl.trim() && (
-              <div className="quick-create">
-                <span className="cal-label">{t("session.quickCreate")}</span>
-                <button type="button" className="cal-link" onClick={toggleMeet}>
-                  🎥 Google Meet {meetOpen ? "▴" : "▾"}
-                </button>
-              </div>
-            )}
-            {meetOpen && !meetingUrl.trim() && (
+            <div className="quick-create">
+              <span className="cal-label">{t("session.quickCreate")}</span>
+              <button type="button" className="cal-link" onClick={toggleMeet}>
+                🎥 Google Meet {meetOpen ? "▴" : "▾"}
+              </button>
+            </div>
+            {meetOpen && (
               <div className="member-pick">
                 <p className="cal-label">{t("session.pickMembers")}</p>
                 {pickerMembers === null ? (

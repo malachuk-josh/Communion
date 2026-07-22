@@ -42,6 +42,7 @@ export default function Nav() {
   const isWord = pathname === "/";
   const isChurches =
     pathname.startsWith("/churches") || pathname.startsWith("/join");
+  const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
 
   return (
@@ -60,6 +61,12 @@ export default function Nav() {
               className={`nav-link${isChurches ? " active" : ""}`}
             >
               {t("nav.churches")}
+            </Link>
+            <Link
+              href="/calendar"
+              className={`nav-link${isCalendar ? " active" : ""}`}
+            >
+              {t("nav.calendar")}
             </Link>
             <Link
               href="/discover"
@@ -104,6 +111,10 @@ export default function Nav() {
         <Link href="/churches" className={isChurches ? "active" : ""}>
           <span className="bn-icon">⛪</span>
           <span>{t("nav.churches")}</span>
+        </Link>
+        <Link href="/calendar" className={isCalendar ? "active" : ""}>
+          <span className="bn-icon">📅</span>
+          <span>{t("nav.calendar")}</span>
         </Link>
         <Link href="/discover" className={isDiscover ? "active" : ""}>
           <span className="bn-icon">🌐</span>
