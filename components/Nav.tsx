@@ -10,7 +10,7 @@ import AuthControls from "@/components/AuthControls";
 
 export default function Nav() {
   const pathname = usePathname();
-  const { lang, setLang, t } = useI18n();
+  const { lang, t } = useI18n();
   const { position } = useReading();
   const [theme, setTheme] = useState<"dark" | "light">("light");
 
@@ -94,20 +94,6 @@ export default function Nav() {
           >
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
-          <div className="lang-toggle" role="group" aria-label="Language">
-            <button
-              className={lang === "en" ? "active" : ""}
-              onClick={() => setLang("en")}
-            >
-              EN
-            </button>
-            <button
-              className={lang === "es" ? "active" : ""}
-              onClick={() => setLang("es")}
-            >
-              ES
-            </button>
-          </div>
           <AuthControls />
         </div>
       </nav>
