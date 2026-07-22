@@ -152,6 +152,32 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
             {m.role === "founder" && (
               <span className="role">★ {t("churches.founder")}</span>
             )}
+            {church.myRole === "founder" && m.role !== "founder" && (
+              <button
+                type="button"
+                className="chip-remove"
+                aria-label={t("churches.removeMember", { name: m.displayName })}
+                title={t("churches.removeMember", { name: m.displayName })}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      t("churches.removeMember", { name: m.displayName })
+                    )
+                  )
+                    return;
+                  try {
+                    await api(`/api/churches/${churchId}/members/${m.userId}`, {
+                      method: "DELETE",
+                    });
+                    load();
+                  } catch {
+                    load();
+                  }
+                }}
+              >
+                ✕
+              </button>
+            )}
           </span>
         ))}
         {church.myRole === "member" && (

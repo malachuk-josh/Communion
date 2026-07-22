@@ -87,12 +87,43 @@ export async function addMember(churchId: string, userId: string) {
   await kv.sadd(keys.userChurches(userId), churchId);
 }
 
-export async function listUserChurches(userId: string): Promise<Church[]> {
-  const ids = await db().smembers(keys.userChurches(userId));
-  const churches = await Promise.all(ids.map((id) => getChurch(id)));
+export async function listUserChurches(
+  userId: string
+): Promise<(Church & { myRole: Role; memberCount: number })[]> {
+  const kv = db();
+  const ids = await kv.smembers(keys.userChurches(userId));
+  const churches = await Promise.all(
+    ids.map(async (id) => {
+      const church = await getChurch(id);
+      if (!church) return null;
+      const members = (await kv.hgetall(keys.churchMembers(id))) ?? {};
+      const role = members[userId];
+      if (role !== "founder" && role !== "member") return null;
+      return {
+        ...church,
+        myRole: role as Role,
+        memberCount: Object.keys(members).length,
+      };
+    })
+  );
   return churches
-    .filter((c): c is Church => c !== null)
+    .filter((c): c is Church & { myRole: Role; memberCount: number } => !!c)
     .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** Founder removes a member (never themselves, never another founder). */
+export async function removeMember(
+  churchId: string,
+  founderId: string,
+  memberId: string
+): Promise<boolean> {
+  const role = await getRole(churchId, founderId);
+  if (role !== "founder" || memberId === founderId) return false;
+  const target = await getRole(churchId, memberId);
+  if (!target || target === "founder") return false;
+  await db().hdel(keys.churchMembers(churchId), memberId);
+  await db().srem(keys.userChurches(memberId), churchId);
+  return true;
 }
 
 async function getMembers(churchId: string): Promise<Member[]> {

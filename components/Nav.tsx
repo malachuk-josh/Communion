@@ -44,6 +44,7 @@ export default function Nav() {
     pathname.startsWith("/churches") || pathname.startsWith("/join");
   const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
+  const isSettings = pathname.startsWith("/settings");
 
   return (
     <>
@@ -76,6 +77,14 @@ export default function Nav() {
             </Link>
           </div>
           {passage && <span className="nav-passage">{passage}</span>}
+          <Link
+            href="/settings"
+            className={`theme-toggle${isSettings ? " settings-active" : ""}`}
+            aria-label={t("nav.settings")}
+            title={t("nav.settings")}
+          >
+            ⚙️
+          </Link>
           <button
             className="theme-toggle"
             onClick={toggleTheme}
@@ -119,6 +128,10 @@ export default function Nav() {
         <Link href="/discover" className={isDiscover ? "active" : ""}>
           <span className="bn-icon">🌐</span>
           <span>{t("nav.discover")}</span>
+        </Link>
+        <Link href="/settings" className={isSettings ? "active" : ""}>
+          <span className="bn-icon">⚙️</span>
+          <span>{t("nav.settings")}</span>
         </Link>
       </nav>
     </>
