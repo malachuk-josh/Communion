@@ -1288,6 +1288,86 @@ mark {
   border-color: var(--gold);
 }
 
+.coll-new {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.coll-new input {
+  flex: 1;
+}
+
+.coll-group {
+  margin-bottom: 14px;
+}
+
+.coll-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.coll-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bookmark-row {
+  flex-wrap: wrap;
+}
+
+.bm-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
+.bm-edit {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 0 2px;
+}
+
+.bm-edit input {
+  flex: 1;
+  min-width: 0;
+}
+
+.bm-edit select {
+  max-width: 130px;
+}
+
+.shared-verse {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.shared-verse .ref {
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.shared-label {
+  display: block;
+  font-style: italic;
+  color: var(--ink-dim);
+  font-size: 0.88rem;
+  margin: 2px 0 4px;
+}
+
+.shared-verse p {
+  font-family: var(--serif);
+  margin-top: 6px;
+}
+
 /* tap-a-word originals (study mode + KJV) */
 .w {
   background: none;

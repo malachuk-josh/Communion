@@ -181,6 +181,8 @@ export const keys = {
     `user:${userId}:notes:${bookNr}`,
   userPushSubs: (userId: string) => `user:${userId}:push`,
   userBookmarks: (userId: string) => `user:${userId}:bookmarks`,
+  userCollections: (userId: string) => `user:${userId}:collections`,
+  sharedCollection: (token: string) => `shared:${token}`,
   church: (churchId: string) => `church:${churchId}`,
   churchMembers: (churchId: string) => `church:${churchId}:members`,
   churchEvents: (churchId: string) => `church:${churchId}:events`,

@@ -36,6 +36,17 @@ interface LexEntry {
   kjv: string;
 }
 
+interface BmEntry {
+  t: number;
+  l?: string;
+  c?: string;
+}
+
+interface BmCollection {
+  name: string;
+  share?: string;
+}
+
 export default function Reader({
   initialBook,
   initialChapter,
@@ -81,8 +92,15 @@ export default function Reader({
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
-  const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
+  const [bookmarks, setBookmarks] = useState<Record<string, BmEntry>>({});
+  const [collections, setCollections] = useState<
+    Record<string, BmCollection>
+  >({});
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [newCollName, setNewCollName] = useState("");
+  const [editingBm, setEditingBm] = useState<string | null>(null);
+  const [bmLabelDraft, setBmLabelDraft] = useState("");
+  const [shareHint, setShareHint] = useState("");
   const [backStack, setBackStack] = useState<
     { b: number; c: number; v: number }[]
   >([]);
@@ -99,8 +117,14 @@ export default function Reader({
 
   // bookmarks sync across devices per user (guests: per browser)
   useEffect(() => {
-    api<{ bookmarks: Record<string, number> }>("/api/bookmarks")
-      .then((res) => setBookmarks(res.bookmarks))
+    api<{
+      bookmarks: Record<string, BmEntry>;
+      collections: Record<string, BmCollection>;
+    }>("/api/bookmarks")
+      .then((res) => {
+        setBookmarks(res.bookmarks);
+        setCollections(res.collections);
+      })
       .catch(() => {});
   }, []);
 
@@ -322,13 +346,87 @@ export default function Reader({
     setBookmarks((prev) => {
       const next = { ...prev };
       if (key in next) delete next[key];
-      else next[key] = Date.now();
+      else next[key] = { t: Date.now() };
       return next;
     });
     api("/api/bookmarks", {
       method: "POST",
       body: { b: bookNr, c: chapter, v: verse },
     }).catch(() => {});
+  };
+
+  const updateBookmark = (key: string, patch: { label?: string; coll?: string }) => {
+    setBookmarks((prev) => {
+      const entry = { ...prev[key] };
+      if (patch.label !== undefined) {
+        if (patch.label.trim()) entry.l = patch.label.trim();
+        else delete entry.l;
+      }
+      if (patch.coll !== undefined) {
+        if (patch.coll) entry.c = patch.coll;
+        else delete entry.c;
+      }
+      return { ...prev, [key]: entry };
+    });
+    api("/api/bookmarks", { method: "PATCH", body: { key, ...patch } }).catch(
+      () => {}
+    );
+  };
+
+  const createCollection = async () => {
+    const name = newCollName.trim();
+    if (!name) return;
+    setNewCollName("");
+    try {
+      const res = await api<{ id: string; name: string }>("/api/collections", {
+        method: "POST",
+        body: { name },
+      });
+      setCollections((prev) => ({ ...prev, [res.id]: { name: res.name } }));
+    } catch {
+      // transient — the next open re-syncs
+    }
+  };
+
+  const deleteCollection = async (id: string) => {
+    if (!window.confirm(t("reader.deleteCollectionConfirm"))) return;
+    setCollections((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setBookmarks((prev) => {
+      const next: Record<string, BmEntry> = {};
+      for (const [key, entry] of Object.entries(prev)) {
+        next[key] = entry.c === id ? { ...entry, c: undefined } : entry;
+      }
+      return next;
+    });
+    api(`/api/collections/${id}`, { method: "DELETE" }).catch(() => {});
+  };
+
+  const shareCollection = async (id: string) => {
+    try {
+      const res = await api<{ url: string }>(`/api/collections/${id}/share`, {
+        method: "POST",
+      });
+      setCollections((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], share: res.url.split("/").pop() },
+      }));
+      if (navigator.share) {
+        await navigator.share({
+          title: collections[id]?.name ?? "Communion",
+          url: res.url,
+        });
+      } else {
+        await navigator.clipboard.writeText(res.url);
+        setShareHint(id);
+        setTimeout(() => setShareHint(""), 2500);
+      }
+    } catch {
+      // share cancelled or clipboard blocked — nothing to clean up
+    }
   };
 
   const jumpToBookmark = (key: string) => {
@@ -874,45 +972,176 @@ export default function Reader({
         <div className="modal-overlay" onClick={() => setBookmarksOpen(false)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             <h2>🔖 {t("reader.bookmarks")}</h2>
+            <div className="coll-new">
+              <input
+                value={newCollName}
+                onChange={(e) => setNewCollName(e.target.value)}
+                placeholder={t("reader.newCollection")}
+                maxLength={80}
+                onKeyDown={(e) => e.key === "Enter" && createCollection()}
+              />
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={createCollection}
+                disabled={!newCollName.trim()}
+              >
+                ＋
+              </button>
+            </div>
             {Object.keys(bookmarks).length === 0 ? (
               <p className="notice">{t("reader.bookmarksEmpty")}</p>
             ) : (
               <div className="bookmark-list">
-                {Object.entries(bookmarks)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([key]) => {
-                    const [b, c, v] = key.split(":").map(Number);
-                    return (
-                      <div key={key} className="bookmark-row">
-                        <button
-                          type="button"
-                          className="bookmark-jump"
-                          onClick={() => jumpToBookmark(key)}
-                        >
-                          📖 {bookNameOf(b)} {c}:{v}
-                        </button>
-                        <button
-                          type="button"
-                          className="chip-remove"
-                          aria-label={t("reader.removeBookmark")}
-                          title={t("reader.removeBookmark")}
-                          onClick={() => {
-                            setBookmarks((prev) => {
-                              const next = { ...prev };
-                              delete next[key];
-                              return next;
-                            });
-                            api("/api/bookmarks", {
-                              method: "POST",
-                              body: { b, c, v },
-                            }).catch(() => {});
-                          }}
-                        >
-                          ✕
-                        </button>
+                {[
+                  ...Object.entries(collections).map(([id, coll]) => ({
+                    id,
+                    name: coll.name,
+                  })),
+                  { id: "", name: t("reader.unsorted") },
+                ].map((group) => {
+                  const rows = Object.entries(bookmarks)
+                    .filter(([, e]) => (e.c ?? "") === group.id)
+                    .sort((a, b) => b[1].t - a[1].t);
+                  if (group.id === "" && rows.length === 0) return null;
+                  return (
+                    <div key={group.id || "unsorted"} className="coll-group">
+                      <div className="coll-head">
+                        <strong>
+                          {group.id ? "📚" : "🔖"} {group.name}
+                        </strong>
+                        <span className="coll-tools">
+                          {group.id && (
+                            <>
+                              <button
+                                type="button"
+                                className="rsvp-btn"
+                                onClick={() => shareCollection(group.id)}
+                              >
+                                {shareHint === group.id
+                                  ? `✓ ${t("reader.shareCopied")}`
+                                  : `📤 ${t("reader.shareCollection")}`}
+                              </button>
+                              <button
+                                type="button"
+                                className="chip-remove"
+                                aria-label={t("reader.deleteCollection")}
+                                title={t("reader.deleteCollection")}
+                                onClick={() => deleteCollection(group.id)}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          )}
+                        </span>
                       </div>
-                    );
-                  })}
+                      {rows.length === 0 ? (
+                        <p className="cal-hint">{t("reader.collEmpty")}</p>
+                      ) : (
+                        rows.map(([key, entry]) => {
+                          const [b, c, v] = key.split(":").map(Number);
+                          return (
+                            <div key={key} className="bookmark-row">
+                              <button
+                                type="button"
+                                className="bookmark-jump"
+                                onClick={() => jumpToBookmark(key)}
+                              >
+                                📖 {bookNameOf(b)} {c}:{v}
+                                {entry.l && (
+                                  <span className="bm-label">{entry.l}</span>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                className="rsvp-btn"
+                                aria-label={t("reader.editLabel")}
+                                title={t("reader.editLabel")}
+                                onClick={() => {
+                                  setEditingBm(editingBm === key ? null : key);
+                                  setBmLabelDraft(entry.l ?? "");
+                                }}
+                              >
+                                ✎
+                              </button>
+                              <button
+                                type="button"
+                                className="chip-remove"
+                                aria-label={t("reader.removeBookmark")}
+                                title={t("reader.removeBookmark")}
+                                onClick={() => {
+                                  setBookmarks((prev) => {
+                                    const next = { ...prev };
+                                    delete next[key];
+                                    return next;
+                                  });
+                                  api("/api/bookmarks", {
+                                    method: "POST",
+                                    body: { b, c, v },
+                                  }).catch(() => {});
+                                }}
+                              >
+                                ✕
+                              </button>
+                              {editingBm === key && (
+                                <div className="bm-edit">
+                                  <input
+                                    value={bmLabelDraft}
+                                    onChange={(e) =>
+                                      setBmLabelDraft(e.target.value)
+                                    }
+                                    placeholder={t("reader.labelPlaceholder")}
+                                    maxLength={120}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        updateBookmark(key, {
+                                          label: bmLabelDraft,
+                                        });
+                                        setEditingBm(null);
+                                      }
+                                    }}
+                                  />
+                                  <select
+                                    value={entry.c ?? ""}
+                                    onChange={(e) =>
+                                      updateBookmark(key, {
+                                        coll: e.target.value,
+                                      })
+                                    }
+                                  >
+                                    <option value="">
+                                      {t("reader.unsorted")}
+                                    </option>
+                                    {Object.entries(collections).map(
+                                      ([id, coll]) => (
+                                        <option key={id} value={id}>
+                                          {coll.name}
+                                        </option>
+                                      )
+                                    )}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className="rsvp-btn active"
+                                    onClick={() => {
+                                      updateBookmark(key, {
+                                        label: bmLabelDraft,
+                                      });
+                                      setEditingBm(null);
+                                    }}
+                                  >
+                                    {t("common.save")}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="modal-actions">

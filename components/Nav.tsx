@@ -68,16 +68,16 @@ export default function Nav() {
               {t("nav.churches")}
             </Link>
             <Link
-              href="/calendar"
-              className={`nav-link${isCalendar ? " active" : ""}`}
-            >
-              {t("nav.calendar")}
-            </Link>
-            <Link
               href="/discover"
               className={`nav-link${isDiscover ? " active" : ""}`}
             >
               {t("nav.discover")}
+            </Link>
+            <Link
+              href="/calendar"
+              className={`nav-link${isCalendar ? " active" : ""}`}
+            >
+              {t("nav.calendar")}
             </Link>
           </div>
           {showPassage && (
@@ -120,13 +120,13 @@ export default function Nav() {
           <span className="bn-icon">⛪</span>
           <span>{t("nav.churches")}</span>
         </Link>
-        <Link href="/calendar" className={isCalendar ? "active" : ""}>
-          <span className="bn-icon">📅</span>
-          <span>{t("nav.calendar")}</span>
-        </Link>
         <Link href="/discover" className={isDiscover ? "active" : ""}>
           <span className="bn-icon">🌐</span>
           <span>{t("nav.discover")}</span>
+        </Link>
+        <Link href="/calendar" className={isCalendar ? "active" : ""}>
+          <span className="bn-icon">📅</span>
+          <span>{t("nav.calendar")}</span>
         </Link>
         <Link href="/menu" className={isMenu ? "active" : ""}>
           <span className="bn-icon">☰</span>
