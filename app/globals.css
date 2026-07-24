@@ -1217,6 +1217,14 @@ mark {
   transform: translateY(-2px);
 }
 
+button.menu-tile {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 .menu-tile-emoji {
   font-size: 1.5rem;
 }
