@@ -38,10 +38,18 @@ function upstashKV(redis: Redis): KV {
   return {
     async hgetall(key) {
       const value = await redis.hgetall(key);
-      if (!value || Object.keys(value).length === 0) return null;
+      if (!value) return null;
       const out: Record<string, string> = {};
-      for (const [k, v] of Object.entries(value)) out[k] = String(v);
-      return out;
+      if (Array.isArray(value)) {
+        // with automaticDeserialization off the client returns the raw
+        // flat [field, value, field, value, …] reply
+        for (let i = 0; i < value.length; i += 2) {
+          out[String(value[i])] = String(value[i + 1]);
+        }
+      } else {
+        for (const [k, v] of Object.entries(value)) out[k] = String(v);
+      }
+      return Object.keys(out).length === 0 ? null : out;
     },
     async hset(key, value) {
       await redis.hset(key, value);
