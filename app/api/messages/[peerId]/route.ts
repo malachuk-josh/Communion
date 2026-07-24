@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
+import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
 import {
   getThread,
   markRead,
   sendMessage,
   sharesChurch,
+  type ChatMessage,
 } from "@/lib/messages";
 
 /** Thread with one person; ?since=ts returns only newer messages. */
@@ -44,8 +46,37 @@ export async function POST(
   if (peerId === userId) {
     return NextResponse.json({ error: "Invalid recipient" }, { status: 400 });
   }
-  const body = (await req.json().catch(() => null)) as { text?: string } | null;
-  const text = body?.text?.trim().slice(0, 2000);
+  const body = (await req.json().catch(() => null)) as {
+    text?: string;
+    attach?: ChatMessage["attach"];
+  } | null;
+  let text = body?.text?.trim().slice(0, 2000) ?? "";
+
+  let attach: ChatMessage["attach"];
+  if (body?.attach) {
+    const { b, c, v, kind, label } = body.attach;
+    const book = getBook(Number(b));
+    if (
+      !book ||
+      !c ||
+      !v ||
+      c < 1 ||
+      c > book.chapters ||
+      v < 1 ||
+      v > 200 ||
+      (kind !== "bookmark" && kind !== "note")
+    ) {
+      return NextResponse.json({ error: "Invalid attachment" }, { status: 400 });
+    }
+    attach = {
+      b: Number(b),
+      c: Number(c),
+      v: Number(v),
+      kind,
+      label: label?.trim().slice(0, 1000) || undefined,
+    };
+    if (!text) text = `${book.en} ${c}:${v}`;
+  }
   if (!text) {
     return NextResponse.json({ error: "Empty message" }, { status: 400 });
   }
@@ -55,6 +86,6 @@ export async function POST(
       { status: 403 }
     );
   }
-  const message = await sendMessage(userId, peerId, text);
+  const message = await sendMessage(userId, peerId, text, attach);
   return NextResponse.json({ message }, { status: 201 });
 }

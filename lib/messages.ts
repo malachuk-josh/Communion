@@ -12,6 +12,14 @@ export interface ChatMessage {
   from: string;
   text: string;
   ts: number;
+  /** shared verse card: a bookmark or note attached to the message */
+  attach?: {
+    b: number;
+    c: number;
+    v: number;
+    kind: "bookmark" | "note";
+    label?: string;
+  };
 }
 
 export interface ConvSummary {
@@ -136,7 +144,8 @@ export async function markRead(userId: string, peerId: string): Promise<void> {
 export async function sendMessage(
   from: string,
   to: string,
-  text: string
+  text: string,
+  attach?: ChatMessage["attach"]
 ): Promise<ChatMessage> {
   const kv = db();
   const convId = convIdFor(from, to);
@@ -145,6 +154,7 @@ export async function sendMessage(
     from,
     text,
     ts: Date.now(),
+    ...(attach ? { attach } : {}),
   };
   await kv.zadd(keys.convMessages(convId), message.ts, JSON.stringify(message));
 
@@ -152,7 +162,9 @@ export async function sendMessage(
     profileOf(from),
     profileOf(to),
   ]);
-  const preview = text.slice(0, 120);
+  const preview = (
+    attach ? `📖 ${text}`.trim() : text
+  ).slice(0, 120);
 
   // sender's summary (unread stays 0)
   await kv.hset(keys.userConvs(from), {

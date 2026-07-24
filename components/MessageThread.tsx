@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -13,6 +14,21 @@ interface ChatMessage {
   from: string;
   text: string;
   ts: number;
+  attach?: {
+    b: number;
+    c: number;
+    v: number;
+    kind: "bookmark" | "note";
+    label?: string;
+  };
+}
+
+interface ShareItem {
+  b: number;
+  c: number;
+  v: number;
+  kind: "bookmark" | "note";
+  label?: string;
 }
 
 export default function MessageThread({ peerId }: { peerId: string }) {
@@ -25,6 +41,8 @@ export default function MessageThread({ peerId }: { peerId: string }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [shareItems, setShareItems] = useState<ShareItem[] | null>(null);
   const lastTs = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +114,67 @@ export default function MessageThread({ peerId }: { peerId: string }) {
     }
   };
 
+  const openPicker = () => {
+    setPickerOpen((v) => !v);
+    if (shareItems === null) {
+      Promise.all([
+        api<{ bookmarks: Record<string, { t: number; l?: string }> }>(
+          "/api/bookmarks"
+        ).catch(() => ({ bookmarks: {} })),
+        api<{ notes: { b: number; c: number; v: number; text: string }[] }>(
+          "/api/notes"
+        ).catch(() => ({ notes: [] })),
+      ]).then(([bm, nt]) => {
+        const items: ShareItem[] = [];
+        for (const [key, entry] of Object.entries(bm.bookmarks)) {
+          const [b, c, v] = key.split(":").map(Number);
+          items.push({ b, c, v, kind: "bookmark", label: entry.l });
+        }
+        for (const n of nt.notes) {
+          items.push({ b: n.b, c: n.c, v: n.v, kind: "note", label: n.text });
+        }
+        items.sort((a, b) => a.b - b.b || a.c - b.c || a.v - b.v);
+        setShareItems(items);
+      });
+    }
+  };
+
+  const refLabel = (item: { b: number; c: number; v: number }) => {
+    const book = getBook(item.b);
+    const name = book ? (lang === "es" ? book.es : book.en) : "";
+    return `${name} ${item.c}:${item.v}`;
+  };
+
+  const sendShare = async (item: ShareItem) => {
+    if (sending) return;
+    setSending(true);
+    setError("");
+    setPickerOpen(false);
+    try {
+      const res = await api<{ message: ChatMessage }>(
+        `/api/messages/${peerId}`,
+        {
+          method: "POST",
+          body: {
+            text: refLabel(item),
+            attach: {
+              b: item.b,
+              c: item.c,
+              v: item.v,
+              kind: item.kind,
+              label: item.label,
+            },
+          },
+        }
+      );
+      merge([res.message]);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
+
   let lastDay = "";
 
   return (
@@ -127,7 +206,23 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                 <div
                   className={`bubble${m.from === myUserId ? " mine" : ""}`}
                 >
-                  {m.text}
+                  {m.attach ? (
+                    <Link
+                      href={`/?b=${m.attach.b}&c=${m.attach.c}&v=${m.attach.v}`}
+                      className="verse-card"
+                    >
+                      <span className="verse-card-kind">
+                        {m.attach.kind === "note"
+                          ? `📝 ${t("messages.sharedNote")}`
+                          : `🔖 ${t("messages.sharedBookmark")}`}
+                      </span>
+                      <strong>📖 {refLabel(m.attach)}</strong>
+                      {m.attach.label && <em>{m.attach.label}</em>}
+                      <small>{t("messages.tapToRead")}</small>
+                    </Link>
+                  ) : (
+                    m.text
+                  )}
                   <span className="bubble-time">
                     {new Date(m.ts).toLocaleTimeString(
                       lang === "es" ? "es" : "en",
@@ -143,7 +238,47 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       </div>
 
       {error && <p className="error-text">{error}</p>}
+      {pickerOpen && (
+        <div className="glass card share-picker">
+          <p className="cal-label" style={{ marginBottom: 8 }}>
+            {t("messages.share")}
+          </p>
+          {shareItems === null ? (
+            <p className="skeleton">{t("common.loading")}</p>
+          ) : shareItems.length === 0 ? (
+            <p className="cal-hint">{t("messages.shareEmpty")}</p>
+          ) : (
+            <div className="share-list">
+              {shareItems.map((item, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="share-row"
+                  onClick={() => sendShare(item)}
+                >
+                  <span>{item.kind === "note" ? "📝" : "🔖"}</span>
+                  <span className="share-row-body">
+                    <strong>{refLabel(item)}</strong>
+                    {item.label && <small>{item.label}</small>}
+                  </span>
+                  <span className="menu-tile-arrow">↑</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="composer glass">
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={openPicker}
+          aria-label={t("messages.share")}
+          title={t("messages.share")}
+          aria-pressed={pickerOpen}
+        >
+          🔖
+        </button>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
