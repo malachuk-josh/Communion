@@ -380,7 +380,7 @@ a {
   position: fixed;
   /* sit partly into the safe area so the bar hugs the bottom edge,
      while never dropping below 2px on devices without an inset */
-  bottom: max(2px, calc(env(safe-area-inset-bottom, 0px) - 12px));
+  bottom: max(4px, calc(env(safe-area-inset-bottom, 0px) - 6px));
   /* center without transform: iOS misplaces transformed fixed elements
      during momentum scrolling, floating the bar up the page */
   left: 0;
