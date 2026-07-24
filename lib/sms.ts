@@ -14,9 +14,16 @@ function cleanEnv(value: string | undefined): string | undefined {
   return unquoted || undefined;
 }
 
-/** SMS rides on the Brevo key; credits/sender registration gate delivery. */
+/**
+ * SMS goes live only when a registered sender number exists
+ * (BREVO_SMS_SENDER) — US carriers drop alphanumeric senders, so until a
+ * number is registered every send would be skipped. Preferences collected
+ * in Settings are stored regardless and activate the moment this is set.
+ */
 export function smsEnabled(): boolean {
-  return !!cleanEnv(process.env.BREVO_API_KEY);
+  return !!(
+    cleanEnv(process.env.BREVO_API_KEY) && cleanEnv(process.env.BREVO_SMS_SENDER)
+  );
 }
 
 /** E.164: +15551234567 */
@@ -26,11 +33,8 @@ export function isValidPhone(phone: string): boolean {
 
 export async function sendSms(to: string, content: string): Promise<boolean> {
   const apiKey = cleanEnv(process.env.BREVO_API_KEY);
-  if (!apiKey || !isValidPhone(to)) return false;
-  // Alphanumeric sender, max 11 chars (Brevo requirement); numeric sender
-  // countries (like the US) use the number Brevo assigns at registration.
-  const sender =
-    cleanEnv(process.env.BREVO_SMS_SENDER)?.slice(0, 11) || "Communion";
+  const sender = cleanEnv(process.env.BREVO_SMS_SENDER);
+  if (!apiKey || !sender || !isValidPhone(to)) return false;
   try {
     const res = await fetch("https://api.brevo.com/v3/transactionalSMS/sms", {
       method: "POST",
