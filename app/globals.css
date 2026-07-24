@@ -1783,6 +1783,25 @@ button.menu-tile {
   font-size: 0.88rem;
 }
 
+.lex-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.lex-peers {
+  margin-top: 8px;
+  max-height: 22vh;
+  overflow-y: auto;
+}
+
+.verse-card em {
+  white-space: pre-wrap;
+}
+
 .phone-prefix {
   color: var(--ink-dim);
   font-size: 0.92rem;

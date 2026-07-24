@@ -12,12 +12,12 @@ export interface ChatMessage {
   from: string;
   text: string;
   ts: number;
-  /** shared verse card: a bookmark or note attached to the message */
+  /** shared verse card: a bookmark, note, or word translation */
   attach?: {
     b: number;
     c: number;
     v: number;
-    kind: "bookmark" | "note";
+    kind: "bookmark" | "note" | "word";
     label?: string;
   };
 }

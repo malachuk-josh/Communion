@@ -18,7 +18,7 @@ interface ChatMessage {
     b: number;
     c: number;
     v: number;
-    kind: "bookmark" | "note";
+    kind: "bookmark" | "note" | "word";
     label?: string;
   };
 }
@@ -214,7 +214,9 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                       <span className="verse-card-kind">
                         {m.attach.kind === "note"
                           ? `📝 ${t("messages.sharedNote")}`
-                          : `🔖 ${t("messages.sharedBookmark")}`}
+                          : m.attach.kind === "word"
+                            ? `🔤 ${t("messages.sharedWord")}`
+                            : `🔖 ${t("messages.sharedBookmark")}`}
                       </span>
                       <strong>📖 {refLabel(m.attach)}</strong>
                       {m.attach.label && <em>{m.attach.label}</em>}

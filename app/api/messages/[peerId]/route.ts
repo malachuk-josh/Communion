@@ -64,7 +64,7 @@ export async function POST(
       c > book.chapters ||
       v < 1 ||
       v > 200 ||
-      (kind !== "bookmark" && kind !== "note")
+      (kind !== "bookmark" && kind !== "note" && kind !== "word")
     ) {
       return NextResponse.json({ error: "Invalid attachment" }, { status: 400 });
     }

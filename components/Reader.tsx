@@ -85,7 +85,13 @@ export default function Reader({
   const [wordSel, setWordSel] = useState<{
     text: string;
     nums: string[];
+    verse: number;
   } | null>(null);
+  const [wordAction, setWordAction] = useState("");
+  const [sharePeers, setSharePeers] = useState<
+    { userId: string; displayName: string; icon?: string }[] | null
+  >(null);
+  const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [context, setContext] = useState<Record<
     string,
     Record<string, { practical: string; spiritual: string }>
@@ -272,8 +278,10 @@ export default function Reader({
     window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
   };
 
-  const openWord = (text: string, nums: string[]) => {
-    setWordSel({ text, nums });
+  const openWord = (text: string, nums: string[], verse: number) => {
+    setWordSel({ text, nums, verse });
+    setWordAction("");
+    setSharePickerOpen(false);
     // load the lexicon for this testament (and counts) on first use
     if (bookNr <= 39 && !lexHeb) {
       fetch("/lexicon/hebrew.json")
@@ -297,6 +305,114 @@ export default function Reader({
 
   const lexFor = (num: string): LexEntry | undefined =>
     (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
+
+  /** Plain-text rendering of the open word study, for copy/share/note. */
+  const wordSummary = (): string => {
+    if (!wordSel) return "";
+    const ref = `${bookName} ${chapter}:${wordSel.verse}`;
+    const parts = [`"${wordSel.text}" — ${ref}`];
+    for (const num of wordSel.nums) {
+      const entry = lexFor(num);
+      if (!entry) continue;
+      const gram = entry.gram ? gramLabel(entry.gram) : null;
+      parts.push(
+        `${entry.lemma} [${entry.translit}] · ${num}${gram ? ` · ${gram}` : ""}`
+      );
+      if (entry.def) parts.push(entry.def.trim());
+    }
+    parts.push("— Communion");
+    return parts.join("\n");
+  };
+
+  const flashWord = (msg: string) => {
+    setWordAction(msg);
+    setTimeout(() => setWordAction(""), 2200);
+  };
+
+  const copyWord = async () => {
+    try {
+      await navigator.clipboard.writeText(wordSummary());
+      flashWord(t("reader.copied"));
+    } catch {
+      flashWord(t("reader.error"));
+    }
+  };
+
+  const shareWord = async () => {
+    const text = wordSummary();
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch {
+        // cancelled — fall through to a text message / clipboard
+      }
+    }
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isMobile) {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      window.location.href = isIOS
+        ? `sms:&body=${encodeURIComponent(text)}`
+        : `sms:?body=${encodeURIComponent(text)}`;
+      return;
+    }
+    void copyWord();
+  };
+
+  const saveWordNote = async () => {
+    if (!wordSel) return;
+    const key = `${chapter}:${wordSel.verse}`;
+    const existing = notes[key] ?? "";
+    const addition = wordSummary().replace(/\n— Communion$/, "");
+    const text = (existing ? `${existing}\n\n${addition}` : addition).slice(
+      0,
+      1000
+    );
+    setNotes((prev) => ({ ...prev, [key]: text }));
+    try {
+      await api(`/api/notes/${bookNr}`, {
+        method: "POST",
+        body: { ref: key, text },
+      });
+      flashWord(t("reader.savedToNote"));
+    } catch {
+      flashWord(t("reader.error"));
+    }
+  };
+
+  const openSharePicker = () => {
+    setSharePickerOpen((v) => !v);
+    if (sharePeers === null) {
+      api<{ contacts: { userId: string; displayName: string; icon?: string }[] }>(
+        "/api/messages"
+      )
+        .then((res) => setSharePeers(res.contacts))
+        .catch(() => setSharePeers([]));
+    }
+  };
+
+  const sendWordTo = async (peerId: string) => {
+    if (!wordSel) return;
+    setSharePickerOpen(false);
+    try {
+      await api(`/api/messages/${peerId}`, {
+        method: "POST",
+        body: {
+          text: `${wordSel.text} — ${bookName} ${chapter}:${wordSel.verse}`,
+          attach: {
+            b: bookNr,
+            c: chapter,
+            v: wordSel.verse,
+            kind: "word",
+            label: wordSummary().replace(/\n— Communion$/, ""),
+          },
+        },
+      });
+      flashWord(t("reader.sent"));
+    } catch {
+      flashWord(t("reader.error"));
+    }
+  };
 
   // Human-readable part of speech (+ gender) from a STEPBible grammar code
   // like "G:N-F", "H:V", "N:N--L", "G:P-1", "H:PerP-CS".
@@ -813,7 +929,7 @@ export default function Reader({
                               <button
                                 type="button"
                                 className={`w${sel ? " sel" : ""}`}
-                                onClick={() => openWord(m[2], tok[1]!)}
+                                onClick={() => openWord(m[2], tok[1]!, v.verse)}
                               >
                                 {m[2]}
                               </button>
@@ -1001,6 +1117,49 @@ export default function Reader({
               );
             })}
           </div>
+          <div className="lex-actions">
+            <button type="button" className="btn btn-sm" onClick={copyWord}>
+              📋 {t("reader.copy")}
+            </button>
+            <button type="button" className="btn btn-sm" onClick={shareWord}>
+              📤 {t("discover.share")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={openSharePicker}
+              aria-pressed={sharePickerOpen}
+            >
+              💬 {t("reader.sendToFellowship")}
+            </button>
+            <button type="button" className="btn btn-sm" onClick={saveWordNote}>
+              📝 {t("reader.saveToNote")}
+            </button>
+          </div>
+          {wordAction && <p className="email-sent">✓ {wordAction}</p>}
+          {sharePickerOpen && (
+            <div className="lex-peers">
+              {sharePeers === null ? (
+                <p className="skeleton">{t("common.loading")}</p>
+              ) : sharePeers.length === 0 ? (
+                <p className="cal-hint">{t("messages.noContacts")}</p>
+              ) : (
+                <div className="chips">
+                  {sharePeers.map((p) => (
+                    <button
+                      key={p.userId}
+                      type="button"
+                      className="chip"
+                      onClick={() => sendWordTo(p.userId)}
+                    >
+                      {p.icon && <span className="chip-icon">{p.icon}</span>}
+                      {p.displayName}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
