@@ -90,10 +90,15 @@ export default function Nav() {
             </Link>
           </div>
           {showPassage && (
-            <span className="nav-passage">
+            <button
+              type="button"
+              className="nav-passage"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              title={`${bookName} ${position!.chapter}`}
+            >
               <span className="pn-full">{bookName}</span>
               <span className="pn-abbr">{bookAbbr}</span> {position!.chapter}
-            </span>
+            </button>
           )}
           <Link
             href="/menu"

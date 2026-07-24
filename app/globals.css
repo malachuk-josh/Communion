@@ -277,6 +277,7 @@ a {
   border-radius: 999px;
   padding: 4px 14px;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .pn-abbr {
