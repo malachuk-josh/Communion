@@ -40,6 +40,9 @@ export default function Nav() {
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
     window.localStorage.setItem("communion.theme", next);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", next === "light" ? "#ede1c8" : "#000000");
   };
 
   const isWord = pathname === "/";

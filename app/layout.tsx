@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0d1a",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
 };
@@ -31,7 +31,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var t=localStorage.getItem("communion.theme");if(t==="light"||t==="grey")document.documentElement.dataset.theme=t}catch(e){}',
+              'try{var t=localStorage.getItem("communion.theme");if(t==="light"||t==="grey")document.documentElement.dataset.theme=t;var m=document.querySelector(\'meta[name="theme-color"]\');if(m)m.setAttribute("content",t==="light"?"#ede1c8":"#000000")}catch(e){}',
           }}
         />
         <LanguageProvider>
