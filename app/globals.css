@@ -1276,6 +1276,30 @@ button.menu-tile {
   white-space: nowrap;
 }
 
+.nav-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background: #d9544f;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 6px;
+  vertical-align: middle;
+}
+
+.bn-messages {
+  position: relative;
+}
+
+.bn-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  margin: 0;
+}
+
 .notif-list {
   display: grid;
   gap: 4px;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
@@ -13,6 +14,39 @@ export default function Nav() {
   const { lang, t } = useI18n();
   const { position } = useReading();
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
+  const [pending, setPending] = useState(0);
+
+  // pending badge: unread messages + unseen notifications. Refreshes on
+  // navigation, on returning to the app, and every 45s; mirrors to the
+  // app icon badge where the platform supports it.
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () => {
+      api<{ total: number }>("/api/messages/unread")
+        .then((res) => {
+          if (cancelled) return;
+          setPending(res.total);
+          const nav = navigator as Navigator & {
+            setAppBadge?: (n: number) => Promise<void>;
+            clearAppBadge?: () => Promise<void>;
+          };
+          if (res.total > 0) nav.setAppBadge?.(res.total).catch(() => {});
+          else nav.clearAppBadge?.().catch(() => {});
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 45000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [pathname]);
 
   const positionBook = position ? getBook(position.bookNr) : undefined;
   const bookName = positionBook
@@ -99,6 +133,7 @@ export default function Nav() {
               className={`nav-link${isMessages ? " active" : ""}`}
             >
               {t("menu.messages")}
+              {pending > 0 && <span className="nav-badge">{pending}</span>}
             </Link>
           </div>
           {showPassage && (
@@ -150,9 +185,13 @@ export default function Nav() {
           <span className="bn-icon">🌐</span>
           <span>{t("nav.discover")}</span>
         </Link>
-        <Link href="/menu/messages" className={isMessages ? "active" : ""}>
+        <Link
+          href="/menu/messages"
+          className={`bn-messages${isMessages ? " active" : ""}`}
+        >
           <span className="bn-icon">💬</span>
           <span>{t("menu.messages")}</span>
+          {pending > 0 && <span className="nav-badge bn-badge">{pending}</span>}
         </Link>
         <Link href="/menu" className={isMenu ? "active" : ""}>
           <span className="bn-icon">☰</span>

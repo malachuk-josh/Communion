@@ -42,7 +42,12 @@ export default function Messages() {
   const [history, setHistory] = useState<NotifEntry[] | null>(null);
 
   const toggleHistory = () => {
-    setShowHistory((v) => !v);
+    const opening = !showHistory;
+    setShowHistory(opening);
+    if (opening) {
+      // viewing the feed clears its share of the pending badge
+      api("/api/notifications", { method: "POST" }).catch(() => {});
+    }
     if (history === null) {
       api<{ notifications: NotifEntry[] }>("/api/notifications")
         .then((res) => setHistory(res.notifications))

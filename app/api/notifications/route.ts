@@ -31,3 +31,13 @@ export async function GET(req: Request) {
   notifications.sort((a, b) => b.ts - a.ts);
   return NextResponse.json({ notifications: notifications.slice(0, 50) });
 }
+
+/** Mark the notification feed as seen (clears the nav badge's share). */
+export async function POST(req: Request) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  await db().hset(keys.user(userId), { notifSeenAt: Date.now() });
+  return NextResponse.json({ ok: true });
+}
