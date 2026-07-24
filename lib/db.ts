@@ -166,7 +166,13 @@ export function db(): KV {
   if (cached) return cached;
   const url = cleanEnv(process.env.UPSTASH_REDIS_REST_URL);
   const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
-  cached = url && token ? upstashKV(new Redis({ url, token })) : memoryKV();
+  // automaticDeserialization off: this KV stores JSON strings and parses
+  // them itself; the client's auto-parse would hand back objects that
+  // stringify to "[object Object]" and silently break every JSON value
+  cached =
+    url && token
+      ? upstashKV(new Redis({ url, token, automaticDeserialization: false }))
+      : memoryKV();
   return cached;
 }
 
