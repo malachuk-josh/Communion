@@ -25,11 +25,15 @@
 html {
   color-scheme: dark;
   /* the very top strip (status bar, overscroll) reads from here */
-  background: #000;
+  background: #0b0d1a;
 }
 
 :root[data-theme="light"] {
   background: #ede1c8;
+}
+
+:root[data-theme="grey"] {
+  background: #000;
 }
 
 /* ---- light mode: warm almond parchment ---- */
@@ -154,7 +158,6 @@ body {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, #000 0, rgba(0, 0, 0, 0) 170px),
     radial-gradient(52rem 36rem at 82% -8%, rgba(139, 127, 240, 0.28), transparent 62%),
     radial-gradient(44rem 30rem at -12% 32%, rgba(229, 180, 91, 0.16), transparent 60%),
     radial-gradient(40rem 34rem at 55% 118%, rgba(64, 120, 200, 0.2), transparent 65%),

@@ -42,7 +42,10 @@ export default function Nav() {
     window.localStorage.setItem("communion.theme", next);
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", next === "light" ? "#ede1c8" : "#000000");
+      ?.setAttribute(
+        "content",
+        next === "light" ? "#ede1c8" : next === "grey" ? "#000000" : "#0b0d1a"
+      );
   };
 
   const isWord = pathname === "/";
