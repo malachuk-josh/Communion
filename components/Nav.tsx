@@ -32,6 +32,14 @@ export default function Nav() {
     setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
+  // already reading? The Word tab glides back to the top instead of snapping
+  const wordClick = (e: React.MouseEvent) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   // cycles dark → grey → light → dark; the icon shows what comes next
   const toggleTheme = () => {
     const next =
@@ -67,7 +75,11 @@ export default function Nav() {
             Communion
           </Link>
           <div className="nav-links">
-            <Link href="/" className={`nav-link${isWord ? " active" : ""}`}>
+            <Link
+              href="/"
+              className={`nav-link${isWord ? " active" : ""}`}
+              onClick={wordClick}
+            >
               {t("nav.reader")}
             </Link>
             <Link
@@ -126,7 +138,7 @@ export default function Nav() {
       </nav>
 
       <nav className="bottom-nav glass" aria-label="Primary">
-        <Link href="/" className={isWord ? "active" : ""}>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
           <span className="bn-icon">📖</span>
           <span>{t("nav.reader")}</span>
         </Link>
