@@ -105,7 +105,7 @@ export default function Nav() {
                   : "Switch to dark mode"
             }
           >
-            {theme === "dark" ? "☀️" : theme === "light" ? "🩶" : "🌙"}
+            {theme === "dark" ? "☀️" : theme === "light" ? "📰" : "🌙"}
           </button>
           <AuthControls />
         </div>

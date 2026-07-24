@@ -99,7 +99,7 @@ export default function Settings() {
               className={theme === "grey" ? "active" : ""}
               onClick={() => applyTheme("grey")}
             >
-              🩶 {t("settings.themeGrey")}
+              📰 {t("settings.themeGrey")}
             </button>
           </div>
         </div>
