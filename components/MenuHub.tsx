@@ -8,7 +8,7 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 // and sharing the app itself.
 
 const TILES: { href: string; emoji: string; key: string }[] = [
-  { href: "/menu/messages", emoji: "💬", key: "messages" },
+  { href: "/calendar", emoji: "📅", key: "calendar" },
   { href: "/menu/profile", emoji: "👤", key: "profile" },
   { href: "/menu/notifications", emoji: "🔔", key: "notifications" },
   { href: "/menu/settings", emoji: "⚙️", key: "settings" },

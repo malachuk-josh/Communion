@@ -53,8 +53,11 @@ export default function Nav() {
     pathname.startsWith("/churches") || pathname.startsWith("/join");
   const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
+  const isMessages = pathname.startsWith("/menu/messages");
   const isMenu =
-    pathname.startsWith("/menu") || pathname.startsWith("/settings");
+    (!isMessages && pathname.startsWith("/menu")) ||
+    pathname.startsWith("/settings") ||
+    isCalendar;
 
   return (
     <>
@@ -80,10 +83,10 @@ export default function Nav() {
               {t("nav.discover")}
             </Link>
             <Link
-              href="/calendar"
-              className={`nav-link${isCalendar ? " active" : ""}`}
+              href="/menu/messages"
+              className={`nav-link${isMessages ? " active" : ""}`}
             >
-              {t("nav.calendar")}
+              {t("menu.messages")}
             </Link>
           </div>
           {showPassage && (
@@ -130,9 +133,9 @@ export default function Nav() {
           <span className="bn-icon">🌐</span>
           <span>{t("nav.discover")}</span>
         </Link>
-        <Link href="/calendar" className={isCalendar ? "active" : ""}>
-          <span className="bn-icon">📅</span>
-          <span>{t("nav.calendar")}</span>
+        <Link href="/menu/messages" className={isMessages ? "active" : ""}>
+          <span className="bn-icon">💬</span>
+          <span>{t("menu.messages")}</span>
         </Link>
         <Link href="/menu" className={isMenu ? "active" : ""}>
           <span className="bn-icon">☰</span>

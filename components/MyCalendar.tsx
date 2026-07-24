@@ -6,6 +6,7 @@ import { api, guestId } from "@/lib/client";
 import { googleCalendarUrl, outlookCalendarUrl } from "@/lib/calendar";
 import { useI18n } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
+import BackToMenu from "@/components/BackToMenu";
 import MonthGrid from "@/components/MonthGrid";
 import type { SessionType, WorshipEvent } from "@/lib/types";
 
@@ -32,6 +33,7 @@ export default function MyCalendar() {
 
   return (
     <div>
+      <BackToMenu />
       <h1 className="page-title">{t("calendar.title")}</h1>
       <p className="subtitle">{t("calendar.subtitle")}</p>
 
