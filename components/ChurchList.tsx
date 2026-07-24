@@ -46,7 +46,17 @@ export default function ChurchList() {
 
   return (
     <div>
-      <h1 className="page-title">{t("churches.title")}</h1>
+      <div className="section-head">
+        <h1 className="page-title" style={{ margin: 0 }}>
+          {t("churches.title")}
+        </h1>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => setShowCreate(true)}
+        >
+          ⛪ {t("churches.create")}
+        </button>
+      </div>
       <p className="subtitle">{t("churches.subtitle")}</p>
 
       {churches === null ? (
@@ -73,12 +83,6 @@ export default function ChurchList() {
           ))}
         </div>
       )}
-
-      <div style={{ marginTop: 20, textAlign: "center" }}>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-          ⛪ {t("churches.create")}
-        </button>
-      </div>
 
       {showCreate && (
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
