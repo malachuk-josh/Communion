@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   title: "Communion — Read the Word. Gather in His name.",
   description:
     "A Bible app with a social heart: Scripture in multiple translations and languages, and Churches — small groups that worship together. Matthew 18:20.",
+  appleWebApp: {
+    capable: true,
+    title: "Communion",
+    // transparent status bar: the app's live background paints the strip,
+    // so it follows theme switches instead of freezing at launch
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {

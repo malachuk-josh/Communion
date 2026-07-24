@@ -69,6 +69,19 @@ html {
   background: rgba(247, 240, 224, 0.7);
 }
 
+/* installed app, light theme: the transparent status bar shows white text,
+   so paint a warm dark band exactly under it to keep the clock readable */
+@media (display-mode: standalone) {
+  :root[data-theme="light"] .nav {
+    background: linear-gradient(
+      180deg,
+      rgba(43, 33, 18, 0.88) 0,
+      rgba(43, 33, 18, 0.88) env(safe-area-inset-top, 0px),
+      rgba(247, 240, 224, 0.7) env(safe-area-inset-top, 0px)
+    );
+  }
+}
+
 :root[data-theme="light"] .glass {
   box-shadow:
     0 14px 34px rgba(97, 74, 38, 0.14),
