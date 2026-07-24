@@ -1,5 +1,6 @@
-import Settings from "@/components/Settings";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
-  return <Settings />;
+// The Settings tab became the Menu hub; keep old links working.
+export default function SettingsRedirect() {
+  redirect("/menu");
 }

@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   }
   const profile = (await db().hgetall(keys.user(userId))) ?? {};
   return NextResponse.json({
+    displayName: profile.displayName ?? "",
     phone: profile.phone ?? "",
     smsReminders: profile.smsReminders === "1",
     pushAvailable: pushEnabled(),
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as {
+    displayName?: string;
     phone?: string;
     smsReminders?: boolean;
   } | null;
@@ -35,6 +37,13 @@ export async function POST(req: Request) {
   }
 
   const updates: Record<string, string> = {};
+  if (body.displayName !== undefined) {
+    const name = body.displayName.trim().slice(0, 60);
+    if (!name) {
+      return NextResponse.json({ error: "Name required" }, { status: 400 });
+    }
+    updates.displayName = name;
+  }
   if (body.phone !== undefined) {
     let phone = body.phone.replace(/[\s().-]/g, "");
     // Domestic convenience: a bare 10-digit number is a US/Canada number

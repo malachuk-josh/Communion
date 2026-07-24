@@ -49,7 +49,8 @@ export default function Nav() {
     pathname.startsWith("/churches") || pathname.startsWith("/join");
   const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
-  const isSettings = pathname.startsWith("/settings");
+  const isMenu =
+    pathname.startsWith("/menu") || pathname.startsWith("/settings");
 
   return (
     <>
@@ -88,12 +89,12 @@ export default function Nav() {
             </span>
           )}
           <Link
-            href="/settings"
-            className={`theme-toggle settings-gear${isSettings ? " settings-active" : ""}`}
-            aria-label={t("nav.settings")}
-            title={t("nav.settings")}
+            href="/menu"
+            className={`theme-toggle settings-gear${isMenu ? " settings-active" : ""}`}
+            aria-label={t("nav.menu")}
+            title={t("nav.menu")}
           >
-            ⚙️
+            ☰
           </Link>
           <button
             className="theme-toggle"
@@ -125,9 +126,9 @@ export default function Nav() {
           <span className="bn-icon">🌐</span>
           <span>{t("nav.discover")}</span>
         </Link>
-        <Link href="/settings" className={isSettings ? "active" : ""}>
-          <span className="bn-icon">⚙️</span>
-          <span>{t("nav.settings")}</span>
+        <Link href="/menu" className={isMenu ? "active" : ""}>
+          <span className="bn-icon">☰</span>
+          <span>{t("nav.menu")}</span>
         </Link>
       </nav>
     </>

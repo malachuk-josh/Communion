@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { useI18n, type MessageKey } from "@/lib/i18n";
-import ReminderSettings from "@/components/ReminderSettings";
+import { useI18n } from "@/lib/i18n";
+import BackToMenu from "@/components/BackToMenu";
 import type { Church, Role } from "@/lib/types";
 
 type MyChurch = Church & { myRole: Role; memberCount: number };
@@ -56,27 +56,9 @@ export default function Settings() {
 
   return (
     <div>
+      <BackToMenu />
       <h1 className="page-title">{t("settings.title")}</h1>
       <p className="subtitle">{t("settings.subtitle")}</p>
-
-      <div className="section-head">
-        <h2>{t("settings.about")}</h2>
-      </div>
-      <div className="glass card about-card">
-        <blockquote className="founding-verse">
-          {t("verse.matthew")}
-          <cite>{t("verse.matthewRef")}</cite>
-        </blockquote>
-        <p>{t("about.p1")}</p>
-        <p>{t("about.p2")}</p>
-        <h3>{t("about.howTitle")}</h3>
-        <ol className="about-list">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <li key={n}>{t(`about.how${n}` as MessageKey)}</li>
-          ))}
-        </ol>
-        <p className="notice">{t("about.footer")}</p>
-      </div>
 
       <div className="section-head">
         <h2>{t("settings.preferences")}</h2>
@@ -117,8 +99,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-
-      <ReminderSettings />
 
       <div className="section-head">
         <h2>{t("settings.myChurches")}</h2>
