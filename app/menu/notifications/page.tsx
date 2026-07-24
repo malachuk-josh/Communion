@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import Notifications from "@/components/Notifications";
 
-// Notification preferences merged into Settings; keep old links working.
-export default function NotificationsRedirect() {
-  redirect("/menu/settings");
+export default function NotificationsPage() {
+  return <Notifications />;
 }

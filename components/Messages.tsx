@@ -25,12 +25,6 @@ interface Contact {
   icon?: string;
 }
 
-interface NotifEntry {
-  title: string;
-  body: string;
-  url?: string;
-  ts: number;
-}
 
 export default function Messages() {
   const { lang, t } = useI18n();
@@ -38,22 +32,6 @@ export default function Messages() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [showNew, setShowNew] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<NotifEntry[] | null>(null);
-
-  const toggleHistory = () => {
-    const opening = !showHistory;
-    setShowHistory(opening);
-    if (opening) {
-      // viewing the feed clears its share of the pending badge
-      api("/api/notifications", { method: "POST" }).catch(() => {});
-    }
-    if (history === null) {
-      api<{ notifications: NotifEntry[] }>("/api/notifications")
-        .then((res) => setHistory(res.notifications))
-        .catch(() => setHistory([]));
-    }
-  };
 
   useEffect(() => {
     api<{
@@ -77,64 +55,21 @@ export default function Messages() {
       <BackToMenu />
       <div className="section-head">
         <h1 className="page-title" style={{ margin: 0 }}>
-          {showHistory ? `🔔 ${t("messages.history")}` : `💬 ${t("messages.title")}`}
+          💬 {t("messages.title")}
         </h1>
-        <span style={{ display: "inline-flex", gap: 8 }}>
+        {contacts.length > 0 && (
           <button
             type="button"
-            className={`btn btn-sm${showHistory ? " btn-primary" : ""}`}
-            onClick={toggleHistory}
-            aria-pressed={showHistory}
+            className="btn btn-sm btn-primary"
+            onClick={() => setShowNew((v) => !v)}
           >
-            {showHistory ? `← ${t("messages.title")}` : t("messages.history")}
+            ＋ {t("messages.new")}
           </button>
-          {!showHistory && contacts.length > 0 && (
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={() => setShowNew((v) => !v)}
-            >
-              ＋ {t("messages.new")}
-            </button>
-          )}
-        </span>
+        )}
       </div>
-      <p className="subtitle">
-        {showHistory ? t("messages.historySubtitle") : t("messages.subtitle")}
-      </p>
+      <p className="subtitle">{t("messages.subtitle")}</p>
 
-      {showHistory ? (
-        <div className="glass card">
-          {history === null ? (
-            <p className="skeleton">{t("common.loading")}</p>
-          ) : history.length === 0 ? (
-            <p className="cal-hint">{t("messages.historyEmpty")}</p>
-          ) : (
-            <div className="notif-list">
-              {history.map((n, i) => (
-                <Link
-                  key={i}
-                  href={n.url || "/menu/messages"}
-                  className="notif-row"
-                >
-                  <span className="notif-body">
-                    <strong>{n.title}</strong>
-                    <small>{n.body}</small>
-                  </span>
-                  <span className="conv-time">
-                    {new Date(n.ts).toLocaleDateString(
-                      lang === "es" ? "es" : "en",
-                      { month: "short", day: "numeric" }
-                    )}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          {showNew && (
+      {showNew && (
         <div className="glass card" style={{ marginBottom: 14 }}>
           <p className="cal-label" style={{ marginBottom: 8 }}>
             {t("messages.pickContact")}
@@ -158,7 +93,7 @@ export default function Messages() {
         </div>
       )}
 
-          {convs === null ? (
+      {convs === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : convs.length === 0 ? (
         <div className="glass card empty">
@@ -195,9 +130,7 @@ export default function Messages() {
           </Link>
         ))
       )}
-          <p className="notice">{t("messages.hint")}</p>
-        </>
-      )}
+      <p className="notice">{t("messages.hint")}</p>
     </div>
   );
 }

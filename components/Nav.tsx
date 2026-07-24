@@ -14,7 +14,8 @@ export default function Nav() {
   const { lang, t } = useI18n();
   const { position } = useReading();
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
-  const [pending, setPending] = useState(0);
+  const [pendingMsgs, setPendingMsgs] = useState(0);
+  const [pendingNotifs, setPendingNotifs] = useState(0);
 
   // pending badge: unread messages + unseen notifications. Refreshes on
   // navigation, on returning to the app, and every 45s; mirrors to the
@@ -22,10 +23,13 @@ export default function Nav() {
   useEffect(() => {
     let cancelled = false;
     const refresh = () => {
-      api<{ total: number }>("/api/messages/unread")
+      api<{ messages: number; notifications: number; total: number }>(
+        "/api/messages/unread"
+      )
         .then((res) => {
           if (cancelled) return;
-          setPending(res.total);
+          setPendingMsgs(res.messages);
+          setPendingNotifs(res.notifications);
           const nav = navigator as Navigator & {
             setAppBadge?: (n: number) => Promise<void>;
             clearAppBadge?: () => Promise<void>;
@@ -133,7 +137,9 @@ export default function Nav() {
               className={`nav-link${isMessages ? " active" : ""}`}
             >
               {t("menu.messages")}
-              {pending > 0 && <span className="nav-badge">{pending}</span>}
+              {pendingMsgs > 0 && (
+                <span className="nav-badge">{pendingMsgs}</span>
+              )}
             </Link>
           </div>
           {showPassage && (
@@ -191,11 +197,19 @@ export default function Nav() {
         >
           <span className="bn-icon">💬</span>
           <span>{t("menu.messages")}</span>
-          {pending > 0 && <span className="nav-badge bn-badge">{pending}</span>}
+          {pendingMsgs > 0 && (
+            <span className="nav-badge bn-badge">{pendingMsgs}</span>
+          )}
         </Link>
-        <Link href="/menu" className={isMenu ? "active" : ""}>
+        <Link
+          href="/menu"
+          className={`bn-messages${isMenu ? " active" : ""}`}
+        >
           <span className="bn-icon">☰</span>
           <span>{t("nav.menu")}</span>
+          {pendingNotifs > 0 && (
+            <span className="nav-badge bn-badge">{pendingNotifs}</span>
+          )}
         </Link>
       </nav>
     </>
