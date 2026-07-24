@@ -20,7 +20,9 @@ export async function GET(
   const { peerId } = await params;
   const since = Number(new URL(req.url).searchParams.get("since")) || 0;
   const messages = await getThread(userId, peerId, since ? since + 1 : 0);
-  if (!since) await markRead(userId, peerId);
+  // the viewer has the thread in front of them — anything here is read,
+  // including messages that arrive while the thread stays open (polls)
+  await markRead(userId, peerId);
   const profile = await db().hgetall(keys.user(peerId));
   return NextResponse.json({
     messages,
