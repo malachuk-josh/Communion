@@ -87,12 +87,6 @@ export default function Settings() {
           <span>{t("settings.theme")}</span>
           <div className="lang-toggle" role="group">
             <button
-              className={theme === "light" ? "active" : ""}
-              onClick={() => applyTheme("light")}
-            >
-              ☀️ {t("settings.themeLight")}
-            </button>
-            <button
               className={theme === "dark" ? "active" : ""}
               onClick={() => applyTheme("dark")}
             >
@@ -103,6 +97,12 @@ export default function Settings() {
               onClick={() => applyTheme("grey")}
             >
               📰 {t("settings.themeGrey")}
+            </button>
+            <button
+              className={theme === "light" ? "active" : ""}
+              onClick={() => applyTheme("light")}
+            >
+              ☀️ {t("settings.themeLight")}
             </button>
           </div>
         </div>

@@ -32,10 +32,10 @@ export default function Nav() {
     setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
-  // cycles dark → light → grey → dark; the icon shows what comes next
+  // cycles dark → grey → light → dark; the icon shows what comes next
   const toggleTheme = () => {
     const next =
-      theme === "dark" ? "light" : theme === "light" ? "grey" : "dark";
+      theme === "dark" ? "grey" : theme === "grey" ? "light" : "dark";
     setTheme(next);
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
@@ -102,13 +102,13 @@ export default function Nav() {
             onClick={toggleTheme}
             aria-label={
               theme === "dark"
-                ? "Switch to light mode"
-                : theme === "light"
-                  ? "Switch to grey scale"
+                ? "Switch to grey scale"
+                : theme === "grey"
+                  ? "Switch to light mode"
                   : "Switch to dark mode"
             }
           >
-            {theme === "dark" ? "☀️" : theme === "light" ? "📰" : "🌙"}
+            {theme === "dark" ? "📰" : theme === "grey" ? "☀️" : "🌙"}
           </button>
           <AuthControls />
         </div>

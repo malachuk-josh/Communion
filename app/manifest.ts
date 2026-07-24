@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "Read the Word. Gather in His name. A Bible app with Churches — small groups that worship together.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f7efdd",
+    background_color: "#0b0d1a",
     theme_color: "#000000",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
