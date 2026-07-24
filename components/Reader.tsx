@@ -575,16 +575,18 @@ export default function Reader({
             </button>
           </div>
         )}
-        <div className="field zoom-field">
-          <span>{t("reader.bookmarks")}</span>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => setBookmarksOpen(true)}
-          >
-            🔖{Object.keys(bookmarks).length > 0 && ` ${Object.keys(bookmarks).length}`}
-          </button>
-        </div>
+        {study && (
+          <div className="field zoom-field">
+            <span>{t("reader.bookmarks")}</span>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setBookmarksOpen(true)}
+            >
+              🔖{Object.keys(bookmarks).length > 0 && ` ${Object.keys(bookmarks).length}`}
+            </button>
+          </div>
+        )}
         <div className="field zoom-field">
           <span>{t("reader.textSize")}</span>
           <div className="zoom-group">
