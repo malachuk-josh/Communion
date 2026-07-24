@@ -35,6 +35,10 @@ export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
+  // no pinch zoom: the reader has its own text-size controls, and accidental
+  // zoom is far more common than intentional on a home-screen app
+  maximumScale: 1,
+  userScalable: false,
   // extend the page under the status bar so the strip above the header is
   // painted by the app's own background in every theme
   viewportFit: "cover",

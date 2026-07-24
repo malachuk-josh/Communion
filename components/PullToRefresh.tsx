@@ -51,15 +51,23 @@ export default function PullToRefresh() {
       }
     };
 
+    // iOS ignores user-scalable=no in the browser; blocking its proprietary
+    // gesture events is what actually stops accidental pinch zoom
+    const blockGesture = (e: Event) => e.preventDefault();
+
     window.addEventListener("touchstart", onStart, { passive: true });
     window.addEventListener("touchmove", onMove, { passive: true });
     window.addEventListener("touchend", onEnd, { passive: true });
     window.addEventListener("touchcancel", onEnd, { passive: true });
+    document.addEventListener("gesturestart", blockGesture);
+    document.addEventListener("gesturechange", blockGesture);
     return () => {
       window.removeEventListener("touchstart", onStart);
       window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend", onEnd);
       window.removeEventListener("touchcancel", onEnd);
+      document.removeEventListener("gesturestart", blockGesture);
+      document.removeEventListener("gesturechange", blockGesture);
     };
   }, [refreshing]);
 

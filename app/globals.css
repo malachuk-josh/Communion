@@ -26,6 +26,8 @@ html {
   color-scheme: dark;
   /* the very top strip (status bar, overscroll) reads from here */
   background: #0b0d1a;
+  /* scrolling only — no pinch zoom (the reader has text-size controls) */
+  touch-action: pan-x pan-y;
 }
 
 :root[data-theme="light"] {
