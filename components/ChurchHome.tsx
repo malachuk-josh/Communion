@@ -268,6 +268,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
                 key={event.id}
                 event={event}
                 churchName={church.name}
+                members={church.members}
                 myUserId={myUserId}
                 canCancel={
                   event.createdBy === myUserId || church.myRole === "founder"
@@ -408,6 +409,7 @@ function EditChurchModal({
 function SessionCard({
   event,
   churchName,
+  members,
   myUserId,
   canCancel,
   onEdit,
@@ -415,6 +417,7 @@ function SessionCard({
 }: {
   event: WorshipEvent;
   churchName: string;
+  members: { userId: string; displayName: string }[];
   myUserId: string;
   canCancel: boolean;
   onEdit: () => void;
@@ -423,6 +426,14 @@ function SessionCard({
   const { lang, t } = useI18n();
   const mine = event.rsvps[myUserId];
   const goingCount = Object.values(event.rsvps).filter((s) => s === "going").length;
+  const nameOf = (uid: string) =>
+    members.find((m) => m.userId === uid)?.displayName ?? "Believer";
+  const goingNames = Object.entries(event.rsvps)
+    .filter(([, s]) => s === "going")
+    .map(([uid]) => nameOf(uid));
+  const maybeNames = Object.entries(event.rsvps)
+    .filter(([, s]) => s === "maybe")
+    .map(([uid]) => nameOf(uid));
 
   const when = new Date(event.startsAt).toLocaleString(
     lang === "es" ? "es" : "en",
@@ -505,6 +516,22 @@ function SessionCard({
             {goingCount} {t("rsvp.going").toLowerCase()}
           </span>
         </div>
+        {(goingNames.length > 0 || maybeNames.length > 0) && (
+          <p className="session-meta attendee-line">
+            👥{" "}
+            {goingNames.length > 0 && (
+              <>
+                {t("rsvp.going")}: {goingNames.join(", ")}
+              </>
+            )}
+            {goingNames.length > 0 && maybeNames.length > 0 && " · "}
+            {maybeNames.length > 0 && (
+              <>
+                {t("rsvp.maybe")}: {maybeNames.join(", ")}
+              </>
+            )}
+          </p>
+        )}
         <div className="cal-row">
           <span className="cal-label">📅 {t("session.addToCalendar")}</span>
           <a

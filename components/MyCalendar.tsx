@@ -96,6 +96,31 @@ export default function MyCalendar() {
                       </>
                     )}
                   </p>
+                  {(() => {
+                    const going = (event.attendees ?? [])
+                      .filter((a) => a.status === "going")
+                      .map((a) => a.name);
+                    const maybe = (event.attendees ?? [])
+                      .filter((a) => a.status === "maybe")
+                      .map((a) => a.name);
+                    if (going.length === 0 && maybe.length === 0) return null;
+                    return (
+                      <p className="session-meta attendee-line">
+                        👥{" "}
+                        {going.length > 0 && (
+                          <>
+                            {t("rsvp.going")}: {going.join(", ")}
+                          </>
+                        )}
+                        {going.length > 0 && maybe.length > 0 && " · "}
+                        {maybe.length > 0 && (
+                          <>
+                            {t("rsvp.maybe")}: {maybe.join(", ")}
+                          </>
+                        )}
+                      </p>
+                    );
+                  })()}
                   <div className="cal-row">
                     <span className="cal-label">📅 {t("session.addToCalendar")}</span>
                     <a

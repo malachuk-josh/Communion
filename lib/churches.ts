@@ -230,13 +230,31 @@ export async function listPublicGatherings(
 export async function listUserEvents(
   userId: string
 ): Promise<(WorshipEvent & { churchName: string })[]> {
-  const churchIds = await db().smembers(keys.userChurches(userId));
+  const kv = db();
+  const churchIds = await kv.smembers(keys.userChurches(userId));
   const all: (WorshipEvent & { churchName: string })[] = [];
+  const nameCache = new Map<string, string>();
+  const nameOf = async (uid: string): Promise<string> => {
+    const hit = nameCache.get(uid);
+    if (hit) return hit;
+    const profile = await kv.hgetall(keys.user(uid));
+    const name = profile?.displayName || "Believer";
+    nameCache.set(uid, name);
+    return name;
+  };
   for (const churchId of churchIds) {
     const church = await getChurch(churchId);
     if (!church) continue;
     const events = await getUpcomingEvents(churchId);
-    all.push(...events.map((e) => ({ ...e, churchName: church.name })));
+    for (const event of events) {
+      const attendees = await Promise.all(
+        Object.entries(event.rsvps).map(async ([uid, status]) => ({
+          name: await nameOf(uid),
+          status,
+        }))
+      );
+      all.push({ ...event, attendees, churchName: church.name });
+    }
   }
   return all.sort((a, b) => a.startsAt - b.startsAt);
 }

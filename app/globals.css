@@ -1121,6 +1121,12 @@ mark {
   flex-wrap: wrap;
 }
 
+.attendee-line {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
 .rsvp-btn {
   font-size: 0.8rem;
   padding: 5px 11px;

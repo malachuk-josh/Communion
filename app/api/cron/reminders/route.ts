@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
 import { emailEnabled, reminderEmail, sendEmail } from "@/lib/email";
+import { pushEnabled, sendPushToUser } from "@/lib/push";
+import { sendSms, smsEnabled } from "@/lib/sms";
 
-// Daily reminder sweep (Vercel Cron, see vercel.json): emails every member
-// of a Church about sessions starting within the next 24 hours. Each event
-// is reminded once (remindedAt flag). Requires Brevo email config; guests
-// without Clerk accounts have no email and are skipped.
+// Daily reminder sweep (Vercel Cron, see vercel.json): notifies every member
+// of a Church about sessions starting within the next 24 hours, over every
+// configured channel — email (Brevo), web push (VAPID), and SMS (Brevo,
+// opt-in per user in Settings). Each event is reminded once (remindedAt).
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +17,8 @@ export async function GET(req: Request) {
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!emailEnabled()) {
-    return NextResponse.json({ skipped: "email not configured" });
+  if (!emailEnabled() && !pushEnabled() && !smsEnabled()) {
+    return NextResponse.json({ skipped: "no reminder channels configured" });
   }
 
   const kv = db();
@@ -27,7 +29,9 @@ export async function GET(req: Request) {
     now + 24 * 60 * 60 * 1000
   );
 
-  let sent = 0;
+  let emails = 0;
+  let pushes = 0;
+  let sms = 0;
   let reminded = 0;
   for (const eventId of ids) {
     const event = await kv.hgetall(keys.event(eventId));
@@ -35,22 +39,8 @@ export async function GET(req: Request) {
 
     const church = await kv.hgetall(keys.church(event.churchId));
     const members = (await kv.hgetall(keys.churchMembers(event.churchId))) ?? {};
-
-    const emails: string[] = [];
-    if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-      const { clerkClient } = await import("@clerk/nextjs/server");
-      const client = await clerkClient();
-      for (const userId of Object.keys(members)) {
-        if (!userId.startsWith("user_")) continue; // guests have no email
-        try {
-          const user = await client.users.getUser(userId);
-          const email = user.primaryEmailAddress?.emailAddress;
-          if (email) emails.push(email);
-        } catch {
-          // deleted user — skip
-        }
-      }
-    }
+    const churchName = church?.name ?? "your Church";
+    const title = event.title ?? "Worship session";
 
     const when = new Date(Number(event.startsAt)).toLocaleString("en-US", {
       weekday: "long",
@@ -62,8 +52,8 @@ export async function GET(req: Request) {
       timeZoneName: "short",
     });
     const message = reminderEmail(
-      church?.name ?? "your Church",
-      event.title ?? "Worship session",
+      churchName,
+      title,
       when,
       event.meetingUrl || undefined
     );
@@ -73,26 +63,65 @@ export async function GET(req: Request) {
       {
         id: eventId,
         churchId: event.churchId,
-        title: event.title ?? "Worship session",
+        title,
         startsAt: Number(event.startsAt),
         durationMin: Number(event.durationMin) || 60,
         passageRef: event.passageRef || undefined,
         meetingUrl: event.meetingUrl || undefined,
         details: event.details || undefined,
       },
-      church?.name ?? "your Church",
+      churchName,
       origin
     );
     const attachment = {
       name: "session.ics",
       contentBase64: Buffer.from(ics, "utf-8").toString("base64"),
     };
-    for (const to of emails) {
-      if (await sendEmail(to, message.subject, message.html, attachment)) sent++;
+
+    const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    const client =
+      clerkOn && emailEnabled()
+        ? await (await import("@clerk/nextjs/server")).clerkClient()
+        : null;
+
+    const smsText =
+      `Communion: ${title} with ${churchName} — ${when}. ` +
+      (event.meetingUrl || `${origin}/churches/${event.churchId}`);
+
+    for (const userId of Object.keys(members)) {
+      if (client && userId.startsWith("user_")) {
+        try {
+          const user = await client.users.getUser(userId);
+          const email = user.primaryEmailAddress?.emailAddress;
+          if (
+            email &&
+            (await sendEmail(email, message.subject, message.html, attachment))
+          ) {
+            emails++;
+          }
+        } catch {
+          // deleted user — skip
+        }
+      }
+      if (pushEnabled()) {
+        pushes += await sendPushToUser(userId, {
+          title: `⛪ ${title}`,
+          body: `${churchName} · ${when}`,
+          url: `/churches/${event.churchId}`,
+          tag: `reminder-${eventId}`,
+        });
+      }
+      if (smsEnabled()) {
+        const profile = await kv.hgetall(keys.user(userId));
+        if (profile?.phone && profile.smsReminders === "1") {
+          if (await sendSms(profile.phone, smsText)) sms++;
+        }
+      }
     }
+
     await kv.hset(keys.event(eventId), { remindedAt: now });
     reminded++;
   }
 
-  return NextResponse.json({ upcoming: ids.length, reminded, sent });
+  return NextResponse.json({ upcoming: ids.length, reminded, emails, pushes, sms });
 }

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
 import { getChurch, requestJoin } from "@/lib/churches";
 import { emailEnabled, requestEmail, sendEmail } from "@/lib/email";
+import { pushEnabled, sendPushToUser } from "@/lib/push";
 
-/** Ask to join a public church. Notifies the founder by email when possible. */
+/** Ask to join a public church. Notifies the founder by email/push when possible. */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -27,8 +28,17 @@ export async function POST(
   }
 
   // best-effort founder notification
+  const churchForNotify = await getChurch(id);
+  if (pushEnabled() && churchForNotify) {
+    await sendPushToUser(churchForNotify.founderId, {
+      title: `🙏 ${displayName}`,
+      body: `asked to join ${churchForNotify.name}`,
+      url: `/churches/${id}`,
+      tag: `request-${id}-${userId}`,
+    });
+  }
   if (emailEnabled()) {
-    const church = await getChurch(id);
+    const church = churchForNotify;
     if (church?.founderId.startsWith("user_")) {
       try {
         const { clerkClient } = await import("@clerk/nextjs/server");

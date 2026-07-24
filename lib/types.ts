@@ -41,6 +41,8 @@ export interface WorshipEvent {
   createdBy: string;
   createdAt: number;
   rsvps: Record<string, RsvpStatus>;
+  /** Display names per RSVP, resolved server-side for cross-church lists */
+  attendees?: { name: string; status: RsvpStatus }[];
 }
 
 export interface ChurchDetail extends Church {
