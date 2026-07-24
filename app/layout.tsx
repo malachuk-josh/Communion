@@ -9,7 +9,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Communion — Read the Word. Gather in His name.",
   description:
-    "A Bible app with a social heart: Scripture in multiple translations and languages, and Churches — small groups that worship together. Matthew 18:20.",
+    "A Bible app with a social heart: Scripture in multiple translations and languages, and Fellowships — small groups that worship together. Matthew 18:20.",
   appleWebApp: {
     capable: true,
     title: "Communion",

@@ -39,7 +39,7 @@ export async function GET(req: Request) {
 
     const church = await kv.hgetall(keys.church(event.churchId));
     const members = (await kv.hgetall(keys.churchMembers(event.churchId))) ?? {};
-    const churchName = church?.name ?? "your Church";
+    const churchName = church?.name ?? "your Fellowship";
     const title = event.title ?? "Worship session";
 
     const when = new Date(Number(event.startsAt)).toLocaleString("en-US", {

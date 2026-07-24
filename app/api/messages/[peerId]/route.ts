@@ -49,7 +49,7 @@ export async function POST(
   }
   if (!(await sharesChurch(userId, peerId))) {
     return NextResponse.json(
-      { error: "You can only message members of your Churches" },
+      { error: "You can only message members of your Fellowships" },
       { status: 403 }
     );
   }

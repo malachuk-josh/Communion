@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Communion",
     short_name: "Communion",
     description:
-      "Read the Word. Gather in His name. A Bible app with Churches — small groups that worship together.",
+      "Read the Word. Gather in His name. A Bible app with Fellowships — small groups that worship together.",
     start_url: "/",
     display: "standalone",
     background_color: "#101113",
