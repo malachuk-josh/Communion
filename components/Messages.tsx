@@ -72,7 +72,7 @@ export default function Messages() {
       <BackToMenu />
       <div className="section-head">
         <h1 className="page-title" style={{ margin: 0 }}>
-          💬 {t("messages.title")}
+          {showHistory ? `🔔 ${t("messages.history")}` : `💬 ${t("messages.title")}`}
         </h1>
         <span style={{ display: "inline-flex", gap: 8 }}>
           <button
@@ -81,9 +81,9 @@ export default function Messages() {
             onClick={toggleHistory}
             aria-pressed={showHistory}
           >
-            {t("messages.history")}
+            {showHistory ? `← ${t("messages.title")}` : t("messages.history")}
           </button>
-          {contacts.length > 0 && (
+          {!showHistory && contacts.length > 0 && (
             <button
               type="button"
               className="btn btn-sm btn-primary"
@@ -94,13 +94,12 @@ export default function Messages() {
           )}
         </span>
       </div>
-      <p className="subtitle">{t("messages.subtitle")}</p>
+      <p className="subtitle">
+        {showHistory ? t("messages.historySubtitle") : t("messages.subtitle")}
+      </p>
 
-      {showHistory && (
-        <div className="glass card" style={{ marginBottom: 14 }}>
-          <p className="cal-label" style={{ marginBottom: 8 }}>
-            {t("messages.history")}
-          </p>
+      {showHistory ? (
+        <div className="glass card">
           {history === null ? (
             <p className="skeleton">{t("common.loading")}</p>
           ) : history.length === 0 ? (
@@ -128,9 +127,9 @@ export default function Messages() {
             </div>
           )}
         </div>
-      )}
-
-      {showNew && (
+      ) : (
+        <>
+          {showNew && (
         <div className="glass card" style={{ marginBottom: 14 }}>
           <p className="cal-label" style={{ marginBottom: 8 }}>
             {t("messages.pickContact")}
@@ -154,7 +153,7 @@ export default function Messages() {
         </div>
       )}
 
-      {convs === null ? (
+          {convs === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : convs.length === 0 ? (
         <div className="glass card empty">
@@ -191,7 +190,9 @@ export default function Messages() {
           </Link>
         ))
       )}
-      <p className="notice">{t("messages.hint")}</p>
+          <p className="notice">{t("messages.hint")}</p>
+        </>
+      )}
     </div>
   );
 }
