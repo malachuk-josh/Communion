@@ -31,7 +31,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{if(localStorage.getItem("communion.theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}',
+              'try{var t=localStorage.getItem("communion.theme");if(t==="light"||t==="grey")document.documentElement.dataset.theme=t}catch(e){}',
           }}
         />
         <LanguageProvider>

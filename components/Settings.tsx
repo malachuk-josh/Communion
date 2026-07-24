@@ -11,22 +11,21 @@ type MyChurch = Church & { myRole: Role; memberCount: number };
 
 export default function Settings() {
   const { lang, setLang, t } = useI18n();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [churches, setChurches] = useState<MyChurch[] | null>(null);
 
   useEffect(() => {
-    setTheme(
-      document.documentElement.dataset.theme === "light" ? "light" : "dark"
-    );
+    const current = document.documentElement.dataset.theme;
+    setTheme(current === "light" || current === "grey" ? current : "dark");
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
   }, []);
 
-  const applyTheme = (next: "dark" | "light") => {
+  const applyTheme = (next: "dark" | "light" | "grey") => {
     setTheme(next);
-    if (next === "light") document.documentElement.dataset.theme = "light";
-    else delete document.documentElement.dataset.theme;
+    if (next === "dark") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = next;
     window.localStorage.setItem("communion.theme", next);
   };
 
@@ -95,6 +94,12 @@ export default function Settings() {
               onClick={() => applyTheme("dark")}
             >
               🌙 {t("settings.themeDark")}
+            </button>
+            <button
+              className={theme === "grey" ? "active" : ""}
+              onClick={() => applyTheme("grey")}
+            >
+              🩶 {t("settings.themeGrey")}
             </button>
           </div>
         </div>

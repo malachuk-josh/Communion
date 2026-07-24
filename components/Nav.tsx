@@ -12,7 +12,7 @@ export default function Nav() {
   const pathname = usePathname();
   const { lang, t } = useI18n();
   const { position } = useReading();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
 
   const positionBook = position ? getBook(position.bookNr) : undefined;
   const bookName = positionBook
@@ -28,19 +28,17 @@ export default function Nav() {
   // the inline bootstrap script in the layout applies the saved theme before
   // paint; here we just sync React state with what it decided
   useEffect(() => {
-    setTheme(
-      document.documentElement.dataset.theme === "light" ? "light" : "dark"
-    );
+    const current = document.documentElement.dataset.theme;
+    setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
+  // cycles dark → light → grey → dark; the icon shows what comes next
   const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
+    const next =
+      theme === "dark" ? "light" : theme === "light" ? "grey" : "dark";
     setTheme(next);
-    if (next === "light") {
-      document.documentElement.dataset.theme = "light";
-    } else {
-      delete document.documentElement.dataset.theme;
-    }
+    if (next === "dark") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = next;
     window.localStorage.setItem("communion.theme", next);
   };
 
@@ -100,10 +98,14 @@ export default function Nav() {
             className="theme-toggle"
             onClick={toggleTheme}
             aria-label={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+              theme === "dark"
+                ? "Switch to light mode"
+                : theme === "light"
+                  ? "Switch to grey scale"
+                  : "Switch to dark mode"
             }
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? "☀️" : theme === "light" ? "🩶" : "🌙"}
           </button>
           <AuthControls />
         </div>
