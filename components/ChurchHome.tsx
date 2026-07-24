@@ -780,6 +780,9 @@ function ScheduleModal({
   const [meetOpen, setMeetOpen] = useState(false);
   const [pickerMembers, setPickerMembers] = useState<PickMember[] | null>(null);
   const [guests, setGuests] = useState<Set<string>>(new Set());
+  const [meetUrl, setMeetUrl] = useState(initial?.meetingUrl ?? "");
+  const [meetBusy, setMeetBusy] = useState(false);
+  const [meetHint, setMeetHint] = useState<"" | "created" | "fallback">("");
 
   const template = TEMPLATES.find((tpl) => tpl.type === type)!;
   const tk = (suffix: string) => t(`session.${type}.${suffix}` as MessageKey);
@@ -827,6 +830,49 @@ function ScheduleModal({
     });
   };
 
+  const meetTemplateUrl = () =>
+    googleEventTemplateUrl({
+      title: `${title} — ${churchName}`,
+      startsAt: when ? new Date(when).getTime() : undefined,
+      durationMin: duration,
+      details:
+        `${churchName} — Communion` +
+        (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
+      guests: [...guests],
+    });
+
+  const createMeet = async () => {
+    if (!title.trim() || !when || meetBusy) return;
+    setMeetBusy(true);
+    setMeetHint("");
+    try {
+      const res = await api<{ meetUrl: string }>(
+        `/api/churches/${churchId}/meet`,
+        {
+          method: "POST",
+          body: {
+            title: `${title} — ${churchName}`,
+            startsAt: new Date(when).getTime(),
+            durationMin: duration,
+            details:
+              `${churchName} — Communion` +
+              (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
+            guests: [...guests],
+          },
+        }
+      );
+      setMeetUrl(res.meetUrl);
+      setMeetHint("created");
+    } catch {
+      // No Google OAuth token (or missing Calendar scope): hand off to the
+      // pre-filled Google Calendar template instead.
+      setMeetHint("fallback");
+      window.open(meetTemplateUrl(), "_blank", "noopener");
+    } finally {
+      setMeetBusy(false);
+    }
+  };
+
   const submit = async () => {
     if (!title.trim() || !when || busy) return;
     setBusy(true);
@@ -838,6 +884,7 @@ function ScheduleModal({
       durationMin: duration,
       passageRef,
       details: buildDetails(),
+      meetingUrl: meetUrl.trim() || undefined,
     };
     try {
       if (initial) {
@@ -1018,21 +1065,19 @@ function ScheduleModal({
                   </div>
                 )}
                 <div className="invite-actions" style={{ marginTop: 8 }}>
-                  <a
+                  <button
+                    type="button"
                     className="btn btn-sm btn-primary"
+                    onClick={createMeet}
+                    disabled={!title.trim() || !when || meetBusy}
+                  >
+                    🎥 {meetBusy ? t("common.loading") : t("session.createMeet")}
+                  </button>
+                  <a
+                    className="btn btn-sm"
                     target="_blank"
                     rel="noreferrer"
-                    href={googleEventTemplateUrl({
-                      title: `${title} — ${churchName}`,
-                      startsAt: when ? new Date(when).getTime() : undefined,
-                      durationMin: duration,
-                      details:
-                        `${churchName} — Communion` +
-                        (passageRef.trim()
-                          ? `\nPassage: ${passageRef.trim()}`
-                          : ""),
-                      guests: [...guests],
-                    })}
+                    href={meetTemplateUrl()}
                   >
                     📅 {t("session.googleInvite")}
                   </a>
@@ -1045,6 +1090,17 @@ function ScheduleModal({
                     ⚡ {t("session.instantMeet")}
                   </a>
                 </div>
+                {meetHint === "created" && meetUrl && (
+                  <p className="email-sent">
+                    ✓ {t("session.meetReady")}{" "}
+                    <a href={meetUrl} target="_blank" rel="noreferrer">
+                      {meetUrl.replace(/^https?:\/\//, "")}
+                    </a>
+                  </p>
+                )}
+                {meetHint === "fallback" && (
+                  <p className="cal-hint">{t("session.meetFallbackHint")}</p>
+                )}
                 <p className="cal-hint">{t("session.meetPickHint")}</p>
               </div>
             )}
