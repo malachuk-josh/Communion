@@ -7,9 +7,21 @@ import PullToRefresh from "@/components/PullToRefresh";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://communion-mu.vercel.app"),
   title: "Communion — Read the Word. Gather in His name.",
   description:
     "A Bible app with a social heart: Scripture in multiple translations and languages, and Fellowships — small groups that worship together. Matthew 18:20.",
+  openGraph: {
+    title: "Communion",
+    description: "Read the Word. Gather in His name.",
+    images: ["/og.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Communion",
+    description: "Read the Word. Gather in His name.",
+    images: ["/og.png"],
+  },
   appleWebApp: {
     capable: true,
     title: "Communion",
