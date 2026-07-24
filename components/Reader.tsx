@@ -66,6 +66,11 @@ export default function Reader({
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
+  const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [backStack, setBackStack] = useState<
+    { b: number; c: number; v: number }[]
+  >([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searchTotal, setSearchTotal] = useState(0);
@@ -76,6 +81,13 @@ export default function Reader({
   useEffect(() => {
     setPosition({ bookNr, chapter });
   }, [bookNr, chapter, setPosition]);
+
+  // bookmarks sync across devices per user (guests: per browser)
+  useEffect(() => {
+    api<{ bookmarks: Record<string, number> }>("/api/bookmarks")
+      .then((res) => setBookmarks(res.bookmarks))
+      .catch(() => {});
+  }, []);
 
   // restore last reading position and text size
   useEffect(() => {
@@ -267,10 +279,46 @@ export default function Reader({
     }
   };
 
-  const jumpToRef = (ref: number[]) => {
+  const jumpToRef = (ref: number[], fromVerse: number) => {
+    // remember where we came from so the reader can jump straight back
+    setBackStack((prev) =>
+      [...prev, { b: bookNr, c: chapter, v: fromVerse }].slice(-10)
+    );
     setBookNr(ref[0]);
     setChapter(ref[1]);
     setHighlightVerse(ref[2]);
+  };
+
+  const goBack = () => {
+    const last = backStack[backStack.length - 1];
+    if (!last) return;
+    setBackStack((prev) => prev.slice(0, -1));
+    setBookNr(last.b);
+    setChapter(last.c);
+    setHighlightVerse(last.v);
+  };
+
+  const toggleBookmark = (verse: number) => {
+    const key = `${bookNr}:${chapter}:${verse}`;
+    setBookmarks((prev) => {
+      const next = { ...prev };
+      if (key in next) delete next[key];
+      else next[key] = Date.now();
+      return next;
+    });
+    api("/api/bookmarks", {
+      method: "POST",
+      body: { b: bookNr, c: chapter, v: verse },
+    }).catch(() => {});
+  };
+
+  const jumpToBookmark = (key: string) => {
+    const [b, c, v] = key.split(":").map(Number);
+    setBookmarksOpen(false);
+    setBackStack([]);
+    setBookNr(b);
+    setChapter(c);
+    setHighlightVerse(v);
   };
 
   const refChipLabel = (ref: number[]) => {
@@ -280,15 +328,40 @@ export default function Reader({
     return `${name} ${ref[1]}:${ref[2]}${ref[3] ? `–${ref[3]}` : ""}`;
   };
 
-  // after a search jump, bring the target verse into view
+  // After a jump, bring the target verse into view — and keep correcting
+  // briefly, because study-mode extras (xref chips, original-language lines,
+  // notes) load after the text and push the target further down the page.
   useEffect(() => {
-    if (!loading && data && highlightVerse !== null) {
+    if (loading || !data || highlightVerse === null) return;
+    let attempts = 0;
+    const settle = () => {
       const el = document.getElementById(`v-${highlightVerse}`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const rect = el.getBoundingClientRect();
+        const drift = Math.abs(
+          rect.top + rect.height / 2 - window.innerHeight / 2
+        );
+        if (drift > 48) {
+          el.scrollIntoView({
+            behavior: attempts === 0 ? "smooth" : "auto",
+            block: "center",
+          });
+        }
       }
-    }
-  }, [loading, data, highlightVerse]);
+      if (++attempts >= 6) window.clearInterval(id);
+    };
+    const id = window.setInterval(settle, 400);
+    settle();
+    // the user taking over scrolling ends the correction loop immediately
+    const stop = () => window.clearInterval(id);
+    window.addEventListener("wheel", stop, { passive: true, once: true });
+    window.addEventListener("touchmove", stop, { passive: true, once: true });
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+    };
+  }, [loading, data, highlightVerse, study, xrefs, origVerses, litVerses, notes]);
 
   const book = getBook(bookNr)!;
   const bookName = lang === "es" ? book.es : book.en;
@@ -299,6 +372,7 @@ export default function Reader({
 
   const go = (delta: number) => {
     setHighlightVerse(null);
+    setBackStack([]);
     const next = chapter + delta;
     if (next >= 1 && next <= book.chapters) {
       setChapter(next);
@@ -346,6 +420,7 @@ export default function Reader({
   };
 
   const jumpTo = (r: SearchResult) => {
+    setBackStack([]);
     setBookNr(r.bookNr);
     setChapter(r.chapter);
     setHighlightVerse(r.verse);
@@ -430,6 +505,7 @@ export default function Reader({
             value={bookNr}
             onChange={(e) => {
               setHighlightVerse(null);
+              setBackStack([]);
               setBookNr(Number(e.target.value));
               setChapter(1);
             }}
@@ -447,6 +523,7 @@ export default function Reader({
             value={chapter}
             onChange={(e) => {
               setHighlightVerse(null);
+              setBackStack([]);
               setChapter(Number(e.target.value));
             }}
           >
@@ -498,6 +575,16 @@ export default function Reader({
             </button>
           </div>
         )}
+        <div className="field zoom-field">
+          <span>{t("reader.bookmarks")}</span>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setBookmarksOpen(true)}
+          >
+            🔖{Object.keys(bookmarks).length > 0 && ` ${Object.keys(bookmarks).length}`}
+          </button>
+        </div>
         <div className="field zoom-field">
           <span>{t("reader.textSize")}</span>
           <div className="zoom-group">
@@ -585,11 +672,24 @@ export default function Reader({
                         key={i}
                         type="button"
                         className="xref-chip"
-                        onClick={() => jumpToRef(ref)}
+                        onClick={() => jumpToRef(ref, v.verse)}
                       >
                         {refChipLabel(ref)}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      className={`xref-chip note-chip${
+                        bookmarks[`${bookNr}:${chapter}:${v.verse}`]
+                          ? " has-note"
+                          : ""
+                      }`}
+                      onClick={() => toggleBookmark(v.verse)}
+                      aria-label={t("reader.bookmarkToggle")}
+                      title={t("reader.bookmarkToggle")}
+                    >
+                      🔖
+                    </button>
                     <button
                       type="button"
                       className={`xref-chip note-chip${note ? " has-note" : ""}`}
@@ -676,6 +776,71 @@ export default function Reader({
           {t("reader.next")} →
         </button>
       </div>
+
+      {backStack.length > 0 && (
+        <button type="button" className="glass back-pill" onClick={goBack}>
+          ↩{" "}
+          {t("reader.backTo", {
+            ref: `${bookNameOf(backStack[backStack.length - 1].b)} ${
+              backStack[backStack.length - 1].c
+            }:${backStack[backStack.length - 1].v}`,
+          })}
+        </button>
+      )}
+
+      {bookmarksOpen && (
+        <div className="modal-overlay" onClick={() => setBookmarksOpen(false)}>
+          <div className="glass modal" onClick={(e) => e.stopPropagation()}>
+            <h2>🔖 {t("reader.bookmarks")}</h2>
+            {Object.keys(bookmarks).length === 0 ? (
+              <p className="notice">{t("reader.bookmarksEmpty")}</p>
+            ) : (
+              <div className="bookmark-list">
+                {Object.entries(bookmarks)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([key]) => {
+                    const [b, c, v] = key.split(":").map(Number);
+                    return (
+                      <div key={key} className="bookmark-row">
+                        <button
+                          type="button"
+                          className="bookmark-jump"
+                          onClick={() => jumpToBookmark(key)}
+                        >
+                          📖 {bookNameOf(b)} {c}:{v}
+                        </button>
+                        <button
+                          type="button"
+                          className="chip-remove"
+                          aria-label={t("reader.removeBookmark")}
+                          title={t("reader.removeBookmark")}
+                          onClick={() => {
+                            setBookmarks((prev) => {
+                              const next = { ...prev };
+                              delete next[key];
+                              return next;
+                            });
+                            api("/api/bookmarks", {
+                              method: "POST",
+                              body: { b, c, v },
+                            }).catch(() => {});
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setBookmarksOpen(false)}>
+                {t("session.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {contextOpen && chapterContext && (
         <div className="modal-overlay" onClick={() => setContextOpen(false)}>
