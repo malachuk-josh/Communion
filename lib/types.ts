@@ -25,6 +25,8 @@ export interface Member {
   userId: string;
   role: Role;
   displayName: string;
+  /** Chosen profile icon (emoji from the curated set) */
+  icon?: string;
 }
 
 export interface WorshipEvent {
@@ -42,7 +44,7 @@ export interface WorshipEvent {
   createdAt: number;
   rsvps: Record<string, RsvpStatus>;
   /** Display names per RSVP, resolved server-side for cross-church lists */
-  attendees?: { name: string; status: RsvpStatus }[];
+  attendees?: { name: string; status: RsvpStatus; icon?: string }[];
 }
 
 export interface ChurchDetail extends Church {
@@ -53,7 +55,7 @@ export interface ChurchDetail extends Church {
   /** non-members: whether this viewer already asked to join */
   requestPending?: boolean;
   /** founder only: open join requests */
-  requests?: { userId: string; displayName: string }[];
+  requests?: { userId: string; displayName: string; icon?: string }[];
 }
 
 export interface DiscoverChurch extends Church {

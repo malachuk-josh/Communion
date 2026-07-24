@@ -13,6 +13,7 @@ import {
 } from "@clerk/nextjs";
 import { api, saveName } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
+import { PROFILE_ICONS } from "@/lib/profileIcons";
 import BackToMenu from "@/components/BackToMenu";
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -52,15 +53,17 @@ function ClerkAccount() {
 export default function Profile() {
   const { t } = useI18n();
   const [displayName, setDisplayName] = useState("");
+  const [icon, setIcon] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<{ displayName: string }>("/api/profile")
+    api<{ displayName: string; icon: string }>("/api/profile")
       .then((res) => {
         setDisplayName(res.displayName);
+        setIcon(res.icon);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -74,7 +77,7 @@ export default function Profile() {
     try {
       await api("/api/profile", {
         method: "POST",
-        body: { displayName: displayName.trim() },
+        body: { displayName: displayName.trim(), icon },
       });
       saveName(displayName); // prefill guest-mode prompts too
       setSaved(true);
@@ -103,6 +106,24 @@ export default function Profile() {
           />
         </label>
         <p className="cal-hint">{t("profile.displayNameHint")}</p>
+        <label className="field" style={{ marginTop: 12 }}>
+          <span>{t("profile.icon")}</span>
+        </label>
+        <div className="icon-grid" role="radiogroup" aria-label={t("profile.icon")}>
+          {PROFILE_ICONS.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              role="radio"
+              aria-checked={icon === choice}
+              className={`icon-choice${icon === choice ? " active" : ""}`}
+              onClick={() => setIcon(icon === choice ? "" : choice)}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+        <p className="cal-hint">{t("profile.iconHint")}</p>
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions" style={{ justifyContent: "flex-start" }}>
           <button

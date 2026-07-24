@@ -148,6 +148,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
       <div className="chips">
         {church.members.map((m) => (
           <span key={m.userId} className="chip">
+            {m.icon && <span className="chip-icon">{m.icon}</span>}
             {m.displayName}
             {m.role === "founder" && (
               <span className="role">★ {t("churches.founder")}</span>
@@ -214,7 +215,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           </div>
           {church.requests.map((r) => (
             <div key={r.userId} className="glass session request-row">
-              <span className="session-icon">🙏</span>
+              <span className="session-icon">{r.icon || "🙏"}</span>
               <div className="session-body">
                 <h3>{r.displayName}</h3>
               </div>
@@ -417,7 +418,7 @@ function SessionCard({
 }: {
   event: WorshipEvent;
   churchName: string;
-  members: { userId: string; displayName: string }[];
+  members: { userId: string; displayName: string; icon?: string }[];
   myUserId: string;
   canCancel: boolean;
   onEdit: () => void;
@@ -426,8 +427,10 @@ function SessionCard({
   const { lang, t } = useI18n();
   const mine = event.rsvps[myUserId];
   const goingCount = Object.values(event.rsvps).filter((s) => s === "going").length;
-  const nameOf = (uid: string) =>
-    members.find((m) => m.userId === uid)?.displayName ?? "Believer";
+  const nameOf = (uid: string) => {
+    const m = members.find((mm) => mm.userId === uid);
+    return m ? `${m.icon ? `${m.icon} ` : ""}${m.displayName}` : "Believer";
+  };
   const goingNames = Object.entries(event.rsvps)
     .filter(([, s]) => s === "going")
     .map(([uid]) => nameOf(uid));

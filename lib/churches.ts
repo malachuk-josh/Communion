@@ -136,6 +136,7 @@ async function getMembers(churchId: string): Promise<Member[]> {
         userId,
         role: (role === "founder" ? "founder" : "member") as Role,
         displayName: profile?.displayName ?? "Believer",
+        icon: profile?.icon || undefined,
       };
     })
   );
@@ -203,10 +204,16 @@ export async function getChurchDetail(
   const detail: ChurchDetail = { ...church, members, events, myRole: role };
   if (role === "founder") {
     const raw = (await db().hgetall(keys.churchRequests(churchId))) ?? {};
-    detail.requests = Object.entries(raw).map(([uid, name]) => ({
-      userId: uid,
-      displayName: name || "Believer",
-    }));
+    detail.requests = await Promise.all(
+      Object.entries(raw).map(async ([uid, name]) => {
+        const profile = await db().hgetall(keys.user(uid));
+        return {
+          userId: uid,
+          displayName: name || "Believer",
+          icon: profile?.icon || undefined,
+        };
+      })
+    );
   }
   return detail;
 }
@@ -233,14 +240,19 @@ export async function listUserEvents(
   const kv = db();
   const churchIds = await kv.smembers(keys.userChurches(userId));
   const all: (WorshipEvent & { churchName: string })[] = [];
-  const nameCache = new Map<string, string>();
-  const nameOf = async (uid: string): Promise<string> => {
-    const hit = nameCache.get(uid);
+  const profileCache = new Map<string, { name: string; icon?: string }>();
+  const profileOf = async (
+    uid: string
+  ): Promise<{ name: string; icon?: string }> => {
+    const hit = profileCache.get(uid);
     if (hit) return hit;
     const profile = await kv.hgetall(keys.user(uid));
-    const name = profile?.displayName || "Believer";
-    nameCache.set(uid, name);
-    return name;
+    const entry = {
+      name: profile?.displayName || "Believer",
+      icon: profile?.icon || undefined,
+    };
+    profileCache.set(uid, entry);
+    return entry;
   };
   for (const churchId of churchIds) {
     const church = await getChurch(churchId);
@@ -248,10 +260,10 @@ export async function listUserEvents(
     const events = await getUpcomingEvents(churchId);
     for (const event of events) {
       const attendees = await Promise.all(
-        Object.entries(event.rsvps).map(async ([uid, status]) => ({
-          name: await nameOf(uid),
-          status,
-        }))
+        Object.entries(event.rsvps).map(async ([uid, status]) => {
+          const p = await profileOf(uid);
+          return { name: p.name, icon: p.icon, status };
+        })
       );
       all.push({ ...event, attendees, churchName: church.name });
     }

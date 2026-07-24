@@ -97,12 +97,14 @@ export default function MyCalendar() {
                     )}
                   </p>
                   {(() => {
+                    const label = (a: { name: string; icon?: string }) =>
+                      `${a.icon ? `${a.icon} ` : ""}${a.name}`;
                     const going = (event.attendees ?? [])
                       .filter((a) => a.status === "going")
-                      .map((a) => a.name);
+                      .map(label);
                     const maybe = (event.attendees ?? [])
                       .filter((a) => a.status === "maybe")
-                      .map((a) => a.name);
+                      .map(label);
                     if (going.length === 0 && maybe.length === 0) return null;
                     return (
                       <p className="session-meta attendee-line">
