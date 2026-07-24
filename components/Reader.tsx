@@ -34,6 +34,8 @@ interface LexEntry {
   derivation: string;
   def: string;
   kjv: string;
+  /** STEPBible grammar code, e.g. "G:N-F" (Greek noun, feminine) */
+  gram?: string;
 }
 
 interface BmEntry {
@@ -295,6 +297,48 @@ export default function Reader({
 
   const lexFor = (num: string): LexEntry | undefined =>
     (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
+
+  // Human-readable part of speech (+ gender) from a STEPBible grammar code
+  // like "G:N-F", "H:V", "N:N--L", "G:P-1", "H:PerP-CS".
+  const gramLabel = (code: string): string | null => {
+    const [origin, rest] = code.split(":");
+    if (!rest) return null;
+    const segs = rest.split("-");
+    const head = segs[0];
+    const out: string[] = [];
+    if (head === "N") {
+      out.push(t(origin === "N" ? "gram.properNoun" : "gram.noun"));
+      const g = segs[1];
+      if (g === "M") out.push(t("gram.masculine"));
+      else if (g === "F") out.push(t("gram.feminine"));
+      else if (g === "N") out.push(t("gram.neuter"));
+      else if (g === "M/F") out.push(t("gram.mascFem"));
+      const tag = segs[2] ?? "";
+      if (tag.includes("P")) out.push(t("gram.person"));
+      else if (tag.includes("L")) out.push(t("gram.place"));
+      else if (tag.includes("G")) out.push(t("gram.peopleGroup"));
+      else if (tag.includes("T")) out.push(t("gram.title"));
+    } else if (head === "V") out.push(t("gram.verb"));
+    else if (head === "A")
+      out.push(segs[1] === "NUI" ? t("gram.numeral") : t("gram.adjective"));
+    else if (/^adv/i.test(head)) out.push(t("gram.adverb"));
+    else if (/^prep/i.test(head)) out.push(t("gram.preposition"));
+    else if (/^conj/i.test(head)) out.push(t("gram.conjunction"));
+    else if (/^(prt|part)$/i.test(head)) out.push(t("gram.particle"));
+    else if (/^intj/i.test(head)) out.push(t("gram.interjection"));
+    else if (/^intg/i.test(head)) out.push(t("gram.interrogative"));
+    else if (head === "T") out.push(t("gram.article"));
+    else if (head === "COND") out.push(t("gram.conditional"));
+    else if (head === "P" || /^perp/i.test(head))
+      out.push(t("gram.pronounPersonal"));
+    else if (head === "R" || /^rel/i.test(head))
+      out.push(t("gram.pronounRelative"));
+    else if (head === "D" || /^demp/i.test(head))
+      out.push(t("gram.pronounDemonstrative"));
+    else if (head === "X") out.push(t("gram.pronounIndefinite"));
+    else return null;
+    return out.join(" · ");
+  };
 
   const chapterContext = context?.[String(chapter)]?.[lang === "es" ? "es" : "en"];
 
@@ -941,6 +985,9 @@ export default function Reader({
                     [{entry.translit}]{entry.pron ? ` · ${entry.pron}` : ""} ·{" "}
                     {num}
                   </p>
+                  {entry.gram && gramLabel(entry.gram) && (
+                    <p className="lex-gram">{gramLabel(entry.gram)}</p>
+                  )}
                   {entry.derivation && (
                     <p className="lex-derivation">{entry.derivation}</p>
                   )}
