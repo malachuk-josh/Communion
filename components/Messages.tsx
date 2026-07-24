@@ -81,7 +81,7 @@ export default function Messages() {
             onClick={toggleHistory}
             aria-pressed={showHistory}
           >
-            🔔 {t("messages.history")}
+            {t("messages.history")}
           </button>
           {contacts.length > 0 && (
             <button
@@ -99,7 +99,7 @@ export default function Messages() {
       {showHistory && (
         <div className="glass card" style={{ marginBottom: 14 }}>
           <p className="cal-label" style={{ marginBottom: 8 }}>
-            🔔 {t("messages.history")}
+            {t("messages.history")}
           </p>
           {history === null ? (
             <p className="skeleton">{t("common.loading")}</p>
