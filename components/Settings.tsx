@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
+import ReminderSettings from "@/components/ReminderSettings";
 import type { Church, Role } from "@/lib/types";
 
 type MyChurch = Church & { myRole: Role; memberCount: number };
@@ -110,6 +111,8 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      <ReminderSettings />
 
       <div className="section-head">
         <h2>{t("settings.myChurches")}</h2>

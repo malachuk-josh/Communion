@@ -1,11 +1,6 @@
-import BackToMenu from "@/components/BackToMenu";
-import ReminderSettings from "@/components/ReminderSettings";
+import { redirect } from "next/navigation";
 
-export default function NotificationsPage() {
-  return (
-    <div>
-      <BackToMenu />
-      <ReminderSettings />
-    </div>
-  );
+// Notification preferences merged into Settings; keep old links working.
+export default function NotificationsRedirect() {
+  redirect("/menu/settings");
 }

@@ -10,7 +10,6 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 const TILES: { href: string; emoji: string; key: string }[] = [
   { href: "/calendar", emoji: "📅", key: "calendar" },
   { href: "/menu/profile", emoji: "👤", key: "profile" },
-  { href: "/menu/notifications", emoji: "🔔", key: "notifications" },
   { href: "/menu/settings", emoji: "⚙️", key: "settings" },
   { href: "/menu/about", emoji: "🕊️", key: "about" },
 ];

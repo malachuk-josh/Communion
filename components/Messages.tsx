@@ -25,12 +25,30 @@ interface Contact {
   icon?: string;
 }
 
+interface NotifEntry {
+  title: string;
+  body: string;
+  url?: string;
+  ts: number;
+}
+
 export default function Messages() {
   const { lang, t } = useI18n();
   const [convs, setConvs] = useState<ConvSummary[] | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<NotifEntry[] | null>(null);
+
+  const toggleHistory = () => {
+    setShowHistory((v) => !v);
+    if (history === null) {
+      api<{ notifications: NotifEntry[] }>("/api/notifications")
+        .then((res) => setHistory(res.notifications))
+        .catch(() => setHistory([]));
+    }
+  };
 
   useEffect(() => {
     api<{
@@ -56,17 +74,61 @@ export default function Messages() {
         <h1 className="page-title" style={{ margin: 0 }}>
           💬 {t("messages.title")}
         </h1>
-        {contacts.length > 0 && (
+        <span style={{ display: "inline-flex", gap: 8 }}>
           <button
             type="button"
-            className="btn btn-sm btn-primary"
-            onClick={() => setShowNew((v) => !v)}
+            className={`btn btn-sm${showHistory ? " btn-primary" : ""}`}
+            onClick={toggleHistory}
+            aria-pressed={showHistory}
           >
-            ＋ {t("messages.new")}
+            🔔 {t("messages.history")}
           </button>
-        )}
+          {contacts.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => setShowNew((v) => !v)}
+            >
+              ＋ {t("messages.new")}
+            </button>
+          )}
+        </span>
       </div>
       <p className="subtitle">{t("messages.subtitle")}</p>
+
+      {showHistory && (
+        <div className="glass card" style={{ marginBottom: 14 }}>
+          <p className="cal-label" style={{ marginBottom: 8 }}>
+            🔔 {t("messages.history")}
+          </p>
+          {history === null ? (
+            <p className="skeleton">{t("common.loading")}</p>
+          ) : history.length === 0 ? (
+            <p className="cal-hint">{t("messages.historyEmpty")}</p>
+          ) : (
+            <div className="notif-list">
+              {history.map((n, i) => (
+                <Link
+                  key={i}
+                  href={n.url || "/menu/messages"}
+                  className="notif-row"
+                >
+                  <span className="notif-body">
+                    <strong>{n.title}</strong>
+                    <small>{n.body}</small>
+                  </span>
+                  <span className="conv-time">
+                    {new Date(n.ts).toLocaleDateString(
+                      lang === "es" ? "es" : "en",
+                      { month: "short", day: "numeric" }
+                    )}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {showNew && (
         <div className="glass card" style={{ marginBottom: 14 }}>

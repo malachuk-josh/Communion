@@ -185,6 +185,7 @@ export const keys = {
   sharedCollection: (token: string) => `shared:${token}`,
   convMessages: (convId: string) => `conv:${convId}`,
   userConvs: (userId: string) => `user:${userId}:convs`,
+  userNotifs: (userId: string) => `user:${userId}:notifs`,
   church: (churchId: string) => `church:${churchId}`,
   churchMembers: (churchId: string) => `church:${churchId}:members`,
   churchEvents: (churchId: string) => `church:${churchId}:events`,

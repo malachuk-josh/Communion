@@ -57,11 +57,33 @@ export interface PushPayload {
   tag?: string;
 }
 
+/** Keep an in-app history of every notification, delivered by push or not. */
+async function logNotification(
+  userId: string,
+  payload: PushPayload
+): Promise<void> {
+  const kv = db();
+  const key = keys.userNotifs(userId);
+  await kv.zadd(
+    key,
+    Date.now(),
+    JSON.stringify({ ...payload, ts: Date.now() })
+  );
+  // lazy trim: keep roughly the latest 50
+  const all = await kv.zrangebyscore(key, 0, Number.MAX_SAFE_INTEGER);
+  if (all.length > 60) {
+    for (const item of all.slice(0, all.length - 50)) {
+      await kv.zrem(key, item);
+    }
+  }
+}
+
 /** Send a payload to every device the user subscribed. Returns sends that succeeded. */
 export async function sendPushToUser(
   userId: string,
   payload: PushPayload
 ): Promise<number> {
+  await logNotification(userId, payload).catch(() => {});
   const publicKey = cleanEnv(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
   const privateKey = cleanEnv(process.env.VAPID_PRIVATE_KEY);
   if (!publicKey || !privateKey) return 0;
