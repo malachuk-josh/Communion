@@ -378,7 +378,9 @@ a {
 /* ---- floating bottom nav (mobile) ---- */
 .bottom-nav {
   position: fixed;
-  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  /* sit partly into the safe area so the bar hugs the bottom edge,
+     while never dropping below 2px on devices without an inset */
+  bottom: max(2px, calc(env(safe-area-inset-bottom, 0px) - 12px));
   /* center without transform: iOS misplaces transformed fixed elements
      during momentum scrolling, floating the bar up the page */
   left: 0;
