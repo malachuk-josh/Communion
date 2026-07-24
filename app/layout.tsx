@@ -16,6 +16,9 @@ export const viewport: Viewport = {
   themeColor: "#0b0d1a",
   width: "device-width",
   initialScale: 1,
+  // extend the page under the status bar so the strip above the header is
+  // painted by the app's own background in every theme
+  viewportFit: "cover",
 };
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
