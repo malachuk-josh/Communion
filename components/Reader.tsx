@@ -6,7 +6,6 @@ import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
   getBook,
-  originalSourceFor,
   type ChapterData,
 } from "@/lib/bible";
 import { api } from "@/lib/client";
@@ -26,6 +25,15 @@ interface SearchResult {
   chapter: number;
   verse: number;
   text: string;
+}
+
+interface LexEntry {
+  lemma: string;
+  translit: string;
+  pron: string;
+  derivation: string;
+  def: string;
+  kjv: string;
 }
 
 export default function Reader({
@@ -51,13 +59,20 @@ export default function Reader({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
-  const [originals, setOriginals] = useState(false);
-  const [origVerses, setOrigVerses] = useState<Record<number, string> | null>(
+  // tap-a-word originals: tokenized KJV with Strong's numbers per word
+  const [strongsTokens, setStrongsTokens] = useState<Record<
+    string,
+    [string, string[] | null][]
+  > | null>(null);
+  const [lexHeb, setLexHeb] = useState<Record<string, LexEntry> | null>(null);
+  const [lexGrk, setLexGrk] = useState<Record<string, LexEntry> | null>(null);
+  const [lexCounts, setLexCounts] = useState<Record<string, number> | null>(
     null
   );
-  const [litVerses, setLitVerses] = useState<Record<number, string> | null>(
-    null
-  );
+  const [wordSel, setWordSel] = useState<{
+    text: string;
+    nums: string[];
+  } | null>(null);
   const [context, setContext] = useState<Record<
     string,
     Record<string, { practical: string; spiritual: string }>
@@ -116,9 +131,6 @@ export default function Reader({
       }
       if (window.localStorage.getItem("communion.studyMode") === "1") {
         setStudy(true);
-      }
-      if (window.localStorage.getItem("communion.originalsMode") === "1") {
-        setOriginals(true);
       }
     } catch {
       // corrupted storage — start fresh at the default passage
@@ -191,37 +203,24 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
-  // translation layer: original language + Young's literal English
+  // study mode + KJV: tokenized text where every word knows its original
+  // Hebrew/Greek word (Strong's numbers), enabling tap-for-translation
   useEffect(() => {
-    if (!study || !originals) return;
+    if (!study || translation !== "kjv") return;
     let cancelled = false;
-    setOrigVerses(null);
-    setLitVerses(null);
-    const toMap = (json: ChapterData) => {
-      const map: Record<number, string> = {};
-      for (const v of json.verses) map[v.verse] = v.text;
-      return map;
-    };
-    fetch(`/api/bible/${originalSourceFor(bookNr)}/${bookNr}/${chapter}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((json: ChapterData) => {
-        if (!cancelled) setOrigVerses(toMap(json));
+    setStrongsTokens(null);
+    fetch(`/strongs/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (!cancelled) setStrongsTokens(json);
       })
       .catch(() => {
-        if (!cancelled) setOrigVerses({});
-      });
-    fetch(`/api/bible/ylt/${bookNr}/${chapter}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((json: ChapterData) => {
-        if (!cancelled) setLitVerses(toMap(json));
-      })
-      .catch(() => {
-        if (!cancelled) setLitVerses({});
+        if (!cancelled) setStrongsTokens({});
       });
     return () => {
       cancelled = true;
     };
-  }, [study, originals, bookNr, chapter]);
+  }, [study, translation, bookNr]);
 
   // chapter context (practical + spiritual), one static file per book
   useEffect(() => {
@@ -247,11 +246,31 @@ export default function Reader({
     window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
   };
 
-  const toggleOriginals = () => {
-    const next = !originals;
-    setOriginals(next);
-    window.localStorage.setItem("communion.originalsMode", next ? "1" : "0");
+  const openWord = (text: string, nums: string[]) => {
+    setWordSel({ text, nums });
+    // load the lexicon for this testament (and counts) on first use
+    if (bookNr <= 39 && !lexHeb) {
+      fetch("/lexicon/hebrew.json")
+        .then((res) => (res.ok ? res.json() : {}))
+        .then(setLexHeb)
+        .catch(() => setLexHeb({}));
+    }
+    if (bookNr > 39 && !lexGrk) {
+      fetch("/lexicon/greek.json")
+        .then((res) => (res.ok ? res.json() : {}))
+        .then(setLexGrk)
+        .catch(() => setLexGrk({}));
+    }
+    if (!lexCounts) {
+      fetch("/strongs/counts.json")
+        .then((res) => (res.ok ? res.json() : {}))
+        .then(setLexCounts)
+        .catch(() => setLexCounts({}));
+    }
   };
+
+  const lexFor = (num: string): LexEntry | undefined =>
+    (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
 
   const chapterContext = context?.[String(chapter)]?.[lang === "es" ? "es" : "en"];
 
@@ -361,7 +380,12 @@ export default function Reader({
       window.removeEventListener("wheel", stop);
       window.removeEventListener("touchmove", stop);
     };
-  }, [loading, data, highlightVerse, study, xrefs, origVerses, litVerses, notes]);
+  }, [loading, data, highlightVerse, study, xrefs, strongsTokens, notes]);
+
+  // a new chapter closes any open word translation
+  useEffect(() => {
+    setWordSel(null);
+  }, [bookNr, chapter, study, translation]);
 
   const book = getBook(bookNr)!;
   const bookName = lang === "es" ? book.es : book.en;
@@ -562,21 +586,6 @@ export default function Reader({
         </div>
         {study && (
           <div className="field zoom-field">
-            <span>{t("reader.originals")}</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={originals}
-              className={`switch${originals ? " on" : ""}`}
-              onClick={toggleOriginals}
-              aria-label={t("reader.originals")}
-            >
-              <span className="switch-knob" />
-            </button>
-          </div>
-        )}
-        {study && (
-          <div className="field zoom-field">
             <span>{t("reader.bookmarks")}</span>
             <button
               type="button"
@@ -613,6 +622,12 @@ export default function Reader({
         </div>
       </div>
 
+      {study && translation !== "kjv" && (
+        <p className="notice" style={{ marginBottom: 10 }}>
+          {t("reader.strongsKjvOnly")}
+        </p>
+      )}
+
       <article
         className={`glass card scripture${study ? " study" : ""}`}
         style={{ fontSize: `calc(1.12rem * ${scale})` }}
@@ -640,23 +655,31 @@ export default function Reader({
                 >
                   <p>
                     <sup className="verse-num">{v.verse}</sup>
-                    {v.text}
+                    {strongsTokens?.[key]
+                      ? strongsTokens[key].map((tok, i) => {
+                          if (!tok[1]) return <span key={i}>{tok[0]}</span>;
+                          // keep leading spaces/punctuation outside the tap target
+                          const m = tok[0].match(/^([\s,;:.!?()'"—–-]*)([\s\S]*)$/)!;
+                          if (!m[2]) return <span key={i}>{tok[0]}</span>;
+                          const sel =
+                            wordSel &&
+                            wordSel.text === m[2] &&
+                            wordSel.nums.join() === tok[1].join();
+                          return (
+                            <span key={i}>
+                              {m[1]}
+                              <button
+                                type="button"
+                                className={`w${sel ? " sel" : ""}`}
+                                onClick={() => openWord(m[2], tok[1]!)}
+                              >
+                                {m[2]}
+                              </button>
+                            </span>
+                          );
+                        })
+                      : v.text}
                   </p>
-                  {originals && origVerses && origVerses[v.verse] && (
-                    <p
-                      className="orig-line"
-                      dir={bookNr <= 39 ? "rtl" : "ltr"}
-                      lang={bookNr <= 39 ? "he" : "el"}
-                    >
-                      {origVerses[v.verse]}
-                    </p>
-                  )}
-                  {originals && litVerses && litVerses[v.verse] && (
-                    <p className="lit-line">
-                      <span className="lit-label">{t("reader.literalLabel")}</span>{" "}
-                      {litVerses[v.verse]}
-                    </p>
-                  )}
                   <span className="xref-chips">
                     {chapterContext && (
                       <button
@@ -778,6 +801,63 @@ export default function Reader({
           {t("reader.next")} →
         </button>
       </div>
+
+      {wordSel && (
+        <div className="glass lex-sheet" role="dialog" aria-label={wordSel.text}>
+          <div className="lex-head">
+            <span className="lex-lemma">
+              {lexFor(wordSel.nums[0])?.lemma ?? wordSel.text}
+            </span>
+            {lexCounts?.[wordSel.nums[0]] !== undefined && (
+              <span className="lex-count">
+                {t("reader.foundVerses", {
+                  count: String(lexCounts[wordSel.nums[0]]),
+                })}
+              </span>
+            )}
+            <button
+              type="button"
+              className="lex-close"
+              onClick={() => setWordSel(null)}
+              aria-label={t("search.close")}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="lex-body">
+            {wordSel.nums.map((num) => {
+              const entry = lexFor(num);
+              if (!entry) {
+                return (
+                  <p key={num} className="skeleton">
+                    {t("common.loading")}
+                  </p>
+                );
+              }
+              return (
+                <div key={num} className="lex-entry">
+                  {wordSel.nums.length > 1 && (
+                    <p className="lex-sub-lemma">{entry.lemma}</p>
+                  )}
+                  <p className="lex-meta">
+                    [{entry.translit}]{entry.pron ? ` · ${entry.pron}` : ""} ·{" "}
+                    {num}
+                  </p>
+                  {entry.derivation && (
+                    <p className="lex-derivation">{entry.derivation}</p>
+                  )}
+                  <p className="lex-def">{entry.def}</p>
+                  {entry.kjv && (
+                    <p className="lex-kjv">
+                      <strong>KJV:</strong> {entry.kjv}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {backStack.length > 0 && (
         <button type="button" className="glass back-pill" onClick={goBack}>
