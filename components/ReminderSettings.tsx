@@ -26,6 +26,21 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+/** Stored E.164 → what the input shows: US numbers without their +1 prefix. */
+function toDisplay(e164: string): string {
+  return /^\+1\d{10}$/.test(e164) ? e164.slice(2) : e164;
+}
+
+/** Input value → E.164 to store: bare 10 digits get the +1 prefix. */
+function toE164(input: string): string {
+  const cleaned = input.replace(/[\s().-]/g, "");
+  if (!cleaned) return "";
+  if (cleaned.startsWith("+")) return cleaned;
+  const digits = cleaned.replace(/\D/g, "");
+  if (/^1\d{10}$/.test(digits)) return `+${digits}`;
+  return `+1${digits}`;
+}
+
 export default function ReminderSettings() {
   const { t } = useI18n();
   const [push, setPush] = useState<PushState>("loading");
@@ -41,7 +56,7 @@ export default function ReminderSettings() {
       "/api/profile"
     )
       .then((res) => {
-        setPhone(res.phone);
+        setPhone(toDisplay(res.phone));
         setSmsOptIn(res.smsReminders);
         setSmsAvailable(res.smsAvailable);
       })
@@ -113,7 +128,10 @@ export default function ReminderSettings() {
     try {
       await api("/api/profile", {
         method: "POST",
-        body: { phone, smsReminders: smsOptIn && !!phone.trim() },
+        body: {
+          phone: toE164(phone),
+          smsReminders: smsOptIn && !!phone.trim(),
+        },
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -160,14 +178,20 @@ export default function ReminderSettings() {
         <div className="pref-row" style={{ alignItems: "flex-start" }}>
           <span>💬 {t("settings.smsTitle")}</span>
           <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 555 123 4567"
-              maxLength={20}
-              style={{ maxWidth: 190 }}
-            />
+            <span className="phone-row">
+              {!phone.trim().startsWith("+") && (
+                <span className="phone-prefix">+1</span>
+              )}
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+                maxLength={20}
+                style={{ maxWidth: 160 }}
+              />
+            </span>
+            <small className="cal-hint">{t("settings.phoneIntlHint")}</small>
             <label className="toggle-row" style={{ margin: 0 }}>
               <input
                 type="checkbox"

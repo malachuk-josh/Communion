@@ -1127,6 +1127,21 @@ mark {
   opacity: 0.9;
 }
 
+.phone-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phone-prefix {
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  padding: 6px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass);
+}
+
 .rsvp-btn {
   font-size: 0.8rem;
   padding: 5px 11px;

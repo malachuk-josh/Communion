@@ -36,7 +36,10 @@ export async function POST(req: Request) {
 
   const updates: Record<string, string> = {};
   if (body.phone !== undefined) {
-    const phone = body.phone.replace(/[\s().-]/g, "");
+    let phone = body.phone.replace(/[\s().-]/g, "");
+    // Domestic convenience: a bare 10-digit number is a US/Canada number
+    if (/^\d{10}$/.test(phone)) phone = `+1${phone}`;
+    else if (/^1\d{10}$/.test(phone)) phone = `+${phone}`;
     if (phone && !isValidPhone(phone)) {
       return NextResponse.json(
         { error: "Invalid phone — use international format, e.g. +15551234567" },
