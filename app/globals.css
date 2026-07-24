@@ -378,9 +378,13 @@ a {
 /* ---- floating bottom nav (mobile) ---- */
 .bottom-nav {
   position: fixed;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  /* center without transform: iOS misplaces transformed fixed elements
+     during momentum scrolling, floating the bar up the page */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   z-index: 40;
   display: flex;
   align-items: stretch;
@@ -1282,9 +1286,11 @@ button.menu-tile {
 
 .back-pill {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(86px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  bottom: calc(80px + env(safe-area-inset-bottom));
   z-index: 60;
   padding: 10px 18px;
   border-radius: 999px;
