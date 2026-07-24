@@ -8,6 +8,7 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 // and sharing the app itself.
 
 const TILES: { href: string; emoji: string; key: string }[] = [
+  { href: "/menu/messages", emoji: "💬", key: "messages" },
   { href: "/menu/profile", emoji: "👤", key: "profile" },
   { href: "/menu/notifications", emoji: "🔔", key: "notifications" },
   { href: "/menu/settings", emoji: "⚙️", key: "settings" },
@@ -65,7 +66,7 @@ export default function MenuHub() {
           </Link>
         ))}
         <button type="button" className="glass card menu-tile" onClick={shareApp}>
-          <span className="menu-tile-emoji">💬</span>
+          <span className="menu-tile-emoji">📲</span>
           <span className="menu-tile-body">
             <strong>{t("menu.share")}</strong>
             <small>
