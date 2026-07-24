@@ -119,8 +119,17 @@ html {
 :root[data-theme="grey"] img,
 :root[data-theme="grey"] .session-icon,
 :root[data-theme="grey"] .bn-icon,
-:root[data-theme="grey"] .menu-tile-emoji {
+:root[data-theme="grey"] .menu-tile-emoji,
+:root[data-theme="grey"] .theme-toggle,
+:root[data-theme="grey"] .nav-passage,
+:root[data-theme="grey"] .brand {
   filter: grayscale(1);
+}
+
+:root[data-theme="grey"] .nav {
+  background: rgba(16, 17, 19, 0.6);
+  backdrop-filter: blur(22px) saturate(0);
+  -webkit-backdrop-filter: blur(22px) saturate(0);
 }
 
 body {
