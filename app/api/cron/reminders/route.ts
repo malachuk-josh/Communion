@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { getBook } from "@/lib/bible";
 import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
+import { getPlan } from "@/lib/plans";
 import { emailEnabled, reminderEmail, sendEmail } from "@/lib/email";
 import { pushEnabled, sendPushToUser } from "@/lib/push";
 import { sendSms, smsEnabled } from "@/lib/sms";
@@ -123,5 +125,100 @@ export async function GET(req: Request) {
     reminded++;
   }
 
-  return NextResponse.json({ upcoming: ids.length, reminded, emails, pushes, sms });
+  const plans = await sweepPlanReminders();
+
+  return NextResponse.json({
+    upcoming: ids.length,
+    reminded,
+    emails,
+    pushes,
+    sms,
+    plans,
+  });
+}
+
+/** The hour it is right now in a given IANA timezone (falls back to UTC). */
+function hourIn(timeZone: string | undefined): number {
+  try {
+    return Number(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: timeZone || "UTC",
+        hour: "numeric",
+        hour12: false,
+      }).format(new Date())
+    );
+  } catch {
+    return new Date().getUTCHours();
+  }
+}
+
+/** Today's date in a timezone, as YYYY-MM-DD. */
+function dayIn(timeZone: string | undefined): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: timeZone || "UTC",
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/**
+ * Nudge readers at their chosen local hour: one push per person listing
+ * today's reading, skipping plans already read today and finished plans.
+ */
+async function sweepPlanReminders(): Promise<{ notified: number }> {
+  if (!pushEnabled()) return { notified: 0 };
+  const kv = db();
+  const userIds = await kv.smembers(keys.planUsers);
+  let notified = 0;
+
+  for (const userId of userIds) {
+    const profile = (await kv.hgetall(keys.user(userId))) ?? {};
+    if (profile.planReminder === "off") continue;
+    const hour = Number(profile.planReminderHour ?? 7);
+    const tz = profile.planReminderTz;
+    if (hourIn(tz) !== hour) continue;
+
+    const today = dayIn(tz);
+    if (profile.planNudgedOn === today) continue; // already nudged today
+
+    const progress = (await kv.hgetall(keys.userPlans(userId))) ?? {};
+    const due: { emoji: string; name: string; day: number; label: string }[] =
+      [];
+    for (const [planId, value] of Object.entries(progress)) {
+      if (planId.endsWith(":on")) continue;
+      const plan = getPlan(planId);
+      if (!plan) continue;
+      const done = Number(value) || 0;
+      if (done === 0 || done >= plan.days.length) continue; // not started, or finished
+      if (progress[`${planId}:on`] === today) continue; // read today already
+      const readings = plan.days[done].readings;
+      const first = getBook(readings[0].b);
+      const last = getBook(readings[readings.length - 1].b);
+      const label =
+        readings.length === 1
+          ? `${first?.en} ${readings[0].c}`
+          : `${first?.en} ${readings[0].c} – ${last?.en} ${
+              readings[readings.length - 1].c
+            }`;
+      due.push({ emoji: plan.emoji, name: plan.name, day: done + 1, label });
+    }
+    if (due.length === 0) continue;
+
+    const lead = due[0];
+    const body =
+      due.length === 1
+        ? `Day ${lead.day} — ${lead.label}`
+        : `Day ${lead.day} — ${lead.label} (+${due.length - 1} more)`;
+    await sendPushToUser(userId, {
+      title: `${lead.emoji} ${lead.name}`,
+      body,
+      url: "/discover",
+      tag: `plan-${today}`,
+    }).catch(() => {});
+    await kv.hset(keys.user(userId), { planNudgedOn: today });
+    notified++;
+  }
+  return { notified };
 }

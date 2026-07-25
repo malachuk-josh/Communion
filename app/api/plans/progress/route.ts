@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const raw = (await db().hgetall(keys.userPlans(userId))) ?? {};
   const progress: Record<string, number> = {};
   for (const [planId, count] of Object.entries(raw)) {
+    if (planId.endsWith(":on")) continue; // last-read date, not progress
     progress[planId] = Number(count) || 0;
   }
   return NextResponse.json({ progress });

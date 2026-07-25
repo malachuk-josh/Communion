@@ -20,6 +20,8 @@ export async function GET(req: Request) {
     icon: profile.icon ?? "",
     phone: profile.phone ?? "",
     smsReminders: profile.smsReminders === "1",
+    planReminder: profile.planReminder === "off" ? "off" : "on",
+    planReminderHour: Number(profile.planReminderHour ?? 7),
     pushAvailable: pushEnabled(),
     smsAvailable: smsEnabled(),
     isOwner: isOwner(userId),
@@ -36,6 +38,8 @@ export async function POST(req: Request) {
     icon?: string;
     phone?: string;
     smsReminders?: boolean;
+    planReminderHour?: number | "off";
+    planReminderTz?: string;
   } | null;
   if (!body) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -71,6 +75,21 @@ export async function POST(req: Request) {
   }
   if (body.smsReminders !== undefined) {
     updates.smsReminders = body.smsReminders ? "1" : "";
+  }
+  if (body.planReminderHour !== undefined) {
+    if (body.planReminderHour === "off") {
+      updates.planReminder = "off";
+    } else {
+      const hour = Number(body.planReminderHour);
+      if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+        return NextResponse.json({ error: "Invalid hour" }, { status: 400 });
+      }
+      updates.planReminder = "on";
+      updates.planReminderHour = String(hour);
+    }
+  }
+  if (body.planReminderTz !== undefined) {
+    updates.planReminderTz = body.planReminderTz.slice(0, 64);
   }
   await db().hset(keys.user(userId), updates);
   return NextResponse.json({ ok: true });

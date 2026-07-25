@@ -200,6 +200,7 @@ export const keys = {
   convMessages: (convId: string) => `conv:${convId}`,
   userConvs: (userId: string) => `user:${userId}:convs`,
   userNotifs: (userId: string) => `user:${userId}:notifs`,
+  planUsers: "plans:users",
   churchThreads: (churchId: string) => `church:${churchId}:threads`,
   thread: (threadId: string) => `thread:${threadId}`,
   threadPosts: (threadId: string) => `thread:${threadId}:posts`,

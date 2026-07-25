@@ -32,6 +32,22 @@ export async function POST(
   const raw = await kv.hgetall(keys.userPlans(userId));
   const current = Number(raw?.[id]) || 0;
   const completed = Math.min(current + 1, plan.days.length);
-  await kv.hset(keys.userPlans(userId), { [id]: completed });
+  // stamp the date in the reader's own timezone, so the reminder sweep
+  // (which thinks in local days) agrees about what "today" means
+  const profile = await kv.hgetall(keys.user(userId));
+  let today: string;
+  try {
+    today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: profile?.planReminderTz || "UTC",
+    }).format(new Date());
+  } catch {
+    today = new Date().toISOString().slice(0, 10);
+  }
+  await kv.hset(keys.userPlans(userId), {
+    [id]: completed,
+    // keeps the reminder sweep from nudging someone who already read today
+    [`${id}:on`]: today,
+  });
+  await kv.sadd(keys.planUsers, userId);
   return NextResponse.json({ completed });
 }
