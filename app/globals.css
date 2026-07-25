@@ -408,7 +408,7 @@ a {
    glyph is small inside its em box, so it needs the extra size to read as
    a star rather than a dot. */
 .study-toggle {
-  font-size: 1.5rem;
+  font-size: 2rem;
   line-height: 1;
 }
 
