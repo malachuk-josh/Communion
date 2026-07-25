@@ -949,48 +949,189 @@ mark {
 }
 
 /* ---- reader ---- */
-/* the reader's controls, opened from the passage chip in the header */
-.reader-sheet {
-  display: grid;
-  gap: 12px;
-  /* never tall enough to cover the header chip that opened it */
-  max-height: min(86dvh, calc(100dvh - 76px));
-  overflow-y: auto;
+/* the reader's controls, folded out from the edge of the page by the
+   passage chip in the header */
+.panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: rgba(5, 6, 14, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fade-in 0.2s ease;
 }
 
-.reader-sheet .field {
-  margin-bottom: 0;
+:root[data-theme="light"] .panel-scrim {
+  background: rgba(74, 58, 30, 0.35);
 }
 
-/* a <select> is as wide as its longest option unless told otherwise */
-.reader-sheet .form-row .field {
-  min-width: 0;
-}
-
-/* the arrows would only show through the sheet's glass at widths where it
-   spans the screen; on a wide desktop they sit clear of it */
-@media (max-width: 860px) {
-  .reader-open .chap-arrow {
-    display: none;
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
 
-.reader-sheet .search-bar {
+.side-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 70;
+  width: min(88vw, 390px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 22px 22px 0;
+  border-left: none;
+  box-shadow: 14px 0 44px rgba(0, 0, 0, 0.5);
+  padding: env(safe-area-inset-top) 0 0;
+  animation: fold-out 0.26s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+@keyframes fold-out {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.sp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.sp-where {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gold);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.sp-pad {
+  padding: 12px 16px;
+}
+
+.sp-search {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.sp-pad .search-bar {
   margin-bottom: 0;
 }
 
-.rs-group {
-  display: grid;
-  gap: 8px;
-}
-
-.rs-group + .rs-group {
+.sp-prefs {
   border-top: 1px solid var(--glass-border);
-  padding-top: 12px;
+  display: grid;
+  gap: 4px;
 }
 
-.form-row .field.rs-chapter {
-  flex: 0 0 104px;
+.sp-prefs .field {
+  margin-bottom: 0;
+}
+
+/* the arrows sit under the panel and its scrim while it is open */
+.reader-open .chap-arrow {
+  display: none;
+}
+
+/* ---- the book & chapter navigator ---- */
+.bn-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 12px 16px 6px;
+}
+
+.bn-testament,
+.bn-book {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bn-testament {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.bn-book {
+  font-size: 0.98rem;
+  font-family: var(--serif);
+  color: var(--ink-dim);
+  padding: 11px 16px 11px 26px;
+}
+
+.bn-book:hover {
+  color: var(--ink);
+}
+
+.bn-book.current {
+  color: var(--gold);
+}
+
+.bn-caret {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: transform 0.18s;
+}
+
+.bn-caret.open {
+  transform: rotate(180deg);
+}
+
+.bn-chapters {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  padding: 2px 14px 12px 24px;
+}
+
+.bn-ch {
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 11px 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.bn-ch:hover {
+  background: var(--glass);
+  color: var(--ink);
+}
+
+.bn-ch.current {
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-weight: 600;
 }
 
 /* the pinch gesture replaced the A−/A+ buttons on touch; say so where the

@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  BOOKS,
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
   getBook,
@@ -11,6 +10,7 @@ import {
   type Verse,
 } from "@/lib/bible";
 import { api } from "@/lib/client";
+import BookNav from "@/components/BookNav";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 import Concordance from "@/components/Concordance";
@@ -2035,163 +2035,134 @@ export default function Reader({
         </div>
       )}
 
-      {/* Everything that used to sit above the scripture: opened from the
-          passage chip in the header. No scrim — the point of translation,
-          study and text size is watching the text change behind the sheet. */}
+      {/* Everything that used to sit above the scripture, opened from the
+          passage chip: a panel that folds out from the edge of the page. */}
       {panelOpen && (
-        <div
-          id="reader-panel"
-          ref={sheetRef}
-          tabIndex={-1}
-          style={kbInset ? { bottom: kbInset } : undefined}
-          className="glass lex-sheet reader-sheet"
-          role="dialog"
-          aria-label={t("reader.panel")}
-        >
-          <div className="lex-head">
-            <span className="lex-lemma bm-sheet-title">
-              📖 {bookName} {viewChapter}
-            </span>
-            <button
-              type="button"
-              className="lex-count lex-count-btn"
-              onClick={() => {
-                setPanelOpen(false);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-            >
-              ↑ {t("reader.toTop")}
-            </button>
-            <button
-              type="button"
-              className="lex-close"
-              onClick={() => setPanelOpen(false)}
-              aria-label={t("common.close")}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="rs-group">{searchBar(true)}</div>
-
-          <div className="rs-group">
-            <p className="cal-label">{t("reader.passage")}</p>
-            <div className="form-row">
-              <label className="field">
-                <span>{t("reader.book")}</span>
-                <select
-                  value={bookNr}
-                  onChange={(e) => {
-                    setHighlightVerse(null);
-                    setBackStack([]);
-                    setBookNr(Number(e.target.value));
-                    setChapter(1);
-                  }}
-                >
-                  {BOOKS.map((b) => (
-                    <option key={b.nr} value={b.nr}>
-                      {lang === "es" ? b.es : b.en}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field rs-chapter">
-                <span>{t("reader.chapter")}</span>
-                <select
-                  value={viewChapter}
-                  onChange={(e) => {
-                    jumpChapter(Number(e.target.value));
-                    setPanelOpen(false);
-                  }}
-                >
-                  {Array.from({ length: book.chapters }, (_, i) => i + 1).map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
-                </select>
-              </label>
-            </div>
-            <label className="field">
-              <span>{t("reader.translation")}</span>
-              <select
-                value={translation}
-                onChange={(e) => {
-                  // reloading rebases on `chapter`; keep the reader on the
-                  // chapter you were actually reading
-                  setChapter(viewChapter);
-                  setTranslation(e.target.value);
+        <>
+          <div
+            className="panel-scrim"
+            onClick={() => setPanelOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            id="reader-panel"
+            ref={sheetRef}
+            tabIndex={-1}
+            className="glass side-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("reader.panel")}
+          >
+            <div className="sp-head">
+              <span className="sp-where">
+                📖 {bookName} {viewChapter}
+              </span>
+              <button
+                type="button"
+                className="lex-count lex-count-btn"
+                onClick={() => {
+                  setPanelOpen(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
-                {TRANSLATIONS.map((tr) => (
-                  <option key={tr.id} value={tr.id}>
-                    {tr.abbrev} — {tr.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+                ↑ {t("reader.toTop")}
+              </button>
+              <button
+                type="button"
+                className="lex-close"
+                onClick={() => setPanelOpen(false)}
+                aria-label={t("common.close")}
+              >
+                ✕
+              </button>
+            </div>
 
-          <div className="rs-group">
-            {/* study mode itself lives in the header — one tap, always there */}
-            <p className="cal-label">{t("reader.display")}</p>
-            {study && (
-              <div className="pref-row">
-                <span>{t("reader.bookmarks")}</span>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={() => {
-                    setPanelOpen(false);
-                    setBookmarksOpen(true);
-                  }}
-                >
-                  🔖
-                  {Object.keys(bookmarks).length > 0 &&
-                    ` ${Object.keys(bookmarks).length}`}
-                </button>
-              </div>
-            )}
-            {/* touch screens pinch the text instead — see the pinch effect */}
-            <div className="pref-row zoom-size-field">
-              <span>{t("reader.textSize")}</span>
-              <div className="zoom-group">
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={() => zoom(-SCALE_STEP)}
-                  disabled={scale - SCALE_STEP < SCALE_MIN}
-                  aria-label={t("reader.smaller")}
-                >
-                  A−
-                </button>
-                <span className="zoom-value">{Math.round(scale * 100)}%</span>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={() => zoom(SCALE_STEP)}
-                  disabled={scale + SCALE_STEP > SCALE_MAX}
-                  aria-label={t("reader.larger")}
-                >
-                  A+
-                </button>
+            {/* pinned: the way out of the panel shouldn't scroll away */}
+            <div className="sp-pad sp-search">{searchBar(true)}</div>
+
+            <div className="sp-body" style={kbInset ? { paddingBottom: kbInset } : undefined}>
+              <BookNav
+                bookNr={bookNr}
+                chapter={viewChapter}
+                onPick={(b, c) => {
+                  setPanelOpen(false);
+                  if (b === bookNr) {
+                    jumpChapter(c);
+                    return;
+                  }
+                  setHighlightVerse(null);
+                  setBackStack([]);
+                  setBookNr(b);
+                  setChapter(c);
+                }}
+              />
+
+              <div className="sp-pad sp-prefs">
+                <label className="field">
+                  <span>{t("reader.translation")}</span>
+                  <select
+                    value={translation}
+                    onChange={(e) => {
+                      // reloading rebases on `chapter`; keep the reader on the
+                      // chapter you were actually reading
+                      setChapter(viewChapter);
+                      setTranslation(e.target.value);
+                    }}
+                  >
+                    {TRANSLATIONS.map((tr) => (
+                      <option key={tr.id} value={tr.id}>
+                        {tr.abbrev} — {tr.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {study && (
+                  <div className="pref-row">
+                    <span>{t("reader.bookmarks")}</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setPanelOpen(false);
+                        setBookmarksOpen(true);
+                      }}
+                    >
+                      🔖
+                      {Object.keys(bookmarks).length > 0 &&
+                        ` ${Object.keys(bookmarks).length}`}
+                    </button>
+                  </div>
+                )}
+                {/* touch screens pinch the text instead — see the pinch effect */}
+                <div className="pref-row zoom-size-field">
+                  <span>{t("reader.textSize")}</span>
+                  <div className="zoom-group">
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => zoom(-SCALE_STEP)}
+                      disabled={scale - SCALE_STEP < SCALE_MIN}
+                      aria-label={t("reader.smaller")}
+                    >
+                      A−
+                    </button>
+                    <span className="zoom-value">{Math.round(scale * 100)}%</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => zoom(SCALE_STEP)}
+                      disabled={scale + SCALE_STEP > SCALE_MAX}
+                      aria-label={t("reader.larger")}
+                    >
+                      A+
+                    </button>
+                  </div>
+                </div>
+                <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
               </div>
             </div>
-            <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
           </div>
-
-          <div className="lex-actions">
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={() => setPanelOpen(false)}
-            >
-              {t("common.done")}
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

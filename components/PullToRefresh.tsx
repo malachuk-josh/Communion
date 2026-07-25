@@ -25,7 +25,8 @@ export default function PullToRefresh() {
       if (refreshing || window.scrollY > 0) return;
       // reloading would destroy an open sheet or modal — including one the
       // finger never touched, since sheets leave the page behind them live
-      if (document.querySelector(".modal-overlay, .lex-sheet")) return;
+      if (document.querySelector(".modal-overlay, .lex-sheet, .side-panel"))
+        return;
       startY.current = e.touches[0].clientY;
     };
 

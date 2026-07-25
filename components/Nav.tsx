@@ -101,7 +101,7 @@ export default function Nav() {
   // unless the sheet closed to hand off to another dialog, which owns focus
   useEffect(() => {
     if (wasOpen.current && !panelOpen) {
-      if (!document.querySelector(".modal-overlay, .lex-sheet")) {
+      if (!document.querySelector(".modal-overlay, .lex-sheet, .side-panel")) {
         chipRef.current?.focus();
       }
     }
