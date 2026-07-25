@@ -1028,13 +1028,31 @@ mark {
   padding: 12px 16px;
 }
 
-.sp-search {
+.sp-fixed {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--glass-border);
 }
 
 .sp-pad .search-bar {
   margin-bottom: 0;
+}
+
+/* translation and bookmarks ride above the book list, one row */
+.sp-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 0;
+}
+
+.sp-trans {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-bm {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .sp-prefs {

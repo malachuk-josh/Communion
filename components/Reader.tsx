@@ -2087,8 +2087,44 @@ export default function Reader({
               </button>
             </div>
 
-            {/* pinned: the way out of the panel shouldn't scroll away */}
-            <div className="sp-pad sp-search">{searchBar(true)}</div>
+            {/* pinned: search, translation and bookmarks stay put while the
+                book list scrolls under them */}
+            <div className="sp-fixed">
+              <div className="sp-pad">{searchBar(true)}</div>
+              <div className="sp-pad sp-top">
+                <select
+                  className="sp-trans"
+                  aria-label={t("reader.translation")}
+                  value={translation}
+                  onChange={(e) => {
+                    // reloading rebases on `chapter`; keep the reader on the
+                    // chapter you were actually reading
+                    setChapter(viewChapter);
+                    setTranslation(e.target.value);
+                  }}
+                >
+                  {TRANSLATIONS.map((tr) => (
+                    <option key={tr.id} value={tr.id}>
+                      {tr.abbrev} — {tr.name}
+                    </option>
+                  ))}
+                </select>
+                {study && (
+                  <button
+                    type="button"
+                    className="btn btn-sm sp-bm"
+                    onClick={() => {
+                      setPanelOpen(false);
+                      setBookmarksOpen(true);
+                    }}
+                  >
+                    🔖
+                    {Object.keys(bookmarks).length > 0 &&
+                      ` ${Object.keys(bookmarks).length}`}
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="sp-body" style={kbInset ? { paddingBottom: kbInset } : undefined}>
               <BookNav
@@ -2108,41 +2144,6 @@ export default function Reader({
               />
 
               <div className="sp-pad sp-prefs">
-                <label className="field">
-                  <span>{t("reader.translation")}</span>
-                  <select
-                    value={translation}
-                    onChange={(e) => {
-                      // reloading rebases on `chapter`; keep the reader on the
-                      // chapter you were actually reading
-                      setChapter(viewChapter);
-                      setTranslation(e.target.value);
-                    }}
-                  >
-                    {TRANSLATIONS.map((tr) => (
-                      <option key={tr.id} value={tr.id}>
-                        {tr.abbrev} — {tr.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {study && (
-                  <div className="pref-row">
-                    <span>{t("reader.bookmarks")}</span>
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      onClick={() => {
-                        setPanelOpen(false);
-                        setBookmarksOpen(true);
-                      }}
-                    >
-                      🔖
-                      {Object.keys(bookmarks).length > 0 &&
-                        ` ${Object.keys(bookmarks).length}`}
-                    </button>
-                  </div>
-                )}
                 {/* touch screens pinch the text instead — see the pinch effect */}
                 <div className="pref-row zoom-size-field">
                   <span>{t("reader.textSize")}</span>
