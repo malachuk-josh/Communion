@@ -130,6 +130,15 @@ export default function Reader({
     { userId: string; displayName: string; icon?: string }[] | null
   >(null);
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
+  // sharing to The Table: straight to a person, or into a Gathering's discussion
+  const [shareTab, setShareTab] = useState<"dm" | "gathering">("dm");
+  const [shareChurches, setShareChurches] = useState<
+    { id: string; name: string }[] | null
+  >(null);
+  const [shareChurch, setShareChurch] = useState<string | null>(null);
+  const [shareThreads, setShareThreads] = useState<
+    { id: string; title: string }[] | null
+  >(null);
   const [context, setContext] = useState<Record<
     string,
     Record<string, { practical: string; spiritual: string }>
@@ -767,7 +776,24 @@ export default function Reader({
         .then((res) => setSharePeers(res.contacts))
         .catch(() => setSharePeers([]));
     }
+    if (shareChurches === null) {
+      api<{ churches: { id: string; name: string }[] }>("/api/churches")
+        .then((res) => setShareChurches(res.churches))
+        .catch(() => setShareChurches([]));
+    }
   };
+
+  /** What travels with the word study, whoever it goes to. */
+  const wordPayload = () => ({
+    text: `${wordSel!.text} — ${bookName} ${wordSel!.ch}:${wordSel!.verse}`,
+    attach: {
+      b: bookNr,
+      c: wordSel!.ch,
+      v: wordSel!.verse,
+      kind: "word" as const,
+      label: wordSummary().replace(/\n— Communion$/, ""),
+    },
+  });
 
   const sendWordTo = async (peerId: string) => {
     if (!wordSel) return;
@@ -775,18 +801,58 @@ export default function Reader({
     try {
       await api(`/api/messages/${peerId}`, {
         method: "POST",
-        body: {
-          text: `${wordSel.text} — ${bookName} ${wordSel.ch}:${wordSel.verse}`,
-          attach: {
-            b: bookNr,
-            c: wordSel.ch,
-            v: wordSel.verse,
-            kind: "word",
-            label: wordSummary().replace(/\n— Communion$/, ""),
-          },
-        },
+        body: wordPayload(),
       });
       flashWord(t("reader.sent"));
+    } catch {
+      flashWord(t("reader.error"));
+    }
+  };
+
+  /** Open a Gathering in the picker and load the discussions inside it. */
+  const openGathering = (churchId: string) => {
+    if (shareChurch === churchId) {
+      setShareChurch(null);
+      return;
+    }
+    setShareChurch(churchId);
+    setShareThreads(null);
+    api<{ threads: { id: string; title: string }[] }>(
+      `/api/churches/${churchId}/threads`
+    )
+      .then((res) => setShareThreads(res.threads))
+      .catch(() => setShareThreads([]));
+  };
+
+  const postWordToThread = async (threadId: string) => {
+    if (!wordSel) return;
+    setSharePickerOpen(false);
+    try {
+      await api(`/api/threads/${threadId}`, {
+        method: "POST",
+        body: wordPayload(),
+      });
+      flashWord(t("reader.posted"));
+    } catch {
+      flashWord(t("reader.error"));
+    }
+  };
+
+  /** Start a discussion titled after the word, with the study attached. */
+  const postWordToGathering = async (churchId: string) => {
+    if (!wordSel) return;
+    setSharePickerOpen(false);
+    const payload = wordPayload();
+    try {
+      await api(`/api/churches/${churchId}/threads`, {
+        method: "POST",
+        body: {
+          title: `${wordSel.text} — ${bookName} ${wordSel.ch}:${wordSel.verse}`,
+          text: payload.text,
+          attach: payload.attach,
+        },
+      });
+      flashWord(t("reader.posted"));
     } catch {
       flashWord(t("reader.error"));
     }
@@ -1619,22 +1685,85 @@ export default function Reader({
           {wordAction && <p className="email-sent">✓ {wordAction}</p>}
           {sharePickerOpen && (
             <div className="lex-peers">
-              {sharePeers === null ? (
+              <div className="lang-toggle share-tabs" role="group">
+                <button
+                  className={shareTab === "dm" ? "active" : ""}
+                  onClick={() => setShareTab("dm")}
+                  aria-pressed={shareTab === "dm"}
+                >
+                  💬 {t("reader.shareDirect")}
+                </button>
+                <button
+                  className={shareTab === "gathering" ? "active" : ""}
+                  onClick={() => setShareTab("gathering")}
+                  aria-pressed={shareTab === "gathering"}
+                >
+                  ⛪ {t("reader.shareGathering")}
+                </button>
+              </div>
+
+              {shareTab === "dm" ? (
+                sharePeers === null ? (
+                  <p className="skeleton">{t("common.loading")}</p>
+                ) : sharePeers.length === 0 ? (
+                  <p className="cal-hint">{t("messages.noContacts")}</p>
+                ) : (
+                  <div className="chips">
+                    {sharePeers.map((p) => (
+                      <button
+                        key={p.userId}
+                        type="button"
+                        className="chip"
+                        onClick={() => sendWordTo(p.userId)}
+                      >
+                        {p.icon && <span className="chip-icon">{p.icon}</span>}
+                        {p.displayName}
+                      </button>
+                    ))}
+                  </div>
+                )
+              ) : shareChurches === null ? (
                 <p className="skeleton">{t("common.loading")}</p>
-              ) : sharePeers.length === 0 ? (
-                <p className="cal-hint">{t("messages.noContacts")}</p>
+              ) : shareChurches.length === 0 ? (
+                <p className="cal-hint">{t("reader.noGatherings")}</p>
               ) : (
-                <div className="chips">
-                  {sharePeers.map((p) => (
-                    <button
-                      key={p.userId}
-                      type="button"
-                      className="chip"
-                      onClick={() => sendWordTo(p.userId)}
-                    >
-                      {p.icon && <span className="chip-icon">{p.icon}</span>}
-                      {p.displayName}
-                    </button>
+                <div className="share-gatherings">
+                  {shareChurches.map((c) => (
+                    <div key={c.id}>
+                      <button
+                        type="button"
+                        className={`chip${shareChurch === c.id ? " chip-active" : ""}`}
+                        onClick={() => openGathering(c.id)}
+                        aria-expanded={shareChurch === c.id}
+                      >
+                        ⛪ {c.name}
+                      </button>
+                      {shareChurch === c.id && (
+                        <div className="chips share-threads">
+                          <button
+                            type="button"
+                            className="chip"
+                            onClick={() => postWordToGathering(c.id)}
+                          >
+                            ＋ {t("reader.newDiscussion")}
+                          </button>
+                          {shareThreads === null ? (
+                            <p className="skeleton">{t("common.loading")}</p>
+                          ) : (
+                            shareThreads.map((th) => (
+                              <button
+                                key={th.id}
+                                type="button"
+                                className="chip"
+                                onClick={() => postWordToThread(th.id)}
+                              >
+                                💭 {th.title}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}

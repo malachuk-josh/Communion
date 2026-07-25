@@ -2583,8 +2583,26 @@ button.menu-tile {
 
 .lex-peers {
   margin-top: 8px;
-  max-height: 22vh;
+  max-height: 30vh;
   overflow-y: auto;
+}
+
+.share-tabs {
+  margin-bottom: 8px;
+}
+
+.share-tabs button {
+  flex: 1;
+}
+
+.share-gatherings {
+  display: grid;
+  gap: 6px;
+}
+
+/* the discussions inside the Gathering you opened */
+.share-threads {
+  margin: 6px 0 2px 14px;
 }
 
 .verse-card em {
