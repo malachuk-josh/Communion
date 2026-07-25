@@ -408,8 +408,12 @@ a {
    glyph is small inside its em box, so it needs the extra size to read as
    a star rather than a dot. */
 .study-toggle {
-  font-size: 2rem;
-  line-height: 1;
+  line-height: 0;
+}
+
+/* a block-level child centres exactly — no font metrics involved */
+.study-toggle svg {
+  display: block;
 }
 
 .study-toggle.on {

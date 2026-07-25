@@ -1874,6 +1874,16 @@ export default function Reader({
                                 aria-label={t("reader.removeBookmark")}
                                 title={t("reader.removeBookmark")}
                                 onClick={() => {
+                                  const where = `${bookNameOf(b)} ${c}:${v}`;
+                                  if (
+                                    !window.confirm(
+                                      t("reader.removeBookmarkConfirm", {
+                                        ref: where,
+                                      })
+                                    )
+                                  ) {
+                                    return;
+                                  }
                                   setBookmarks((prev) => {
                                     const next = { ...prev };
                                     delete next[key];
