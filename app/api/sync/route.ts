@@ -30,6 +30,15 @@ function validVerseKey(key: string): boolean {
   return !!book && c >= 1 && c <= book.chapters && v >= 1 && v <= 200;
 }
 
+/** Whose data would a sync touch? Asked before anything is sent. */
+export async function GET(req: Request) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json({ who: userId });
+}
+
 export async function POST(req: Request) {
   const userId = await getUserId(req);
   if (!userId) {

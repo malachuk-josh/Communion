@@ -41,6 +41,11 @@ const listeners = new Set<Listener>();
 let pending = 0;
 let flushing: Promise<BookmarkState | null> | null = null;
 let lastFlushFailed = false;
+/** Who the server says we are, and when it last said so. */
+let identity: string | null = null;
+let identityAt = 0;
+/** Long enough to spare a round trip per keystroke, short enough to notice. */
+const IDENTITY_TTL = 30_000;
 
 function announce() {
   for (const fn of listeners) fn(pending);
@@ -63,17 +68,47 @@ async function refreshPending() {
 }
 
 /**
- * Reconcile who this device's data belongs to. Signing in as someone else —
- * or out of a guest session into an account — must not push one person's
- * bookmarks into another's. Returns true if local data was discarded.
+ * Settle who this device's data belongs to, before anything is sent.
+ *
+ * This has to happen first. The outbox is a list of changes with no owner
+ * written on it — flushing it under a different session would file one
+ * person's notes into another person's account, and the reply would then
+ * overwrite the first person's copy. So: ask who we are, and if the answer
+ * differs from whoever this device was holding data for, drop that data
+ * (including the queue) rather than send it somewhere it does not belong.
+ *
+ * Throws when the server can't be reached, which is what stops a flush.
  */
+export async function ensureIdentity(): Promise<string> {
+  // The answer goes stale: someone can sign in, or out, without this module
+  // ever unloading. Trusting a cached identity across that is exactly how one
+  // person's queue ends up in another person's account.
+  if (identity && Date.now() - identityAt < IDENTITY_TTL) return identity;
+  const res = await api<{ who: string }>("/api/sync");
+  identity = res.who;
+  identityAt = Date.now();
+  const local = await readLocalState();
+  if (local?.who && local.who !== res.who) {
+    await clearLocalData();
+    // the API cache holds the previous account's answers too
+    await import("@/lib/offline").then((m) => m.clearApiCache()).catch(() => {});
+    await refreshPending();
+  }
+  return res.who;
+}
+
+/** Reconcile against a `who` that came back with some other response. */
 export async function adoptIdentity(who: string | undefined): Promise<boolean> {
   if (!who) return false;
+  if (!identity) {
+    identity = who;
+    identityAt = Date.now();
+  }
   const local = await readLocalState();
   if (!local || !local.who || local.who === who) return false;
   await clearLocalData();
-  // the API cache holds the previous account's answers too
   await import("@/lib/offline").then((m) => m.clearApiCache()).catch(() => {});
+  await refreshPending();
   return true;
 }
 
@@ -82,8 +117,16 @@ export function readLocalState(): Promise<BookmarkState | null> {
   return getLocal<BookmarkState>(STATE_STORE, STATE_KEY);
 }
 
-export function writeLocalState(state: BookmarkState): Promise<void> {
-  return putLocal(STATE_STORE, STATE_KEY, state);
+export async function writeLocalState(state: BookmarkState): Promise<void> {
+  // Callers that only touch bookmarks pass no `who`. Dropping it would leave
+  // the snapshot ownerless, and an ownerless snapshot is one the identity
+  // check can't recognise as somebody else's.
+  let stamped = state;
+  if (stamped.who === undefined) {
+    const owner = identity ?? (await readLocalState())?.who;
+    if (owner) stamped = { ...state, who: owner };
+  }
+  return putLocal(STATE_STORE, STATE_KEY, stamped);
 }
 
 export function readLocalNotes(book: number): Promise<Record<string, string> | null> {
@@ -122,6 +165,8 @@ export function flush(): Promise<BookmarkState | null> {
   flushing = (async (): Promise<BookmarkState | null> => {
     let result: BookmarkState | null = null;
     try {
+      // never send a queue without knowing whose account it lands in
+      await ensureIdentity();
       for (;;) {
         const queued = (await readOutbox()).slice(0, BATCH);
         if (queued.length === 0) break;
@@ -174,9 +219,13 @@ export function startSync(): () => void {
   void refreshPending();
   if (wired) return () => {};
   wired = true;
-  const onOnline = () => void flush();
+  const recheck = () => {
+    identityAt = 0; // whoever we were, confirm it before sending anything
+    void flush();
+  };
+  const onOnline = recheck;
   const onVisible = () => {
-    if (document.visibilityState === "visible") void flush();
+    if (document.visibilityState === "visible") recheck();
   };
   window.addEventListener("online", onOnline);
   document.addEventListener("visibilitychange", onVisible);

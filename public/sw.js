@@ -37,16 +37,41 @@ const DATA_PATHS = [
 // cache-first would pin a client to the file sizes of whenever it first looked.
 const API_PATHS = ["/api/plans/progress", "/offline-manifest.json"];
 
+/** Pages worth guaranteeing offline; the rest fill in as they are visited. */
+const SHELL_ROUTES = [
+  "/",
+  "/manifest.webmanifest",
+  "/churches",
+  "/discover",
+  "/menu",
+  "/menu/offline",
+];
+
 /** Where the shell cache records which build populated it. */
 const BUILD_MARK = "/__shell-build";
 /** …and where the data cache records which dataset version it holds. */
 const DATA_MARK = "/__data-stamp";
 
+/** Store what we can; a route that won't load must not sink the others. */
+async function cacheEach(cache, urls) {
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const res = await fetch(url, { cache: "reload" });
+        if (res.ok) await cache.put(url, res);
+      } catch {
+        // this one fills in the first time it is visited instead
+      }
+    })
+  );
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL).then((cache) =>
-      // the reader is the page worth guaranteeing; the rest fills in as visited
-      cache.addAll(["/", "/manifest.webmanifest"]).catch(() => {})
+      // one at a time, not addAll: that is atomic, so a single route failing
+      // would throw away the whole shell and leave nothing to open offline
+      cacheEach(cache, SHELL_ROUTES)
     )
   );
   self.skipWaiting();
@@ -83,7 +108,7 @@ async function dropStaleShell() {
     await fresh.put(markUrl, new Response(built));
     // put the reader back straight away, so the first launch after a deploy
     // still opens with no signal
-    await fresh.addAll(["/", "/manifest.webmanifest"]).catch(() => {});
+    await cacheEach(fresh, SHELL_ROUTES);
   } catch {
     // offline at activation: the shell we have is the shell we use
   }
