@@ -404,6 +404,17 @@ a {
   border-color: var(--glass-border-bright);
 }
 
+/* study mode: the same ✦ the chapter heading wears while it is on */
+.study-toggle {
+  font-size: 0.85rem;
+}
+
+.study-toggle.on {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* ---- pull to refresh ---- */
 .ptr {
   position: fixed;

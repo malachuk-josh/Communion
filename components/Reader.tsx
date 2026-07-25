@@ -93,7 +93,6 @@ export default function Reader({
   const scaleRef = useRef(1);
   const pinchRef = useRef<{ d: number; s: number } | null>(null);
   const [pinchPct, setPinchPct] = useState<number | null>(null);
-  const [study, setStudy] = useState(false);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -170,7 +169,7 @@ export default function Reader({
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
-  const { setPosition, panelOpen, setPanelOpen } = useReading();
+  const { setPosition, panelOpen, setPanelOpen, study } = useReading();
   const sheetRef = useRef<HTMLDivElement>(null);
   const [kbInset, setKbInset] = useState(0);
 
@@ -260,9 +259,6 @@ export default function Reader({
       if (savedScale >= SCALE_MIN && savedScale <= SCALE_MAX) {
         setScale(savedScale);
         scaleRef.current = savedScale;
-      }
-      if (window.localStorage.getItem("communion.studyMode") === "1") {
-        setStudy(true);
       }
     } catch {
       // corrupted storage — start fresh at the default passage
@@ -586,12 +582,6 @@ export default function Reader({
       else runs[runs.length - 1].verses.push(v);
     }
     return runs;
-  };
-
-  const toggleStudy = () => {
-    const next = !study;
-    setStudy(next);
-    window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
   };
 
   const openWord = (ch: number, text: string, nums: string[], verse: number) => {
@@ -2145,20 +2135,8 @@ export default function Reader({
           </div>
 
           <div className="rs-group">
+            {/* study mode itself lives in the header — one tap, always there */}
             <p className="cal-label">{t("reader.display")}</p>
-            <div className="pref-row">
-              <span>{t("reader.study")}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={study}
-                className={`switch${study ? " on" : ""}`}
-                onClick={toggleStudy}
-                aria-label={t("reader.study")}
-              >
-                <span className="switch-knob" />
-              </button>
-            </div>
             {study && (
               <div className="pref-row">
                 <span>{t("reader.bookmarks")}</span>

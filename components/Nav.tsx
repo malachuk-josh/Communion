@@ -12,7 +12,8 @@ import AuthControls from "@/components/AuthControls";
 export default function Nav() {
   const pathname = usePathname();
   const { lang, t } = useI18n();
-  const { position, panelOpen, setPanelOpen } = useReading();
+  const { position, panelOpen, setPanelOpen, study, toggleStudy } =
+    useReading();
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
@@ -209,6 +210,19 @@ export default function Nav() {
                   ⌄
                 </span>
               </span>
+            </button>
+          )}
+          {showPassage && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={study}
+              className={`theme-toggle study-toggle${study ? " on" : ""}`}
+              onClick={toggleStudy}
+              aria-label={t("reader.study")}
+              title={t("reader.study")}
+            >
+              ✦
             </button>
           )}
           <Link
