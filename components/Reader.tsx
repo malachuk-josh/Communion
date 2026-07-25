@@ -78,11 +78,8 @@ export default function Reader({
   );
   const loadingMoreRef = useRef(false);
   const loadingPrevRef = useRef(false);
-  const topSentinelRef = useRef<HTMLDivElement>(null);
   /** page height captured just before a chapter is prepended */
   const prependFrom = useRef<number | null>(null);
-  /** upward loading only arms once the reader has moved off the top */
-  const hasScrolledRef = useRef(false);
   // bumped on every jump so stale continuous-scroll fetches drop themselves
   const genRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -333,37 +330,46 @@ export default function Reader({
     return () => observer.disconnect();
   }, [loading, error, data, extra.length, chapter, bookNr, translation]);
 
-  // …and the same in reverse: reaching the top of the column pulls in the
-  // chapter before it. Only after the reader has moved off the top, so
-  // opening a chapter doesn't silently push it down the page.
+  // …and the same in reverse. Watching an observer at the top of the column
+  // doesn't work: it only reports crossings, so once the sentinel is inside
+  // its margin it never fires again and the previous chapter never arrives
+  // until you scroll far enough down to push it out. Watch the scroll
+  // position and direction instead — near the top, moving up, load.
   useEffect(() => {
-    const el = topSentinelRef.current;
-    if (!el || loading || error || !data) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        if (!hasScrolledRef.current || loadingPrevRef.current) return;
-        const prev = (before[0]?.ch ?? chapter) - 1;
-        if (prev < 1) return;
-        loadingPrevRef.current = true;
-        const gen = genRef.current;
-        fetch(`/api/bible/${translation}/${bookNr}/${prev}`)
-          .then((res) => (res.ok ? res.json() : Promise.reject()))
-          .then((json: ChapterData) => {
-            if (genRef.current !== gen) return; // reader jumped meanwhile
-            // hold the reader's place: the page is about to grow upward
-            prependFrom.current = document.documentElement.scrollHeight;
-            setBefore((list) => [{ ch: prev, data: json }, ...list]);
-          })
-          .catch(() => {})
-          .finally(() => {
-            loadingPrevRef.current = false;
-          });
-      },
-      { rootMargin: "900px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    if (loading || error || !data) return;
+    let lastY = window.scrollY;
+    let queued = false;
+    const check = () => {
+      queued = false;
+      const y = window.scrollY;
+      const movingUp = y < lastY;
+      lastY = y;
+      // scrolling down never pulls in what is behind you
+      if (!movingUp || y > 1200 || loadingPrevRef.current) return;
+      const prev = (before[0]?.ch ?? chapter) - 1;
+      if (prev < 1) return;
+      loadingPrevRef.current = true;
+      const gen = genRef.current;
+      fetch(`/api/bible/${translation}/${bookNr}/${prev}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((json: ChapterData) => {
+          if (genRef.current !== gen) return; // reader jumped meanwhile
+          // hold the reader's place: the page is about to grow upward
+          prependFrom.current = document.documentElement.scrollHeight;
+          setBefore((list) => [{ ch: prev, data: json }, ...list]);
+        })
+        .catch(() => {})
+        .finally(() => {
+          loadingPrevRef.current = false;
+        });
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      window.requestAnimationFrame(check);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [loading, error, data, before, chapter, bookNr, translation]);
 
   // scroll by exactly what was inserted above, before the browser paints
@@ -374,16 +380,6 @@ export default function Reader({
     const grew = document.documentElement.scrollHeight - from;
     if (grew > 0) window.scrollTo({ top: window.scrollY + grew });
   }, [before]);
-
-  // arm upward loading once the reader is clear of the top of the column
-  useEffect(() => {
-    hasScrolledRef.current = false;
-    const onScroll = () => {
-      if (window.scrollY > 40) hasScrolledRef.current = true;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [bookNr, chapter, translation]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -1087,7 +1083,6 @@ export default function Reader({
       genRef.current += 1;
       setExtra([]);
       setBefore([]);
-      hasScrolledRef.current = false;
       setViewChapter(c);
       window.scrollTo({ top: 0 });
     } else {
@@ -1247,9 +1242,6 @@ export default function Reader({
           {t("reader.strongsKjvOnly")}
         </p>
       )}
-
-      {/* nearing this line loads the chapter before the column */}
-      <div ref={topSentinelRef} className="chap-sentinel" aria-hidden="true" />
 
       <div ref={readRef}>
         {[
