@@ -16,6 +16,7 @@ import { scrollToChapterTop, useReading } from "@/lib/reading";
 import { fetchChapter, searchLocal } from "@/lib/scripture";
 import { readOutbox } from "@/lib/localStore";
 import {
+  adoptIdentity,
   enqueue,
   flush,
   readLocalNotes,
@@ -282,14 +283,22 @@ export default function Reader({
           setCollections(synced.collections);
           return;
         }
-        // Nothing flushed. If changes are still queued this device is ahead
-        // of the server, so reading from it would undo them — wait instead.
-        if ((await readOutbox()).length > 0) return;
+        // Nothing flushed. If bookmark or collection changes are still queued
+        // this device is ahead of the server, and reading would undo them.
+        // A queued note doesn't block this — it touches nothing here.
+        const queued = await readOutbox();
+        if (queued.some((op) => op.kind.startsWith("bookmark.") || op.kind.startsWith("collection."))) {
+          return;
+        }
         const res = await api<{
+          who?: string;
           bookmarks: Record<string, BmEntry>;
           collections: Record<string, BmCollection>;
         }>(`/api/bookmarks?lang=${lang}`);
         if (cancelled) return;
+        // a different account than the one this device was holding: drop the
+        // old copy rather than let two people's notes mingle
+        await adoptIdentity(res.who);
         setBookmarks(res.bookmarks);
         setCollections(res.collections);
         void writeLocalState(res);
@@ -609,8 +618,12 @@ export default function Reader({
     });
     readOutbox()
       .then((queued) => {
-        // unsent notes mean this device is ahead; don't read over them
-        if (queued.length > 0) return null;
+        // an unsent note for this book means the device is ahead of the
+        // server; a queued bookmark, or a note in another book, does not
+        const ahead = queued.some(
+          (op) => op.kind === "note.set" && op.book === bookNr
+        );
+        if (ahead) return null;
         return api<{ notes: Record<string, string> }>(`/api/notes/${bookNr}`);
       })
       .then((res) => {

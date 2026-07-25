@@ -27,14 +27,18 @@ const DATA_PATHS = [
   "/absmith/",
   "/bdb/",
   "/icons/",
-  "/offline-manifest.json",
 ];
 
 // Read-only API responses worth showing stale. Bookmarks and notes are
 // deliberately absent: IndexedDB holds those now, and it is ahead of the
 // server whenever the outbox has anything in it. A cached copy here would be
 // older than the device's own and would overwrite it on an offline reload.
-const API_PATHS = ["/api/plans/progress"];
+// The manifest is here rather than in DATA because every build regenerates it;
+// cache-first would pin a client to the file sizes of whenever it first looked.
+const API_PATHS = ["/api/plans/progress", "/offline-manifest.json"];
+
+/** Where the shell cache records which build populated it. */
+const BUILD_MARK = "/__shell-build";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -46,6 +50,41 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
+/**
+ * Cached HTML names the JS chunks of the build that produced it, and those
+ * names change every deploy. Keeping stale HTML would mean opening offline to
+ * a page whose scripts no longer exist — so when the build stamp moves, the
+ * shell is emptied and refills from the network. The data cache is untouched:
+ * those files are immutable, and re-downloading 30MB per deploy is not on.
+ */
+async function dropStaleShell() {
+  try {
+    const res = await fetch("/offline-manifest.json", { cache: "no-store" });
+    if (!res.ok) return;
+    const built = (await res.json()).built;
+    if (!built) return;
+    const shell = await caches.open(SHELL);
+    const markUrl = new URL(BUILD_MARK, self.location.origin).toString();
+    const seen = await shell.match(markUrl);
+    const previous = seen ? await seen.text() : null;
+    if (previous === built) return;
+    if (previous === null) {
+      // first run: nothing stale to clear, and the install just precached
+      // the shell — wiping it here would leave nothing to open offline
+      await shell.put(markUrl, new Response(built));
+      return;
+    }
+    await caches.delete(SHELL);
+    const fresh = await caches.open(SHELL);
+    await fresh.put(markUrl, new Response(built));
+    // put the reader back straight away, so the first launch after a deploy
+    // still opens with no signal
+    await fresh.addAll(["/", "/manifest.webmanifest"]).catch(() => {});
+  } catch {
+    // offline at activation: the shell we have is the shell we use
+  }
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -55,6 +94,7 @@ self.addEventListener("activate", (event) => {
           names.filter((n) => !MINE.includes(n)).map((n) => caches.delete(n))
         )
       )
+      .then(dropStaleShell)
       .then(() => self.clients.claim())
   );
 });
@@ -69,6 +109,7 @@ const isApi = (url) =>
 
 const isShell = (url, request) =>
   url.origin === self.location.origin &&
+  url.pathname !== BUILD_MARK &&
   (request.mode === "navigate" ||
     url.pathname.startsWith("/_next/static/") ||
     url.pathname === "/manifest.webmanifest");
@@ -119,20 +160,33 @@ self.addEventListener("fetch", (event) => {
 
 // The offline screen asks for a list of files; we fetch and store them,
 // reporting progress back so it can draw a bar.
+const MAX_CACHE_URLS = 2000;
+
 self.addEventListener("message", (event) => {
   const msg = event.data;
   if (!msg || msg.type !== "cache-urls") return;
-  const urls = Array.isArray(msg.urls) ? msg.urls : [];
+  // only same-origin dataset paths, and only so many: this message is how the
+  // offline screen asks for files, not a general-purpose fetch-and-store
+  const urls = (Array.isArray(msg.urls) ? msg.urls : [])
+    .filter(
+      (u) =>
+        typeof u === "string" &&
+        u.startsWith("/") &&
+        !u.startsWith("//") &&
+        DATA_PATHS.some((p) => u.startsWith(p))
+    )
+    .slice(0, MAX_CACHE_URLS);
   const id = msg.id;
   event.waitUntil(
     (async () => {
       const cache = await caches.open(DATA);
       let done = 0;
       let failed = 0;
+      let full = false;
       const post = (type) =>
         self.clients.matchAll().then((cs) =>
           cs.forEach((c) =>
-            c.postMessage({ type, id, done, failed, total: urls.length })
+            c.postMessage({ type, id, done, failed, total: urls.length, full })
           )
         );
       // a few at a time: enough to saturate a phone, not enough to stall it
@@ -152,8 +206,13 @@ self.addEventListener("message", (event) => {
                 failed++;
               }
             }
-          } catch {
+          } catch (err) {
             failed++;
+            // QuotaExceededError means every remaining file will fail too
+            if (err && err.name === "QuotaExceededError") {
+              queue.length = 0;
+              full = true;
+            }
           }
           if ((done + failed) % 10 === 0) await post("cache-progress");
         }

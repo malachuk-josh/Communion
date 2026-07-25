@@ -54,7 +54,8 @@ const study = merge(
 );
 
 const manifest = {
-  built: new Date().toISOString().slice(0, 10),
+  // full timestamp: the service worker uses this to tell builds apart
+  built: new Date().toISOString(),
   tiers: {
     reading,
     study,

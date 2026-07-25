@@ -51,7 +51,7 @@ export async function GET(req: Request) {
       // corrupted entry — skip
     }
   }
-  return NextResponse.json({ bookmarks, collections });
+  return NextResponse.json({ who: userId, bookmarks, collections });
 }
 
 /** Toggle one bookmark (unchanged contract with the reader). */

@@ -84,14 +84,21 @@ export function putLocal(
     .catch(() => undefined);
 }
 
-/** Queue a change for the server. Returns the number now waiting. */
+// Where ops go when IndexedDB won't take them — Safari private mode, a full
+// disk, storage blocked by settings. Losing the write silently would be the
+// worst outcome: the change is on screen and nothing is coming for it. These
+// last only as long as the tab, which is honest and far better than nothing.
+const memoryQueue: (SyncOp & { seq: number })[] = [];
+let memorySeq = -1;
+
+/** Queue a change for the server. */
 export async function pushOutbox(op: SyncOp): Promise<void> {
   try {
     // autoIncrement fills in "seq"; the op keeps every field it came with
     await run(OUTBOX_STORE, "readwrite", (s) => s.add(op));
   } catch {
-    // storage full or blocked: the write already applied locally, and the
-    // next successful server read will reconcile
+    // negative seqs can never collide with IndexedDB's positive ones
+    memoryQueue.push({ ...op, seq: memorySeq-- });
   }
 }
 
@@ -100,22 +107,39 @@ export function readOutbox(): Promise<(SyncOp & { seq: number })[]> {
     OUTBOX_STORE,
     "readonly",
     (s) => s.getAll() as IDBRequest<(SyncOp & { seq: number })[]>
-  ).catch(() => []);
+  )
+    .catch(() => [])
+    .then((rows) => [...memoryQueue, ...rows]);
 }
 
 export async function dropOutbox(seqs: number[]): Promise<void> {
   if (seqs.length === 0) return;
+  for (const seq of seqs) {
+    if (seq >= 0) continue;
+    const at = memoryQueue.findIndex((op) => op.seq === seq);
+    if (at >= 0) memoryQueue.splice(at, 1);
+  }
+  const stored = seqs.filter((seq) => seq >= 0);
+  if (stored.length === 0) return;
   try {
     const db = await open();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(OUTBOX_STORE, "readwrite");
       const store = tx.objectStore(OUTBOX_STORE);
-      for (const seq of seqs) store.delete(seq);
+      for (const seq of stored) store.delete(seq);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } catch {
     // leaving them queued is safe: every op is idempotent
+  }
+}
+
+/** Forget everything this device holds — used when the account changes. */
+export async function clearLocalData(): Promise<void> {
+  memoryQueue.length = 0;
+  for (const store of [STATE_STORE, NOTES_STORE, OUTBOX_STORE]) {
+    await run(store, "readwrite", (s) => s.clear()).catch(() => undefined);
   }
 }
 

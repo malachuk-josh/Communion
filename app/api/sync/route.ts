@@ -10,6 +10,7 @@ import { db, keys } from "@/lib/db";
 
 const MAX_OPS = 500;
 const MAX_BOOKMARKS = 200;
+const MAX_COLLECTIONS = 40;
 
 type Op =
   | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string }
@@ -35,7 +36,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as { ops?: Op[] } | null;
-  const ops = Array.isArray(body?.ops) ? body!.ops.slice(0, MAX_OPS) : [];
+  if (!body || !Array.isArray(body.ops)) {
+    // 200 here would tell the client its queue was accepted, and it would
+    // delete every change it had been holding
+    return NextResponse.json({ error: "ops required" }, { status: 400 });
+  }
+  if (body.ops.length > MAX_OPS) {
+    // never silently truncate: the client deletes exactly what it sent
+    return NextResponse.json(
+      { error: "Too many operations", max: MAX_OPS },
+      { status: 413 }
+    );
+  }
+  const ops = body.ops;
 
   const kv = db();
   let applied = 0;
@@ -60,11 +73,17 @@ export async function POST(req: Request) {
           const existing = (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
           // make room the same way the toggle route does: oldest goes first
           if (!(op.key in existing) && Object.keys(existing).length >= MAX_BOOKMARKS) {
-            const oldest = Object.entries(existing).sort((a, b) => {
-              const ta = Number(JSON.parse(a[1] || "{}")?.t ?? 0);
-              const tb = Number(JSON.parse(b[1] || "{}")?.t ?? 0);
-              return ta - tb;
-            })[0];
+            const savedAt = (raw: string): number => {
+              try {
+                const parsed = JSON.parse(raw);
+                return Number(parsed?.t) || 0;
+              } catch {
+                return Number(raw) || 0; // legacy plain-timestamp value
+              }
+            };
+            const oldest = Object.entries(existing).sort(
+              (a, b) => savedAt(a[1]) - savedAt(b[1])
+            )[0];
             if (oldest) await kv.hdel(keys.userBookmarks(userId), oldest[0]);
           }
           const entry: { t: number; l?: string; c?: string } = {
@@ -75,8 +94,9 @@ export async function POST(req: Request) {
           if (op.c) {
             const colls = (await kv.hgetall(keys.userCollections(userId))) ?? {};
             // a collection created in the same batch is already here; one
-            // that never existed is dropped rather than dangling
-            if (op.c in colls) entry.c = op.c;
+            // that never existed is dropped rather than dangling. hasOwnProperty
+            // because "constructor" and friends are `in` every object.
+            if (Object.prototype.hasOwnProperty.call(colls, op.c)) entry.c = op.c;
           }
           await kv.hset(keys.userBookmarks(userId), {
             [op.key]: JSON.stringify(entry),
@@ -100,8 +120,13 @@ export async function POST(req: Request) {
             break;
           }
           const colls = (await kv.hgetall(keys.userCollections(userId))) ?? {};
+          const known = Object.prototype.hasOwnProperty.call(colls, op.id);
+          if (!known && Object.keys(colls).length >= MAX_COLLECTIONS) {
+            rejected++;
+            break;
+          }
           let value: Record<string, unknown> = { name };
-          if (colls[op.id]) {
+          if (known) {
             try {
               value = { ...JSON.parse(colls[op.id]), name }; // keep the share token
             } catch {
@@ -188,5 +213,7 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ applied, rejected, bookmarks, collections });
+  // the device stores this alongside its copy: if it ever changes, the local
+  // data belonged to someone else and must not be merged into this account
+  return NextResponse.json({ who: userId, applied, rejected, bookmarks, collections });
 }

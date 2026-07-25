@@ -5,6 +5,9 @@
 // conversation — what the tiers are, how big, how far along, and what is
 // already here.
 
+/** Must match DATA in public/sw.js — the worker owns the cache, this reads it. */
+export const DATA_CACHE = "communion-data-v1";
+
 export type TierId = string;
 
 export interface Tier {
@@ -43,7 +46,7 @@ export function supportsOffline(): boolean {
 /** How many of a tier's files are already stored. */
 export async function tierProgress(tier: Tier): Promise<number> {
   if (!supportsOffline() || tier.urls.length === 0) return 0;
-  const cache = await caches.open("communion-data-v1");
+  const cache = await caches.open(DATA_CACHE);
   // matching 600 URLs one by one is slow; read the key list once instead
   const keys = await cache.keys();
   const have = new Set(keys.map((r) => new URL(r.url).pathname));
@@ -72,30 +75,56 @@ export function downloadTier(
       return;
     }
     const id = `dl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let settled = false;
+    let idle: ReturnType<typeof setTimeout>;
+    let onMessage: (event: MessageEvent) => void;
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(idle);
+      navigator.serviceWorker.removeEventListener("message", onMessage);
+      fn();
+    };
+    // a worker that is replaced or killed mid-download never sends cache-done;
+    // without this the screen would sit at a frozen bar forever
+    const watchdog = () => {
+      clearTimeout(idle);
+      idle = setTimeout(
+        () => finish(() => reject(new Error("download stalled"))),
+        45000
+      );
+    };
+
     navigator.serviceWorker.ready
       .then((reg) => {
         const worker = reg.active;
         if (!worker) throw new Error("no active service worker");
-        const onMessage = (event: MessageEvent) => {
+        onMessage = (event: MessageEvent) => {
           const msg = event.data;
           if (!msg || msg.id !== id) return;
+          watchdog();
           if (msg.type === "cache-progress") {
             onProgress({ done: msg.done, failed: msg.failed, total: msg.total });
           } else if (msg.type === "cache-done") {
-            navigator.serviceWorker.removeEventListener("message", onMessage);
             const final = {
               done: msg.done,
               failed: msg.failed,
               total: msg.total,
             };
-            onProgress(final);
-            resolve(final);
+            finish(() => {
+              onProgress(final);
+              // a full disk stops the run early; say so rather than claim done
+              if (msg.full) reject(new Error("storage full"));
+              else resolve(final);
+            });
           }
         };
         navigator.serviceWorker.addEventListener("message", onMessage);
+        watchdog();
         worker.postMessage({ type: "cache-urls", id, urls: tier.urls });
       })
-      .catch(reject);
+      .catch((err) => finish(() => reject(err)));
   });
 }
 
@@ -128,7 +157,7 @@ export async function requestPersistence(): Promise<boolean> {
 /** Drop everything downloaded. The app still works, it just re-fetches. */
 export async function clearDownloads(): Promise<void> {
   if (!supportsOffline()) return;
-  await caches.delete("communion-data-v1");
+  await caches.delete(DATA_CACHE);
 }
 
 export function formatBytes(bytes: number): string {
