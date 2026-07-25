@@ -1595,12 +1595,15 @@ export default function Reader({
               )}
             </div>
           )}
-          <div className="lex-actions">
+          {/* four to a row: icon over label, so Spanish fits too */}
+          <div className="lex-actions word-actions">
             <button type="button" className="btn btn-sm" onClick={copyWord}>
-              📋 {t("reader.copy")}
+              <span className="wa-icon">📋</span>
+              <span className="wa-label">{t("reader.copy")}</span>
             </button>
             <button type="button" className="btn btn-sm" onClick={shareWord}>
-              📤 {t("discover.share")}
+              <span className="wa-icon">📤</span>
+              <span className="wa-label">{t("discover.share")}</span>
             </button>
             <button
               type="button"
@@ -1608,10 +1611,17 @@ export default function Reader({
               onClick={openSharePicker}
               aria-pressed={sharePickerOpen}
             >
-              💬 {t("reader.sendToFellowship")}
+              <span className="wa-icon">💬</span>
+              <span className="wa-label">{t("reader.sendToFellowship")}</span>
             </button>
-            <button type="button" className="btn btn-sm" onClick={saveWordNote}>
-              📝 {t("reader.saveToNote")}
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={saveWordNote}
+              title={t("reader.saveToNote")}
+            >
+              <span className="wa-icon">📝</span>
+              <span className="wa-label">{t("reader.note")}</span>
             </button>
           </div>
           {wordAction && <p className="email-sent">✓ {wordAction}</p>}
