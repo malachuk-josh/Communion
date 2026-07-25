@@ -1308,6 +1308,51 @@ button.menu-tile {
   margin: 0;
 }
 
+.push-prompt {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 55;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.push-prompt-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.push-prompt-body small {
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+}
+
+.push-prompt-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .push-prompt {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .push-prompt-actions {
+    justify-content: flex-end;
+  }
+}
+
 /* ---- admin dashboard (owner only, desktop-first) ---- */
 .admin-tile {
   display: none;

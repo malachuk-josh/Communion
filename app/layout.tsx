@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { ReadingProvider } from "@/lib/reading";
 import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
+import PushPrompt from "@/components/PushPrompt";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -66,6 +67,7 @@ export default function RootLayout({
             <PullToRefresh />
             <Nav />
             <main className="page">{children}</main>
+            <PushPrompt />
           </ReadingProvider>
         </LanguageProvider>
       </body>
