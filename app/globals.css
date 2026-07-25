@@ -270,7 +270,31 @@ a {
   color: var(--gold);
 }
 
+/* the Discover switch is a page-level control, not a nav trinket */
+.discover-tabs {
+  margin: -4px 0 10px;
+}
+
+.discover-tabs button {
+  flex: 1;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+}
+
+.discover-start {
+  display: flex;
+  justify-content: center;
+  margin: 22px 0 4px;
+}
+
+/* the chip is the only door to the reader's controls, so it carries a
+   caret and a tap target larger than the pill it draws */
 .nav-passage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
   font-family: var(--serif);
   font-size: 0.95rem;
   color: var(--gold);
@@ -280,6 +304,45 @@ a {
   padding: 4px 14px;
   white-space: nowrap;
   cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.nav-passage::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+}
+
+.pn-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the chapter and caret never truncate — only the book name gives way */
+.pn-tail {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.pn-caret {
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  transition: transform 0.2s;
+}
+
+.nav-passage.pn-open {
+  border-color: var(--gold);
+}
+
+/* in grey scale the gold border greys out, so the caret carries the state */
+.nav-passage.pn-open .pn-caret {
+  transform: rotate(180deg);
 }
 
 .pn-abbr {
@@ -291,17 +354,26 @@ a {
      ellipsizes — nothing ever wraps controls onto a second row */
   .nav-inner {
     flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .brand {
+    font-size: 1.15rem;
+  }
+  /* the signed-out "Sign in" button must not wrap to two lines */
+  .nav-inner > .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .brand,
   .theme-toggle,
   .lang-toggle {
     flex-shrink: 0;
   }
+  /* the clipping lives on .pn-name, not here — overflow:hidden on the chip
+     would cut off its own enlarged tap target */
   .nav-passage {
     min-width: 0;
     flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .pn-full {
     display: none;
@@ -843,10 +915,6 @@ mark {
   padding: 0 2px;
 }
 
-.zoom-field {
-  flex: 0 0 auto;
-}
-
 .zoom-group {
   display: flex;
   align-items: center;
@@ -867,17 +935,68 @@ mark {
 }
 
 /* ---- reader ---- */
-.reader-controls {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+/* the reader's controls, opened from the passage chip in the header */
+.reader-sheet {
+  display: grid;
+  gap: 12px;
+  /* never tall enough to cover the header chip that opened it */
+  max-height: min(86dvh, calc(100dvh - 76px));
+  overflow-y: auto;
 }
 
-.reader-controls .field {
-  flex: 1;
-  min-width: 130px;
+.reader-sheet .field {
   margin-bottom: 0;
+}
+
+/* a <select> is as wide as its longest option unless told otherwise */
+.reader-sheet .form-row .field {
+  min-width: 0;
+}
+
+/* the arrows would only show through the sheet's glass at widths where it
+   spans the screen; on a wide desktop they sit clear of it */
+@media (max-width: 860px) {
+  .reader-open .chap-arrow {
+    display: none;
+  }
+}
+
+.reader-sheet .search-bar {
+  margin-bottom: 0;
+}
+
+.rs-group {
+  display: grid;
+  gap: 8px;
+}
+
+.rs-group + .rs-group {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 12px;
+}
+
+.form-row .field.rs-chapter {
+  flex: 0 0 104px;
+}
+
+/* the pinch gesture replaced the A−/A+ buttons on touch; say so where the
+   buttons used to be */
+.pinch-tip {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .pinch-tip {
+    display: block;
+  }
+}
+
+.chap-trans {
+  font-size: 0.58em;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  margin-left: 10px;
+  vertical-align: middle;
 }
 
 .scripture {

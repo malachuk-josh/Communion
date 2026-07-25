@@ -8,6 +8,7 @@ import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
 import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
+import StartGathering from "@/components/StartGathering";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
 
 const EMOJI: Record<SessionType, string> = {
@@ -29,6 +30,7 @@ function refLabel(ref: VerseRef, lang: Lang): string {
 
 export default function Discover() {
   const { t } = useI18n();
+  const [tab, setTab] = useState<"scripture" | "gatherings">("scripture");
   const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
   const [gatherings, setGatherings] = useState<Gathering[]>([]);
 
@@ -44,13 +46,53 @@ export default function Discover() {
   return (
     <div>
       <h1 className="page-title">{t("discover.title")}</h1>
-      <p className="subtitle">{t("discover.subtitle")}</p>
+      {/* two things worth discovering: the Word, and the people reading it */}
+      <div className="lang-toggle discover-tabs" role="group">
+        <button
+          className={tab === "scripture" ? "active" : ""}
+          onClick={() => setTab("scripture")}
+          aria-pressed={tab === "scripture"}
+        >
+          📖 {t("discover.tabScripture")}
+        </button>
+        <button
+          className={tab === "gatherings" ? "active" : ""}
+          onClick={() => setTab("gatherings")}
+          aria-pressed={tab === "gatherings"}
+        >
+          ⛪ {t("discover.tabGatherings")}
+        </button>
+      </div>
+      <p className="subtitle">
+        {tab === "scripture"
+          ? t("discover.subtitleScripture")
+          : t("discover.subtitle")}
+      </p>
 
-      <VerseOfDay />
-      <TopicsSection />
-      <PlansSection />
-      <GatheringsSection gatherings={gatherings} />
-      <ChurchDirectory churches={churches} />
+      {tab === "scripture" ? (
+        <>
+          <VerseOfDay />
+          <TopicsSection />
+          <PlansSection />
+        </>
+      ) : (
+        <>
+          <GatheringsSection gatherings={gatherings} />
+          <ChurchDirectory churches={churches} />
+          <div className="discover-start">
+            <StartGathering
+              className="btn btn-primary"
+              // new Gatherings start public, so it belongs in the directory
+              onCreated={(church) =>
+                setChurches((prev) => [
+                  { ...church, memberCount: 1, mine: true },
+                  ...(prev ?? []),
+                ])
+              }
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

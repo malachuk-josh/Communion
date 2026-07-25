@@ -23,9 +23,9 @@ export default function PullToRefresh() {
 
     const onStart = (e: TouchEvent) => {
       if (refreshing || window.scrollY > 0) return;
-      // pulls inside modals shouldn't refresh the app
-      const target = e.target as Element | null;
-      if (target?.closest?.(".modal-overlay")) return;
+      // reloading would destroy an open sheet or modal — including one the
+      // finger never touched, since sheets leave the page behind them live
+      if (document.querySelector(".modal-overlay, .lex-sheet")) return;
       startY.current = e.touches[0].clientY;
     };
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
@@ -12,7 +12,9 @@ import AuthControls from "@/components/AuthControls";
 export default function Nav() {
   const pathname = usePathname();
   const { lang, t } = useI18n();
-  const { position } = useReading();
+  const { position, panelOpen, setPanelOpen } = useReading();
+  const chipRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [pendingNotifs, setPendingNotifs] = useState(0);
@@ -94,6 +96,17 @@ export default function Nav() {
     bookName.length > 8 ? `${bookName.slice(0, 4).trimEnd()}.` : bookName;
   const showPassage = pathname === "/" && position && positionBook;
 
+  // closing the control sheet hands focus back to the chip that opened it —
+  // unless the sheet closed to hand off to another dialog, which owns focus
+  useEffect(() => {
+    if (wasOpen.current && !panelOpen) {
+      if (!document.querySelector(".modal-overlay, .lex-sheet")) {
+        chipRef.current?.focus();
+      }
+    }
+    wasOpen.current = panelOpen;
+  }, [panelOpen]);
+
   // the inline bootstrap script in the layout applies the saved theme before
   // paint; here we just sync React state with what it decided
   useEffect(() => {
@@ -140,7 +153,7 @@ export default function Nav() {
     <>
       <nav className="nav">
         <div className="nav-inner">
-          <Link href="/" className="brand">
+          <Link href="/" className="brand" onClick={wordClick}>
             Communion
           </Link>
           <div className="nav-links">
@@ -176,12 +189,26 @@ export default function Nav() {
           {showPassage && (
             <button
               type="button"
-              className="nav-passage"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              title={`${bookName} ${position!.chapter}`}
+              ref={chipRef}
+              className={`nav-passage${panelOpen ? " pn-open" : ""}`}
+              onClick={() => setPanelOpen((open) => !open)}
+              aria-expanded={panelOpen}
+              aria-haspopup="dialog"
+              aria-controls="reader-panel"
+              title={`${bookName} ${position!.chapter} — ${t("reader.openControls")}`}
             >
-              <span className="pn-full">{bookName}</span>
-              <span className="pn-abbr">{bookAbbr}</span> {position!.chapter}
+              {/* only the book name may shrink; the chapter and the caret,
+                  which is the chip's whole affordance, never truncate */}
+              <span className="pn-name">
+                <span className="pn-full">{bookName}</span>
+                <span className="pn-abbr">{bookAbbr}</span>
+              </span>
+              <span className="pn-tail">
+                {position!.chapter}
+                <span className="pn-caret" aria-hidden>
+                  ⌄
+                </span>
+              </span>
             </button>
           )}
           <Link

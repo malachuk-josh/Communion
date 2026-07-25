@@ -156,13 +156,54 @@ export default function Reader({
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
-  const { setPosition } = useReading();
+  const { setPosition, panelOpen, setPanelOpen } = useReading();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [kbInset, setKbInset] = useState(0);
 
   // keep the sticky header's passage indicator in sync with the chapter
   // actually on screen, which trails continuous scrolling
   useEffect(() => {
     setPosition({ bookNr, chapter: viewChapter });
   }, [bookNr, viewChapter, setPosition]);
+
+  // the control sheet lives in the header's context, which outlives this
+  // component — leaving The Word must not strand it open
+  useEffect(() => () => setPanelOpen(false), [setPanelOpen]);
+
+  // the control sheet, the word study and the bookmark sheet all sit at the
+  // bottom of the screen: only one of them may be up at a time
+  useEffect(() => {
+    if (!panelOpen) {
+      setKbInset(0);
+      return;
+    }
+    setWordSel(null);
+    setBmSheet(null);
+    setContextOpen(null);
+    setEditingNote(null);
+    sheetRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanelOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    // a software keyboard shrinks the visual viewport but leaves fixed
+    // elements pinned to the layout viewport — lift the sheet clear of it
+    const vv = window.visualViewport;
+    const onViewport = () => {
+      if (!vv) return;
+      setKbInset(
+        Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))
+      );
+    };
+    onViewport();
+    vv?.addEventListener("resize", onViewport);
+    vv?.addEventListener("scroll", onViewport);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      vv?.removeEventListener("resize", onViewport);
+      vv?.removeEventListener("scroll", onViewport);
+    };
+  }, [panelOpen, setPanelOpen]);
 
   // bookmarks sync across devices per user (guests: per browser)
   useEffect(() => {
@@ -450,6 +491,7 @@ export default function Reader({
   };
 
   const openWord = (ch: number, text: string, nums: string[], verse: number) => {
+    setPanelOpen(false);
     setWordSel({ ch, text, nums, verse });
     setWordAction("");
     setSharePickerOpen(false);
@@ -706,6 +748,7 @@ export default function Reader({
     context?.[String(ch)]?.[lang === "es" ? "es" : "en"];
 
   const startNote = (key: string) => {
+    setPanelOpen(false);
     setNoteDraft(notes[key] ?? "");
     setEditingNote(key);
   };
@@ -730,6 +773,8 @@ export default function Reader({
   };
 
   const jumpToRef = (fromCh: number, ref: number[], fromVerse: number) => {
+    // the sheet would cover both the landing verse and the back pill
+    setPanelOpen(false);
     // remember where we came from so the reader can jump straight back
     setBackStack((prev) =>
       [...prev, { b: bookNr, c: fromCh, v: fromVerse }].slice(-10)
@@ -763,6 +808,7 @@ export default function Reader({
     }).catch(() => {});
     // saving a verse opens the organise/share sheet; removing just removes
     if (!removing) {
+      setPanelOpen(false);
       setBmSheet({ c: ch, v: verse });
       setBmSheetColl("");
       setBmSheetMsg("");
@@ -928,6 +974,8 @@ export default function Reader({
 
   const book = getBook(bookNr)!;
   const bookName = lang === "es" ? book.es : book.en;
+  const transAbbrev =
+    TRANSLATIONS.find((tr) => tr.id === translation)?.abbrev ?? "";
   const bookNameOf = (nr: number) => {
     const b = getBook(nr);
     return b ? (lang === "es" ? b.es : b.en) : "";
@@ -1026,24 +1074,39 @@ export default function Reader({
     );
   };
 
+  /** The search bar. Lives in the control sheet, and again above a result
+   *  list so a query can be refined without reopening the sheet. */
+  const searchBar = (fromSheet: boolean) => (
+    <form
+      className="glass search-bar"
+      onSubmit={(e) => {
+        runSearch(e);
+        if (fromSheet) {
+          setPanelOpen(false);
+          window.scrollTo({ top: 0 });
+        }
+      }}
+    >
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t("search.placeholder")}
+        maxLength={60}
+      />
+      <button
+        className="btn btn-sm"
+        type="submit"
+        disabled={query.trim().length < 3 || searching}
+      >
+        🔍 {t("search.button")}
+      </button>
+    </form>
+  );
+
   return (
-    <div>
-      <form className="glass search-bar" onSubmit={runSearch}>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("search.placeholder")}
-          maxLength={60}
-        />
-        <button
-          className="btn btn-sm"
-          type="submit"
-          disabled={query.trim().length < 3 || searching}
-        >
-          🔍 {t("search.button")}
-        </button>
-      </form>
+    <div className={panelOpen ? "reader-open" : undefined}>
+      {results !== null && searchBar(false)}
 
       {results !== null && (
         <div className="search-results">
@@ -1083,103 +1146,6 @@ export default function Reader({
         </div>
       )}
 
-      <div className="reader-controls">
-        <label className="field">
-          <span>{t("reader.book")}</span>
-          <select
-            value={bookNr}
-            onChange={(e) => {
-              setHighlightVerse(null);
-              setBackStack([]);
-              setBookNr(Number(e.target.value));
-              setChapter(1);
-            }}
-          >
-            {BOOKS.map((b) => (
-              <option key={b.nr} value={b.nr}>
-                {lang === "es" ? b.es : b.en}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>{t("reader.chapter")}</span>
-          <select
-            value={viewChapter}
-            onChange={(e) => jumpChapter(Number(e.target.value))}
-          >
-            {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>{t("reader.translation")}</span>
-          <select
-            value={translation}
-            onChange={(e) => setTranslation(e.target.value)}
-          >
-            {TRANSLATIONS.map((tr) => (
-              <option key={tr.id} value={tr.id}>
-                {tr.abbrev} — {tr.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="field zoom-field">
-          <span>{t("reader.study")}</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={study}
-            className={`switch${study ? " on" : ""}`}
-            onClick={toggleStudy}
-            aria-label={t("reader.study")}
-          >
-            <span className="switch-knob" />
-          </button>
-        </div>
-        {study && (
-          <div className="field zoom-field">
-            <span>{t("reader.bookmarks")}</span>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => setBookmarksOpen(true)}
-            >
-              🔖{Object.keys(bookmarks).length > 0 && ` ${Object.keys(bookmarks).length}`}
-            </button>
-          </div>
-        )}
-        {/* touch screens pinch the text instead — see the pinch effect */}
-        <div className="field zoom-field zoom-size-field">
-          <span>{t("reader.textSize")}</span>
-          <div className="zoom-group">
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => zoom(-SCALE_STEP)}
-              disabled={scale - SCALE_STEP < SCALE_MIN}
-              aria-label={t("reader.smaller")}
-            >
-              A−
-            </button>
-            <span className="zoom-value">{Math.round(scale * 100)}%</span>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => zoom(SCALE_STEP)}
-              disabled={scale + SCALE_STEP > SCALE_MAX}
-              aria-label={t("reader.larger")}
-            >
-              A+
-            </button>
-          </div>
-        </div>
-      </div>
-
       {study && translation !== "kjv" && (
         <p className="notice" style={{ marginBottom: 10 }}>
           {t("reader.strongsKjvOnly")}
@@ -1198,6 +1164,9 @@ export default function Reader({
           >
             <h2 className="chap-head" data-ch={ch}>
               {bookName} {ch}
+              {/* the translation picker moved into the sheet, so the heading
+                  carries which text you're actually reading */}
+              <span className="chap-trans">{transAbbrev}</span>
             </h2>
             {ch === chapter && loading ? (
               <p className="skeleton">{t("reader.loading")}</p>
@@ -1257,7 +1226,10 @@ export default function Reader({
                           <button
                             type="button"
                             className="xref-chip ctx-chip"
-                            onClick={() => setContextOpen(ch)}
+                            onClick={() => {
+                              setPanelOpen(false);
+                              setContextOpen(ch);
+                            }}
                             aria-label={t("reader.context")}
                             title={t("reader.context")}
                           >
@@ -1951,6 +1923,177 @@ export default function Reader({
                 {t("session.cancel")}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Everything that used to sit above the scripture: opened from the
+          passage chip in the header. No scrim — the point of translation,
+          study and text size is watching the text change behind the sheet. */}
+      {panelOpen && (
+        <div
+          id="reader-panel"
+          ref={sheetRef}
+          tabIndex={-1}
+          style={kbInset ? { bottom: kbInset } : undefined}
+          className="glass lex-sheet reader-sheet"
+          role="dialog"
+          aria-label={t("reader.panel")}
+        >
+          <div className="lex-head">
+            <span className="lex-lemma bm-sheet-title">
+              📖 {bookName} {viewChapter}
+            </span>
+            <button
+              type="button"
+              className="lex-count lex-count-btn"
+              onClick={() => {
+                setPanelOpen(false);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              ↑ {t("reader.toTop")}
+            </button>
+            <button
+              type="button"
+              className="lex-close"
+              onClick={() => setPanelOpen(false)}
+              aria-label={t("common.close")}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="rs-group">{searchBar(true)}</div>
+
+          <div className="rs-group">
+            <p className="cal-label">{t("reader.passage")}</p>
+            <div className="form-row">
+              <label className="field">
+                <span>{t("reader.book")}</span>
+                <select
+                  value={bookNr}
+                  onChange={(e) => {
+                    setHighlightVerse(null);
+                    setBackStack([]);
+                    setBookNr(Number(e.target.value));
+                    setChapter(1);
+                  }}
+                >
+                  {BOOKS.map((b) => (
+                    <option key={b.nr} value={b.nr}>
+                      {lang === "es" ? b.es : b.en}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field rs-chapter">
+                <span>{t("reader.chapter")}</span>
+                <select
+                  value={viewChapter}
+                  onChange={(e) => {
+                    jumpChapter(Number(e.target.value));
+                    setPanelOpen(false);
+                  }}
+                >
+                  {Array.from({ length: book.chapters }, (_, i) => i + 1).map(
+                    (c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    )
+                  )}
+                </select>
+              </label>
+            </div>
+            <label className="field">
+              <span>{t("reader.translation")}</span>
+              <select
+                value={translation}
+                onChange={(e) => {
+                  // reloading rebases on `chapter`; keep the reader on the
+                  // chapter you were actually reading
+                  setChapter(viewChapter);
+                  setTranslation(e.target.value);
+                }}
+              >
+                {TRANSLATIONS.map((tr) => (
+                  <option key={tr.id} value={tr.id}>
+                    {tr.abbrev} — {tr.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="rs-group">
+            <p className="cal-label">{t("reader.display")}</p>
+            <div className="pref-row">
+              <span>{t("reader.study")}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={study}
+                className={`switch${study ? " on" : ""}`}
+                onClick={toggleStudy}
+                aria-label={t("reader.study")}
+              >
+                <span className="switch-knob" />
+              </button>
+            </div>
+            {study && (
+              <div className="pref-row">
+                <span>{t("reader.bookmarks")}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => {
+                    setPanelOpen(false);
+                    setBookmarksOpen(true);
+                  }}
+                >
+                  🔖
+                  {Object.keys(bookmarks).length > 0 &&
+                    ` ${Object.keys(bookmarks).length}`}
+                </button>
+              </div>
+            )}
+            {/* touch screens pinch the text instead — see the pinch effect */}
+            <div className="pref-row zoom-size-field">
+              <span>{t("reader.textSize")}</span>
+              <div className="zoom-group">
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => zoom(-SCALE_STEP)}
+                  disabled={scale - SCALE_STEP < SCALE_MIN}
+                  aria-label={t("reader.smaller")}
+                >
+                  A−
+                </button>
+                <span className="zoom-value">{Math.round(scale * 100)}%</span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => zoom(SCALE_STEP)}
+                  disabled={scale + SCALE_STEP > SCALE_MAX}
+                  aria-label={t("reader.larger")}
+                >
+                  A+
+                </button>
+              </div>
+            </div>
+            <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
+          </div>
+
+          <div className="lex-actions">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => setPanelOpen(false)}
+            >
+              {t("common.done")}
+            </button>
           </div>
         </div>
       )}
