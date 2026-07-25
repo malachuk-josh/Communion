@@ -15,15 +15,18 @@ const normalize = (s: string) =>
  */
 export function parsePassage(
   text: string | undefined
-): { bookNr: number; chapter: number } | null {
+): { bookNr: number; chapter: number; verse?: number } | null {
   if (!text) return null;
-  const match = normalize(text).match(/^(.+?)\s+(\d{1,3})(?::\d.*)?$/);
+  const match = normalize(text).match(
+    /^(.+?)\s+(\d{1,3})(?::(\d{1,3}))?(?:[-–]\d.*)?$/
+  );
   if (!match) return null;
   const name = match[1];
   const chapter = Number(match[2]);
+  const verse = match[3] ? Number(match[3]) : undefined;
   const book = BOOKS.find(
     (b) => normalize(b.en) === name || normalize(b.es) === name
   );
   if (!book || chapter < 1 || chapter > book.chapters) return null;
-  return { bookNr: book.nr, chapter };
+  return { bookNr: book.nr, chapter, ...(verse ? { verse } : {}) };
 }

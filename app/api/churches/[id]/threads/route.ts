@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { getUserId } from "@/lib/auth";
+import { getChurch, getRole } from "@/lib/churches";
+import { createThread, listThreads, validateAttach } from "@/lib/threads";
+
+/** Discussion threads in a Fellowship (members only). */
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  if (!(await getRole(id, userId))) {
+    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  }
+  return NextResponse.json({ threads: await listThreads(id), myUserId: userId });
+}
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  if (!(await getRole(id, userId))) {
+    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  }
+  const body = (await req.json().catch(() => null)) as {
+    title?: string;
+    text?: string;
+    attach?: unknown;
+  } | null;
+  const title = body?.title?.trim().slice(0, 120);
+  const text = body?.text?.trim().slice(0, 4000) ?? "";
+  if (!title) {
+    return NextResponse.json({ error: "Title required" }, { status: 400 });
+  }
+  const attach = validateAttach(body?.attach);
+  if (attach === "invalid") {
+    return NextResponse.json({ error: "Invalid attachment" }, { status: 400 });
+  }
+  const church = await getChurch(id);
+  const thread = await createThread(
+    id,
+    church?.name ?? "your Fellowship",
+    userId,
+    title,
+    text,
+    attach ?? undefined
+  );
+  return NextResponse.json({ thread }, { status: 201 });
+}

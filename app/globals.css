@@ -1783,6 +1783,59 @@ button.menu-tile {
   font-size: 0.88rem;
 }
 
+.post-row {
+  margin-bottom: 10px;
+}
+
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.post-head strong {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.post-attach {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.post-attach .verse-card-kind {
+  margin-bottom: 1px;
+}
+
+/* keep the picker clear of the sticky composer */
+.attach-picker {
+  margin-top: 8px;
+  padding-bottom: 8px;
+}
+
+.attach-picker .share-list {
+  max-height: 30vh;
+}
+
+.attach-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.88rem;
+  margin-bottom: 10px;
+}
+
 .lex-actions {
   display: flex;
   flex-wrap: wrap;

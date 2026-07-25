@@ -1,0 +1,171 @@
+"use client";
+
+// Discussions inside a Fellowship: the thread list plus a composer for
+// starting a new topic (with an optional scripture or bookmark).
+
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { api } from "@/lib/client";
+import { useI18n } from "@/lib/i18n";
+import AttachPicker, { attachRef, type Attach } from "@/components/AttachPicker";
+
+interface ThreadSummary {
+  id: string;
+  title: string;
+  createdByName: string;
+  lastAt: number;
+  replies: number;
+  lastText: string;
+}
+
+export default function ThreadList({ churchId }: { churchId: string }) {
+  const { lang, t } = useI18n();
+  const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [attach, setAttach] = useState<Attach | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = useCallback(() => {
+    api<{ threads: ThreadSummary[] }>(`/api/churches/${churchId}/threads`)
+      .then((res) => setThreads(res.threads))
+      .catch(() => setThreads([]));
+  }, [churchId]);
+
+  useEffect(load, [load]);
+
+  const create = async () => {
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/churches/${churchId}/threads`, {
+        method: "POST",
+        body: { title, text, attach: attach ?? undefined },
+      });
+      setTitle("");
+      setText("");
+      setAttach(null);
+      setPickerOpen(false);
+      setOpen(false);
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="section-head">
+        <h2>{t("threads.title")}</h2>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => setOpen((v) => !v)}
+        >
+          ＋ {t("threads.new")}
+        </button>
+      </div>
+
+      {open && (
+        <div className="glass card" style={{ marginBottom: 12 }}>
+          <label className="field">
+            <span>{t("threads.topic")}</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("threads.topicPlaceholder")}
+              maxLength={120}
+              autoFocus
+            />
+          </label>
+          <label className="field">
+            <span>{t("threads.firstPost")}</span>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={t("threads.replyPlaceholder")}
+              maxLength={4000}
+              rows={3}
+            />
+          </label>
+          {attach && (
+            <div className="attach-chip-row">
+              <span>
+                📖 {attachRef(attach, lang === "es")}
+                {attach.label ? ` — ${attach.label.slice(0, 60)}` : ""}
+              </span>
+              <button
+                type="button"
+                className="chip-remove"
+                onClick={() => setAttach(null)}
+                aria-label={t("session.cancel")}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {pickerOpen && (
+            <AttachPicker
+              onPick={(a) => {
+                setAttach(a);
+                setPickerOpen(false);
+              }}
+            />
+          )}
+          {error && <p className="error-text">{error}</p>}
+          <div className="modal-actions">
+            <button
+              className="btn"
+              onClick={() => setPickerOpen((v) => !v)}
+              aria-pressed={pickerOpen}
+            >
+              📖 {t("threads.addScripture")}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={create}
+              disabled={!title.trim() || busy}
+            >
+              {t("threads.post")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {threads === null ? (
+        <p className="skeleton">{t("common.loading")}</p>
+      ) : threads.length === 0 ? (
+        <div className="glass card empty">{t("threads.empty")}</div>
+      ) : (
+        threads.map((th) => (
+          <Link
+            key={th.id}
+            href={`/churches/${churchId}/threads/${th.id}`}
+            className="glass card conv-row"
+          >
+            <span className="conv-avatar">💬</span>
+            <span className="conv-body">
+              <strong>{th.title}</strong>
+              <small>
+                {th.createdByName}
+                {th.lastText ? ` · ${th.lastText}` : ""}
+              </small>
+            </span>
+            <span className="conv-time">
+              {th.replies > 0 && `${th.replies} · `}
+              {new Date(th.lastAt).toLocaleDateString(
+                lang === "es" ? "es" : "en",
+                { month: "short", day: "numeric" }
+              )}
+            </span>
+          </Link>
+        ))
+      )}
+    </>
+  );
+}

@@ -13,6 +13,7 @@ import {
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
+import ThreadList from "@/components/ThreadList";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
 const TEMPLATES: {
@@ -281,6 +282,8 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           )}
         </>
       )}
+
+      {isMember && <ThreadList churchId={churchId} />}
 
       {showInvite && (
         <InviteModal churchId={churchId} churchName={church.name} onClose={() => setShowInvite(false)} />
