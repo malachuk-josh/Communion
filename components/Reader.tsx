@@ -12,7 +12,7 @@ import {
 import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import { useI18n } from "@/lib/i18n";
-import { useReading } from "@/lib/reading";
+import { scrollToChapterTop, useReading } from "@/lib/reading";
 import Concordance from "@/components/Concordance";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
@@ -78,8 +78,10 @@ export default function Reader({
   );
   const loadingMoreRef = useRef(false);
   const loadingPrevRef = useRef(false);
-  /** page height captured just before a chapter is prepended */
-  const prependFrom = useRef<number | null>(null);
+  /** where a chapter heading sat before something grew above it */
+  const holdRef = useRef<{ ch: number; top: number } | null>(null);
+  /** the chapter on screen, readable from inside a fetch callback */
+  const viewChapterRef = useRef(1);
   // bumped on every jump so stale continuous-scroll fetches drop themselves
   const genRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -182,6 +184,7 @@ export default function Reader({
   // keep the sticky header's passage indicator in sync with the chapter
   // actually on screen, which trails continuous scrolling
   useEffect(() => {
+    viewChapterRef.current = viewChapter;
     setPosition({ bookNr, chapter: viewChapter });
   }, [bookNr, viewChapter, setPosition]);
 
@@ -271,9 +274,20 @@ export default function Reader({
     }
   }, []);
 
+  /**
+   * Remember where a chapter heading is sitting, so the layout effect below
+   * can put it back after the DOM grows above it. Call this immediately
+   * before the setState that causes the growth.
+   */
+  const holdAnchor = (ch: number) => {
+    const el = document.querySelector<HTMLElement>(`.chap-head[data-ch="${ch}"]`);
+    if (el) holdRef.current = { ch, top: el.getBoundingClientRect().top };
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     genRef.current += 1;
+    const gen = genRef.current;
     setExtra([]);
     setBefore([]);
     setViewChapter(chapter);
@@ -294,6 +308,24 @@ export default function Reader({
           JSON.stringify({ translation, bookNr, chapter })
         );
         window.scrollTo({ top: 0 });
+        // the chapter before this one comes along straight away, so it is
+        // already above you the moment you think to scroll back
+        if (chapter > 1) {
+          loadingPrevRef.current = true;
+          fetch(`/api/bible/${translation}/${bookNr}/${chapter - 1}`, {
+            signal: controller.signal,
+          })
+            .then((res) => (res.ok ? res.json() : Promise.reject()))
+            .then((prev: ChapterData) => {
+              if (genRef.current !== gen) return;
+              holdAnchor(chapter);
+              setBefore([{ ch: chapter - 1, data: prev }]);
+            })
+            .catch(() => {})
+            .finally(() => {
+              loadingPrevRef.current = false;
+            });
+        }
       })
       .catch((err: unknown) => {
         if ((err as Error).name !== "AbortError") {
@@ -364,7 +396,7 @@ export default function Reader({
         .then((json: ChapterData) => {
           if (genRef.current !== gen) return; // reader jumped meanwhile
           // hold the reader's place: the page is about to grow upward
-          prependFrom.current = document.documentElement.scrollHeight;
+          holdAnchor(before[0]?.ch ?? chapter);
           setBefore((list) => [{ ch: prev, data: json }, ...list]);
         })
         .catch(() => {})
@@ -381,14 +413,21 @@ export default function Reader({
     return () => window.removeEventListener("scroll", onScroll);
   }, [loading, error, data, before, chapter, bookNr, translation]);
 
-  // scroll by exactly what was inserted above, before the browser paints
+  // Hold the reader's place when something grows above them. Measuring the
+  // page height is not enough — cross-references, section headings and the
+  // tagged text all arrive late and change heights all over the column — so
+  // this pins one chapter heading and corrects by how far it actually moved.
   useLayoutEffect(() => {
-    const from = prependFrom.current;
-    if (from === null) return;
-    prependFrom.current = null;
-    const grew = document.documentElement.scrollHeight - from;
-    if (grew > 0) window.scrollTo({ top: window.scrollY + grew });
-  }, [before]);
+    const held = holdRef.current;
+    if (!held) return;
+    holdRef.current = null;
+    const el = document.querySelector<HTMLElement>(
+      `.chap-head[data-ch="${held.ch}"]`
+    );
+    if (!el) return;
+    const moved = el.getBoundingClientRect().top - held.top;
+    if (moved !== 0) window.scrollBy(0, moved);
+  }, [before, heads, xrefs, strongsTokens, notes]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -487,7 +526,9 @@ export default function Reader({
     fetch(`/xref/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((json: Record<string, number[][]>) => {
-        if (!cancelled) setXrefs(json);
+        if (cancelled) return;
+        holdAnchor(viewChapterRef.current);
+        setXrefs(json);
       })
       .catch(() => {
         if (!cancelled) setXrefs({});
@@ -505,7 +546,9 @@ export default function Reader({
     setEditingNote(null);
     api<{ notes: Record<string, string> }>(`/api/notes/${bookNr}`)
       .then((res) => {
-        if (!cancelled) setNotes(res.notes);
+        if (cancelled) return;
+        holdAnchor(viewChapterRef.current);
+        setNotes(res.notes);
       })
       .catch(() => {
         // signed-out — notes stay local-less until sign-in
@@ -524,7 +567,9 @@ export default function Reader({
     fetch(`/strongs/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
-        if (!cancelled) setStrongsTokens(json);
+        if (cancelled) return;
+        holdAnchor(viewChapterRef.current);
+        setStrongsTokens(json);
       })
       .catch(() => {
         if (!cancelled) setStrongsTokens({});
@@ -561,7 +606,9 @@ export default function Reader({
     fetch(`/headings/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
-        if (!cancelled) setHeads(json);
+        if (cancelled) return;
+        holdAnchor(viewChapterRef.current);
+        setHeads(json);
       })
       .catch(() => {
         if (!cancelled) setHeads({});
@@ -2203,7 +2250,7 @@ export default function Reader({
                 className="lex-count lex-count-btn"
                 onClick={() => {
                   setPanelOpen(false);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  scrollToChapterTop(viewChapter);
                 }}
               >
                 ↑ {t("reader.toTop")}

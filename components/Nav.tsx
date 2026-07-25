@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
-import { useReading } from "@/lib/reading";
+import { scrollToChapterTop, useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 
@@ -115,11 +115,11 @@ export default function Nav() {
     setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
-  // already reading? The Word tab glides back to the top instead of snapping
+  // already reading? The Word tab glides to the top of this chapter
   const wordClick = (e: React.MouseEvent) => {
     if (pathname === "/") {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToChapterTop(position?.chapter);
     }
   };
 

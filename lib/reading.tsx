@@ -76,3 +76,23 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
 export function useReading(): ReadingContextValue {
   return useContext(ReadingContext);
 }
+
+/**
+ * Glide to the top of a chapter. The column carries the chapters either side
+ * of the one you are reading, so "the top" is that chapter's heading rather
+ * than the top of the document.
+ */
+export function scrollToChapterTop(chapter?: number): void {
+  const head =
+    chapter === undefined
+      ? null
+      : document.querySelector<HTMLElement>(`.chap-head[data-ch="${chapter}"]`);
+  if (!head) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  const nav = document.querySelector<HTMLElement>(".nav");
+  const clear = (nav?.getBoundingClientRect().height ?? 0) + 10;
+  const top = head.getBoundingClientRect().top + window.scrollY - clear;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
