@@ -16,6 +16,37 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [pendingNotifs, setPendingNotifs] = useState(0);
+  const [navHidden, setNavHidden] = useState(false);
+
+  // In The Word, reading down tucks the bottom nav away for an unbroken
+  // page; a brisk upward flick (or nearing the top) brings it back. A slow
+  // upward drift keeps it hidden — that's still reading, not reaching.
+  useEffect(() => {
+    if (pathname !== "/") {
+      setNavHidden(false);
+      return;
+    }
+    let lastY = window.scrollY;
+    let lastT = performance.now();
+    const onScroll = () => {
+      const y = window.scrollY;
+      const now = performance.now();
+      const dy = y - lastY;
+      const speed = -dy / Math.max(1, now - lastT); // px/ms upward
+      if (y < 130) setNavHidden(false);
+      else if (dy > 4) setNavHidden(true);
+      else if (dy < 0 && (speed > 0.9 || -dy > 110)) setNavHidden(false);
+      lastY = y;
+      lastT = now;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [pathname]);
+
+  // the reader's floating chapter arrows drop into the freed space
+  useEffect(() => {
+    document.documentElement.classList.toggle("navhide", navHidden);
+  }, [navHidden]);
 
   // pending badge: unread messages + unseen notifications. Refreshes on
   // navigation, on returning to the app, and every 45s; mirrors to the
@@ -178,7 +209,10 @@ export default function Nav() {
         </div>
       </nav>
 
-      <nav className="bottom-nav glass" aria-label="Primary">
+      <nav
+        className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
+        aria-label="Primary"
+      >
         <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
           <span className="bn-icon">📖</span>
           <span>{t("nav.reader")}</span>

@@ -397,6 +397,14 @@ a {
   padding: 7px;
   border-radius: 999px;
   max-width: calc(100vw - 16px);
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+/* reading down The Word tucks the bar out of sight (see Nav.tsx) */
+.bottom-nav.nav-hidden {
+  transform: translateY(calc(100% + 16px));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bottom-nav a {
@@ -895,10 +903,72 @@ mark {
   opacity: 0.85;
 }
 
-.pager {
+/* ---- floating chapter arrows ---- */
+.chap-arrow {
+  position: fixed;
+  bottom: calc(max(4px, env(safe-area-inset-bottom, 0px)) + 70px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   display: flex;
-  justify-content: space-between;
-  margin-top: 18px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0 0 3px;
+  color: var(--ink);
+  z-index: 39;
+  cursor: pointer;
+  transition: bottom 0.28s ease, opacity 0.2s;
+}
+
+.chap-arrow-l {
+  left: 10px;
+}
+
+.chap-arrow-r {
+  right: 10px;
+}
+
+.chap-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* when the nav bar hides, the arrows settle into the freed corner space */
+html.navhide .chap-arrow {
+  bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + 6px);
+}
+
+@media (min-width: 640px) {
+  .chap-arrow {
+    bottom: 26px;
+  }
+}
+
+.chap-sentinel {
+  height: 1px;
+}
+
+/* transient badge while pinch-zooming the text */
+.pinch-hint {
+  position: fixed;
+  top: 44%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 20px;
+  border-radius: 14px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  z-index: 70;
+  pointer-events: none;
+}
+
+/* touch screens size text by pinching instead (Reader.tsx) */
+@media (pointer: coarse) {
+  .zoom-size-field {
+    display: none;
+  }
 }
 
 /* ---- study mode ---- */

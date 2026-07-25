@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BOOKS,
   DEFAULT_TRANSLATION,
@@ -66,9 +66,24 @@ export default function Reader({
   const [bookNr, setBookNr] = useState(initialBook ?? DEFAULT_BOOK);
   const [chapter, setChapter] = useState(initialChapter ?? DEFAULT_CHAPTER);
   const [data, setData] = useState<ChapterData | null>(null);
+  // chapters appended below the current one by continuous scroll (same book)
+  const [extra, setExtra] = useState<{ ch: number; data: ChapterData }[]>([]);
+  // the chapter currently in view — trails the scroll, drives the pager,
+  // the header indicator, and the saved reading position
+  const [viewChapter, setViewChapter] = useState(
+    initialChapter ?? DEFAULT_CHAPTER
+  );
+  const loadingMoreRef = useRef(false);
+  // bumped on every jump so stale continuous-scroll fetches drop themselves
+  const genRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const readRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+  const pinchRef = useRef<{ d: number; s: number } | null>(null);
+  const [pinchPct, setPinchPct] = useState<number | null>(null);
   const [study, setStudy] = useState(false);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -85,13 +100,17 @@ export default function Reader({
     null
   );
   const [wordSel, setWordSel] = useState<{
+    ch: number;
     text: string;
     nums: string[];
     verse: number;
   } | null>(null);
   const [wordAction, setWordAction] = useState("");
-  // Septuagint text for the open chapter (Old Testament only)
-  const [lxx, setLxx] = useState<Record<number, string> | null>(null);
+  // Septuagint text for the chapter of the open word (Old Testament only)
+  const [lxx, setLxx] = useState<{
+    ch: number;
+    map: Record<number, string>;
+  } | null>(null);
   const [lxxLoading, setLxxLoading] = useState(false);
   const [concFor, setConcFor] = useState<string | null>(null);
   // Abbott-Smith (Greek) / brief lexicon (Hebrew), loaded per bucket
@@ -110,7 +129,8 @@ export default function Reader({
     string,
     Record<string, { practical: string; spiritual: string }>
   > | null>(null);
-  const [contextOpen, setContextOpen] = useState(false);
+  // which chapter's context modal is open (null: closed)
+  const [contextOpen, setContextOpen] = useState<number | null>(null);
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -121,7 +141,9 @@ export default function Reader({
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [newCollFor, setNewCollFor] = useState<string | null>(null);
   const [newCollDraft, setNewCollDraft] = useState("");
-  const [bmSheet, setBmSheet] = useState<number | null>(null);
+  const [bmSheet, setBmSheet] = useState<{ c: number; v: number } | null>(
+    null
+  );
   const [bmSheetColl, setBmSheetColl] = useState("");
   const [bmSheetMsg, setBmSheetMsg] = useState("");
   const [editingBm, setEditingBm] = useState<string | null>(null);
@@ -136,10 +158,11 @@ export default function Reader({
   const [searching, setSearching] = useState(false);
   const { setPosition } = useReading();
 
-  // keep the sticky header's passage indicator in sync
+  // keep the sticky header's passage indicator in sync with the chapter
+  // actually on screen, which trails continuous scrolling
   useEffect(() => {
-    setPosition({ bookNr, chapter });
-  }, [bookNr, chapter, setPosition]);
+    setPosition({ bookNr, chapter: viewChapter });
+  }, [bookNr, viewChapter, setPosition]);
 
   // bookmarks sync across devices per user (guests: per browser)
   useEffect(() => {
@@ -170,6 +193,7 @@ export default function Reader({
         if (!deepLinked) {
           setBookNr(saved.bookNr);
           setChapter(saved.chapter);
+          setViewChapter(saved.chapter);
         }
       } else if (!deepLinked) {
         // first visit: land on the founding verse, gently highlighted
@@ -180,6 +204,7 @@ export default function Reader({
       );
       if (savedScale >= SCALE_MIN && savedScale <= SCALE_MAX) {
         setScale(savedScale);
+        scaleRef.current = savedScale;
       }
       if (window.localStorage.getItem("communion.studyMode") === "1") {
         setStudy(true);
@@ -191,6 +216,9 @@ export default function Reader({
 
   useEffect(() => {
     const controller = new AbortController();
+    genRef.current += 1;
+    setExtra([]);
+    setViewChapter(chapter);
     setLoading(true);
     setError(false);
     fetch(`/api/bible/${translation}/${bookNr}/${chapter}`, {
@@ -217,6 +245,129 @@ export default function Reader({
       });
     return () => controller.abort();
   }, [translation, bookNr, chapter]);
+
+  // continuous scroll: nearing the bottom pulls in the next chapter of the
+  // same book, so a book reads as one unbroken column
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || loading || error || !data) return;
+    const bookChapters = getBook(bookNr)?.chapters ?? 0;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (loadingMoreRef.current) return;
+        const next = chapter + extra.length + 1;
+        if (next > bookChapters) return;
+        loadingMoreRef.current = true;
+        const gen = genRef.current;
+        fetch(`/api/bible/${translation}/${bookNr}/${next}`)
+          .then((res) => (res.ok ? res.json() : Promise.reject()))
+          .then((json: ChapterData) => {
+            if (genRef.current !== gen) return; // reader jumped meanwhile
+            setExtra((prev) =>
+              next === chapter + prev.length + 1
+                ? [...prev, { ch: next, data: json }]
+                : prev
+            );
+          })
+          .catch(() => {})
+          .finally(() => {
+            loadingMoreRef.current = false;
+          });
+      },
+      { rootMargin: "1400px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, error, data, extra.length, chapter, bookNr, translation]);
+
+  // as chapter headings scroll past, remember which chapter is being read
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        ticking = false;
+        let current = chapter;
+        for (const head of document.querySelectorAll<HTMLElement>(
+          ".chap-head"
+        )) {
+          if (head.getBoundingClientRect().top < window.innerHeight * 0.4) {
+            current = Number(head.dataset.ch) || current;
+          }
+        }
+        setViewChapter((prev) => (prev === current ? prev : current));
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [chapter]);
+
+  // scrolling into a later chapter updates the saved reading position
+  useEffect(() => {
+    if (viewChapter === chapter) return;
+    window.localStorage.setItem(
+      "communion.reading",
+      JSON.stringify({ translation, bookNr, chapter: viewChapter })
+    );
+  }, [viewChapter, chapter, translation, bookNr]);
+
+  // pinch-to-zoom on the scripture column replaces text-size buttons on
+  // touch screens; page zoom itself is disabled app-wide, so the gesture
+  // is free for this. Native listeners: React's synthetic touch events are
+  // passive and can't preventDefault the two-finger pan.
+  useEffect(() => {
+    const el = readRef.current;
+    if (!el) return;
+    const dist = (touches: TouchList) =>
+      Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+      );
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        pinchRef.current = { d: dist(e.touches), s: scaleRef.current };
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      const pinch = pinchRef.current;
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const next =
+        Math.round(
+          Math.min(
+            SCALE_MAX,
+            Math.max(SCALE_MIN, pinch.s * (dist(e.touches) / pinch.d))
+          ) * 100
+        ) / 100;
+      if (next !== scaleRef.current) {
+        scaleRef.current = next;
+        setScale(next);
+      }
+      setPinchPct(Math.round(next * 100));
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2 && pinchRef.current) {
+        pinchRef.current = null;
+        window.localStorage.setItem(
+          "communion.textScale",
+          String(scaleRef.current)
+        );
+        window.setTimeout(() => setPinchPct(null), 800);
+      }
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    el.addEventListener("touchcancel", onEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
 
   // study mode: load the KJV-keyed cross-reference set for the open book.
   // The same keys apply to every translation sharing KJV versification.
@@ -298,22 +449,22 @@ export default function Reader({
     window.localStorage.setItem("communion.studyMode", next ? "1" : "0");
   };
 
-  const openWord = (text: string, nums: string[], verse: number) => {
-    setWordSel({ text, nums, verse });
+  const openWord = (ch: number, text: string, nums: string[], verse: number) => {
+    setWordSel({ ch, text, nums, verse });
     setWordAction("");
     setSharePickerOpen(false);
     // Old Testament: bring in the Septuagint rendering of this chapter
-    if (bookNr <= 39 && lxx === null && !lxxLoading) {
+    if (bookNr <= 39 && lxx?.ch !== ch && !lxxLoading) {
       setLxxLoading(true);
-      const lxxChapter = bookNr === 19 ? lxxPsalm(chapter) : chapter;
+      const lxxChapter = bookNr === 19 ? lxxPsalm(ch) : ch;
       fetch(`/api/bible/lxx/${bookNr}/${lxxChapter}`)
         .then((res) => (res.ok ? res.json() : Promise.reject()))
         .then((json: ChapterData) => {
           const map: Record<number, string> = {};
           for (const v of json.verses) map[v.verse] = v.text;
-          setLxx(map);
+          setLxx({ ch, map });
         })
-        .catch(() => setLxx({}))
+        .catch(() => setLxx({ ch, map: {} }))
         .finally(() => setLxxLoading(false));
     }
     // load the lexicon for this testament (and counts) on first use
@@ -386,17 +537,23 @@ export default function Reader({
    * superscriptions as verses where the KJV doesn't, so when the Greek
    * chapter is longer we shift by the difference.
    */
+  /** The verses of a loaded chapter — the primary one or a scrolled-in one. */
+  const chDataOf = (ch: number): ChapterData | null =>
+    ch === chapter ? data : (extra.find((e) => e.ch === ch)?.data ?? null);
+
   const lxxLine = (): string | null => {
-    if (!wordSel || !lxx || !data) return null;
-    const drift = Object.keys(lxx).length - data.verses.length;
+    if (!wordSel || !lxx || lxx.ch !== wordSel.ch) return null;
+    const own = chDataOf(wordSel.ch);
+    if (!own) return null;
+    const drift = Object.keys(lxx.map).length - own.verses.length;
     const offset = bookNr === 19 && drift > 0 ? drift : 0;
-    return lxx[wordSel.verse + offset] ?? lxx[wordSel.verse] ?? null;
+    return lxx.map[wordSel.verse + offset] ?? lxx.map[wordSel.verse] ?? null;
   };
 
   /** Plain-text rendering of the open word study, for copy/share/note. */
   const wordSummary = (): string => {
     if (!wordSel) return "";
-    const ref = `${bookName} ${chapter}:${wordSel.verse}`;
+    const ref = `${bookName} ${wordSel.ch}:${wordSel.verse}`;
     const parts = [`"${wordSel.text}" — ${ref}`];
     for (const num of wordSel.nums) {
       const entry = lexFor(num);
@@ -450,7 +607,7 @@ export default function Reader({
 
   const saveWordNote = async () => {
     if (!wordSel) return;
-    const key = `${chapter}:${wordSel.verse}`;
+    const key = `${wordSel.ch}:${wordSel.verse}`;
     const existing = notes[key] ?? "";
     const addition = wordSummary().replace(/\n— Communion$/, "");
     const text = (existing ? `${existing}\n\n${addition}` : addition).slice(
@@ -487,10 +644,10 @@ export default function Reader({
       await api(`/api/messages/${peerId}`, {
         method: "POST",
         body: {
-          text: `${wordSel.text} — ${bookName} ${chapter}:${wordSel.verse}`,
+          text: `${wordSel.text} — ${bookName} ${wordSel.ch}:${wordSel.verse}`,
           attach: {
             b: bookNr,
-            c: chapter,
+            c: wordSel.ch,
             v: wordSel.verse,
             kind: "word",
             label: wordSummary().replace(/\n— Communion$/, ""),
@@ -545,7 +702,8 @@ export default function Reader({
     return out.join(" · ");
   };
 
-  const chapterContext = context?.[String(chapter)]?.[lang === "es" ? "es" : "en"];
+  const ctxOf = (ch: number) =>
+    context?.[String(ch)]?.[lang === "es" ? "es" : "en"];
 
   const startNote = (key: string) => {
     setNoteDraft(notes[key] ?? "");
@@ -571,10 +729,10 @@ export default function Reader({
     }
   };
 
-  const jumpToRef = (ref: number[], fromVerse: number) => {
+  const jumpToRef = (fromCh: number, ref: number[], fromVerse: number) => {
     // remember where we came from so the reader can jump straight back
     setBackStack((prev) =>
-      [...prev, { b: bookNr, c: chapter, v: fromVerse }].slice(-10)
+      [...prev, { b: bookNr, c: fromCh, v: fromVerse }].slice(-10)
     );
     setBookNr(ref[0]);
     setChapter(ref[1]);
@@ -590,8 +748,8 @@ export default function Reader({
     setHighlightVerse(last.v);
   };
 
-  const toggleBookmark = (verse: number) => {
-    const key = `${bookNr}:${chapter}:${verse}`;
+  const toggleBookmark = (ch: number, verse: number) => {
+    const key = `${bookNr}:${ch}:${verse}`;
     const removing = key in bookmarks;
     setBookmarks((prev) => {
       const next = { ...prev };
@@ -601,14 +759,14 @@ export default function Reader({
     });
     api("/api/bookmarks", {
       method: "POST",
-      body: { b: bookNr, c: chapter, v: verse },
+      body: { b: bookNr, c: ch, v: verse },
     }).catch(() => {});
     // saving a verse opens the organise/share sheet; removing just removes
     if (!removing) {
-      setBmSheet(verse);
+      setBmSheet({ c: ch, v: verse });
       setBmSheetColl("");
       setBmSheetMsg("");
-    } else if (bmSheet === verse) {
+    } else if (bmSheet?.c === ch && bmSheet.v === verse) {
       setBmSheet(null);
     }
   };
@@ -629,12 +787,12 @@ export default function Reader({
     }
   };
 
-  const shareVerse = async (verse: number) => {
+  const shareVerse = async (ch: number, verse: number) => {
     const text =
-      data?.verses.find((v) => v.verse === verse)?.text?.trim() ?? "";
-    const ref = `${bookName} ${chapter}:${verse}`;
+      chDataOf(ch)?.verses.find((v) => v.verse === verse)?.text?.trim() ?? "";
+    const ref = `${bookName} ${ch}:${verse}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const payload = `${ref} — ${text}\n${origin}/?b=${bookNr}&c=${chapter}&v=${verse}`;
+    const payload = `${ref} — ${text}\n${origin}/?b=${bookNr}&c=${ch}&v=${verse}`;
     if (navigator.share) {
       try {
         await navigator.share({ text: payload });
@@ -775,17 +933,38 @@ export default function Reader({
     return b ? (lang === "es" ? b.es : b.en) : "";
   };
 
-  const go = (delta: number) => {
+  /**
+   * Jump to a chapter of the open book. Setting the same primary chapter
+   * again wouldn't re-render, so that case resets the scroll column by hand
+   * (it happens when continuous scroll has carried the reader past it).
+   */
+  const jumpChapter = (c: number) => {
     setHighlightVerse(null);
     setBackStack([]);
-    const next = chapter + delta;
+    if (c === chapter) {
+      genRef.current += 1;
+      setExtra([]);
+      setViewChapter(c);
+      window.scrollTo({ top: 0 });
+    } else {
+      setChapter(c);
+    }
+  };
+
+  // the floating arrows move relative to the chapter on screen
+  const go = (delta: number) => {
+    const next = viewChapter + delta;
     if (next >= 1 && next <= book.chapters) {
-      setChapter(next);
+      jumpChapter(next);
     } else if (next < 1 && bookNr > 1) {
       const prevBook = getBook(bookNr - 1)!;
+      setHighlightVerse(null);
+      setBackStack([]);
       setBookNr(prevBook.nr);
       setChapter(prevBook.chapters);
     } else if (next > book.chapters && bookNr < 66) {
+      setHighlightVerse(null);
+      setBackStack([]);
       setBookNr(bookNr + 1);
       setChapter(1);
     }
@@ -795,6 +974,7 @@ export default function Reader({
     const next = Math.round((scale + delta) * 100) / 100;
     if (next < SCALE_MIN || next > SCALE_MAX) return;
     setScale(next);
+    scaleRef.current = next;
     window.localStorage.setItem("communion.textScale", String(next));
   };
 
@@ -925,12 +1105,8 @@ export default function Reader({
         <label className="field">
           <span>{t("reader.chapter")}</span>
           <select
-            value={chapter}
-            onChange={(e) => {
-              setHighlightVerse(null);
-              setBackStack([]);
-              setChapter(Number(e.target.value));
-            }}
+            value={viewChapter}
+            onChange={(e) => jumpChapter(Number(e.target.value))}
           >
             {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
               <option key={c} value={c}>
@@ -977,7 +1153,8 @@ export default function Reader({
             </button>
           </div>
         )}
-        <div className="field zoom-field">
+        {/* touch screens pinch the text instead — see the pinch effect */}
+        <div className="field zoom-field zoom-size-field">
           <span>{t("reader.textSize")}</span>
           <div className="zoom-group">
             <button
@@ -1009,179 +1186,209 @@ export default function Reader({
         </p>
       )}
 
-      <article
-        className={`glass card scripture${study ? " study" : ""}`}
-        style={{ fontSize: `calc(1.12rem * ${scale})` }}
-      >
-        <h2>
-          {bookName} {chapter}
-        </h2>
-        {loading ? (
-          <p className="skeleton">{t("reader.loading")}</p>
-        ) : error || !data ? (
-          <p className="error-text">{t("reader.error")}</p>
-        ) : study ? (
-          <div className="study-verses">
-            {data.verses.map((v) => {
-              const key = `${chapter}:${v.verse}`;
-              const refs = xrefs?.[key];
-              const note = notes[key];
-              return (
-                <div
-                  key={v.verse}
-                  id={`v-${v.verse}`}
-                  className={`verse-block${
-                    highlightVerse === v.verse ? " verse-highlight" : ""
-                  }`}
-                >
-                  <p>
-                    <sup className="verse-num">{v.verse}</sup>
-                    {strongsTokens?.[key]
-                      ? strongsTokens[key].map((tok, i) => {
-                          if (!tok[1]) return <span key={i}>{tok[0]}</span>;
-                          // keep leading spaces/punctuation outside the tap target
-                          const m = tok[0].match(/^([\s,;:.!?()'"—–-]*)([\s\S]*)$/)!;
-                          if (!m[2]) return <span key={i}>{tok[0]}</span>;
-                          const sel =
-                            wordSel &&
-                            wordSel.text === m[2] &&
-                            wordSel.nums.join() === tok[1].join();
-                          return (
-                            <span key={i}>
-                              {m[1]}
-                              <button
-                                type="button"
-                                className={`w${sel ? " sel" : ""}`}
-                                onClick={() => openWord(m[2], tok[1]!, v.verse)}
-                              >
-                                {m[2]}
-                              </button>
-                            </span>
-                          );
-                        })
-                      : v.text}
-                  </p>
-                  <span className="xref-chips">
-                    {chapterContext && (
-                      <button
-                        type="button"
-                        className="xref-chip ctx-chip"
-                        onClick={() => setContextOpen(true)}
-                        aria-label={t("reader.context")}
-                        title={t("reader.context")}
-                      >
-                        📜 {t("reader.context")}
-                      </button>
-                    )}
-                    {refs?.map((ref, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="xref-chip"
-                        onClick={() => jumpToRef(ref, v.verse)}
-                      >
-                        {refChipLabel(ref)}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className={`xref-chip note-chip${
-                        bookmarks[`${bookNr}:${chapter}:${v.verse}`]
-                          ? " has-note"
+      <div ref={readRef}>
+        {[
+          { ch: chapter, d: loading || error ? null : data },
+          ...extra.map((e) => ({ ch: e.ch, d: e.data as ChapterData | null })),
+        ].map(({ ch, d }) => (
+          <article
+            key={`${bookNr}-${ch}`}
+            className={`glass card scripture${study ? " study" : ""}`}
+            style={{ fontSize: `calc(1.12rem * ${scale})` }}
+          >
+            <h2 className="chap-head" data-ch={ch}>
+              {bookName} {ch}
+            </h2>
+            {ch === chapter && loading ? (
+              <p className="skeleton">{t("reader.loading")}</p>
+            ) : !d ? (
+              <p className="error-text">{t("reader.error")}</p>
+            ) : study ? (
+              <div className="study-verses">
+                {d.verses.map((v) => {
+                  const key = `${ch}:${v.verse}`;
+                  const refs = xrefs?.[key];
+                  const note = notes[key];
+                  return (
+                    <div
+                      key={v.verse}
+                      id={ch === chapter ? `v-${v.verse}` : undefined}
+                      className={`verse-block${
+                        ch === chapter && highlightVerse === v.verse
+                          ? " verse-highlight"
                           : ""
                       }`}
-                      onClick={() => toggleBookmark(v.verse)}
-                      aria-label={t("reader.bookmarkToggle")}
-                      title={t("reader.bookmarkToggle")}
                     >
-                      🔖
-                    </button>
-                    <button
-                      type="button"
-                      className={`xref-chip note-chip${note ? " has-note" : ""}`}
-                      onClick={() => startNote(key)}
-                      aria-label={t("reader.addNote")}
-                      title={t("reader.addNote")}
-                    >
-                      📝
-                    </button>
+                      <p>
+                        <sup className="verse-num">{v.verse}</sup>
+                        {strongsTokens?.[key]
+                          ? strongsTokens[key].map((tok, i) => {
+                              if (!tok[1]) return <span key={i}>{tok[0]}</span>;
+                              // keep leading spaces/punctuation outside the tap target
+                              const m = tok[0].match(
+                                /^([\s,;:.!?()'"—–-]*)([\s\S]*)$/
+                              )!;
+                              if (!m[2]) return <span key={i}>{tok[0]}</span>;
+                              const sel =
+                                wordSel &&
+                                wordSel.ch === ch &&
+                                wordSel.verse === v.verse &&
+                                wordSel.text === m[2] &&
+                                wordSel.nums.join() === tok[1].join();
+                              return (
+                                <span key={i}>
+                                  {m[1]}
+                                  <button
+                                    type="button"
+                                    className={`w${sel ? " sel" : ""}`}
+                                    onClick={() =>
+                                      openWord(ch, m[2], tok[1]!, v.verse)
+                                    }
+                                  >
+                                    {m[2]}
+                                  </button>
+                                </span>
+                              );
+                            })
+                          : v.text}
+                      </p>
+                      <span className="xref-chips">
+                        {ctxOf(ch) && (
+                          <button
+                            type="button"
+                            className="xref-chip ctx-chip"
+                            onClick={() => setContextOpen(ch)}
+                            aria-label={t("reader.context")}
+                            title={t("reader.context")}
+                          >
+                            📜 {t("reader.context")}
+                          </button>
+                        )}
+                        {refs?.map((ref, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="xref-chip"
+                            onClick={() => jumpToRef(ch, ref, v.verse)}
+                          >
+                            {refChipLabel(ref)}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          className={`xref-chip note-chip${
+                            bookmarks[`${bookNr}:${ch}:${v.verse}`]
+                              ? " has-note"
+                              : ""
+                          }`}
+                          onClick={() => toggleBookmark(ch, v.verse)}
+                          aria-label={t("reader.bookmarkToggle")}
+                          title={t("reader.bookmarkToggle")}
+                        >
+                          🔖
+                        </button>
+                        <button
+                          type="button"
+                          className={`xref-chip note-chip${note ? " has-note" : ""}`}
+                          onClick={() => startNote(key)}
+                          aria-label={t("reader.addNote")}
+                          title={t("reader.addNote")}
+                        >
+                          📝
+                        </button>
+                      </span>
+                      {note && editingNote !== key && (
+                        <div
+                          className="verse-note"
+                          onClick={() => startNote(key)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          {note}
+                        </div>
+                      )}
+                      {editingNote === key && (
+                        <div className="note-edit">
+                          <textarea
+                            value={noteDraft}
+                            onChange={(e) => setNoteDraft(e.target.value)}
+                            placeholder={t("reader.notePlaceholder")}
+                            maxLength={1000}
+                            rows={3}
+                            autoFocus
+                          />
+                          <div className="note-actions">
+                            <button
+                              type="button"
+                              className="rsvp-btn"
+                              onClick={() => setEditingNote(null)}
+                            >
+                              {t("session.cancel")}
+                            </button>
+                            <button
+                              type="button"
+                              className="rsvp-btn active"
+                              onClick={() => saveNote(key)}
+                            >
+                              {t("common.save")}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>
+                {d.verses.map((v) => (
+                  <span
+                    key={v.verse}
+                    id={ch === chapter ? `v-${v.verse}` : undefined}
+                    className={
+                      ch === chapter && highlightVerse === v.verse
+                        ? "verse-highlight"
+                        : undefined
+                    }
+                  >
+                    <sup className="verse-num">{v.verse}</sup>
+                    {v.text}{" "}
                   </span>
-                  {note && editingNote !== key && (
-                    <div
-                      className="verse-note"
-                      onClick={() => startNote(key)}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      {note}
-                    </div>
-                  )}
-                  {editingNote === key && (
-                    <div className="note-edit">
-                      <textarea
-                        value={noteDraft}
-                        onChange={(e) => setNoteDraft(e.target.value)}
-                        placeholder={t("reader.notePlaceholder")}
-                        maxLength={1000}
-                        rows={3}
-                        autoFocus
-                      />
-                      <div className="note-actions">
-                        <button
-                          type="button"
-                          className="rsvp-btn"
-                          onClick={() => setEditingNote(null)}
-                        >
-                          {t("session.cancel")}
-                        </button>
-                        <button
-                          type="button"
-                          className="rsvp-btn active"
-                          onClick={() => saveNote(key)}
-                        >
-                          {t("common.save")}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p>
-            {data.verses.map((v) => (
-              <span
-                key={v.verse}
-                id={`v-${v.verse}`}
-                className={
-                  highlightVerse === v.verse ? "verse-highlight" : undefined
-                }
-              >
-                <sup className="verse-num">{v.verse}</sup>
-                {v.text}{" "}
-              </span>
-            ))}
-          </p>
-        )}
-      </article>
-
-      <div className="pager">
-        <button
-          className="btn"
-          onClick={() => go(-1)}
-          disabled={bookNr === 1 && chapter === 1}
-        >
-          ← {t("reader.prev")}
-        </button>
-        <button
-          className="btn"
-          onClick={() => go(1)}
-          disabled={bookNr === 66 && chapter === book.chapters}
-        >
-          {t("reader.next")} →
-        </button>
+                ))}
+              </p>
+            )}
+          </article>
+        ))}
       </div>
+      {/* nearing this line loads the next chapter of the book */}
+      <div ref={sentinelRef} className="chap-sentinel" aria-hidden="true" />
+
+      <button
+        type="button"
+        className="glass chap-arrow chap-arrow-l"
+        onClick={() => go(-1)}
+        disabled={bookNr === 1 && viewChapter === 1}
+        aria-label={t("reader.prev")}
+        title={t("reader.prev")}
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        className="glass chap-arrow chap-arrow-r"
+        onClick={() => go(1)}
+        disabled={bookNr === 66 && viewChapter === book.chapters}
+        aria-label={t("reader.next")}
+        title={t("reader.next")}
+      >
+        ›
+      </button>
+
+      {pinchPct !== null && (
+        <div className="glass pinch-hint" aria-hidden="true">
+          {pinchPct}%
+        </div>
+      )}
 
       {wordSel && (
         <div className="glass lex-sheet" role="dialog" aria-label={wordSel.text}>
@@ -1366,7 +1573,11 @@ export default function Reader({
             setBackStack((prev) =>
               [
                 ...prev,
-                { b: bookNr, c: chapter, v: wordSel?.verse ?? 1 },
+                {
+                  b: bookNr,
+                  c: wordSel?.ch ?? viewChapter,
+                  v: wordSel?.verse ?? 1,
+                },
               ].slice(-10)
             );
             setBookNr(b);
@@ -1380,7 +1591,7 @@ export default function Reader({
         <div className="glass lex-sheet bm-sheet" role="dialog">
           <div className="lex-head">
             <span className="lex-lemma bm-sheet-title">
-              🔖 {bookName} {chapter}:{bmSheet}
+              🔖 {bookName} {bmSheet.c}:{bmSheet.v}
             </span>
             <button
               type="button"
@@ -1394,7 +1605,7 @@ export default function Reader({
           <p className="cal-label">{t("reader.addToCollection")}</p>
           <div className="chips bm-coll-chips">
             {Object.entries(collections).map(([id, coll]) => {
-              const key = `${bookNr}:${chapter}:${bmSheet}`;
+              const key = `${bookNr}:${bmSheet.c}:${bmSheet.v}`;
               const active = bookmarks[key]?.c === id;
               return (
                 <button
@@ -1426,7 +1637,7 @@ export default function Reader({
                 const id = await createCollectionNamed(name);
                 setBmSheetColl("");
                 if (id) {
-                  updateBookmark(`${bookNr}:${chapter}:${bmSheet}`, {
+                  updateBookmark(`${bookNr}:${bmSheet.c}:${bmSheet.v}`, {
                     coll: id,
                   });
                   setBmSheetMsg(t("reader.addedTo", { name }));
@@ -1442,7 +1653,7 @@ export default function Reader({
                 const id = await createCollectionNamed(name);
                 setBmSheetColl("");
                 if (id) {
-                  updateBookmark(`${bookNr}:${chapter}:${bmSheet}`, {
+                  updateBookmark(`${bookNr}:${bmSheet.c}:${bmSheet.v}`, {
                     coll: id,
                   });
                   setBmSheetMsg(t("reader.addedTo", { name }));
@@ -1457,7 +1668,7 @@ export default function Reader({
             <button
               type="button"
               className="btn btn-sm"
-              onClick={() => shareVerse(bmSheet)}
+              onClick={() => shareVerse(bmSheet.c, bmSheet.v)}
             >
               📤 {t("discover.share")}
             </button>
@@ -1721,22 +1932,22 @@ export default function Reader({
         </div>
       )}
 
-      {contextOpen && chapterContext && (
-        <div className="modal-overlay" onClick={() => setContextOpen(false)}>
+      {contextOpen !== null && ctxOf(contextOpen) && (
+        <div className="modal-overlay" onClick={() => setContextOpen(null)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             <h2>
-              📜 {bookName} {chapter} — {t("reader.context")}
+              📜 {bookName} {contextOpen} — {t("reader.context")}
             </h2>
             <div className="ctx-section">
               <h3>🏺 {t("reader.ctxPractical")}</h3>
-              <p>{chapterContext.practical}</p>
+              <p>{ctxOf(contextOpen)!.practical}</p>
             </div>
             <div className="ctx-section">
               <h3>✨ {t("reader.ctxSpiritual")}</h3>
-              <p>{chapterContext.spiritual}</p>
+              <p>{ctxOf(contextOpen)!.spiritual}</p>
             </div>
             <div className="modal-actions">
-              <button className="btn" onClick={() => setContextOpen(false)}>
+              <button className="btn" onClick={() => setContextOpen(null)}>
                 {t("session.cancel")}
               </button>
             </div>
