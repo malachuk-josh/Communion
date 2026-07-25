@@ -105,7 +105,8 @@ export default function Reader({
     Record<string, BmCollection>
   >({});
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
-  const [newCollName, setNewCollName] = useState("");
+  const [newCollFor, setNewCollFor] = useState<string | null>(null);
+  const [newCollDraft, setNewCollDraft] = useState("");
   const [bmSheet, setBmSheet] = useState<number | null>(null);
   const [bmSheetColl, setBmSheetColl] = useState("");
   const [bmSheetMsg, setBmSheetMsg] = useState("");
@@ -582,21 +583,6 @@ export default function Reader({
     api("/api/bookmarks", { method: "PATCH", body: { key, ...patch } }).catch(
       () => {}
     );
-  };
-
-  const createCollection = async () => {
-    const name = newCollName.trim();
-    if (!name) return;
-    setNewCollName("");
-    try {
-      const res = await api<{ id: string; name: string }>("/api/collections", {
-        method: "POST",
-        body: { name },
-      });
-      setCollections((prev) => ({ ...prev, [res.id]: { name: res.name } }));
-    } catch {
-      // transient — the next open re-syncs
-    }
   };
 
   const deleteCollection = async (id: string) => {
@@ -1335,23 +1321,6 @@ export default function Reader({
         <div className="modal-overlay" onClick={() => setBookmarksOpen(false)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             <h2>🔖 {t("reader.bookmarks")}</h2>
-            <div className="coll-new">
-              <input
-                value={newCollName}
-                onChange={(e) => setNewCollName(e.target.value)}
-                placeholder={t("reader.newCollection")}
-                maxLength={80}
-                onKeyDown={(e) => e.key === "Enter" && createCollection()}
-              />
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={createCollection}
-                disabled={!newCollName.trim()}
-              >
-                ＋
-              </button>
-            </div>
             {Object.keys(bookmarks).length === 0 ? (
               <p className="notice">{t("reader.bookmarksEmpty")}</p>
             ) : (
@@ -1466,12 +1435,22 @@ export default function Reader({
                                     }}
                                   />
                                   <select
-                                    value={entry.c ?? ""}
-                                    onChange={(e) =>
+                                    value={
+                                      newCollFor === key
+                                        ? "__new"
+                                        : (entry.c ?? "")
+                                    }
+                                    onChange={(e) => {
+                                      if (e.target.value === "__new") {
+                                        setNewCollFor(key);
+                                        setNewCollDraft("");
+                                        return;
+                                      }
+                                      setNewCollFor(null);
                                       updateBookmark(key, {
                                         coll: e.target.value,
-                                      })
-                                    }
+                                      });
+                                    }}
                                   >
                                     <option value="">
                                       {t("reader.unsorted")}
@@ -1483,6 +1462,9 @@ export default function Reader({
                                         </option>
                                       )
                                     )}
+                                    <option value="__new">
+                                      ＋ {t("reader.newCollectionShort")}
+                                    </option>
                                   </select>
                                   <button
                                     type="button"
@@ -1492,9 +1474,51 @@ export default function Reader({
                                         label: bmLabelDraft,
                                       });
                                       setEditingBm(null);
+                                      setNewCollFor(null);
                                     }}
                                   >
                                     {t("common.save")}
+                                  </button>
+                                </div>
+                              )}
+                              {editingBm === key && newCollFor === key && (
+                                <div className="bm-edit">
+                                  <input
+                                    value={newCollDraft}
+                                    onChange={(e) =>
+                                      setNewCollDraft(e.target.value)
+                                    }
+                                    placeholder={t("reader.newCollection")}
+                                    maxLength={80}
+                                    autoFocus
+                                    onKeyDown={async (e) => {
+                                      if (
+                                        e.key !== "Enter" ||
+                                        !newCollDraft.trim()
+                                      )
+                                        return;
+                                      const id = await createCollectionNamed(
+                                        newCollDraft.trim()
+                                      );
+                                      setNewCollDraft("");
+                                      setNewCollFor(null);
+                                      if (id) updateBookmark(key, { coll: id });
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="rsvp-btn active"
+                                    disabled={!newCollDraft.trim()}
+                                    onClick={async () => {
+                                      const id = await createCollectionNamed(
+                                        newCollDraft.trim()
+                                      );
+                                      setNewCollDraft("");
+                                      setNewCollFor(null);
+                                      if (id) updateBookmark(key, { coll: id });
+                                    }}
+                                  >
+                                    ＋ {t("common.save")}
                                   </button>
                                 </div>
                               )}
