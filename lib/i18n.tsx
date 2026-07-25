@@ -32,6 +32,34 @@ const dictionaries = {
     "menu.notificationsDesc": "Reminders, join requests, and new messages",
     "menu.settings": "Settings",
     "menu.settingsDesc": "Language, theme, and your Gatherings",
+    "menu.offline": "Offline",
+    "menu.offlineDesc": "Keep Scripture on this device, no signal needed",
+    "offline.title": "Read offline",
+    "offline.subtitle":
+      "Keep Scripture on this device. Once downloaded, reading, notes and bookmarks all work with no signal.",
+    "offline.reading": "Scripture & reading tools",
+    "offline.readingDesc":
+      "The King James text, section headings, chapter context and cross-references.",
+    "offline.study": "Study tools",
+    "offline.studyDesc":
+      "Strong's tagged text, Hebrew and Greek lexicons, the concordance, Abbott-Smith, Brown-Driver-Briggs and the Septuagint.",
+    "offline.translationDesc": "A complete translation.",
+    "offline.download": "Download",
+    "offline.saved": "On this device",
+    "offline.finish": "Finish — {n} left",
+    "offline.partial": "{have} of {total} files",
+    "offline.stored": "Stored on this device",
+    "offline.quota": "{used} used of about {quota} available",
+    "offline.persisted": "✓ Protected from being cleared automatically.",
+    "offline.notPersisted":
+      "Your device may clear this if storage runs low. Downloading again restores it.",
+    "offline.clear": "Remove downloads",
+    "offline.clearConfirm":
+      "Remove everything downloaded for offline use? Notes and bookmarks are not affected.",
+    "offline.failed": "Some files could not be downloaded. Try again on a better connection.",
+    "offline.unavailable": "This browser can't store Scripture for offline use.",
+    "offline.note":
+      "Gatherings, The Table and notifications still need a connection. Everything else — reading, search, notes, bookmarks and reading plans — works offline and syncs when you're back.",
     "menu.about": "About Communion",
     "menu.aboutDesc": "What this app is for and how to use it",
     "menu.messages": "The Table",
@@ -493,6 +521,34 @@ const dictionaries = {
     "menu.notificationsDesc": "Recordatorios, solicitudes y mensajes nuevos",
     "menu.settings": "Configuración",
     "menu.settingsDesc": "Idioma, tema y tus Comunidades",
+    "menu.offline": "Sin conexión",
+    "menu.offlineDesc": "Guarda las Escrituras en este dispositivo",
+    "offline.title": "Leer sin conexión",
+    "offline.subtitle":
+      "Guarda las Escrituras en este dispositivo. Una vez descargadas, la lectura, las notas y los marcadores funcionan sin señal.",
+    "offline.reading": "Escrituras y herramientas de lectura",
+    "offline.readingDesc":
+      "El texto Reina Valera y King James, los títulos de sección, el contexto de cada capítulo y las referencias cruzadas.",
+    "offline.study": "Herramientas de estudio",
+    "offline.studyDesc":
+      "El texto con códigos Strong, los léxicos hebreo y griego, la concordancia, Abbott-Smith, Brown-Driver-Briggs y la Septuaginta.",
+    "offline.translationDesc": "Una traducción completa.",
+    "offline.download": "Descargar",
+    "offline.saved": "En este dispositivo",
+    "offline.finish": "Terminar — faltan {n}",
+    "offline.partial": "{have} de {total} archivos",
+    "offline.stored": "Guardado en este dispositivo",
+    "offline.quota": "{used} usados de unos {quota} disponibles",
+    "offline.persisted": "✓ Protegido: no se borrará automáticamente.",
+    "offline.notPersisted":
+      "Tu dispositivo puede borrarlo si se queda sin espacio. Descargarlo de nuevo lo restaura.",
+    "offline.clear": "Eliminar descargas",
+    "offline.clearConfirm":
+      "¿Eliminar todo lo descargado para uso sin conexión? Las notas y los marcadores no se ven afectados.",
+    "offline.failed": "Algunos archivos no se pudieron descargar. Inténtalo con mejor conexión.",
+    "offline.unavailable": "Este navegador no puede guardar las Escrituras sin conexión.",
+    "offline.note":
+      "Las Comunidades, La Mesa y las notificaciones siguen necesitando conexión. Todo lo demás — lectura, búsqueda, notas, marcadores y planes — funciona sin conexión y se sincroniza al volver.",
     "menu.about": "Acerca de Communion",
     "menu.aboutDesc": "Para qué es esta app y cómo usarla",
     "menu.messages": "La Mesa",

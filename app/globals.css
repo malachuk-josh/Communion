@@ -542,6 +542,69 @@ a {
   }
 }
 
+/* ---- offline downloads ---- */
+.offline-row {
+  display: grid;
+  gap: 6px;
+}
+
+.offline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.offline-size {
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.offline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* the bar replaces the button in place, so the row doesn't jump */
+.offline-bar {
+  position: relative;
+  height: 30px;
+  margin-top: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.offline-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--gold-soft);
+  transition: width 0.25s ease;
+}
+
+.offline-bar span {
+  position: relative;
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+
+.offline-foot {
+  display: grid;
+  gap: 4px;
+}
+
+.offline-note {
+  margin-top: 14px;
+}
+
 /* ---- settings ---- */
 .settings-active {
   background: var(--gold-soft);

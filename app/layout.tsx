@@ -5,6 +5,7 @@ import { ReadingProvider } from "@/lib/reading";
 import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
 import PushPrompt from "@/components/PushPrompt";
+import OfflineReady from "@/components/OfflineReady";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -68,6 +69,7 @@ export default function RootLayout({
             <Nav />
             <main className="page">{children}</main>
             <PushPrompt />
+            <OfflineReady />
           </ReadingProvider>
         </LanguageProvider>
       </body>

@@ -13,6 +13,7 @@ const TILES: { href: string; emoji: string; key: string }[] = [
   { href: "/calendar", emoji: "📅", key: "calendar" },
   { href: "/menu/profile", emoji: "👤", key: "profile" },
   { href: "/menu/settings", emoji: "⚙️", key: "settings" },
+  { href: "/menu/offline", emoji: "📥", key: "offline" },
   { href: "/menu/about", emoji: "🕊️", key: "about" },
 ];
 
