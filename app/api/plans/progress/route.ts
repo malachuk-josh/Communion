@@ -14,5 +14,6 @@ export async function GET(req: Request) {
     if (planId.endsWith(":on")) continue; // last-read date, not progress
     progress[planId] = Number(count) || 0;
   }
-  return NextResponse.json({ progress });
+  // `who` lets the device notice it is holding a different account's copy
+  return NextResponse.json({ who: userId, progress });
 }

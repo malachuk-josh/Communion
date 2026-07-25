@@ -29,13 +29,13 @@ const DATA_PATHS = [
   "/icons/",
 ];
 
-// Read-only API responses worth showing stale. Bookmarks and notes are
-// deliberately absent: IndexedDB holds those now, and it is ahead of the
-// server whenever the outbox has anything in it. A cached copy here would be
-// older than the device's own and would overwrite it on an offline reload.
+// Read-only API responses worth showing stale. Bookmarks, notes and reading
+// plans are deliberately absent: IndexedDB holds those now, and it is ahead of
+// the server whenever the outbox has anything in it. A cached copy here would
+// be older than the device's own and would overwrite it on an offline reload.
 // The manifest is here rather than in DATA because every build regenerates it;
 // cache-first would pin a client to the file sizes of whenever it first looked.
-const API_PATHS = ["/api/plans/progress", "/offline-manifest.json"];
+const API_PATHS = ["/offline-manifest.json"];
 
 /** Pages worth guaranteeing offline; the rest fill in as they are visited. */
 const SHELL_ROUTES = [

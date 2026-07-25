@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/client";
+import { readOutbox } from "@/lib/localStore";
+import {
+  adoptIdentity,
+  enqueue,
+  flush,
+  readLocalState,
+  startSync,
+  writeLocalState,
+} from "@/lib/sync";
 import { fetchChapter } from "@/lib/scripture";
 import { getBook, type Verse } from "@/lib/bible";
 import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
@@ -223,42 +232,81 @@ function TopicsSection() {
 function PlansSection() {
   const { lang, t } = useI18n();
   const [progress, setProgress] = useState<Record<string, number>>({});
-  const [busy, setBusy] = useState<string | null>(null);
+  // the handlers need what progress is *now*, not what it was when they were
+  // built: two quick taps on "mark read" should count as two days
+  const progressRef = useRef<Record<string, number>>({});
   const [filter, setFilter] = useState<string>("all");
 
+  const apply = (next: Record<string, number>) => {
+    progressRef.current = next;
+    setProgress(next);
+  };
+
+  // progress is local-first, the same as bookmarks and notes: a day marked
+  // read on a plane is on screen at once and reaches the server later
   useEffect(() => {
-    api<{ progress: Record<string, number> }>("/api/plans/progress")
-      .then((res) => setProgress(res.progress))
-      .catch(() => {});
+    let cancelled = false;
+    readLocalState().then((local) => {
+      if (cancelled || !local?.plans) return;
+      apply(local.plans);
+    });
+    startSync();
+    (async () => {
+      try {
+        const synced = await flush();
+        if (cancelled) return;
+        if (synced) {
+          apply(synced.plans ?? {});
+          return;
+        }
+        // Nothing flushed. If plan changes are still queued this device is
+        // ahead of the server, and reading would undo them on screen.
+        const queued = await readOutbox();
+        if (queued.some((op) => op.kind === "plan.set")) return;
+        const res = await api<{ who?: string; progress: Record<string, number> }>(
+          "/api/plans/progress"
+        );
+        if (cancelled) return;
+        await adoptIdentity(res.who);
+        apply(res.progress);
+        void writeLocalState({ plans: res.progress });
+      } catch {
+        // offline: the local snapshot above is what we read from
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // mount only: this settles what the device holds, once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const complete = async (planId: string) => {
-    if (busy) return;
-    setBusy(planId);
+  /** Today where this device is standing — the honest date for an offline read. */
+  const localDate = () => {
     try {
-      const res = await api<{ completed: number }>(`/api/plans/${planId}`, {
-        method: "POST",
-        body: { action: "complete" },
-      });
-      setProgress((prev) => ({ ...prev, [planId]: res.completed }));
+      return new Intl.DateTimeFormat("en-CA").format(new Date());
     } catch {
-      // signed-out in Clerk mode — progress needs an account
-    } finally {
-      setBusy(null);
+      return new Date().toISOString().slice(0, 10);
     }
   };
 
-  const reset = async (planId: string) => {
-    try {
-      await api(`/api/plans/${planId}`, {
-        method: "POST",
-        body: { action: "reset" },
-      });
-      setProgress((prev) => ({ ...prev, [planId]: 0 }));
-    } catch {
-      // ignore
-    }
+  /** Record where a plan now stands. States the total, never "+1", so a
+   *  batch the server takes twice can't advance anyone twice. */
+  const setDone = (planId: string, done: number, on?: string) => {
+    const next = { ...progressRef.current, [planId]: done };
+    apply(next);
+    void writeLocalState({ plans: next });
+    void enqueue({ kind: "plan.set", id: planId, done, on, ts: Date.now() });
   };
+
+  const complete = (planId: string, total: number) =>
+    setDone(
+      planId,
+      Math.min((progressRef.current[planId] ?? 0) + 1, total),
+      localDate()
+    );
+
+  const reset = (planId: string) => setDone(planId, 0);
 
   const started = PLANS.filter(
     (p) => (progress[p.id] ?? 0) > 0 && (progress[p.id] ?? 0) < p.days.length
@@ -351,8 +399,7 @@ function PlansSection() {
                     </Link>
                     <button
                       className="btn btn-sm btn-primary"
-                      onClick={() => complete(plan.id)}
-                      disabled={busy === plan.id}
+                      onClick={() => complete(plan.id, total)}
                     >
                       ✓ {t("discover.markRead")}
                     </button>

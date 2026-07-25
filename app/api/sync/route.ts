@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
+import { getPlan } from "@/lib/plans";
 
 // The outbox drains here. Every operation is a statement of intent — "this
 // bookmark exists with this label", not "toggle this bookmark" — so replaying
@@ -17,10 +18,12 @@ type Op =
   | { kind: "bookmark.del"; key: string }
   | { kind: "collection.set"; id: string; name: string }
   | { kind: "collection.del"; id: string }
-  | { kind: "note.set"; book: number; ref: string; text: string };
+  | { kind: "note.set"; book: number; ref: string; text: string }
+  | { kind: "plan.set"; id: string; done: number; on?: string };
 
 const VERSE_KEY = /^\d{1,2}:\d{1,3}:\d{1,3}$/;
 const NOTE_REF = /^\d{1,3}:\d{1,3}$/;
+const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** A verse key only counts if the book, chapter and verse actually exist. */
 function validVerseKey(key: string): boolean {
@@ -77,6 +80,29 @@ export async function POST(req: Request) {
     (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
   const colls: Record<string, string> =
     (await kv.hgetall(keys.userCollections(userId))) ?? {};
+
+  // A device that finished a day offline stamps the date it happened in its
+  // own timezone, which is the honest answer days later when it finally
+  // syncs. When it doesn't say, fall back to the profile timezone the
+  // reminder sweep thinks in — read at most once per batch.
+  let profileToday: string | null = null;
+  const todayForUser = async (): Promise<string> => {
+    if (profileToday) return profileToday;
+    const profile = await kv.hgetall(keys.user(userId));
+    try {
+      profileToday = new Intl.DateTimeFormat("en-CA", {
+        timeZone: profile?.planReminderTz || "UTC",
+      }).format(new Date());
+    } catch {
+      profileToday = new Date().toISOString().slice(0, 10);
+    }
+    return profileToday;
+  };
+  // nowhere on earth is more than a day ahead of UTC, so a later date is a
+  // wrong clock rather than a timezone, and would mute reminders for a week
+  const latestPlausible = new Date(Date.now() + 86400000)
+    .toISOString()
+    .slice(0, 10);
 
   for (const op of ordered) {
     try {
@@ -204,6 +230,30 @@ export async function POST(req: Request) {
           applied++;
           break;
         }
+        case "plan.set": {
+          // States where the plan now stands, not "+1 day" — a batch that is
+          // sent twice must not advance anyone twice.
+          const plan = getPlan(String(op.id));
+          const done = Number(op.done);
+          if (!plan || !Number.isFinite(done)) {
+            rejected++;
+            break;
+          }
+          const clamped = Math.min(Math.max(Math.floor(done), 0), plan.days.length);
+          const fields: Record<string, string | number> = { [plan.id]: clamped };
+          if (clamped > 0) {
+            // keeps the reminder sweep from nudging someone who already read.
+            // A reset carries no reading, so it leaves the stamp alone.
+            fields[`${plan.id}:on`] =
+              op.on && LOCAL_DATE.test(op.on) && op.on <= latestPlausible
+                ? op.on
+                : await todayForUser();
+          }
+          await kv.hset(keys.userPlans(userId), fields);
+          if (clamped > 0) await kv.sadd(keys.planUsers, userId);
+          applied++;
+          break;
+        }
         default:
           rejected++;
       }
@@ -213,9 +263,10 @@ export async function POST(req: Request) {
   }
 
   // hand back the authoritative state so the device can reconcile in one trip
-  const [rawBookmarks, rawCollections] = await Promise.all([
+  const [rawBookmarks, rawCollections, rawPlans] = await Promise.all([
     kv.hgetall(keys.userBookmarks(userId)),
     kv.hgetall(keys.userCollections(userId)),
+    kv.hgetall(keys.userPlans(userId)),
   ]);
   const bookmarks: Record<string, unknown> = {};
   for (const [key, raw] of Object.entries(rawBookmarks ?? {})) {
@@ -233,8 +284,20 @@ export async function POST(req: Request) {
       // corrupted entry — skip
     }
   }
+  const plans: Record<string, number> = {};
+  for (const [planId, count] of Object.entries(rawPlans ?? {})) {
+    if (planId.endsWith(":on")) continue; // last-read date, not progress
+    plans[planId] = Number(count) || 0;
+  }
 
   // the device stores this alongside its copy: if it ever changes, the local
   // data belonged to someone else and must not be merged into this account
-  return NextResponse.json({ who: userId, applied, rejected, bookmarks, collections });
+  return NextResponse.json({
+    who: userId,
+    applied,
+    rejected,
+    bookmarks,
+    collections,
+    plans,
+  });
 }

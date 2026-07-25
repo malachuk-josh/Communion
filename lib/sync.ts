@@ -27,9 +27,11 @@ export interface BmCollection {
   name: string;
   share?: string;
 }
-export interface BookmarkState {
+export interface LocalState {
   bookmarks: Record<string, BmEntry>;
   collections: Record<string, BmCollection>;
+  /** reading-plan progress: { planId: days completed } */
+  plans: Record<string, number>;
   /** which account this copy belongs to */
   who?: string;
 }
@@ -39,7 +41,7 @@ const STATE_KEY = "bookmarks";
 type Listener = (pending: number) => void;
 const listeners = new Set<Listener>();
 let pending = 0;
-let flushing: Promise<BookmarkState | null> | null = null;
+let flushing: Promise<LocalState | null> | null = null;
 let lastFlushFailed = false;
 /** Who the server says we are, and when it last said so. */
 let identity: string | null = null;
@@ -113,8 +115,8 @@ export async function adoptIdentity(who: string | undefined): Promise<boolean> {
 }
 
 /** The device's own copy — instant, and all there is when offline. */
-export function readLocalState(): Promise<BookmarkState | null> {
-  return getLocal<BookmarkState>(STATE_STORE, STATE_KEY);
+export function readLocalState(): Promise<LocalState | null> {
+  return getLocal<LocalState>(STATE_STORE, STATE_KEY);
 }
 
 /**
@@ -125,12 +127,13 @@ export function readLocalState(): Promise<BookmarkState | null> {
  * check can't recognise as somebody else's.
  */
 export async function writeLocalState(
-  state: Partial<BookmarkState>
+  state: Partial<LocalState>
 ): Promise<void> {
   const prev = await readLocalState();
   return putLocal(STATE_STORE, STATE_KEY, {
     bookmarks: state.bookmarks ?? prev?.bookmarks ?? {},
     collections: state.collections ?? prev?.collections ?? {},
+    plans: state.plans ?? prev?.plans ?? {},
     who: state.who ?? identity ?? prev?.who,
   });
 }
@@ -161,15 +164,15 @@ const BATCH = 200;
  * only once the server has taken them, so nothing is lost if the connection
  * dies partway. Returns the reconciled state if anything was sent.
  */
-export function flush(): Promise<BookmarkState | null> {
+export function flush(): Promise<LocalState | null> {
   // the guard and the assignment must not be separated by an await, or two
   // callers both pass it and send the same ops twice
   if (flushing) return flushing.then(() => null);
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return Promise.resolve(null);
   }
-  flushing = (async (): Promise<BookmarkState | null> => {
-    let result: BookmarkState | null = null;
+  flushing = (async (): Promise<LocalState | null> => {
+    let result: LocalState | null = null;
     try {
       // never send a queue without knowing whose account it lands in
       await ensureIdentity();
@@ -183,12 +186,14 @@ export function flush(): Promise<BookmarkState | null> {
           rejected: number;
           bookmarks: Record<string, BmEntry>;
           collections: Record<string, BmCollection>;
+          plans: Record<string, number>;
         }>("/api/sync", { method: "POST", body: { ops } });
         // only drop this batch — anything queued meanwhile keeps its place
         await dropOutbox(queued.map((o) => o.seq));
         result = {
           bookmarks: res.bookmarks,
           collections: res.collections,
+          plans: res.plans,
           who: res.who,
         };
       }
