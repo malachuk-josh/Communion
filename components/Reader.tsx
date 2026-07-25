@@ -106,6 +106,9 @@ export default function Reader({
   >({});
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [newCollName, setNewCollName] = useState("");
+  const [bmSheet, setBmSheet] = useState<number | null>(null);
+  const [bmSheetColl, setBmSheetColl] = useState("");
+  const [bmSheetMsg, setBmSheetMsg] = useState("");
   const [editingBm, setEditingBm] = useState<string | null>(null);
   const [bmLabelDraft, setBmLabelDraft] = useState("");
   const [shareHint, setShareHint] = useState("");
@@ -503,9 +506,10 @@ export default function Reader({
 
   const toggleBookmark = (verse: number) => {
     const key = `${bookNr}:${chapter}:${verse}`;
+    const removing = key in bookmarks;
     setBookmarks((prev) => {
       const next = { ...prev };
-      if (key in next) delete next[key];
+      if (removing) delete next[key];
       else next[key] = { t: Date.now() };
       return next;
     });
@@ -513,6 +517,53 @@ export default function Reader({
       method: "POST",
       body: { b: bookNr, c: chapter, v: verse },
     }).catch(() => {});
+    // saving a verse opens the organise/share sheet; removing just removes
+    if (!removing) {
+      setBmSheet(verse);
+      setBmSheetColl("");
+      setBmSheetMsg("");
+    } else if (bmSheet === verse) {
+      setBmSheet(null);
+    }
+  };
+
+  /** Create a collection by name and return its id (for the bookmark sheet). */
+  const createCollectionNamed = async (
+    name: string
+  ): Promise<string | null> => {
+    try {
+      const res = await api<{ id: string; name: string }>("/api/collections", {
+        method: "POST",
+        body: { name },
+      });
+      setCollections((prev) => ({ ...prev, [res.id]: { name: res.name } }));
+      return res.id;
+    } catch {
+      return null;
+    }
+  };
+
+  const shareVerse = async (verse: number) => {
+    const text =
+      data?.verses.find((v) => v.verse === verse)?.text?.trim() ?? "";
+    const ref = `${bookName} ${chapter}:${verse}`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const payload = `${ref} — ${text}\n${origin}/?b=${bookNr}&c=${chapter}&v=${verse}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: payload });
+        return;
+      } catch {
+        // cancelled — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setBmSheetMsg(t("reader.copied"));
+      setTimeout(() => setBmSheetMsg(""), 2200);
+    } catch {
+      setBmSheetMsg(t("reader.error"));
+    }
   };
 
   const updateBookmark = (key: string, patch: { label?: string; coll?: string }) => {
@@ -1160,6 +1211,112 @@ export default function Reader({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {bmSheet !== null && (
+        <div className="glass lex-sheet bm-sheet" role="dialog">
+          <div className="lex-head">
+            <span className="lex-lemma bm-sheet-title">
+              🔖 {bookName} {chapter}:{bmSheet}
+            </span>
+            <button
+              type="button"
+              className="lex-close"
+              onClick={() => setBmSheet(null)}
+              aria-label={t("search.close")}
+            >
+              ✕
+            </button>
+          </div>
+          <p className="cal-label">{t("reader.addToCollection")}</p>
+          <div className="chips bm-coll-chips">
+            {Object.entries(collections).map(([id, coll]) => {
+              const key = `${bookNr}:${chapter}:${bmSheet}`;
+              const active = bookmarks[key]?.c === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`chip${active ? " chip-active" : ""}`}
+                  onClick={() => {
+                    updateBookmark(key, { coll: active ? "" : id });
+                    setBmSheetMsg(
+                      active ? "" : t("reader.addedTo", { name: coll.name })
+                    );
+                  }}
+                >
+                  📚 {coll.name}
+                  {active && " ✓"}
+                </button>
+              );
+            })}
+          </div>
+          <div className="coll-new">
+            <input
+              value={bmSheetColl}
+              onChange={(e) => setBmSheetColl(e.target.value)}
+              placeholder={t("reader.newCollection")}
+              maxLength={80}
+              onKeyDown={async (e) => {
+                if (e.key !== "Enter" || !bmSheetColl.trim()) return;
+                const name = bmSheetColl.trim();
+                const id = await createCollectionNamed(name);
+                setBmSheetColl("");
+                if (id) {
+                  updateBookmark(`${bookNr}:${chapter}:${bmSheet}`, {
+                    coll: id,
+                  });
+                  setBmSheetMsg(t("reader.addedTo", { name }));
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={!bmSheetColl.trim()}
+              onClick={async () => {
+                const name = bmSheetColl.trim();
+                const id = await createCollectionNamed(name);
+                setBmSheetColl("");
+                if (id) {
+                  updateBookmark(`${bookNr}:${chapter}:${bmSheet}`, {
+                    coll: id,
+                  });
+                  setBmSheetMsg(t("reader.addedTo", { name }));
+                }
+              }}
+            >
+              ＋
+            </button>
+          </div>
+          {bmSheetMsg && <p className="email-sent">✓ {bmSheetMsg}</p>}
+          <div className="lex-actions">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => shareVerse(bmSheet)}
+            >
+              📤 {t("discover.share")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => {
+                setBmSheet(null);
+                setBookmarksOpen(true);
+              }}
+            >
+              🔖 {t("reader.bookmarks")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => setBmSheet(null)}
+            >
+              {t("common.done")}
+            </button>
+          </div>
         </div>
       )}
 

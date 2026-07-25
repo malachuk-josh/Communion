@@ -1836,6 +1836,27 @@ button.menu-tile {
   margin-bottom: 10px;
 }
 
+.bm-sheet {
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+}
+
+.bm-sheet-title {
+  font-size: 1.15rem;
+  font-family: var(--serif);
+}
+
+.bm-coll-chips {
+  margin: 6px 0 10px;
+  max-height: 22vh;
+  overflow-y: auto;
+}
+
+.chip-active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
 .lex-actions {
   display: flex;
   flex-wrap: wrap;
