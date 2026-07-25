@@ -1,39 +1,41 @@
+import { readFile } from "fs/promises";
+import path from "path";
 import { NextResponse } from "next/server";
 import { isTranslation } from "@/lib/bible";
 
-interface GBVerse {
-  chapter: number;
-  verse: number;
-  text: string;
-}
+/** A book file: chapter number → [verse, text] pairs. */
+type BookFile = Record<string, [number, string][]>;
 
-interface GBBook {
-  nr: number;
-  name: string;
-  chapters: { chapter: number; verses: GBVerse[] }[];
-}
-
-// Whole-translation JSON is ~9MB — far over Next's data-cache entry limit,
-// so we keep parsed translations in module scope. Warm serverless instances
-// reuse it; a cold start pays one fetch (~2s) on its first search.
-const cache = new Map<string, GBBook[]>();
+// Whole translations are read from the static files this app ships
+// (public/bible/<id>/<book>.json) rather than fetched from an upstream API,
+// so search keeps working when that API doesn't. Parsed books stay in module
+// scope; a warm instance searches without touching disk again.
+const cache = new Map<string, BookFile[]>();
 
 const normalize = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 
-async function loadTranslation(id: string): Promise<GBBook[]> {
+async function loadTranslation(id: string): Promise<BookFile[]> {
   const hit = cache.get(id);
   if (hit) return hit;
-  const res = await fetch(`https://api.getbible.net/v2/${id}.json`, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`upstream ${res.status}`);
-  const data = (await res.json()) as { books: GBBook[] };
-  cache.set(id, data.books);
-  return data.books;
+  const dir = path.join(process.cwd(), "public", "bible", id);
+  const books = await Promise.all(
+    Array.from({ length: 66 }, async (_, i) => {
+      try {
+        return JSON.parse(await readFile(path.join(dir, `${i + 1}.json`), "utf8")) as BookFile;
+      } catch {
+        return {} as BookFile; // a missing book must not fail the whole search
+      }
+    })
+  );
+  if (books.every((b) => Object.keys(b).length === 0)) {
+    throw new Error(`no scripture files for ${id}`);
+  }
+  cache.set(id, books);
+  return books;
 }
 
 const MAX_RESULTS = 50;
@@ -58,23 +60,19 @@ export async function GET(req: Request) {
     }[] = [];
     let total = 0;
 
-    for (const book of books) {
-      for (const chapter of book.chapters) {
-        for (const verse of chapter.verses) {
-          if (normalize(verse.text).includes(needle)) {
+    books.forEach((book, i) => {
+      const bookNr = i + 1;
+      for (const [chapter, rows] of Object.entries(book)) {
+        for (const [verse, text] of rows) {
+          if (normalize(text).includes(needle)) {
             total++;
             if (results.length < MAX_RESULTS) {
-              results.push({
-                bookNr: book.nr,
-                chapter: chapter.chapter,
-                verse: verse.verse,
-                text: verse.text.trim(),
-              });
+              results.push({ bookNr, chapter: Number(chapter), verse, text });
             }
           }
         }
       }
-    }
+    });
 
     return NextResponse.json({ results, total });
   } catch {

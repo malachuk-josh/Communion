@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getBook, type ChapterData } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
+import { fetchChapter } from "@/lib/scripture";
 
 interface SharedVerse {
   b: number;
@@ -39,8 +40,7 @@ export default function SharedCollection({ token }: { token: string }) {
     const chapters = [...new Set(snap.verses.map((x) => `${x.b}:${x.c}`))];
     chapters.forEach((ch) => {
       const [b, c] = ch.split(":").map(Number);
-      fetch(`/api/bible/kjv/${b}/${c}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
+      fetchChapter("kjv", b, c)
         .then((json: ChapterData) => {
           setTexts((prev) => {
             const next = { ...prev };

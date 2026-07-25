@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client";
+import { fetchChapter } from "@/lib/scripture";
 import { getBook, type Verse } from "@/lib/bible";
 import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
 import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
@@ -106,8 +107,7 @@ function VerseOfDay() {
 
   useEffect(() => {
     const translation = lang === "es" ? "valera" : "kjv";
-    fetch(`/api/bible/${translation}/${ref.b}/${ref.c}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
+    fetchChapter(translation, ref.b, ref.c)
       .then((json: { verses: Verse[] }) => {
         const last = ref.ve ?? ref.v;
         const picked = json.verses.filter(

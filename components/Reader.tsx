@@ -13,6 +13,7 @@ import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import { useI18n } from "@/lib/i18n";
 import { scrollToChapterTop, useReading } from "@/lib/reading";
+import { fetchChapter, searchLocal } from "@/lib/scripture";
 import Concordance from "@/components/Concordance";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
@@ -285,7 +286,6 @@ export default function Reader({
   };
 
   useEffect(() => {
-    const controller = new AbortController();
     genRef.current += 1;
     const gen = genRef.current;
     setExtra([]);
@@ -293,14 +293,9 @@ export default function Reader({
     setViewChapter(chapter);
     setLoading(true);
     setError(false);
-    fetch(`/api/bible/${translation}/${bookNr}/${chapter}`, {
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("bad response");
-        return res.json();
-      })
-      .then((json: ChapterData) => {
+    fetchChapter(translation, bookNr, chapter)
+      .then((json) => {
+        if (genRef.current !== gen) return; // reader jumped meanwhile
         setData(json);
         setLoading(false);
         window.localStorage.setItem(
@@ -312,11 +307,8 @@ export default function Reader({
         // already above you the moment you think to scroll back
         if (chapter > 1) {
           loadingPrevRef.current = true;
-          fetch(`/api/bible/${translation}/${bookNr}/${chapter - 1}`, {
-            signal: controller.signal,
-          })
-            .then((res) => (res.ok ? res.json() : Promise.reject()))
-            .then((prev: ChapterData) => {
+          fetchChapter(translation, bookNr, chapter - 1)
+            .then((prev) => {
               if (genRef.current !== gen) return;
               holdAnchor(chapter);
               setBefore([{ ch: chapter - 1, data: prev }]);
@@ -327,13 +319,11 @@ export default function Reader({
             });
         }
       })
-      .catch((err: unknown) => {
-        if ((err as Error).name !== "AbortError") {
-          setError(true);
-          setLoading(false);
-        }
+      .catch(() => {
+        if (genRef.current !== gen) return;
+        setError(true);
+        setLoading(false);
       });
-    return () => controller.abort();
   }, [translation, bookNr, chapter]);
 
   // continuous scroll: nearing the bottom pulls in the next chapter of the
@@ -350,9 +340,8 @@ export default function Reader({
         if (next > bookChapters) return;
         loadingMoreRef.current = true;
         const gen = genRef.current;
-        fetch(`/api/bible/${translation}/${bookNr}/${next}`)
-          .then((res) => (res.ok ? res.json() : Promise.reject()))
-          .then((json: ChapterData) => {
+        fetchChapter(translation, bookNr, next)
+          .then((json) => {
             if (genRef.current !== gen) return; // reader jumped meanwhile
             setExtra((prev) =>
               next === chapter + prev.length + 1
@@ -391,9 +380,8 @@ export default function Reader({
       if (prev < 1) return;
       loadingPrevRef.current = true;
       const gen = genRef.current;
-      fetch(`/api/bible/${translation}/${bookNr}/${prev}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((json: ChapterData) => {
+      fetchChapter(translation, bookNr, prev)
+        .then((json) => {
           if (genRef.current !== gen) return; // reader jumped meanwhile
           // hold the reader's place: the page is about to grow upward
           holdAnchor(before[0]?.ch ?? chapter);
@@ -645,9 +633,8 @@ export default function Reader({
     if (bookNr <= 39 && lxx?.ch !== ch && !lxxLoading) {
       setLxxLoading(true);
       const lxxChapter = bookNr === 19 ? lxxPsalm(ch) : ch;
-      fetch(`/api/bible/lxx/${bookNr}/${lxxChapter}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((json: ChapterData) => {
+      fetchChapter("lxx", bookNr, lxxChapter)
+        .then((json) => {
           const map: Record<number, string> = {};
           for (const v of json.verses) map[v.verse] = v.text;
           setLxx({ ch, map });
@@ -1249,8 +1236,15 @@ export default function Reader({
       setResults(json.results);
       setSearchTotal(json.total);
     } catch {
-      setResults([]);
-      setSearchTotal(0);
+      // offline: scan the static book files already on this device
+      try {
+        const local = await searchLocal(translation, q);
+        setResults(local.results);
+        setSearchTotal(local.total);
+      } catch {
+        setResults([]);
+        setSearchTotal(0);
+      }
     } finally {
       setSearching(false);
     }
