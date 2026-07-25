@@ -101,6 +101,7 @@ export default function Discover() {
 function VerseOfDay() {
   const { lang, t } = useI18n();
   const [text, setText] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useMemo(() => verseOfTheDay(), []);
   const label = refLabel(ref, lang);
@@ -115,7 +116,11 @@ function VerseOfDay() {
         );
         setText(picked.map((v) => v.text).join(" "));
       })
-      .catch(() => setText(null));
+      .catch(() => {
+        // offline and this book isn't stored: say so rather than spin
+        setText(null);
+        setMissing(true);
+      });
   }, [lang, ref]);
 
   const share = async () => {
@@ -136,7 +141,9 @@ function VerseOfDay() {
   return (
     <div className="glass card votd">
       <p className="votd-label">☀️ {t("discover.votd")}</p>
-      {text === null ? (
+      {missing ? (
+        <p className="cal-hint">{t("discover.votdOffline")}</p>
+      ) : text === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : (
         <>

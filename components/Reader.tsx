@@ -741,13 +741,13 @@ export default function Reader({
       fetch("/lexicon/hebrew.json")
         .then((res) => (res.ok ? res.json() : {}))
         .then(setLexHeb)
-        .catch(() => setLexHeb({}));
+        .catch(() => setLexHeb(null));
     }
     if (bookNr > 39 && !lexGrk) {
       fetch("/lexicon/greek.json")
         .then((res) => (res.ok ? res.json() : {}))
         .then(setLexGrk)
-        .catch(() => setLexGrk({}));
+        .catch(() => setLexGrk(null));
     }
     if (!lexCounts) {
       fetch("/strongs/counts.json")
@@ -1075,7 +1075,7 @@ export default function Reader({
     if (removing) delete next[key];
     else next[key] = { t: Date.now() };
     setBookmarks(next);
-    void writeLocalState({ bookmarks: next, collections });
+    void writeLocalState({ bookmarks: next });
     void enqueue(
       removing
         ? { kind: "bookmark.del", key, ts: Date.now() }
@@ -1107,7 +1107,7 @@ export default function Reader({
       .join("");
     const next = { ...collections, [id]: { name: trimmed } };
     setCollections(next);
-    void writeLocalState({ bookmarks, collections: next });
+    void writeLocalState({ collections: next });
     void enqueue({ kind: "collection.set", id, name: trimmed, ts: Date.now() });
     return id;
   };
@@ -1147,7 +1147,7 @@ export default function Reader({
     }
     const next = { ...bookmarks, [key]: entry };
     setBookmarks(next);
-    void writeLocalState({ bookmarks: next, collections });
+    void writeLocalState({ bookmarks: next });
     void enqueue({
       kind: "bookmark.set",
       key,
@@ -2147,15 +2147,15 @@ export default function Reader({
                                   ) {
                                     return;
                                   }
-                                  setBookmarks((prev) => {
-                                    const next = { ...prev };
-                                    delete next[key];
-                                    return next;
+                                  const next = { ...bookmarks };
+                                  delete next[key];
+                                  setBookmarks(next);
+                                  void writeLocalState({ bookmarks: next });
+                                  void enqueue({
+                                    kind: "bookmark.del",
+                                    key,
+                                    ts: Date.now(),
                                   });
-                                  api("/api/bookmarks", {
-                                    method: "POST",
-                                    body: { b, c, v },
-                                  }).catch(() => {});
                                 }}
                               >
                                 ✕

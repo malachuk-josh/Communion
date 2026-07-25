@@ -117,16 +117,22 @@ export function readLocalState(): Promise<BookmarkState | null> {
   return getLocal<BookmarkState>(STATE_STORE, STATE_KEY);
 }
 
-export async function writeLocalState(state: BookmarkState): Promise<void> {
-  // Callers that only touch bookmarks pass no `who`. Dropping it would leave
-  // the snapshot ownerless, and an ownerless snapshot is one the identity
-  // check can't recognise as somebody else's.
-  let stamped = state;
-  if (stamped.who === undefined) {
-    const owner = identity ?? (await readLocalState())?.who;
-    if (owner) stamped = { ...state, who: owner };
-  }
-  return putLocal(STATE_STORE, STATE_KEY, stamped);
+/**
+ * Merge into the device's copy. Callers pass only what they changed: a
+ * handler that adds a collection holds a bookmarks value from before some
+ * other handler's update, and writing both would put the stale one back.
+ * The owner stamp is preserved — an ownerless snapshot is one the identity
+ * check can't recognise as somebody else's.
+ */
+export async function writeLocalState(
+  state: Partial<BookmarkState>
+): Promise<void> {
+  const prev = await readLocalState();
+  return putLocal(STATE_STORE, STATE_KEY, {
+    bookmarks: state.bookmarks ?? prev?.bookmarks ?? {},
+    collections: state.collections ?? prev?.collections ?? {},
+    who: state.who ?? identity ?? prev?.who,
+  });
 }
 
 export function readLocalNotes(book: number): Promise<Record<string, string> | null> {

@@ -174,6 +174,8 @@ const dictionaries = {
     "discover.members": "{count} members",
     "discover.mine": "Member",
     "discover.votd": "Verse of the Day",
+    "discover.votdOffline":
+      "Today's verse needs a connection, or this book downloaded for offline use.",
     "discover.openReader": "Read the chapter",
     "discover.share": "Share",
     "discover.topics": "Verses for the moment",
@@ -667,6 +669,8 @@ const dictionaries = {
     "discover.members": "{count} miembros",
     "discover.mine": "Miembro",
     "discover.votd": "Versículo del Día",
+    "discover.votdOffline":
+      "El versículo de hoy necesita conexión, o este libro descargado para uso sin conexión.",
     "discover.openReader": "Leer el capítulo",
     "discover.share": "Compartir",
     "discover.topics": "Versículos para el momento",
