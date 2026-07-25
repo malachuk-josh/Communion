@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { scrollToChapterTop, useReading } from "@/lib/reading";
@@ -222,7 +223,7 @@ export default function Nav() {
             aria-label={t("nav.menu")}
             title={t("nav.menu")}
           >
-            ☰
+            <Icon name="menu" />
           </Link>
           {/* The Word keeps its header for reading: the passage and study
               mode only. Theme and account live on every other tab. */}
@@ -238,7 +239,7 @@ export default function Nav() {
                     : "Switch to dark mode"
               }
             >
-              {theme === "dark" ? "📰" : theme === "grey" ? "☀️" : "🌙"}
+              <Icon name={theme === "dark" ? "news" : theme === "grey" ? "sun" : "moon"} />
             </button>
           )}
           {!isWord && <AuthControls />}
@@ -270,22 +271,22 @@ export default function Nav() {
         aria-label="Primary"
       >
         <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon">📖</span>
+          <span className="bn-icon"><Icon name="book" /></span>
           <span>{t("nav.reader")}</span>
         </Link>
         <Link href="/churches" className={isChurches ? "active" : ""}>
-          <span className="bn-icon">⛪</span>
+          <span className="bn-icon"><Icon name="church" /></span>
           <span>{t("nav.churches")}</span>
         </Link>
         <Link href="/discover" className={isDiscover ? "active" : ""}>
-          <span className="bn-icon">🌐</span>
+          <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
         </Link>
         <Link
           href="/menu/messages"
           className={`bn-messages${isMessages ? " active" : ""}`}
         >
-          <span className="bn-icon">💬</span>
+          <span className="bn-icon"><Icon name="chat" /></span>
           <span>{t("menu.messages")}</span>
           {pendingMsgs > 0 && (
             <span className="nav-badge bn-badge">{pendingMsgs}</span>
@@ -295,7 +296,7 @@ export default function Nav() {
           href="/menu"
           className={`bn-messages${isMenu ? " active" : ""}`}
         >
-          <span className="bn-icon">☰</span>
+          <span className="bn-icon"><Icon name="menu" /></span>
           <span>{t("nav.menu")}</span>
           {pendingNotifs > 0 && (
             <span className="nav-badge bn-badge">{pendingNotifs}</span>

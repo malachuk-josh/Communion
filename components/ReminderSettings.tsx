@@ -6,6 +6,7 @@
 // live once the Brevo account has SMS credits and a registered sender.
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -175,7 +176,7 @@ export default function ReminderSettings() {
       <div className="glass card">
         <div className="pref-row">
           <span>
-            🔔 {t("settings.pushLabel")}
+            <Icon name="bell" /> {t("settings.pushLabel")}
             <br />
             <small className="cal-hint">{t("settings.pushHint")}</small>
           </span>
@@ -202,7 +203,7 @@ export default function ReminderSettings() {
 
         <div className="pref-row">
           <span>
-            📖 {t("settings.planReminder")}
+            <Icon name="book" /> {t("settings.planReminder")}
             <br />
             <small className="cal-hint">{t("settings.planReminderHint")}</small>
           </span>
@@ -224,7 +225,7 @@ export default function ReminderSettings() {
         </div>
 
         <div className="pref-row" style={{ alignItems: "flex-start" }}>
-          <span>💬 {t("settings.smsTitle")}</span>
+          <span><Icon name="chat" /> {t("settings.smsTitle")}</span>
           <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
             <span className="phone-row">
               {!phone.trim().startsWith("+") && (

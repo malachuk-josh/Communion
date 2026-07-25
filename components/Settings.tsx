@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -94,19 +95,19 @@ export default function Settings() {
               className={theme === "dark" ? "active" : ""}
               onClick={() => applyTheme("dark")}
             >
-              🌙 {t("settings.themeDark")}
+              <Icon name="moon" /> {t("settings.themeDark")}
             </button>
             <button
               className={theme === "grey" ? "active" : ""}
               onClick={() => applyTheme("grey")}
             >
-              📰 {t("settings.themeGrey")}
+              <Icon name="news" /> {t("settings.themeGrey")}
             </button>
             <button
               className={theme === "light" ? "active" : ""}
               onClick={() => applyTheme("light")}
             >
-              ☀️ {t("settings.themeLight")}
+              <Icon name="sun" /> {t("settings.themeLight")}
             </button>
           </div>
         </div>
@@ -137,8 +138,8 @@ export default function Settings() {
                   })}
                   {" · "}
                   {church.visibility === "private"
-                    ? `🔒 ${t("churches.privateBadge")}`
-                    : `🌐 ${t("settings.public")}`}
+                    ? t("churches.privateBadge")
+                    : t("settings.public")}
                 </p>
               </div>
               <Link href={`/churches/${church.id}`} className="btn btn-sm">
@@ -152,7 +153,7 @@ export default function Settings() {
                   checked={church.visibility === "private"}
                   onChange={() => toggleVisibility(church)}
                 />
-                🔒 {t("churches.privateLabel")}
+                <Icon name="lock" /> {t("churches.privateLabel")}
               </label>
             )}
           </div>

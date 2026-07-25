@@ -7,6 +7,7 @@
 // prompt is the closest thing to a default "on".
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -99,7 +100,7 @@ export default function PushPrompt() {
   return (
     <div className="glass push-prompt" role="dialog">
       <span className="push-prompt-body">
-        <strong>🔔 {t("push.promptTitle")}</strong>
+        <strong><Icon name="bell" /> {t("push.promptTitle")}</strong>
         <small>{t("push.promptBody")}</small>
       </span>
       <span className="push-prompt-actions">

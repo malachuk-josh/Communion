@@ -4,6 +4,7 @@
 // scripture reference or a shared bookmark/note/word study.
 
 import Link from "next/link";
+import Icon, { type IconName } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
@@ -139,9 +140,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
                 setError(t("reader.error"));
               }
             }}
-          >
-            🗑
-          </button>
+          ><Icon name="trash" /></button>
         )}
       </div>
       <p className="subtitle">
@@ -151,7 +150,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       {posts.map((p) => (
         <div key={p.id} className="glass card post-row">
           <div className="post-head">
-            <span className="conv-avatar">{p.fromIcon || "🙏"}</span>
+            <span className="conv-avatar"><Icon name={(p.fromIcon as IconName) || "prayer"} /></span>
             <strong>{p.from === myUserId ? t("messages.you") : p.fromName}</strong>
             <span className="conv-time">
               {new Date(p.ts).toLocaleString(lang === "es" ? "es" : "en", {
@@ -183,14 +182,14 @@ export default function ThreadView({ threadId }: { threadId: string }) {
             >
               <span className="verse-card-kind">
                 {p.attach.kind === "note"
-                  ? `📝 ${t("messages.sharedNote")}`
+                  ? t("messages.sharedNote")
                   : p.attach.kind === "word"
-                    ? `🔤 ${t("messages.sharedWord")}`
+                    ? t("messages.sharedWord")
                     : p.attach.kind === "bookmark"
-                      ? `🔖 ${t("messages.sharedBookmark")}`
-                      : `📖 ${t("threads.scripture")}`}
+                      ? t("messages.sharedBookmark")
+                      : t("threads.scripture")}
               </span>
-              <strong>📖 {attachRef(p.attach, lang === "es")}</strong>
+              <strong><Icon name="book" /> {attachRef(p.attach, lang === "es")}</strong>
               {p.attach.label && <em>{p.attach.label}</em>}
               <small>{t("messages.tapToRead")}</small>
             </Link>
@@ -202,7 +201,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       {attach && (
         <div className="glass card attach-chip-row">
           <span>
-            📖 {attachRef(attach, lang === "es")}
+            <Icon name="book" /> {attachRef(attach, lang === "es")}
             {attach.label ? ` — ${attach.label.slice(0, 60)}` : ""}
           </span>
           <button
@@ -234,9 +233,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
           aria-label={t("threads.addScripture")}
           title={t("threads.addScripture")}
           aria-pressed={pickerOpen}
-        >
-          📖
-        </button>
+        ><Icon name="book" /></button>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

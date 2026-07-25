@@ -4,6 +4,7 @@
 // bookmarks or notes. Used by fellowship discussion threads.
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -108,7 +109,7 @@ export default function AttachPicker({
               className="share-row"
               onClick={() => onPick(item)}
             >
-              <span>{item.kind === "note" ? "📝" : "🔖"}</span>
+              <span><Icon name={item.kind === "note" ? "note" : "bookmark"} /></span>
               <span className="share-row-body">
                 <strong>{attachRef(item, lang === "es")}</strong>
                 {item.label && <small>{item.label}</small>}

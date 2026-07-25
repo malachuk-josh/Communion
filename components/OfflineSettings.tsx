@@ -5,6 +5,7 @@
 // asks and reports.
 
 import { useCallback, useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { TRANSLATIONS } from "@/lib/bible";
@@ -157,7 +158,7 @@ export default function OfflineSettings() {
       {waiting > 0 && (
         <div className="glass card offline-row">
           <div className="offline-head">
-            <strong>⏳ {t("offline.waiting", { n: String(waiting) })}</strong>
+            <strong><Icon name="hourglass" /> {t("offline.waiting", { n: String(waiting) })}</strong>
           </div>
           <p className="cal-hint">{t("offline.waitingDesc")}</p>
           <div className="offline-actions">
@@ -249,7 +250,7 @@ export default function OfflineSettings() {
               onClick={removeAll}
               disabled={!!busy}
             >
-              🗑 {t("offline.clear")}
+              <Icon name="trash" /> {t("offline.clear")}
             </button>
           </div>
         </div>

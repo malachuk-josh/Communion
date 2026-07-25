@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon, { type IconName } from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
@@ -8,13 +9,13 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 // The Menu tab: a hub of tiles for profile, notifications, settings, about,
 // and sharing the app itself.
 
-const TILES: { href: string; emoji: string; key: string }[] = [
-  { href: "/menu/notifications", emoji: "🔔", key: "notifications" },
-  { href: "/calendar", emoji: "📅", key: "calendar" },
-  { href: "/menu/profile", emoji: "👤", key: "profile" },
-  { href: "/menu/settings", emoji: "⚙️", key: "settings" },
-  { href: "/menu/offline", emoji: "📥", key: "offline" },
-  { href: "/menu/about", emoji: "🕊️", key: "about" },
+const TILES: { href: string; icon: IconName; key: string }[] = [
+  { href: "/menu/notifications", icon: "bell", key: "notifications" },
+  { href: "/calendar", icon: "calendar", key: "calendar" },
+  { href: "/menu/profile", icon: "person", key: "profile" },
+  { href: "/menu/settings", icon: "gear", key: "settings" },
+  { href: "/menu/offline", icon: "download", key: "offline" },
+  { href: "/menu/about", icon: "dove", key: "about" },
 ];
 
 export default function MenuHub() {
@@ -67,7 +68,7 @@ export default function MenuHub() {
       <div className="menu-tiles">
         {TILES.map((tile) => (
           <Link key={tile.key} href={tile.href} className="glass card menu-tile">
-            <span className="menu-tile-emoji">{tile.emoji}</span>
+            <span className="menu-tile-emoji"><Icon name={tile.icon} /></span>
             <span className="menu-tile-body">
               <strong>{t(`menu.${tile.key}` as MessageKey)}</strong>
               <small>{t(`menu.${tile.key}Desc` as MessageKey)}</small>
@@ -77,7 +78,7 @@ export default function MenuHub() {
         ))}
         {isOwner && (
           <Link href="/admin" className="glass card menu-tile admin-tile">
-            <span className="menu-tile-emoji">🛠</span>
+            <span className="menu-tile-emoji"><Icon name="tools" /></span>
             <span className="menu-tile-body">
               <strong>Admin</strong>
               <small>Users, fellowships, and activity — desktop only</small>
@@ -86,7 +87,7 @@ export default function MenuHub() {
           </Link>
         )}
         <button type="button" className="glass card menu-tile" onClick={shareApp}>
-          <span className="menu-tile-emoji">📲</span>
+          <span className="menu-tile-emoji"><Icon name="phone" /></span>
           <span className="menu-tile-body">
             <strong>{t("menu.share")}</strong>
             <small>

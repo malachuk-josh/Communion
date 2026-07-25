@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon, { SESSION_ICON } from "@/components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { readOutbox } from "@/lib/localStore";
@@ -21,14 +22,7 @@ import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import StartGathering from "@/components/StartGathering";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
 
-const EMOJI: Record<SessionType, string> = {
-  bible_study: "📖",
-  prayer: "🙏",
-  communion: "🍞",
-  praise_worship: "🎶",
-  fellowship: "🤝",
-  custom: "✨",
-};
+
 
 type Gathering = WorshipEvent & { churchName: string };
 
@@ -63,14 +57,14 @@ export default function Discover() {
           onClick={() => setTab("scripture")}
           aria-pressed={tab === "scripture"}
         >
-          📖 {t("discover.tabScripture")}
+          <Icon name="book" /> {t("discover.tabScripture")}
         </button>
         <button
           className={tab === "gatherings" ? "active" : ""}
           onClick={() => setTab("gatherings")}
           aria-pressed={tab === "gatherings"}
         >
-          ⛪ {t("discover.tabGatherings")}
+          <Icon name="church" /> {t("discover.tabGatherings")}
         </button>
       </div>
       <p className="subtitle">
@@ -149,7 +143,7 @@ function VerseOfDay() {
 
   return (
     <div className="glass card votd">
-      <p className="votd-label">☀️ {t("discover.votd")}</p>
+      <p className="votd-label"><Icon name="sun" /> {t("discover.votd")}</p>
       {missing ? (
         <p className="cal-hint">{t("discover.votdOffline")}</p>
       ) : text === null ? (
@@ -163,10 +157,10 @@ function VerseOfDay() {
               className="btn btn-sm btn-primary"
               href={`/?b=${ref.b}&c=${ref.c}&v=${ref.v}`}
             >
-              📖 {t("discover.openReader")}
+              <Icon name="book" /> {t("discover.openReader")}
             </Link>
             <button className="btn btn-sm" onClick={share}>
-              📤 {copied ? t("churches.copied") : t("discover.share")}
+              <Icon name="share" /> {copied ? t("churches.copied") : t("discover.share")}
             </button>
           </div>
         </>
@@ -191,7 +185,7 @@ function TopicsSection() {
             className="type-card"
             onClick={() => setOpen(topic)}
           >
-            <span className="emoji">{topic.emoji}</span>
+            <span className="emoji"><Icon name={topic.icon} /></span>
             <span className="name">
               {t(`topic.${topic.id}` as MessageKey)}
             </span>
@@ -203,7 +197,7 @@ function TopicsSection() {
         <div className="modal-overlay" onClick={() => setOpen(null)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             <h2>
-              {open.emoji} {t(`topic.${open.id}` as MessageKey)}
+              <Icon name={open.icon} /> {t(`topic.${open.id}` as MessageKey)}
             </h2>
             <div className="topic-list">
               {open.passages.map((ref, i) => (
@@ -213,7 +207,7 @@ function TopicsSection() {
                   href={`/?b=${ref.b}&c=${ref.c}&v=${ref.v}`}
                   onClick={() => setOpen(null)}
                 >
-                  <span className="ref">📖 {refLabel(ref, lang)}</span>
+                  <span className="ref"><Icon name="book" /> {refLabel(ref, lang)}</span>
                 </Link>
               ))}
             </div>
@@ -362,7 +356,7 @@ function PlansSection() {
             <div key={plan.id} className="glass card plan-card">
               <div className="plan-head">
                 <h3>
-                  {plan.emoji} {t(`plan.${plan.id}` as MessageKey)}
+                  <Icon name={plan.icon} /> {t(`plan.${plan.id}` as MessageKey)}
                 </h3>
                 <span className="plan-count">
                   {done}/{total}
@@ -382,7 +376,7 @@ function PlansSection() {
               </div>
               {finished ? (
                 <div className="plan-actions">
-                  <span className="email-sent">🎉 {t("discover.planDone")}</span>
+                  <span className="email-sent"><Icon name="party" /> {t("discover.planDone")}</span>
                   <button className="rsvp-btn" onClick={() => reset(plan.id)}>
                     {t("discover.restart")}
                   </button>
@@ -394,7 +388,7 @@ function PlansSection() {
                       className="cal-link"
                       href={`/?b=${today.readings[0].b}&c=${today.readings[0].c}`}
                     >
-                      📖 {t("discover.day", { n: String(done + 1) })}:{" "}
+                      <Icon name="book" /> {t("discover.day", { n: String(done + 1) })}:{" "}
                       {dayLabel(today)}
                     </Link>
                     <button
@@ -439,11 +433,11 @@ function GatheringsSection({ gatherings }: { gatherings: Gathering[] }) {
             href={`/churches/${event.churchId}`}
             className="glass session gathering-row"
           >
-            <span className="session-icon">{EMOJI[event.type]}</span>
+            <span className="session-icon"><Icon name={SESSION_ICON[event.type]} /></span>
             <div className="session-body">
               <h3>{event.title}</h3>
               <p className="session-meta">
-                ⛪ {event.churchName} · {when}
+                <Icon name="church" /> {event.churchName} · {when}
               </p>
             </div>
           </Link>
@@ -499,7 +493,7 @@ function ChurchDirectory({ churches }: { churches: DiscoverChurch[] | null }) {
           placeholder={t("discover.searchChurches")}
           maxLength={60}
         />
-        <span aria-hidden>🔍</span>
+        <span aria-hidden><Icon name="search" /></span>
       </div>
 
       {filtered === null ? (
@@ -526,7 +520,7 @@ function ChurchDirectory({ churches }: { churches: DiscoverChurch[] | null }) {
                   <span className="chip mine-chip">✓ {t("discover.mine")}</span>
                 )}
                 <span className="chip">
-                  👥 {t("discover.members", { count: String(church.memberCount) })}
+                  <Icon name="people" /> {t("discover.members", { count: String(church.memberCount) })}
                 </span>
               </span>
             </div>

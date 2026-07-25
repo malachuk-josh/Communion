@@ -4,6 +4,7 @@
 // members to start a new conversation.
 
 import Link from "next/link";
+import Icon, { type IconName } from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -78,7 +79,7 @@ export default function Messages() {
       <BackToMenu />
       <div className="section-head">
         <h1 className="page-title" style={{ margin: 0 }}>
-          💬 {t("messages.title")}
+          <Icon name="chat" /> {t("messages.title")}
         </h1>
         {contacts.length > 0 && (
           <button
@@ -143,7 +144,7 @@ export default function Messages() {
                   href={`/menu/messages/${row.dm.peerId}`}
                   className="conv-row-link"
                 >
-                  <span className="conv-avatar">{row.dm.peerIcon || "🙏"}</span>
+                  <span className="conv-avatar"><Icon name={(row.dm.peerIcon as IconName) || "prayer"} /></span>
                   <span className="conv-body">
                     <strong>
                       {row.dm.peerName}
@@ -181,11 +182,11 @@ export default function Messages() {
                 href={`/churches/${row.thread.churchId}/threads/${row.thread.id}`}
                 className="glass card conv-row"
               >
-                <span className="conv-avatar">💬</span>
+                <span className="conv-avatar"><Icon name="chat" /></span>
                 <span className="conv-body">
                   <strong>{row.thread.title}</strong>
                   <small>
-                    ⛪ {row.thread.churchName}
+                    <Icon name="church" /> {row.thread.churchName}
                     {row.thread.lastText ? ` · ${row.thread.lastText}` : ""}
                   </small>
                 </span>

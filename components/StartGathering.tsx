@@ -4,6 +4,7 @@
 // Gatherings tab and the Discover directory so both open the same flow.
 
 import { useState } from "react";
+import Icon from "@/components/Icon";
 import { api, getSavedName, saveName } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import type { Church } from "@/lib/types";
@@ -54,7 +55,7 @@ export default function StartGathering({
           setOpen(true);
         }}
       >
-        ⛪ {t("churches.create")}
+        <Icon name="church" /> {t("churches.create")}
       </button>
 
       {open && (

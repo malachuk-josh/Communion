@@ -11,6 +11,7 @@ import {
 } from "@/lib/bible";
 import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
+import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { scrollToChapterTop, useReading } from "@/lib/reading";
 import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
@@ -644,7 +645,7 @@ export default function Reader({
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
         if (cancelled) return;
-        // this adds a 📜 chip to every verse in the column, including the
+        // this adds a context chip to every verse in the column, including the
         // ones above the viewport — hold the reader's place across it
         holdAnchor(viewChapterRef.current);
         setContext(json);
@@ -1386,7 +1387,7 @@ export default function Reader({
         type="submit"
         disabled={query.trim().length < 3 || searching}
       >
-        🔍 {t("search.button")}
+        <Icon name="search" /> {t("search.button")}
       </button>
     </form>
   );
@@ -1529,7 +1530,7 @@ export default function Reader({
                             aria-label={t("reader.context")}
                             title={t("reader.context")}
                           >
-                            📜 {t("reader.context")}
+                            <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
                         {/* One chip, not seven. The references themselves
@@ -1544,7 +1545,7 @@ export default function Reader({
                             aria-label={t("reader.crossRefs")}
                             title={t("reader.crossRefs")}
                           >
-                            🔗 {refs.length}
+                            <Icon name="link" /> {refs.length}
                           </button>
                         )}
                         <button
@@ -1558,7 +1559,7 @@ export default function Reader({
                           aria-label={t("reader.bookmarkToggle")}
                           title={t("reader.bookmarkToggle")}
                         >
-                          🔖 {t("reader.bookmark")}
+                          <Icon name="bookmark" /> {t("reader.bookmark")}
                         </button>
                         <button
                           type="button"
@@ -1567,7 +1568,7 @@ export default function Reader({
                           aria-label={t("reader.addNote")}
                           title={t("reader.addNote")}
                         >
-                          📝 {t("reader.note")}
+                          <Icon name="note" /> {t("reader.note")}
                         </button>
                       </span>
                       {note && editingNote !== key && (
@@ -1702,7 +1703,7 @@ export default function Reader({
           {refsAt(wordSel.ch, wordSel.verse).length > 0 && (
             <div className="lex-xrefs">
               <p className="lex-meta">
-                🔗 {t("reader.crossRefs")}
+                <Icon name="link" /> {t("reader.crossRefs")}
                 {wordSel.nums.length > 0 &&
                   ` · ${bookName} ${wordSel.ch}:${wordSel.verse}`}
               </p>
@@ -1810,7 +1811,7 @@ export default function Reader({
           {bookNr <= 39 && (lxxLoading || lxxLine()) && (
             <div className="lxx-block">
               <p className="lex-meta lxx-head">
-                ☩ {t("reader.lxx")}{" "}
+                <Icon name="cross" /> {t("reader.lxx")}{" "}
                 <span className="lxx-note">{t("reader.lxxNote")}</span>
               </p>
               {lxxLoading ? (
@@ -1825,11 +1826,11 @@ export default function Reader({
           {/* four to a row: icon over label, so Spanish fits too */}
           <div className="lex-actions word-actions">
             <button type="button" className="btn btn-sm" onClick={copyWord}>
-              <span className="wa-icon">📋</span>
+              <span className="wa-icon"><Icon name="clipboard" /></span>
               <span className="wa-label">{t("reader.copy")}</span>
             </button>
             <button type="button" className="btn btn-sm" onClick={shareWord}>
-              <span className="wa-icon">📤</span>
+              <span className="wa-icon"><Icon name="share" /></span>
               <span className="wa-label">{t("discover.share")}</span>
             </button>
             <button
@@ -1838,7 +1839,7 @@ export default function Reader({
               onClick={openSharePicker}
               aria-pressed={sharePickerOpen}
             >
-              <span className="wa-icon">💬</span>
+              <span className="wa-icon"><Icon name="chat" /></span>
               <span className="wa-label">{t("reader.sendToFellowship")}</span>
             </button>
             <button
@@ -1847,7 +1848,7 @@ export default function Reader({
               onClick={saveWordNote}
               title={t("reader.saveToNote")}
             >
-              <span className="wa-icon">📝</span>
+              <span className="wa-icon"><Icon name="note" /></span>
               <span className="wa-label">{t("reader.note")}</span>
             </button>
           </div>
@@ -1860,14 +1861,14 @@ export default function Reader({
                   onClick={() => setShareTab("dm")}
                   aria-pressed={shareTab === "dm"}
                 >
-                  💬 {t("reader.shareDirect")}
+                  <Icon name="person" /> {t("reader.shareDirect")}
                 </button>
                 <button
                   className={shareTab === "gathering" ? "active" : ""}
                   onClick={() => setShareTab("gathering")}
                   aria-pressed={shareTab === "gathering"}
                 >
-                  ⛪ {t("reader.shareGathering")}
+                  <Icon name="church" /> {t("reader.shareGathering")}
                 </button>
               </div>
 
@@ -1905,7 +1906,7 @@ export default function Reader({
                         onClick={() => openGathering(c.id)}
                         aria-expanded={shareChurch === c.id}
                       >
-                        ⛪ {c.name}
+                        <Icon name="church" /> {c.name}
                       </button>
                       {shareChurch === c.id && (
                         <div className="chips share-threads">
@@ -1926,7 +1927,7 @@ export default function Reader({
                                 className="chip"
                                 onClick={() => postWordToThread(th.id)}
                               >
-                                💭 {th.title}
+                                <Icon name="thought" /> {th.title}
                               </button>
                             ))
                           )}
@@ -1973,7 +1974,7 @@ export default function Reader({
         <div className="glass lex-sheet bm-sheet" role="dialog">
           <div className="lex-head">
             <span className="lex-lemma bm-sheet-title">
-              🔖 {bookName} {bmSheet.c}:{bmSheet.v}
+              <Icon name="bookmark" /> {bookName} {bmSheet.c}:{bmSheet.v}
             </span>
             <button
               type="button"
@@ -2001,7 +2002,7 @@ export default function Reader({
                     );
                   }}
                 >
-                  📚 {coll.name}
+                  <Icon name="collection" /> {coll.name}
                   {active && " ✓"}
                 </button>
               );
@@ -2052,7 +2053,7 @@ export default function Reader({
               className="btn btn-sm"
               onClick={() => shareVerse(bmSheet.c, bmSheet.v)}
             >
-              📤 {t("discover.share")}
+              <Icon name="share" /> {t("discover.share")}
             </button>
             <button
               type="button"
@@ -2062,7 +2063,7 @@ export default function Reader({
                 setBookmarksOpen(true);
               }}
             >
-              🔖 {t("reader.bookmarks")}
+              <Icon name="bookmark" /> {t("reader.bookmarks")}
             </button>
             <button
               type="button"
@@ -2089,7 +2090,7 @@ export default function Reader({
       {bookmarksOpen && (
         <div className="modal-overlay" onClick={() => setBookmarksOpen(false)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
-            <h2>🔖 {t("reader.bookmarks")}</h2>
+            <h2><Icon name="bookmark" /> {t("reader.bookmarks")}</h2>
             {Object.keys(bookmarks).length === 0 ? (
               <p className="notice">{t("reader.bookmarksEmpty")}</p>
             ) : (
@@ -2111,7 +2112,7 @@ export default function Reader({
                     <div key={group.id || "unsorted"} className="coll-group">
                       <div className="coll-head">
                         <strong>
-                          {group.id ? "📚" : "🔖"} {group.name}
+                          <Icon name={group.id ? "collection" : "bookmark"} /> {group.name}
                         </strong>
                         <span className="coll-tools">
                           {group.id && (
@@ -2123,7 +2124,7 @@ export default function Reader({
                               >
                                 {shareHint === group.id
                                   ? `✓ ${t("reader.shareCopied")}`
-                                  : `📤 ${t("reader.shareCollection")}`}
+                                  : t("reader.shareCollection")}
                               </button>
                               <button
                                 type="button"
@@ -2153,7 +2154,7 @@ export default function Reader({
                                 className="bookmark-jump"
                                 onClick={() => jumpToBookmark(key)}
                               >
-                                📖 {bookNameOf(b)} {c}:{v}
+                                <Icon name="book" /> {bookNameOf(b)} {c}:{v}
                                 {entry.l && (
                                   <span className="bm-label">{entry.l}</span>
                                 )}
@@ -2328,14 +2329,14 @@ export default function Reader({
         <div className="modal-overlay" onClick={() => setContextOpen(null)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             <h2>
-              📜 {bookName} {contextOpen} — {t("reader.context")}
+              <Icon name="scroll" /> {bookName} {contextOpen} — {t("reader.context")}
             </h2>
             <div className="ctx-section">
-              <h3>🏺 {t("reader.ctxPractical")}</h3>
+              <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>
               <p>{ctxOf(contextOpen)!.practical}</p>
             </div>
             <div className="ctx-section">
-              <h3>✨ {t("reader.ctxSpiritual")}</h3>
+              <h3><Icon name="sparkle" /> {t("reader.ctxSpiritual")}</h3>
               <p>{ctxOf(contextOpen)!.spiritual}</p>
             </div>
             <div className="modal-actions">
@@ -2367,7 +2368,7 @@ export default function Reader({
           >
             <div className="sp-head">
               <span className="sp-where">
-                📖 {bookName} {viewChapter}
+                <Icon name="book" /> {bookName} {viewChapter}
               </span>
               <button
                 type="button"
@@ -2420,7 +2421,7 @@ export default function Reader({
                       setBookmarksOpen(true);
                     }}
                   >
-                    🔖
+                    <Icon name="bookmark" />
                     {Object.keys(bookmarks).length > 0 &&
                       ` ${Object.keys(bookmarks).length}`}
                   </button>

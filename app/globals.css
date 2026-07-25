@@ -3120,3 +3120,45 @@ button.menu-tile {
     padding-top: 40px;
   }
 }
+
+/* ---- drawn icons ---- */
+/* Sized in em so an icon always matches the type it sits beside, and stroked
+   in currentColor so it takes the colour of whatever it is part of. */
+.ic {
+  width: 1.15em;
+  height: 1.15em;
+  display: inline-block;
+  vertical-align: -0.2em;
+  flex: none;
+}
+
+.icon-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+}
+
+.icon-cell {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--gold);
+}
+
+.icon-cell .icon-big {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.icon-cell .icon-small {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.icon-cell code {
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+}

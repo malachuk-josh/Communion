@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon, { SESSION_ICON } from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api, guestId } from "@/lib/client";
 import { googleCalendarUrl, outlookCalendarUrl } from "@/lib/calendar";
@@ -10,14 +11,7 @@ import BackToMenu from "@/components/BackToMenu";
 import MonthGrid from "@/components/MonthGrid";
 import type { SessionType, WorshipEvent } from "@/lib/types";
 
-const EMOJI: Record<SessionType, string> = {
-  bible_study: "📖",
-  prayer: "🙏",
-  communion: "🍞",
-  praise_worship: "🎶",
-  fellowship: "🤝",
-  custom: "✨",
-};
+
 
 type CalendarEventRow = WorshipEvent & { churchName: string };
 
@@ -65,12 +59,12 @@ export default function MyCalendar() {
             const parsed = parsePassage(event.passageRef);
             return (
               <div key={event.id} className="glass session" id={`event-${event.id}`}>
-                <span className="session-icon">{EMOJI[event.type]}</span>
+                <span className="session-icon"><Icon name={SESSION_ICON[event.type]} /></span>
                 <div className="session-body">
                   <h3>{event.title}</h3>
                   <p className="session-meta">
                     <Link href={`/churches/${event.churchId}`} className="passage-link">
-                      ⛪ {event.churchName}
+                      <Icon name="church" /> {event.churchName}
                     </Link>
                     {" · "}
                     {when} · {event.durationMin} {t("common.min")}
@@ -83,7 +77,7 @@ export default function MyCalendar() {
                             href={`/?b=${parsed.bookNr}&c=${parsed.chapter}`}
                             className="passage-link"
                           >
-                            📖 {event.passageRef}
+                            <Icon name="book" /> {event.passageRef}
                           </Link>
                         </>
                       ) : (
@@ -110,7 +104,7 @@ export default function MyCalendar() {
                     if (going.length === 0 && maybe.length === 0) return null;
                     return (
                       <p className="session-meta attendee-line">
-                        👥{" "}
+                        <Icon name="people" />{" "}
                         {going.length > 0 && (
                           <>
                             {t("rsvp.going")}: {going.join(", ")}
@@ -126,7 +120,7 @@ export default function MyCalendar() {
                     );
                   })()}
                   <div className="cal-row">
-                    <span className="cal-label">📅 {t("session.addToCalendar")}</span>
+                    <span className="cal-label"><Icon name="calendar" /> {t("session.addToCalendar")}</span>
                     <a
                       className="cal-link"
                       target="_blank"

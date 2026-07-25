@@ -167,7 +167,7 @@ export async function deleteMessage(
         try {
           const summary = JSON.parse(summaries[convId]) as ConvSummary;
           if (last) {
-            summary.lastText = last.attach ? `📖 ${last.text}` : last.text;
+            summary.lastText = last.text;
             summary.lastFrom = last.from;
             summary.ts = last.ts;
           } else {
@@ -243,7 +243,7 @@ export async function sendMessage(
     profileOf(to),
   ]);
   const preview = (
-    attach ? `📖 ${text}`.trim() : text
+    text
   ).slice(0, 120);
 
   // sender's summary (unread stays 0)

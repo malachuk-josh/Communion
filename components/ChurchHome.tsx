@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon, { SESSION_ICON, type IconName } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { SignInButton } from "@clerk/nextjs";
@@ -18,27 +19,19 @@ import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/
 
 const TEMPLATES: {
   type: SessionType;
-  emoji: string;
   duration: number;
   choices?: number;
   hasToggle?: boolean;
 }[] = [
-  { type: "bible_study", emoji: "📖", duration: 60, choices: 3, hasToggle: true },
-  { type: "prayer", emoji: "🙏", duration: 30, choices: 3, hasToggle: true },
-  { type: "communion", emoji: "🍞", duration: 45, choices: 2, hasToggle: true },
-  { type: "praise_worship", emoji: "🎶", duration: 60, choices: 3, hasToggle: true },
-  { type: "fellowship", emoji: "🤝", duration: 90, choices: 4, hasToggle: true },
-  { type: "custom", emoji: "✨", duration: 60 },
+  { type: "bible_study", duration: 60, choices: 3, hasToggle: true },
+  { type: "prayer", duration: 30, choices: 3, hasToggle: true },
+  { type: "communion", duration: 45, choices: 2, hasToggle: true },
+  { type: "praise_worship", duration: 60, choices: 3, hasToggle: true },
+  { type: "fellowship", duration: 90, choices: 4, hasToggle: true },
+  { type: "custom", duration: 60 },
 ];
 
-const EMOJI: Record<SessionType, string> = {
-  bible_study: "📖",
-  prayer: "🙏",
-  communion: "🍞",
-  praise_worship: "🎶",
-  fellowship: "🤝",
-  custom: "✨",
-};
+
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -116,7 +109,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
       <h1 className="page-title">
         {church.name}
         {church.visibility === "private" && (
-          <span className="chip private-chip">🔒 {t("churches.privateBadge")}</span>
+          <span className="chip private-chip"><Icon name="lock" /> {t("churches.privateBadge")}</span>
         )}
         {church.myRole === "founder" && (
           <button
@@ -142,7 +135,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
         </h2>
         {isMember && (
           <button className="btn btn-sm" onClick={() => setShowInvite(true)}>
-            ✉️ {t("churches.invite")}
+            <Icon name="envelope" /> {t("churches.invite")}
           </button>
         )}
       </div>
@@ -201,7 +194,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
             </SignInButton>
           ) : (
             <button className="btn btn-primary" onClick={requestToJoin}>
-              🙏 {t("churches.requestJoin")}
+              <Icon name="prayer" /> {t("churches.requestJoin")}
             </button>
           )}
         </div>
@@ -216,7 +209,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           </div>
           {church.requests.map((r) => (
             <div key={r.userId} className="glass session request-row">
-              <span className="session-icon">{r.icon || "🙏"}</span>
+              <span className="session-icon"><Icon name={(r.icon as IconName) || "prayer"} /></span>
               <div className="session-body">
                 <h3>{r.displayName}</h3>
               </div>
@@ -390,7 +383,7 @@ function EditChurchModal({
             checked={isPrivate}
             onChange={(e) => setIsPrivate(e.target.checked)}
           />
-          🔒 {t("churches.privateLabel")}
+          <Icon name="lock" /> {t("churches.privateLabel")}
         </label>
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions">
@@ -476,7 +469,7 @@ function SessionCard({
 
   return (
     <div className="glass session" id={`event-${event.id}`}>
-      <span className="session-icon">{EMOJI[event.type]}</span>
+      <span className="session-icon"><Icon name={SESSION_ICON[event.type]} /></span>
       <div className="session-body">
         <h3>{event.title}</h3>
         <p className="session-meta">
@@ -492,7 +485,7 @@ function SessionCard({
                     href={`/?b=${parsed.bookNr}&c=${parsed.chapter}`}
                     className="passage-link"
                   >
-                    📖 {event.passageRef}
+                    <Icon name="book" /> {event.passageRef}
                   </Link>
                 </>
               ) : (
@@ -524,7 +517,7 @@ function SessionCard({
         </div>
         {(goingNames.length > 0 || maybeNames.length > 0) && (
           <p className="session-meta attendee-line">
-            👥{" "}
+            <Icon name="people" />{" "}
             {goingNames.length > 0 && (
               <>
                 {t("rsvp.going")}: {goingNames.join(", ")}
@@ -539,7 +532,7 @@ function SessionCard({
           </p>
         )}
         <div className="cal-row">
-          <span className="cal-label">📅 {t("session.addToCalendar")}</span>
+          <span className="cal-label"><Icon name="calendar" /> {t("session.addToCalendar")}</span>
           <a
             className="cal-link"
             target="_blank"
@@ -714,7 +707,7 @@ function InviteModal({
             <p className="invite-url">{url}</p>
             <div className="invite-actions">
               <button className="btn btn-primary" onClick={copy}>
-                🔗 {copied ? t("churches.copied") : t("churches.copyLink")}
+                <Icon name="link" /> {copied ? t("churches.copied") : t("churches.copyLink")}
               </button>
               {serverEmail ? (
                 <div className="email-invite-row">
@@ -730,7 +723,7 @@ function InviteModal({
                     onClick={sendInviteEmail}
                     disabled={!emailTo.trim() || sending}
                   >
-                    ✉️ {t("churches.sendEmail")}
+                    <Icon name="envelope" /> {t("churches.sendEmail")}
                   </button>
                   {sentTo && !emailError && (
                     <p className="email-sent">
@@ -743,18 +736,18 @@ function InviteModal({
                 </div>
               ) : (
                 <button className="btn" onClick={email}>
-                  ✉️ {t("churches.emailInvite")}
+                  <Icon name="envelope" /> {t("churches.emailInvite")}
                 </button>
               )}
               <button className="btn" onClick={messenger}>
-                💬 {t("churches.messenger")}
+                <Icon name="chat" /> {t("churches.messenger")}
               </button>
               {messengerHint && (
                 <p className="email-sent">✓ {t("churches.messengerCopied")}</p>
               )}
               {typeof navigator !== "undefined" && "share" in navigator && (
                 <button className="btn" onClick={nativeShare}>
-                  📤 {t("churches.share")}
+                  <Icon name="share" /> {t("churches.share")}
                 </button>
               )}
             </div>
@@ -954,7 +947,7 @@ function ScheduleModal({
                   className={`type-card${type === tpl.type ? " active" : ""}`}
                   onClick={() => pick(tpl)}
                 >
-                  <span className="emoji">{tpl.emoji}</span>
+                  <span className="emoji"><Icon name={SESSION_ICON[tpl.type]} /></span>
                   <span className="name">
                     {t(`session.${tpl.type}` as MessageKey)}
                   </span>
@@ -976,7 +969,7 @@ function ScheduleModal({
           <>
             <div className="about-box">
               <p className="about-lead">
-                <span className="about-emoji">{template.emoji}</span>
+                <span className="about-emoji"><Icon name={SESSION_ICON[template.type]} /></span>
                 {tk("about")}
               </p>
               <blockquote className="founding-verse">
@@ -1068,7 +1061,7 @@ function ScheduleModal({
             <div className="quick-create">
               <span className="cal-label">{t("session.quickCreate")}</span>
               <button type="button" className="cal-link" onClick={toggleMeet}>
-                🎥 Google Meet {meetOpen ? "▴" : "▾"}
+                <Icon name="video" /> Google Meet {meetOpen ? "▴" : "▾"}
               </button>
             </div>
             {meetOpen && (
@@ -1104,7 +1097,7 @@ function ScheduleModal({
                     onClick={createMeet}
                     disabled={!title.trim() || !when || meetBusy}
                   >
-                    🎥 {meetBusy ? t("common.loading") : t("session.createMeet")}
+                    <Icon name="video" /> {meetBusy ? t("common.loading") : t("session.createMeet")}
                   </button>
                   <a
                     className="btn btn-sm"
@@ -1112,7 +1105,7 @@ function ScheduleModal({
                     rel="noreferrer"
                     href={meetTemplateUrl()}
                   >
-                    📅 {t("session.googleInvite")}
+                    <Icon name="calendar" /> {t("session.googleInvite")}
                   </a>
                   <a
                     className="btn btn-sm"
@@ -1120,7 +1113,7 @@ function ScheduleModal({
                     rel="noreferrer"
                     href="https://meet.google.com/new"
                   >
-                    ⚡ {t("session.instantMeet")}
+                    <Icon name="fire" /> {t("session.instantMeet")}
                   </a>
                 </div>
                 {meetHint === "created" && meetUrl && (

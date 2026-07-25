@@ -4,6 +4,7 @@
 // starting a new topic (with an optional scripture or bookmark).
 
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -115,7 +116,7 @@ export default function ThreadList({ churchId }: { churchId: string }) {
           {attach && (
             <div className="attach-chip-row">
               <span>
-                📖 {attachRef(attach, lang === "es")}
+                <Icon name="book" /> {attachRef(attach, lang === "es")}
                 {attach.label ? ` — ${attach.label.slice(0, 60)}` : ""}
               </span>
               <button
@@ -143,7 +144,7 @@ export default function ThreadList({ churchId }: { churchId: string }) {
               onClick={() => setPickerOpen((v) => !v)}
               aria-pressed={pickerOpen}
             >
-              📖 {t("threads.addScripture")}
+              <Icon name="book" /> {t("threads.addScripture")}
             </button>
             <button
               className="btn btn-primary"
@@ -167,7 +168,7 @@ export default function ThreadList({ churchId }: { churchId: string }) {
               href={`/churches/${churchId}/threads/${th.id}`}
               className="conv-row-link"
             >
-              <span className="conv-avatar">💬</span>
+              <span className="conv-avatar"><Icon name="chat" /></span>
               <span className="conv-body">
                 <strong>{th.title}</strong>
                 <small>

@@ -4,6 +4,7 @@
 // composer pinned above the bottom nav.
 
 import Link from "next/link";
+import Icon, { type IconName } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBook } from "@/lib/bible";
@@ -208,7 +209,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
         <Link href="/menu/messages" className="passage-link">
           ←
         </Link>
-        <span className="conv-avatar">{peerIcon || "🙏"}</span>
+        <span className="conv-avatar"><Icon name={(peerIcon as IconName) || "prayer"} /></span>
         <h1>{peerName}</h1>
         <button
           type="button"
@@ -216,9 +217,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
           onClick={clearChat}
           aria-label={t("messages.clearChat")}
           title={t("messages.clearChat")}
-        >
-          🗑
-        </button>
+        ><Icon name="trash" /></button>
       </div>
 
       <div className="thread-scroll">
@@ -247,12 +246,12 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                     >
                       <span className="verse-card-kind">
                         {m.attach.kind === "note"
-                          ? `📝 ${t("messages.sharedNote")}`
+                          ? t("messages.sharedNote")
                           : m.attach.kind === "word"
-                            ? `🔤 ${t("messages.sharedWord")}`
-                            : `🔖 ${t("messages.sharedBookmark")}`}
+                            ? t("messages.sharedWord")
+                            : t("messages.sharedBookmark")}
                       </span>
-                      <strong>📖 {refLabel(m.attach)}</strong>
+                      <strong><Icon name="book" /> {refLabel(m.attach)}</strong>
                       {m.attach.label && <em>{m.attach.label}</em>}
                       <small>{t("messages.tapToRead")}</small>
                     </Link>
@@ -303,7 +302,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                   className="share-row"
                   onClick={() => sendShare(item)}
                 >
-                  <span>{item.kind === "note" ? "📝" : "🔖"}</span>
+                  <span><Icon name={item.kind === "note" ? "note" : "bookmark"} /></span>
                   <span className="share-row-body">
                     <strong>{refLabel(item)}</strong>
                     {item.label && <small>{item.label}</small>}
@@ -323,9 +322,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
           aria-label={t("messages.share")}
           title={t("messages.share")}
           aria-pressed={pickerOpen}
-        >
-          🔖
-        </button>
+        ><Icon name="bookmark" /></button>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

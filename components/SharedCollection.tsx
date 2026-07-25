@@ -4,6 +4,7 @@
 // sharer's labels, each deep-linking into The Word.
 
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { getBook, type ChapterData } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
@@ -69,7 +70,7 @@ export default function SharedCollection({ token }: { token: string }) {
 
   return (
     <div>
-      <h1 className="page-title">🔖 {snap.name}</h1>
+      <h1 className="page-title"><Icon name="bookmark" /> {snap.name}</h1>
       <p className="subtitle">
         {snap.sharedBy
           ? t("shared.by", { name: snap.sharedBy })

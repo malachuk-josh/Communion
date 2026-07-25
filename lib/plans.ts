@@ -1,3 +1,4 @@
+import type { IconName } from "@/components/Icon";
 // Reading plans: fixed sequences of daily readings. Names/descriptions live
 // in the i18n dictionaries under plan.<id> / plan.<id>.desc. Per-user
 // progress (count of completed days) is stored server-side.
@@ -11,7 +12,7 @@ export type PlanCategory = "gospels" | "foundations" | "wisdom" | "journeys";
 
 export interface Plan {
   id: string;
-  emoji: string;
+  icon: IconName;
   category: PlanCategory;
   /** English title, for server-side notifications (the UI uses i18n) */
   name: string;
@@ -70,16 +71,16 @@ const spread = (
 
 // ---- Gospels & the life of Christ ----------------------------------------
 
-const john21: Plan = { id: "john21", emoji: "📖", category: "gospels",
+const john21: Plan = { id: "john21", icon: "book", category: "gospels",
   name: "The Gospel of John in 21 Days", days: book(43, 21) };
-const mark16: Plan = { id: "mark16", emoji: "🏃", category: "gospels",
+const mark16: Plan = { id: "mark16", icon: "runner", category: "gospels",
   name: "Mark in 16 Days", days: book(41, 16) };
-const luke24: Plan = { id: "luke24", emoji: "🕯️", category: "gospels",
+const luke24: Plan = { id: "luke24", icon: "candle", category: "gospels",
   name: "Luke in 24 Days", days: book(42, 24) };
 
 const sermon7: Plan = {
   id: "sermon7",
-  emoji: "⛰️",
+  icon: "mountain",
   category: "gospels",
   name: "The Sermon on the Mount",
   days: [
@@ -95,7 +96,7 @@ const sermon7: Plan = {
 
 const passion7: Plan = {
   id: "passion7",
-  emoji: "✝️",
+  icon: "cross",
   category: "gospels",
   name: "Passion Week",
   days: [
@@ -113,7 +114,7 @@ const passion7: Plan = {
 
 const newbeliever14: Plan = {
   id: "newbeliever14",
-  emoji: "🌱",
+  icon: "seedling",
   category: "foundations",
   name: "First Steps",
   days: across([
@@ -122,12 +123,12 @@ const newbeliever14: Plan = {
   ]),
 };
 
-const romans16: Plan = { id: "romans16", emoji: "📜", category: "foundations",
+const romans16: Plan = { id: "romans16", icon: "scroll", category: "foundations",
   name: "Romans in 16 Days", days: book(45, 16) };
 
 const nt30: Plan = {
   id: "nt30",
-  emoji: "✨",
+  icon: "sparkle",
   category: "foundations",
   name: "New Testament Highlights",
   days: across([
@@ -141,7 +142,7 @@ const nt30: Plan = {
 
 const prayer10: Plan = {
   id: "prayer10",
-  emoji: "🙏",
+  icon: "prayer",
   category: "foundations",
   name: "Learning to Pray",
   days: across([
@@ -152,7 +153,7 @@ const prayer10: Plan = {
 
 const armor7: Plan = {
   id: "armor7",
-  emoji: "🛡️",
+  icon: "shield",
   category: "foundations",
   name: "Strength for the Battle",
   days: across([
@@ -164,18 +165,18 @@ const armor7: Plan = {
 
 const psalms14: Plan = {
   id: "psalms14",
-  emoji: "🕊️",
+  icon: "dove",
   category: "wisdom",
   name: "Psalms of Comfort",
   days: picks(19, [23, 27, 34, 46, 91, 121, 139, 42, 62, 63, 103, 116, 130, 145]),
 };
 
-const proverbs31: Plan = { id: "proverbs31", emoji: "🦉", category: "wisdom",
+const proverbs31: Plan = { id: "proverbs31", icon: "owl", category: "wisdom",
   name: "Proverbs in a Month", days: book(20, 31) };
 
 const psalms150: Plan = {
   id: "psalms150",
-  emoji: "🎶",
+  icon: "music",
   category: "wisdom",
   name: "All 150 Psalms",
   days: chunked(chaptersOf(19, 150), 3),
@@ -183,7 +184,7 @@ const psalms150: Plan = {
 
 const ecclesiastes12: Plan = {
   id: "ecclesiastes12",
-  emoji: "⏳",
+  icon: "hourglass",
   category: "wisdom",
   name: "Ecclesiastes in 12 Days",
   days: book(21, 12),
@@ -191,15 +192,15 @@ const ecclesiastes12: Plan = {
 
 // ---- Longer journeys -----------------------------------------------------
 
-const genesis50: Plan = { id: "genesis50", emoji: "🌍", category: "journeys",
+const genesis50: Plan = { id: "genesis50", icon: "globe", category: "journeys",
   name: "Genesis in 50 Days", days: book(1, 50) };
-const acts28: Plan = { id: "acts28", emoji: "🔥", category: "journeys",
+const acts28: Plan = { id: "acts28", icon: "fire", category: "journeys",
   name: "Acts in 28 Days", days: book(44, 28) };
 
 /** The New Testament, Matthew → Revelation, about two chapters a day. */
 const nt90: Plan = {
   id: "nt90",
-  emoji: "📚",
+  icon: "books",
   category: "journeys",
   name: "The New Testament in 90 Days",
   days: (() => {
@@ -217,7 +218,7 @@ const nt90: Plan = {
 /** The whole Bible, Genesis → Revelation, in a year. */
 const bible365: Plan = {
   id: "bible365",
-  emoji: "🌟",
+  icon: "sparkle",
   category: "journeys",
   name: "The Whole Bible in a Year",
   days: (() => {

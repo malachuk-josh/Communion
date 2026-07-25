@@ -1,17 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Icon, { SESSION_ICON } from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import type { WorshipEvent } from "@/lib/types";
 
-const TYPE_DOT: Record<string, string> = {
-  bible_study: "📖",
-  prayer: "🙏",
-  communion: "🍞",
-  praise_worship: "🎶",
-  fellowship: "🤝",
-  custom: "✨",
-};
 
 export default function MonthGrid({
   events,
@@ -97,7 +90,7 @@ export default function MonthGrid({
               {dayEvents && (
                 <span className="day-dots">
                   {dayEvents.slice(0, 3).map((event) => (
-                    <span key={event.id}>{TYPE_DOT[event.type] ?? "✨"}</span>
+                    <span key={event.id}><Icon name={SESSION_ICON[event.type] ?? "sparkle"} /></span>
                   ))}
                 </span>
               )}

@@ -5,6 +5,7 @@
 // of the pending badge.
 
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -31,7 +32,7 @@ export default function Notifications() {
   return (
     <div>
       <BackToMenu />
-      <h1 className="page-title">🔔 {t("messages.history")}</h1>
+      <h1 className="page-title"><Icon name="bell" /> {t("messages.history")}</h1>
       <p className="subtitle">{t("messages.historySubtitle")}</p>
 
       {items === null ? (

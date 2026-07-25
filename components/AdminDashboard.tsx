@@ -5,6 +5,7 @@
 // small screens get a note rather than a squeezed table.
 
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -81,7 +82,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin">
       <BackToMenu />
-      <h1 className="page-title">🛠 Admin</h1>
+      <h1 className="page-title"><Icon name="tools" /> Admin</h1>
       <p className="subtitle">
         Everything happening across Communion. Visible only to you.
       </p>
@@ -129,7 +130,7 @@ export default function AdminDashboard() {
                     )}
                   </td>
                   <td>
-                    {f.visibility === "private" ? "🔒 private" : "🌐 public"}
+                    {f.visibility === "private" ? "private" : "public"}
                   </td>
                   <td>{f.adminName}</td>
                   <td>{f.memberCount}</td>
