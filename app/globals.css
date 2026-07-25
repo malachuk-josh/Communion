@@ -2049,6 +2049,16 @@ button.menu-tile {
   color: var(--gold);
 }
 
+.lex-tabs {
+  margin: 2px 0 8px;
+}
+
+.absmith-text {
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
 .lex-count-btn {
   cursor: pointer;
   font: inherit;

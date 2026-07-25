@@ -94,6 +94,12 @@ export default function Reader({
   const [lxx, setLxx] = useState<Record<number, string> | null>(null);
   const [lxxLoading, setLxxLoading] = useState(false);
   const [concFor, setConcFor] = useState<string | null>(null);
+  // Abbott-Smith (Greek) / brief lexicon (Hebrew), loaded per bucket
+  const [deepSource, setDeepSource] = useState<"strongs" | "absmith">(
+    "strongs"
+  );
+  const [deep, setDeep] = useState<Record<string, { d: string }>>({});
+  const [deepLoading, setDeepLoading] = useState(false);
   const [sharePeers, setSharePeers] = useState<
     { userId: string; displayName: string; icon?: string }[] | null
   >(null);
@@ -329,6 +335,25 @@ export default function Reader({
 
   const lexFor = (num: string): LexEntry | undefined =>
     (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
+
+  /** Fetch the Abbott-Smith bucket holding this number, once. */
+  const loadDeep = (num: string) => {
+    const bucket = `${num.slice(0, 1)}${Math.floor(Number(num.slice(1)) / 500)}`;
+    if (deep[num] !== undefined || deepLoading) return;
+    setDeepLoading(true);
+    fetch(`/absmith/${bucket}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((data: Record<string, { d: string }>) =>
+        setDeep((prev) => ({ ...prev, ...data }))
+      )
+      .catch(() => {})
+      .finally(() => setDeepLoading(false));
+  };
+
+  const showDeep = (num: string) => {
+    setDeepSource("absmith");
+    loadDeep(num);
+  };
 
   /**
    * The Septuagint line for the open verse. The LXX counts psalm
@@ -1160,8 +1185,44 @@ export default function Reader({
               ✕
             </button>
           </div>
+          <div className="plan-filters lex-tabs">
+            <button
+              type="button"
+              className={`chip${deepSource === "strongs" ? " chip-active" : ""}`}
+              onClick={() => setDeepSource("strongs")}
+            >
+              {t("reader.srcStrongs")}
+            </button>
+            <button
+              type="button"
+              className={`chip${deepSource === "absmith" ? " chip-active" : ""}`}
+              onClick={() => showDeep(wordSel.nums[0])}
+            >
+              {wordSel.nums[0].startsWith("H")
+                ? t("reader.srcBrief")
+                : t("reader.srcAbsmith")}
+            </button>
+          </div>
           <div className="lex-body">
-            {wordSel.nums.map((num) => {
+            {deepSource === "absmith" ? (
+              deepLoading ? (
+                <p className="skeleton">{t("common.loading")}</p>
+              ) : (
+                wordSel.nums.map((num) => (
+                  <div key={num} className="lex-entry">
+                    {wordSel.nums.length > 1 && (
+                      <p className="lex-sub-lemma">{lexFor(num)?.lemma}</p>
+                    )}
+                    {deep[num] ? (
+                      <p className="absmith-text">{deep[num].d}</p>
+                    ) : (
+                      <p className="cal-hint">{t("reader.srcMissing")}</p>
+                    )}
+                  </div>
+                ))
+              )
+            ) : (
+              wordSel.nums.map((num) => {
               const entry = lexFor(num);
               if (!entry) {
                 return (
@@ -1192,8 +1253,9 @@ export default function Reader({
                     </p>
                   )}
                 </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
           {bookNr <= 39 && (lxxLoading || lxxLine()) && (
             <div className="lxx-block">
