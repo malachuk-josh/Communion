@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
 import { addMember, getChurch, getInvite, saveProfile } from "@/lib/churches";
 import { db, keys } from "@/lib/db";
+import { sendPushToUser } from "@/lib/push";
 
 /** Public invite preview — church name + who invited (no membership data). */
 export async function GET(
@@ -48,5 +49,24 @@ export async function POST(
   const displayName = await getDisplayName(req, body?.displayName);
   await saveProfile(userId, displayName);
   await addMember(invite.churchId, userId);
+
+  // welcome the newcomer, and tell whoever invited them they arrived
+  const church = await getChurch(invite.churchId);
+  if (church) {
+    await sendPushToUser(userId, {
+      title: `⛪ ${church.name}`,
+      body: "You've joined the Fellowship — welcome!",
+      url: `/churches/${church.id}`,
+      tag: `welcome-${church.id}`,
+    }).catch(() => {});
+    if (invite.invitedBy && invite.invitedBy !== userId) {
+      await sendPushToUser(invite.invitedBy, {
+        title: `⛪ ${church.name}`,
+        body: `${displayName} accepted your invitation.`,
+        url: `/churches/${church.id}`,
+        tag: `joined-${church.id}-${userId}`,
+      }).catch(() => {});
+    }
+  }
   return NextResponse.json({ churchId: invite.churchId });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { resolveRequest } from "@/lib/churches";
+import { getChurch, resolveRequest } from "@/lib/churches";
+import { sendPushToUser } from "@/lib/push";
 
 /** Founder approves or declines a join request. */
 export async function POST(
@@ -26,6 +27,19 @@ export async function POST(
   );
   if (!resolved) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // welcome the newcomer (best effort — the membership is already stored)
+  if (body.action === "approve") {
+    const church = await getChurch(id);
+    if (church) {
+      await sendPushToUser(requesterId, {
+        title: `⛪ ${church.name}`,
+        body: "Your request was approved — welcome to the Fellowship!",
+        url: `/churches/${id}`,
+        tag: `welcome-${id}`,
+      }).catch(() => {});
+    }
   }
   return NextResponse.json({ ok: true });
 }
