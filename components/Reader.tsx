@@ -1549,7 +1549,7 @@ export default function Reader({
                           aria-label={t("reader.bookmarkToggle")}
                           title={t("reader.bookmarkToggle")}
                         >
-                          🔖
+                          🔖 {t("reader.bookmark")}
                         </button>
                         <button
                           type="button"
@@ -1558,7 +1558,7 @@ export default function Reader({
                           aria-label={t("reader.addNote")}
                           title={t("reader.addNote")}
                         >
-                          📝
+                          📝 {t("reader.note")}
                         </button>
                       </span>
                       {note && editingNote !== key && (
