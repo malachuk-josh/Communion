@@ -112,12 +112,22 @@ export default function Nav() {
     setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
-  // already reading? The Word tab glides to the top of this chapter
+  // Already reading? The Word tab glides to the top of this chapter, and
+  // tapping it again straight after opens the navigator. The first tap still
+  // acts at once — waiting to see whether a second one is coming would put a
+  // third of a second of lag on the common case.
+  const lastWordTap = useRef(0);
   const wordClick = (e: React.MouseEvent) => {
-    if (pathname === "/") {
-      e.preventDefault();
-      scrollToChapterTop(position?.chapter);
+    if (pathname !== "/") return;
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastWordTap.current < 350) {
+      lastWordTap.current = 0;
+      setPanelOpen(true);
+      return;
     }
+    lastWordTap.current = now;
+    scrollToChapterTop(position?.chapter);
   };
 
   // cycles dark → grey → light → dark; the icon shows what comes next
