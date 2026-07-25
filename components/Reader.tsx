@@ -63,6 +63,30 @@ interface BmCollection {
   share?: string;
 }
 
+/**
+ * The passage named in the address bar, if any. The page is server-rendered
+ * with these already resolved — but the service worker may answer any URL
+ * with its cached copy of "/", whose props were baked at some other visit,
+ * so offline the address bar is the only trustworthy source.
+ */
+function deepLinkFromUrl():
+  | { bookNr: number; chapter: number; verse?: number }
+  | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const book = getBook(Number(params.get("b")));
+  const chapter = Number(params.get("c"));
+  const verse = Number(params.get("v"));
+  if (!book || !Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
+    return null;
+  }
+  return {
+    bookNr: book.nr,
+    chapter,
+    verse: Number.isInteger(verse) && verse >= 1 ? verse : undefined,
+  };
+}
+
 export default function Reader({
   initialBook,
   initialChapter,
@@ -282,6 +306,15 @@ export default function Reader({
 
   // restore last reading position and text size
   useEffect(() => {
+    // offline the server-rendered props can belong to a different visit
+    const urlLink = deepLinkFromUrl();
+    const linked = deepLinked || !!urlLink;
+    if (urlLink && (urlLink.bookNr !== initialBook || urlLink.chapter !== initialChapter)) {
+      setBookNr(urlLink.bookNr);
+      setChapter(urlLink.chapter);
+      setViewChapter(urlLink.chapter);
+      if (urlLink.verse) setHighlightVerse(urlLink.verse);
+    }
     try {
       const saved = JSON.parse(
         window.localStorage.getItem("communion.reading") ?? "null"
@@ -291,12 +324,12 @@ export default function Reader({
           setTranslation(saved.translation);
         }
         // a deep link (?b=&c=) outranks the remembered reading position
-        if (!deepLinked) {
+        if (!linked) {
           setBookNr(saved.bookNr);
           setChapter(saved.chapter);
           setViewChapter(saved.chapter);
         }
-      } else if (!deepLinked) {
+      } else if (!linked) {
         // first visit: land on the founding verse, gently highlighted
         setHighlightVerse(DEFAULT_VERSE);
       }
