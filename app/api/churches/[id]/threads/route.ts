@@ -3,7 +3,7 @@ import { getUserId } from "@/lib/auth";
 import { getChurch, getRole } from "@/lib/churches";
 import { createThread, listThreads, validateAttach } from "@/lib/threads";
 
-/** Discussion threads in a Fellowship (members only). */
+/** Discussion threads in a Gathering (members only). */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -53,7 +53,7 @@ export async function POST(
   const church = await getChurch(id);
   const thread = await createThread(
     id,
-    church?.name ?? "your Fellowship",
+    church?.name ?? "your Gathering",
     userId,
     title,
     text,

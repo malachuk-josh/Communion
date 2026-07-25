@@ -1,6 +1,6 @@
 "use client";
 
-// Discussions inside a Fellowship: the thread list plus a composer for
+// Discussions inside a Gathering: the thread list plus a composer for
 // starting a new topic (with an optional scripture or bookmark).
 
 import Link from "next/link";

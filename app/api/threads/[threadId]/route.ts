@@ -9,7 +9,7 @@ import {
   validateAttach,
 } from "@/lib/threads";
 
-/** One discussion thread with its posts (Fellowship members only). */
+/** One discussion thread with its posts (Gathering members only). */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ threadId: string }> }
@@ -38,7 +38,7 @@ export async function GET(
   });
 }
 
-/** Delete a discussion — its author or the Fellowship's founder. */
+/** Delete a discussion — its author or the Gathering's founder. */
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ threadId: string }> }
@@ -93,7 +93,7 @@ export async function POST(
   const post = await addPost(
     threadId,
     meta.churchId,
-    church?.name ?? "your Fellowship",
+    church?.name ?? "your Gathering",
     userId,
     text,
     attach ?? undefined

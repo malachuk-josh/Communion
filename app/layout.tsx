@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://communion-mu.vercel.app"),
   title: "Communion — Read the Word. Gather in His name.",
   description:
-    "A Bible app with a social heart: Scripture in multiple translations and languages, and Fellowships — small groups that worship together. Matthew 18:20.",
+    "A Bible app with a social heart: Scripture in multiple translations and languages, and Gatherings — small groups that worship together. Matthew 18:20.",
   openGraph: {
     title: "Communion",
     description: "Read the Word. Gather in His name.",

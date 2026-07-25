@@ -10,7 +10,7 @@ import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
 
-interface Fellowship {
+interface Gathering {
   id: string;
   name: string;
   description: string;
@@ -32,7 +32,7 @@ interface AdminUser {
   lastSignInAt?: number;
   phone?: string;
   smsReminders: boolean;
-  fellowships: number;
+  gatherings: number;
   bookmarks: number;
   pushDevices: number;
   guest: boolean;
@@ -40,7 +40,7 @@ interface AdminUser {
 
 interface Summary {
   totals: Record<string, number>;
-  fellowships: Fellowship[];
+  gatherings: Gathering[];
   users: AdminUser[];
 }
 
@@ -48,8 +48,8 @@ const TOTALS: { key: string; label: string }[] = [
   { key: "users", label: "People" },
   { key: "clerkUsers", label: "Accounts" },
   { key: "guests", label: "Guests" },
-  { key: "fellowships", label: "Fellowships" },
-  { key: "privateFellowships", label: "Private" },
+  { key: "gatherings", label: "Gatherings" },
+  { key: "privateGatherings", label: "Private" },
   { key: "members", label: "Memberships" },
   { key: "threads", label: "Discussions" },
   { key: "events", label: "Sessions" },
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="section-head">
-        <h2>Fellowships ({data.fellowships.length})</h2>
+        <h2>Gatherings ({data.gatherings.length})</h2>
       </div>
       <div className="glass card admin-table-wrap">
         <table className="admin-table">
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {data.fellowships.map((f) => (
+            {data.gatherings.map((f) => (
               <Fragment key={f.id}>
                 <tr>
                   <td>
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
               <th>Type</th>
               <th>Phone</th>
               <th>SMS</th>
-              <th>Fellowships</th>
+              <th>Gatherings</th>
               <th>Bookmarks</th>
               <th>Push</th>
               <th>Joined</th>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                 <td>{u.guest ? "guest" : "account"}</td>
                 <td>{u.phone ?? "—"}</td>
                 <td>{u.smsReminders ? "on" : "—"}</td>
-                <td>{u.fellowships}</td>
+                <td>{u.gatherings}</td>
                 <td>{u.bookmarks}</td>
                 <td>{u.pushDevices}</td>
                 <td>{date(u.createdAt)}</td>

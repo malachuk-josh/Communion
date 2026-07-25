@@ -125,7 +125,7 @@ export default function Messages() {
             : t("messages.empty")}
         </div>
       ) : (
-        // direct messages and Fellowship discussions share one list,
+        // direct messages and Gathering discussions share one list,
         // ordered by whichever spoke last
         [
           ...convs.map((c) => ({ kind: "dm" as const, ts: c.ts, dm: c })),

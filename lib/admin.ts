@@ -20,7 +20,7 @@ export function isOwner(userId: string | null): boolean {
   return !!userId && owners().includes(userId);
 }
 
-export interface AdminFellowship {
+export interface AdminGathering {
   id: string;
   name: string;
   description: string;
@@ -42,7 +42,7 @@ export interface AdminUser {
   lastSignInAt?: number;
   phone?: string;
   smsReminders: boolean;
-  fellowships: number;
+  gatherings: number;
   bookmarks: number;
   pushDevices: number;
   guest: boolean;
@@ -53,15 +53,15 @@ export interface AdminSummary {
     users: number;
     clerkUsers: number;
     guests: number;
-    fellowships: number;
-    publicFellowships: number;
-    privateFellowships: number;
+    gatherings: number;
+    publicGatherings: number;
+    privateGatherings: number;
     members: number;
     events: number;
     threads: number;
     pushDevices: number;
   };
-  fellowships: AdminFellowship[];
+  gatherings: AdminGathering[];
   users: AdminUser[];
 }
 
@@ -73,7 +73,7 @@ async function countFor(userId: string) {
     kv.hgetall(keys.userPushSubs(userId)),
   ]);
   return {
-    fellowships: churches.length,
+    gatherings: churches.length,
     bookmarks: Object.keys(bookmarks ?? {}).length,
     pushDevices: Object.keys(push ?? {}).length,
   };
@@ -83,7 +83,7 @@ export async function buildSummary(): Promise<AdminSummary> {
   const kv = db();
   const churchIds = await kv.smembers(keys.allChurches);
 
-  const fellowships: AdminFellowship[] = [];
+  const gatherings: AdminGathering[] = [];
   const seenUsers = new Set<string>();
   let members = 0;
   let events = 0;
@@ -115,7 +115,7 @@ export async function buildSummary(): Promise<AdminSummary> {
       })
     );
 
-    fellowships.push({
+    gatherings.push({
       id: churchId,
       name: raw.name,
       description: raw.description ?? "",
@@ -129,7 +129,7 @@ export async function buildSummary(): Promise<AdminSummary> {
       members: memberDetails,
     });
   }
-  fellowships.sort((a, b) => b.createdAt - a.createdAt);
+  gatherings.sort((a, b) => b.createdAt - a.createdAt);
 
   // Clerk accounts, when configured — these carry email and sign-in data
   const clerkProfiles = new Map<
@@ -183,17 +183,17 @@ export async function buildSummary(): Promise<AdminSummary> {
       users: users.length,
       clerkUsers: clerkCount || users.filter((u) => !u.guest).length,
       guests: users.filter((u) => u.guest).length,
-      fellowships: fellowships.length,
-      publicFellowships: fellowships.filter((f) => f.visibility === "public")
+      gatherings: gatherings.length,
+      publicGatherings: gatherings.filter((f) => f.visibility === "public")
         .length,
-      privateFellowships: fellowships.filter((f) => f.visibility === "private")
+      privateGatherings: gatherings.filter((f) => f.visibility === "private")
         .length,
       members,
       events,
       threads,
       pushDevices: users.reduce((sum, u) => sum + u.pushDevices, 0),
     },
-    fellowships,
+    gatherings,
     users,
   };
 }

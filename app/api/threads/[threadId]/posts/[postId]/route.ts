@@ -3,7 +3,7 @@ import { getUserId } from "@/lib/auth";
 import { getRole } from "@/lib/churches";
 import { deletePost, getThreadMeta } from "@/lib/threads";
 
-/** Delete one message in a discussion — its author or the Fellowship admin. */
+/** Delete one message in a discussion — its author or the Gathering admin. */
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ threadId: string; postId: string }> }

@@ -35,7 +35,7 @@ export async function POST(
     if (church) {
       await sendPushToUser(requesterId, {
         title: `⛪ ${church.name}`,
-        body: "Your request was approved — welcome to the Fellowship!",
+        body: "Your request was approved — welcome to the Gathering!",
         url: `/churches/${id}`,
         tag: `welcome-${id}`,
       }).catch(() => {});

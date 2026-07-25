@@ -1,4 +1,4 @@
-// Discussion threads inside a Fellowship: a titled topic with replies.
+// Discussion threads inside a Gathering: a titled topic with replies.
 // Posts may carry a scripture reference or a shared bookmark/note/word
 // study, using the same attachment shape as direct messages.
 
@@ -101,7 +101,7 @@ export async function listThreads(churchId: string): Promise<ThreadSummary[]> {
     .sort((a, b) => b.lastAt - a.lastAt);
 }
 
-/** Every discussion across the Fellowships a user belongs to, newest first. */
+/** Every discussion across the Gatherings a user belongs to, newest first. */
 export async function listUserThreads(
   userId: string
 ): Promise<(ThreadSummary & { churchName: string })[]> {
@@ -119,7 +119,7 @@ export async function listUserThreads(
 
 /**
  * Remove one post from a discussion. Allowed for its author, and for the
- * Fellowship's admin moderating. Returns false when the post isn't theirs.
+ * Gathering's admin moderating. Returns false when the post isn't theirs.
  */
 export async function deletePost(
   threadId: string,
@@ -212,7 +212,7 @@ export async function getPosts(threadId: string): Promise<ThreadPost[]> {
   return posts.sort((a, b) => a.ts - b.ts);
 }
 
-/** Push to every member of the Fellowship except the author. */
+/** Push to every member of the Gathering except the author. */
 async function notifyMembers(
   churchId: string,
   authorId: string,

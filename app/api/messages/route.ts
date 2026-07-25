@@ -4,7 +4,7 @@ import { listContacts, listConversations } from "@/lib/messages";
 import { listUserThreads } from "@/lib/threads";
 
 /**
- * Inbox: direct-message summaries, Fellowship discussions (each its own
+ * Inbox: direct-message summaries, Gathering discussions (each its own
  * conversation), and contacts for starting a new message.
  */
 export async function GET(req: Request) {

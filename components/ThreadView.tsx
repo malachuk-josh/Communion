@@ -1,6 +1,6 @@
 "use client";
 
-// One Fellowship discussion: posts in order, each optionally carrying a
+// One Gathering discussion: posts in order, each optionally carrying a
 // scripture reference or a shared bookmark/note/word study.
 
 import Link from "next/link";

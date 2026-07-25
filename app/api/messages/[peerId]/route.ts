@@ -84,7 +84,7 @@ export async function POST(
   }
   if (!(await sharesChurch(userId, peerId))) {
     return NextResponse.json(
-      { error: "You can only message members of your Fellowships" },
+      { error: "You can only message members of your Gatherings" },
       { status: 403 }
     );
   }
