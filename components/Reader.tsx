@@ -12,6 +12,7 @@ import {
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
+import Concordance from "@/components/Concordance";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -92,6 +93,7 @@ export default function Reader({
   // Septuagint text for the open chapter (Old Testament only)
   const [lxx, setLxx] = useState<Record<number, string> | null>(null);
   const [lxxLoading, setLxxLoading] = useState(false);
+  const [concFor, setConcFor] = useState<string | null>(null);
   const [sharePeers, setSharePeers] = useState<
     { userId: string; displayName: string; icon?: string }[] | null
   >(null);
@@ -1137,11 +1139,17 @@ export default function Reader({
               {lexFor(wordSel.nums[0])?.lemma ?? wordSel.text}
             </span>
             {lexCounts?.[wordSel.nums[0]] !== undefined && (
-              <span className="lex-count">
+              <button
+                type="button"
+                className="lex-count lex-count-btn"
+                onClick={() => setConcFor(wordSel.nums[0])}
+                title={t("reader.concOpen")}
+              >
                 {t("reader.foundVerses", {
                   count: String(lexCounts[wordSel.nums[0]]),
-                })}
-              </span>
+                })}{" "}
+                →
+              </button>
             )}
             <button
               type="button"
@@ -1246,6 +1254,28 @@ export default function Reader({
             </div>
           )}
         </div>
+      )}
+
+      {concFor && (
+        <Concordance
+          num={concFor}
+          lemma={lexFor(concFor)?.lemma ?? ""}
+          translit={lexFor(concFor)?.translit ?? ""}
+          onClose={() => setConcFor(null)}
+          onPick={(b, c, v) => {
+            setConcFor(null);
+            setWordSel(null);
+            setBackStack((prev) =>
+              [
+                ...prev,
+                { b: bookNr, c: chapter, v: wordSel?.verse ?? 1 },
+              ].slice(-10)
+            );
+            setBookNr(b);
+            setChapter(c);
+            setHighlightVerse(v);
+          }}
+        />
       )}
 
       {bmSheet !== null && (

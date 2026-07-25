@@ -2049,6 +2049,69 @@ button.menu-tile {
   color: var(--gold);
 }
 
+.lex-count-btn {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  transition: border-color 0.15s ease;
+}
+
+.lex-count-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* sits above the word sheet that opened it (beats the later
+   .modal-overlay rule on specificity) */
+.modal-overlay.conc-overlay {
+  z-index: 80;
+}
+
+.concordance {
+  max-width: 560px;
+}
+
+.conc-list {
+  display: grid;
+  gap: 2px;
+  max-height: 52vh;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+
+.conc-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 7px 9px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.conc-row:hover {
+  border-color: var(--glass-border);
+}
+
+.conc-ref {
+  color: var(--gold);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.conc-word {
+  color: var(--ink-dim);
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lxx-block {
   margin-top: 10px;
   padding-top: 10px;
