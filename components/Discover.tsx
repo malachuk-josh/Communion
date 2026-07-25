@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client";
 import { getBook, type Verse } from "@/lib/bible";
 import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
-import { PLANS } from "@/lib/plans";
+import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
@@ -175,6 +175,7 @@ function PlansSection() {
   const { lang, t } = useI18n();
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
     api<{ progress: Record<string, number> }>("/api/plans/progress")
@@ -210,63 +211,109 @@ function PlansSection() {
     }
   };
 
+  const started = PLANS.filter(
+    (p) => (progress[p.id] ?? 0) > 0 && (progress[p.id] ?? 0) < p.days.length
+  );
+  const shown =
+    filter === "mine"
+      ? started
+      : filter === "all"
+        ? PLANS
+        : PLANS.filter((p) => p.category === filter);
+
+  const dayLabel = (day: { readings: { b: number; c: number }[] }) => {
+    const refs = day.readings.map((r) =>
+      refLabel({ ...r, v: 1 }, lang).replace(/:1$/, "")
+    );
+    return refs.length <= 2 ? refs.join(" · ") : `${refs[0]} – ${refs.at(-1)}`;
+  };
+
   return (
     <>
       <div className="section-head">
         <h2>{t("discover.plans")}</h2>
       </div>
-      {PLANS.map((plan) => {
-        const done = progress[plan.id] ?? 0;
-        const total = plan.days.length;
-        const finished = done >= total;
-        const today = finished ? null : plan.days[done];
-        return (
-          <div key={plan.id} className="glass card plan-card">
-            <div className="plan-head">
-              <h3>
-                {plan.emoji} {t(`plan.${plan.id}` as MessageKey)}
-              </h3>
-              <span className="plan-count">
-                {done}/{total}
-              </span>
-            </div>
-            <p className="plan-desc">{t(`plan.${plan.id}.desc` as MessageKey)}</p>
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${Math.round((done / total) * 100)}%` }}
-              />
-            </div>
-            {finished ? (
-              <div className="plan-actions">
-                <span className="email-sent">🎉 {t("discover.planDone")}</span>
-                <button className="rsvp-btn" onClick={() => reset(plan.id)}>
-                  {t("discover.restart")}
-                </button>
+      <p className="subtitle plans-lead">{t("discover.plansLead")}</p>
+      <div className="plan-filters">
+        {(["all", ...PLAN_CATEGORIES] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`chip${filter === key ? " chip-active" : ""}`}
+            onClick={() => setFilter(key)}
+          >
+            {t(`planCat.${key}` as MessageKey)}
+          </button>
+        ))}
+        {started.length > 0 && (
+          <button
+            type="button"
+            className={`chip${filter === "mine" ? " chip-active" : ""}`}
+            onClick={() => setFilter("mine")}
+          >
+            ▶ {t("discover.planMine")} ({started.length})
+          </button>
+        )}
+      </div>
+      <div className="plan-grid">
+        {shown.map((plan) => {
+          const done = progress[plan.id] ?? 0;
+          const total = plan.days.length;
+          const finished = done >= total;
+          const today = finished ? null : plan.days[done];
+          return (
+            <div key={plan.id} className="glass card plan-card">
+              <div className="plan-head">
+                <h3>
+                  {plan.emoji} {t(`plan.${plan.id}` as MessageKey)}
+                </h3>
+                <span className="plan-count">
+                  {done}/{total}
+                </span>
               </div>
-            ) : (
-              today && (
+              <p className="plan-desc">
+                {t(`plan.${plan.id}.desc` as MessageKey)}
+              </p>
+              <p className="plan-meta">
+                {t("discover.planLength", { n: String(total) })}
+              </p>
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${Math.round((done / total) * 100)}%` }}
+                />
+              </div>
+              {finished ? (
                 <div className="plan-actions">
-                  <Link
-                    className="cal-link"
-                    href={`/?b=${today.b}&c=${today.c}`}
-                  >
-                    📖 {t("discover.day", { n: String(done + 1) })}:{" "}
-                    {refLabel({ ...today, v: 1 }, lang).replace(/:1$/, "")}
-                  </Link>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => complete(plan.id)}
-                    disabled={busy === plan.id}
-                  >
-                    ✓ {t("discover.markRead")}
+                  <span className="email-sent">🎉 {t("discover.planDone")}</span>
+                  <button className="rsvp-btn" onClick={() => reset(plan.id)}>
+                    {t("discover.restart")}
                   </button>
                 </div>
-              )
-            )}
-          </div>
-        );
-      })}
+              ) : (
+                today && (
+                  <div className="plan-actions">
+                    <Link
+                      className="cal-link"
+                      href={`/?b=${today.readings[0].b}&c=${today.readings[0].c}`}
+                    >
+                      📖 {t("discover.day", { n: String(done + 1) })}:{" "}
+                      {dayLabel(today)}
+                    </Link>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => complete(plan.id)}
+                      disabled={busy === plan.id}
+                    >
+                      ✓ {t("discover.markRead")}
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }

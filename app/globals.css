@@ -1308,6 +1308,34 @@ button.menu-tile {
   margin: 0;
 }
 
+.plans-lead {
+  margin-top: -6px;
+}
+
+.plan-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.plan-grid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 760px) {
+  .plan-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.plan-meta {
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  margin: 2px 0 8px;
+}
+
 .push-prompt {
   position: fixed;
   left: 12px;
