@@ -13,7 +13,7 @@ import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import { useI18n } from "@/lib/i18n";
 import { scrollToChapterTop, useReading } from "@/lib/reading";
-import { fetchChapter, searchLocal } from "@/lib/scripture";
+import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
 import { readOutbox } from "@/lib/localStore";
 import {
   adoptIdentity,
@@ -102,25 +102,28 @@ export default function Reader({
   const [translation, setTranslation] = useState(DEFAULT_TRANSLATION);
   const [bookNr, setBookNr] = useState(initialBook ?? DEFAULT_BOOK);
   const [chapter, setChapter] = useState(initialChapter ?? DEFAULT_CHAPTER);
-  const [data, setData] = useState<ChapterData | null>(null);
-  // chapters appended below the current one by continuous scroll (same book)
-  const [extra, setExtra] = useState<{ ch: number; data: ChapterData }[]>([]);
-  // and the ones pulled in above it, oldest first
-  const [before, setBefore] = useState<{ ch: number; data: ChapterData }[]>([]);
+  // The whole book, every chapter, in order. Scrolling never loads anything:
+  // the file on disk holds the book entire, so there is nothing left to fetch
+  // once you have arrived, in either direction.
+  const [chapters, setChapters] = useState<{ ch: number; verses: Verse[] }[]>(
+    []
+  );
   // the chapter currently in view — trails the scroll, drives the pager,
   // the header indicator, and the saved reading position
   const [viewChapter, setViewChapter] = useState(
     initialChapter ?? DEFAULT_CHAPTER
   );
-  const loadingMoreRef = useRef(false);
-  const loadingPrevRef = useRef(false);
   /** where a chapter heading sat before something grew above it */
   const holdRef = useRef<{ ch: number; top: number } | null>(null);
   /** the chapter on screen, readable from inside a fetch callback */
   const viewChapterRef = useRef(1);
-  // bumped on every jump so stale continuous-scroll fetches drop themselves
+  /** the chapter asked for, readable from the book load that ignores it */
+  const chapterRef = useRef(initialChapter ?? DEFAULT_CHAPTER);
+  chapterRef.current = chapter;
+  // bumped on every jump so a stale book load drops itself
   const genRef = useRef(0);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  /** the chapter this reader has already been placed at */
+  const placedRef = useRef<string | null>(null);
   const readRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -354,6 +357,14 @@ export default function Reader({
     }
   }, []);
 
+  // The reader is the one screen where chrome is pure cost. This marks the
+  // document while it is open so the stylesheet can strip the page gutter and
+  // the scrollbar for scripture and nothing else.
+  useEffect(() => {
+    document.documentElement.classList.add("reading");
+    return () => document.documentElement.classList.remove("reading");
+  }, []);
+
   /**
    * Remember where a chapter heading is sitting, so the layout effect below
    * can put it back after the DOM grows above it. Call this immediately
@@ -364,126 +375,76 @@ export default function Reader({
     if (el) holdRef.current = { ch, top: el.getBoundingClientRect().top };
   };
 
+  /** Put the reader at the top of a chapter, clear of the sticky header. */
+  const placeAt = (ch: number) => {
+    const head = document.querySelector<HTMLElement>(
+      `.chap-head[data-ch="${ch}"]`
+    );
+    if (!head) {
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    const nav = document.querySelector<HTMLElement>(".nav");
+    const clear = (nav?.getBoundingClientRect().height ?? 0) + 10;
+    const top = head.getBoundingClientRect().top + window.scrollY - clear;
+    window.scrollTo({ top: Math.max(0, top) });
+  };
+
   useEffect(() => {
     genRef.current += 1;
     const gen = genRef.current;
-    setExtra([]);
-    setBefore([]);
-    setViewChapter(chapter);
+    setChapters([]);
+    placedRef.current = null;
     setLoading(true);
     setError(false);
-    fetchChapter(translation, bookNr, chapter)
-      .then((json) => {
+    fetchBook(translation, bookNr)
+      .then((book) =>
+        book.chapters.map((c) => ({ ch: c.chapter, verses: c.verses }))
+      )
+      // no static file for this text: fall back to the one chapter asked for
+      .catch(() =>
+        fetchChapter(translation, bookNr, chapterRef.current).then((json) => [
+          { ch: json.chapter, verses: json.verses },
+        ])
+      )
+      .then((list) => {
         if (genRef.current !== gen) return; // reader jumped meanwhile
-        setData(json);
+        setChapters(list);
         setLoading(false);
-        window.localStorage.setItem(
-          "communion.reading",
-          JSON.stringify({ translation, bookNr, chapter })
-        );
-        window.scrollTo({ top: 0 });
-        // the chapter before this one comes along straight away, so it is
-        // already above you the moment you think to scroll back
-        if (chapter > 1) {
-          loadingPrevRef.current = true;
-          fetchChapter(translation, bookNr, chapter - 1)
-            .then((prev) => {
-              if (genRef.current !== gen) return;
-              holdAnchor(chapter);
-              setBefore([{ ch: chapter - 1, data: prev }]);
-            })
-            .catch(() => {})
-            .finally(() => {
-              loadingPrevRef.current = false;
-            });
-        }
       })
       .catch(() => {
         if (genRef.current !== gen) return;
         setError(true);
         setLoading(false);
       });
-  }, [translation, bookNr, chapter]);
+  }, [translation, bookNr]);
 
-  // continuous scroll: nearing the bottom pulls in the next chapter of the
-  // same book, so a book reads as one unbroken column
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || loading || error || !data) return;
-    const bookChapters = getBook(bookNr)?.chapters ?? 0;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        if (loadingMoreRef.current) return;
-        const next = chapter + extra.length + 1;
-        if (next > bookChapters) return;
-        loadingMoreRef.current = true;
-        const gen = genRef.current;
-        fetchChapter(translation, bookNr, next)
-          .then((json) => {
-            if (genRef.current !== gen) return; // reader jumped meanwhile
-            setExtra((prev) =>
-              next === chapter + prev.length + 1
-                ? [...prev, { ch: next, data: json }]
-                : prev
-            );
-          })
-          .catch(() => {})
-          .finally(() => {
-            loadingMoreRef.current = false;
-          });
-      },
-      { rootMargin: "1400px 0px" }
+  /**
+   * Put the reader at the chapter they asked for. This runs before paint, so
+   * arriving at Psalm 40 never shows Psalm 1 first. It fires only when the
+   * requested chapter actually changes — never on a scroll — so it cannot
+   * fight the reader's own thumb.
+   */
+  useLayoutEffect(() => {
+    if (loading || error || chapters.length === 0) return;
+    const want = `${translation}/${bookNr}/${chapter}`;
+    if (placedRef.current === want) return;
+    placedRef.current = want;
+    setViewChapter(chapter);
+    viewChapterRef.current = chapter;
+    placeAt(chapter);
+    window.localStorage.setItem(
+      "communion.reading",
+      JSON.stringify({ translation, bookNr, chapter })
     );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loading, error, data, extra.length, chapter, bookNr, translation]);
+  }, [loading, error, chapters, translation, bookNr, chapter]);
 
-  // …and the same in reverse. Watching an observer at the top of the column
-  // doesn't work: it only reports crossings, so once the sentinel is inside
-  // its margin it never fires again and the previous chapter never arrives
-  // until you scroll far enough down to push it out. Watch the scroll
-  // position and direction instead — near the top, moving up, load.
-  useEffect(() => {
-    if (loading || error || !data) return;
-    let lastY = window.scrollY;
-    let queued = false;
-    const check = () => {
-      queued = false;
-      const y = window.scrollY;
-      const movingUp = y < lastY;
-      lastY = y;
-      // scrolling down never pulls in what is behind you
-      if (!movingUp || y > 1200 || loadingPrevRef.current) return;
-      const prev = (before[0]?.ch ?? chapter) - 1;
-      if (prev < 1) return;
-      loadingPrevRef.current = true;
-      const gen = genRef.current;
-      fetchChapter(translation, bookNr, prev)
-        .then((json) => {
-          if (genRef.current !== gen) return; // reader jumped meanwhile
-          // hold the reader's place: the page is about to grow upward
-          holdAnchor(before[0]?.ch ?? chapter);
-          setBefore((list) => [{ ch: prev, data: json }, ...list]);
-        })
-        .catch(() => {})
-        .finally(() => {
-          loadingPrevRef.current = false;
-        });
-    };
-    const onScroll = () => {
-      if (queued) return;
-      queued = true;
-      window.requestAnimationFrame(check);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [loading, error, data, before, chapter, bookNr, translation]);
-
-  // Hold the reader's place when something grows above them. Measuring the
-  // page height is not enough — cross-references, section headings and the
-  // tagged text all arrive late and change heights all over the column — so
-  // this pins one chapter heading and corrects by how far it actually moved.
+  // Hold the reader's place when something grows above them. Nothing is
+  // inserted by scrolling any more, but the study extras — cross-references,
+  // section headings, the tagged text, the context chips — still arrive after
+  // the first paint and change heights all over the column. Measuring the
+  // page height is not enough, so this pins one chapter heading and corrects
+  // by how far it actually moved.
   useLayoutEffect(() => {
     const held = holdRef.current;
     if (!held) return;
@@ -494,7 +455,7 @@ export default function Reader({
     if (!el) return;
     const moved = el.getBoundingClientRect().top - held.top;
     if (moved !== 0) window.scrollBy(0, moved);
-  }, [before, heads, xrefs, strongsTokens, notes]);
+  }, [heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -669,7 +630,11 @@ export default function Reader({
     fetch(`/context/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
-        if (!cancelled) setContext(json);
+        if (cancelled) return;
+        // this adds a 📜 chip to every verse in the column, including the
+        // ones above the viewport — hold the reader's place across it
+        holdAnchor(viewChapterRef.current);
+        setContext(json);
       })
       .catch(() => {
         if (!cancelled) setContext({});
@@ -806,9 +771,13 @@ export default function Reader({
    * superscriptions as verses where the KJV doesn't, so when the Greek
    * chapter is longer we shift by the difference.
    */
-  /** The verses of a loaded chapter — the primary one or a scrolled-in one. */
-  const chDataOf = (ch: number): ChapterData | null =>
-    ch === chapter ? data : (extra.find((e) => e.ch === ch)?.data ?? null);
+  /** The verses of any chapter of the open book. */
+  const chDataOf = (ch: number): ChapterData | null => {
+    const found = chapters.find((c) => c.ch === ch);
+    return found
+      ? { translation, bookNr, chapter: ch, verses: found.verses }
+      : null;
+  };
 
   const lxxLine = (): string | null => {
     if (!wordSel || !lxx || lxx.ch !== wordSel.ch) return null;
@@ -1216,7 +1185,7 @@ export default function Reader({
   // briefly, because study-mode extras (xref chips, original-language lines,
   // notes) load after the text and push the target further down the page.
   useEffect(() => {
-    if (loading || !data || highlightVerse === null) return;
+    if (loading || chapters.length === 0 || highlightVerse === null) return;
     let attempts = 0;
     const settle = () => {
       const el = document.getElementById(`v-${highlightVerse}`);
@@ -1245,7 +1214,7 @@ export default function Reader({
       window.removeEventListener("wheel", stop);
       window.removeEventListener("touchmove", stop);
     };
-  }, [loading, data, highlightVerse, study, xrefs, strongsTokens, notes]);
+  }, [loading, chapters, highlightVerse, study, xrefs, strongsTokens, notes]);
 
   // a new chapter closes any open word translation
   useEffect(() => {
@@ -1263,22 +1232,22 @@ export default function Reader({
   };
 
   /**
-   * Jump to a chapter of the open book. Setting the same primary chapter
-   * again wouldn't re-render, so that case resets the scroll column by hand
-   * (it happens when continuous scroll has carried the reader past it).
+   * Jump to a chapter of the open book. The whole book is already rendered,
+   * so this is a move, not a load. Asking for the chapter you are nominally
+   * on — after scrolling well past it — wouldn't change any state, so that
+   * case clears the placement marker to make the move happen anyway.
    */
   const jumpChapter = (c: number) => {
     setHighlightVerse(null);
     setBackStack([]);
     if (c === chapter) {
-      genRef.current += 1;
-      setExtra([]);
-      setBefore([]);
+      // no state changes, so nothing would re-run: move by hand
+      placeAt(c);
       setViewChapter(c);
-      window.scrollTo({ top: 0 });
-    } else {
-      setChapter(c);
+      viewChapterRef.current = c;
+      return;
     }
+    setChapter(c);
   };
 
   // the floating arrows move relative to the chapter on screen
@@ -1442,14 +1411,24 @@ export default function Reader({
       )}
 
       <div ref={readRef}>
-        {[
-          ...before.map((e) => ({ ch: e.ch, d: e.data as ChapterData | null })),
-          { ch: chapter, d: loading || error ? null : data },
-          ...extra.map((e) => ({ ch: e.ch, d: e.data as ChapterData | null })),
-        ].map(({ ch, d }) => (
+        {loading && (
+          <article className="scripture">
+            <h2 className="chap-head" data-ch={chapter}>
+              {bookName} {chapter}
+              <span className="chap-trans">{transAbbrev}</span>
+            </h2>
+            <p className="skeleton">{t("reader.loading")}</p>
+          </article>
+        )}
+        {error && !loading && (
+          <article className="scripture">
+            <p className="error-text">{t("reader.error")}</p>
+          </article>
+        )}
+        {chapters.map(({ ch, verses }) => (
           <article
             key={`${bookNr}-${ch}`}
-            className={`glass card scripture${study ? " study" : ""}`}
+            className={`scripture${study ? " study" : ""}`}
             style={{ fontSize: `calc(1.12rem * ${scale})` }}
           >
             <h2 className="chap-head" data-ch={ch}>
@@ -1458,13 +1437,9 @@ export default function Reader({
                   carries which text you're actually reading */}
               <span className="chap-trans">{transAbbrev}</span>
             </h2>
-            {ch === chapter && loading ? (
-              <p className="skeleton">{t("reader.loading")}</p>
-            ) : !d ? (
-              <p className="error-text">{t("reader.error")}</p>
-            ) : study ? (
+            {study ? (
               <div className="study-verses">
-                {d.verses.map((v) => {
+                {verses.map((v) => {
                   const key = `${ch}:${v.verse}`;
                   const refs = xrefs?.[key];
                   const note = notes[key];
@@ -1605,7 +1580,7 @@ export default function Reader({
               </div>
             ) : (
               // one paragraph per section, so a heading can open each one
-              runsOf(ch, d.verses).map((run, i) => (
+              runsOf(ch, verses).map((run, i) => (
                 <div key={i} className="section">
                   {run.title && <h3 className="section-head">{run.title}</h3>}
                   <p>
@@ -1630,8 +1605,6 @@ export default function Reader({
           </article>
         ))}
       </div>
-      {/* nearing this line loads the next chapter of the book */}
-      <div ref={sentinelRef} className="chap-sentinel" aria-hidden="true" />
 
       <button
         type="button"

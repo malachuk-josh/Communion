@@ -190,6 +190,26 @@ a {
   padding: 24px 16px 96px;
 }
 
+/* ---- The Word only ---- */
+/* Reader.tsx marks the document while scripture is open. Nothing here should
+   reach any other screen. */
+html.reading .page {
+  padding-top: 0;
+}
+
+/* the scrollbar is not how anyone finds a passage — the chapter headings and
+   the navigator are — and on a phone it is a stripe over the text */
+html.reading {
+  scrollbar-width: none;
+}
+
+html.reading::-webkit-scrollbar,
+html.reading body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* ---- navigation ---- */
 .nav {
   position: sticky;
@@ -1234,10 +1254,28 @@ mark {
   vertical-align: middle;
 }
 
+/* Scripture carries no card. A book is one continuous column: no border, no
+   seam between chapters, and the page gutter cancelled so the only inset is
+   the one that keeps the text off the bezel. On a 390px phone that is 358px
+   of line rather than 314px. */
 .scripture {
   font-family: var(--serif);
   font-size: 1.12rem;
   line-height: 1.85;
+  margin-inline: -16px;
+  padding-inline: 16px;
+}
+
+/* The whole book is in the document and every chapter is laid out for real.
+   Letting the browser skip the chapters nobody is looking at was tried and
+   reverted: a skipped chapter stands at an estimated height, and when the
+   true height replaced the estimate above the reader the page slid under
+   them — 28 slides of 1,000-7,000px over one pass up through Psalms. An
+   exact column costs one render when a book opens and never moves again. */
+
+/* chapters are told apart by their heading, not by a gap in the page */
+.scripture + .scripture .chap-head {
+  margin-top: 34px;
 }
 
 .scripture h2 {
@@ -1298,10 +1336,6 @@ html.navhide .chap-arrow {
   .chap-arrow {
     bottom: 26px;
   }
-}
-
-.chap-sentinel {
-  height: 1px;
 }
 
 /* section headings inside a chapter — quiet small caps, the way a print
@@ -1380,10 +1414,6 @@ html.navhide .chap-arrow {
 .switch.on .switch-knob {
   transform: translateX(20px);
   background: var(--gold);
-}
-
-.scripture.study {
-  border-color: rgba(229, 180, 91, 0.4);
 }
 
 .scripture.study h2::after {

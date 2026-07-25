@@ -60,6 +60,39 @@ export async function fetchChapter(
   return res.json() as Promise<ChapterData>;
 }
 
+/** One book, every chapter, in reading order. */
+export interface BookChapters {
+  translation: string;
+  bookNr: number;
+  chapters: { chapter: number; verses: Verse[] }[];
+}
+
+/**
+ * The whole book at once. The file on disk already holds every chapter — the
+ * reader used to take one chapter out of it at a time and ask again on every
+ * scroll, which is what made scrolling feel like it was fetching. Throws if
+ * the static file is unreachable; the caller falls back to a single chapter.
+ */
+export async function fetchBook(
+  translation: string,
+  bookNr: number
+): Promise<BookChapters> {
+  if (!isTranslation(translation) && translation !== "lxx") {
+    throw new Error("unknown translation");
+  }
+  const book = await loadBook(translation, bookNr);
+  const chapters = Object.keys(book)
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && book[String(n)]?.length > 0)
+    .sort((a, b) => a - b)
+    .map((chapter) => ({
+      chapter,
+      verses: book[String(chapter)].map(([verse, text]) => ({ verse, text })),
+    }));
+  if (chapters.length === 0) throw new Error("empty book");
+  return { translation, bookNr, chapters };
+}
+
 export interface LocalSearchResult {
   bookNr: number;
   chapter: number;

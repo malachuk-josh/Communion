@@ -23,6 +23,10 @@ export default function PullToRefresh() {
 
     const onStart = (e: TouchEvent) => {
       if (refreshing || window.scrollY > 0) return;
+      // In the reader, dragging down IS scrolling up — you reach the top of a
+      // book by making exactly this gesture, and reloading there is both a
+      // surprise and, offline, pointless. Every other screen keeps it.
+      if (document.documentElement.classList.contains("reading")) return;
       // reloading would destroy an open sheet or modal — including one the
       // finger never touched, since sheets leave the page behind them live
       if (document.querySelector(".modal-overlay, .lex-sheet, .side-panel"))
