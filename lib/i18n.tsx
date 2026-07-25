@@ -45,6 +45,10 @@ const dictionaries = {
       "Strong's tagged text, Hebrew and Greek lexicons, the concordance, Abbott-Smith, Brown-Driver-Briggs and the Septuagint.",
     "offline.translationDesc": "A complete translation.",
     "offline.download": "Download",
+    "offline.waiting": "{n} changes waiting to sync",
+    "offline.waitingDesc":
+      "Notes and bookmarks you saved without a connection. They'll go up on their own the next time you're online.",
+    "offline.syncNow": "Sync now",
     "offline.saved": "On this device",
     "offline.finish": "Finish — {n} left",
     "offline.partial": "{have} of {total} files",
@@ -534,6 +538,10 @@ const dictionaries = {
       "El texto con códigos Strong, los léxicos hebreo y griego, la concordancia, Abbott-Smith, Brown-Driver-Briggs y la Septuaginta.",
     "offline.translationDesc": "Una traducción completa.",
     "offline.download": "Descargar",
+    "offline.waiting": "{n} cambios pendientes de sincronizar",
+    "offline.waitingDesc":
+      "Notas y marcadores que guardaste sin conexión. Se enviarán solos la próxima vez que tengas señal.",
+    "offline.syncNow": "Sincronizar ahora",
     "offline.saved": "En este dispositivo",
     "offline.finish": "Terminar — faltan {n}",
     "offline.partial": "{have} de {total} archivos",

@@ -14,6 +14,16 @@ import BookNav from "@/components/BookNav";
 import { useI18n } from "@/lib/i18n";
 import { scrollToChapterTop, useReading } from "@/lib/reading";
 import { fetchChapter, searchLocal } from "@/lib/scripture";
+import { readOutbox } from "@/lib/localStore";
+import {
+  enqueue,
+  flush,
+  readLocalNotes,
+  readLocalState,
+  startSync,
+  writeLocalNotes,
+  writeLocalState,
+} from "@/lib/sync";
 import Concordance from "@/components/Concordance";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
@@ -230,15 +240,42 @@ export default function Reader({
 
   // bookmarks sync across devices per user (guests: per browser)
   useEffect(() => {
-    api<{
-      bookmarks: Record<string, BmEntry>;
-      collections: Record<string, BmCollection>;
-    }>(`/api/bookmarks?lang=${lang}`)
-      .then((res) => {
+    let cancelled = false;
+    // paint from this device first — instant, and all there is offline
+    readLocalState().then((local) => {
+      if (cancelled || !local) return;
+      setBookmarks(local.bookmarks);
+      setCollections(local.collections);
+    });
+    // then send anything queued and take the server's answer as the truth
+    startSync();
+    (async () => {
+      try {
+        const synced = await flush();
+        if (cancelled) return;
+        if (synced) {
+          setBookmarks(synced.bookmarks);
+          setCollections(synced.collections);
+          return;
+        }
+        // Nothing flushed. If changes are still queued this device is ahead
+        // of the server, so reading from it would undo them — wait instead.
+        if ((await readOutbox()).length > 0) return;
+        const res = await api<{
+          bookmarks: Record<string, BmEntry>;
+          collections: Record<string, BmCollection>;
+        }>(`/api/bookmarks?lang=${lang}`);
+        if (cancelled) return;
         setBookmarks(res.bookmarks);
         setCollections(res.collections);
-      })
-      .catch(() => {});
+        void writeLocalState(res);
+      } catch {
+        // offline: the local snapshot above is what we read from
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // lang only decides the wording of the seeded default collection
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -532,14 +569,25 @@ export default function Reader({
     let cancelled = false;
     setNotes({});
     setEditingNote(null);
-    api<{ notes: Record<string, string> }>(`/api/notes/${bookNr}`)
+    readLocalNotes(bookNr).then((local) => {
+      if (cancelled || !local) return;
+      holdAnchor(viewChapterRef.current);
+      setNotes(local);
+    });
+    readOutbox()
+      .then((queued) => {
+        // unsent notes mean this device is ahead; don't read over them
+        if (queued.length > 0) return null;
+        return api<{ notes: Record<string, string> }>(`/api/notes/${bookNr}`);
+      })
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || !res) return;
         holdAnchor(viewChapterRef.current);
         setNotes(res.notes);
+        void writeLocalNotes(bookNr, res.notes);
       })
       .catch(() => {
-        // signed-out — notes stay local-less until sign-in
+        // offline or signed out — the local copy above stands
       });
     return () => {
       cancelled = true;
@@ -789,16 +837,13 @@ export default function Reader({
       0,
       1000
     );
-    setNotes((prev) => ({ ...prev, [key]: text }));
-    try {
-      await api(`/api/notes/${bookNr}`, {
-        method: "POST",
-        body: { ref: key, text },
-      });
-      flashWord(t("reader.savedToNote"));
-    } catch {
-      flashWord(t("reader.error"));
-    }
+    setNotes((prev) => {
+      const next = { ...prev, [key]: text };
+      void writeLocalNotes(bookNr, next);
+      return next;
+    });
+    void enqueue({ kind: "note.set", book: bookNr, ref: key, text, ts: Date.now() });
+    flashWord(t("reader.savedToNote"));
   };
 
   const openSharePicker = () => {
@@ -949,17 +994,11 @@ export default function Reader({
       const next = { ...prev };
       if (text) next[key] = text;
       else delete next[key];
+      void writeLocalNotes(bookNr, next);
       return next;
     });
     setEditingNote(null);
-    try {
-      await api(`/api/notes/${bookNr}`, {
-        method: "POST",
-        body: { ref: key, text },
-      });
-    } catch {
-      // offline/unauthenticated — the optimistic note stays for this session
-    }
+    void enqueue({ kind: "note.set", book: bookNr, ref: key, text, ts: Date.now() });
   };
 
   const jumpToRef = (fromCh: number, ref: number[], fromVerse: number) => {
@@ -986,16 +1025,16 @@ export default function Reader({
   const toggleBookmark = (ch: number, verse: number) => {
     const key = `${bookNr}:${ch}:${verse}`;
     const removing = key in bookmarks;
-    setBookmarks((prev) => {
-      const next = { ...prev };
-      if (removing) delete next[key];
-      else next[key] = { t: Date.now() };
-      return next;
-    });
-    api("/api/bookmarks", {
-      method: "POST",
-      body: { b: bookNr, c: ch, v: verse },
-    }).catch(() => {});
+    const next = { ...bookmarks };
+    if (removing) delete next[key];
+    else next[key] = { t: Date.now() };
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next, collections });
+    void enqueue(
+      removing
+        ? { kind: "bookmark.del", key, ts: Date.now() }
+        : { kind: "bookmark.set", key, t: Date.now(), ts: Date.now() }
+    );
     // saving a verse opens the organise/share sheet; removing just removes
     if (!removing) {
       setPanelOpen(false);
@@ -1008,19 +1047,23 @@ export default function Reader({
   };
 
   /** Create a collection by name and return its id (for the bookmark sheet). */
+  /**
+   * Collections are named here and given their id here — waiting on the
+   * server for one would mean no new collections without a connection.
+   */
   const createCollectionNamed = async (
     name: string
   ): Promise<string | null> => {
-    try {
-      const res = await api<{ id: string; name: string }>("/api/collections", {
-        method: "POST",
-        body: { name },
-      });
-      setCollections((prev) => ({ ...prev, [res.id]: { name: res.name } }));
-      return res.id;
-    } catch {
-      return null;
-    }
+    const trimmed = name.trim().slice(0, 80);
+    if (!trimmed) return null;
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const next = { ...collections, [id]: { name: trimmed } };
+    setCollections(next);
+    void writeLocalState({ bookmarks, collections: next });
+    void enqueue({ kind: "collection.set", id, name: trimmed, ts: Date.now() });
+    return id;
   };
 
   const shareVerse = async (ch: number, verse: number) => {
@@ -1047,38 +1090,40 @@ export default function Reader({
   };
 
   const updateBookmark = (key: string, patch: { label?: string; coll?: string }) => {
-    setBookmarks((prev) => {
-      const entry = { ...prev[key] };
-      if (patch.label !== undefined) {
-        if (patch.label.trim()) entry.l = patch.label.trim();
-        else delete entry.l;
-      }
-      if (patch.coll !== undefined) {
-        if (patch.coll) entry.c = patch.coll;
-        else delete entry.c;
-      }
-      return { ...prev, [key]: entry };
+    const entry = { ...bookmarks[key] };
+    if (patch.label !== undefined) {
+      if (patch.label.trim()) entry.l = patch.label.trim();
+      else delete entry.l;
+    }
+    if (patch.coll !== undefined) {
+      if (patch.coll) entry.c = patch.coll;
+      else delete entry.c;
+    }
+    const next = { ...bookmarks, [key]: entry };
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next, collections });
+    void enqueue({
+      kind: "bookmark.set",
+      key,
+      t: entry.t,
+      l: entry.l,
+      c: entry.c,
+      ts: Date.now(),
     });
-    api("/api/bookmarks", { method: "PATCH", body: { key, ...patch } }).catch(
-      () => {}
-    );
   };
 
   const deleteCollection = async (id: string) => {
     if (!window.confirm(t("reader.deleteCollectionConfirm"))) return;
-    setCollections((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setBookmarks((prev) => {
-      const next: Record<string, BmEntry> = {};
-      for (const [key, entry] of Object.entries(prev)) {
-        next[key] = entry.c === id ? { ...entry, c: undefined } : entry;
-      }
-      return next;
-    });
-    api(`/api/collections/${id}`, { method: "DELETE" }).catch(() => {});
+    const nextColls = { ...collections };
+    delete nextColls[id];
+    const nextMarks: Record<string, BmEntry> = {};
+    for (const [key, entry] of Object.entries(bookmarks)) {
+      nextMarks[key] = entry.c === id ? { ...entry, c: undefined } : entry;
+    }
+    setCollections(nextColls);
+    setBookmarks(nextMarks);
+    void writeLocalState({ bookmarks: nextMarks, collections: nextColls });
+    void enqueue({ kind: "collection.del", id, ts: Date.now() });
   };
 
   const shareCollection = async (id: string) => {

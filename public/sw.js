@@ -27,10 +27,14 @@ const DATA_PATHS = [
   "/absmith/",
   "/bdb/",
   "/icons/",
+  "/offline-manifest.json",
 ];
 
-/** Read-only API responses that are better stale than missing. */
-const API_PATHS = ["/api/bookmarks", "/api/notes", "/api/plans/progress"];
+// Read-only API responses worth showing stale. Bookmarks and notes are
+// deliberately absent: IndexedDB holds those now, and it is ahead of the
+// server whenever the outbox has anything in it. A cached copy here would be
+// older than the device's own and would overwrite it on an offline reload.
+const API_PATHS = ["/api/plans/progress"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

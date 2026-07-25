@@ -1,0 +1,128 @@
+"use client";
+
+// A small IndexedDB wrapper: the device's own copy of your bookmarks,
+// collections and notes, plus the outbox of changes not yet on the server.
+// No dependency — three object stores and a handful of promises.
+
+const DB_NAME = "communion";
+const DB_VERSION = 2;
+
+/** Snapshot of server-shaped state, so the reader can paint before any fetch. */
+export const STATE_STORE = "state";
+/** Notes, one record per book: { book, notes: { "ch:v": text } } */
+export const NOTES_STORE = "notes";
+/** Changes waiting for a connection, applied in the order they were made.
+ *  Keyed on "seq", deliberately not "id": collection ops carry an id of
+ *  their own, and a keyPath of "id" silently used it as the primary key. */
+export const OUTBOX_STORE = "outbox";
+
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function open(): Promise<IDBDatabase> {
+  if (typeof indexedDB === "undefined") {
+    return Promise.reject(new Error("no indexedDB"));
+  }
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STATE_STORE)) {
+          db.createObjectStore(STATE_STORE);
+        }
+        if (!db.objectStoreNames.contains(NOTES_STORE)) {
+          db.createObjectStore(NOTES_STORE);
+        }
+        // v1 keyed the outbox on "id"; recreate it on "seq"
+        if (db.objectStoreNames.contains(OUTBOX_STORE)) {
+          db.deleteObjectStore(OUTBOX_STORE);
+        }
+        db.createObjectStore(OUTBOX_STORE, {
+          keyPath: "seq",
+          autoIncrement: true,
+        });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    dbPromise.catch(() => {
+      dbPromise = null;
+    });
+  }
+  return dbPromise;
+}
+
+function run<T>(
+  store: string,
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T>
+): Promise<T> {
+  return open().then(
+    (db) =>
+      new Promise<T>((resolve, reject) => {
+        const tx = db.transaction(store, mode);
+        const req = fn(tx.objectStore(store));
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      })
+  );
+}
+
+export function getLocal<T>(store: string, key: IDBValidKey): Promise<T | null> {
+  return run<T>(store, "readonly", (s) => s.get(key) as IDBRequest<T>)
+    .then((v) => v ?? null)
+    .catch(() => null);
+}
+
+export function putLocal(
+  store: string,
+  key: IDBValidKey,
+  value: unknown
+): Promise<void> {
+  return run(store, "readwrite", (s) => s.put(value, key))
+    .then(() => undefined)
+    .catch(() => undefined);
+}
+
+/** Queue a change for the server. Returns the number now waiting. */
+export async function pushOutbox(op: SyncOp): Promise<void> {
+  try {
+    // autoIncrement fills in "seq"; the op keeps every field it came with
+    await run(OUTBOX_STORE, "readwrite", (s) => s.add(op));
+  } catch {
+    // storage full or blocked: the write already applied locally, and the
+    // next successful server read will reconcile
+  }
+}
+
+export function readOutbox(): Promise<(SyncOp & { seq: number })[]> {
+  return run<(SyncOp & { seq: number })[]>(
+    OUTBOX_STORE,
+    "readonly",
+    (s) => s.getAll() as IDBRequest<(SyncOp & { seq: number })[]>
+  ).catch(() => []);
+}
+
+export async function dropOutbox(seqs: number[]): Promise<void> {
+  if (seqs.length === 0) return;
+  try {
+    const db = await open();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(OUTBOX_STORE, "readwrite");
+      const store = tx.objectStore(OUTBOX_STORE);
+      for (const seq of seqs) store.delete(seq);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // leaving them queued is safe: every op is idempotent
+  }
+}
+
+/** Every change the app can make to your own data, as a replayable record. */
+export type SyncOp =
+  | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string; ts: number }
+  | { kind: "bookmark.del"; key: string; ts: number }
+  | { kind: "collection.set"; id: string; name: string; ts: number }
+  | { kind: "collection.del"; id: string; ts: number }
+  | { kind: "note.set"; book: number; ref: string; text: string; ts: number };

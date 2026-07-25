@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import BackToMenu from "@/components/BackToMenu";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { TRANSLATIONS } from "@/lib/bible";
+import { onPendingChange, flush, startSync } from "@/lib/sync";
 import {
   clearDownloads,
   downloadTier,
@@ -37,6 +38,7 @@ export default function OfflineSettings() {
   const [pct, setPct] = useState(0);
   const [used, setUsed] = useState<{ used: number; quota: number } | null>(null);
   const [persisted, setPersisted] = useState(false);
+  const [waiting, setWaiting] = useState(0);
   const [error, setError] = useState("");
 
   const describe = useCallback(
@@ -96,6 +98,13 @@ export default function OfflineSettings() {
     void navigator.storage?.persisted?.().then(setPersisted).catch(() => {});
   }, [refresh, t]);
 
+  // changes made offline, still waiting for a connection. startSync counts
+  // the outbox — the reader normally does this, but it isn't mounted here.
+  useEffect(() => {
+    startSync();
+    return onPendingChange(setWaiting);
+  }, []);
+
   // re-label when the language flips without re-reading the manifest
   useEffect(() => {
     if (manifest) void describe(manifest).then(setRows);
@@ -144,6 +153,25 @@ export default function OfflineSettings() {
       <p className="subtitle">{t("offline.subtitle")}</p>
 
       {error && <p className="notice">{error}</p>}
+
+      {waiting > 0 && (
+        <div className="glass card offline-row">
+          <div className="offline-head">
+            <strong>⏳ {t("offline.waiting", { n: String(waiting) })}</strong>
+          </div>
+          <p className="cal-hint">{t("offline.waitingDesc")}</p>
+          <div className="offline-actions">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => void flush()}
+              disabled={!!busy}
+            >
+              {t("offline.syncNow")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {rows === null ? (
         <p className="skeleton">{t("common.loading")}</p>
