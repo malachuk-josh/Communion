@@ -2607,6 +2607,17 @@ button.menu-tile {
   white-space: nowrap;
 }
 
+/* the verse's cross-references, moved here out of the reading column */
+.lex-xrefs {
+  margin: 8px 0 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.lex-xrefs .lex-meta {
+  margin-bottom: 6px;
+}
+
 .lxx-block {
   margin-top: 10px;
   padding-top: 10px;

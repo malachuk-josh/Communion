@@ -683,6 +683,22 @@ export default function Reader({
     return runs;
   };
 
+  /** The cross-references opening from a verse. */
+  const refsAt = (ch: number, verse: number): number[][] =>
+    xrefs?.[`${ch}:${verse}`] ?? [];
+
+  /**
+   * The same sheet, opened on a verse rather than a word. Every translation
+   * has cross-references; only the KJV has words to tap, so this is how the
+   * others reach them.
+   */
+  const openVerseRefs = (ch: number, verse: number) => {
+    setPanelOpen(false);
+    setWordSel({ ch, text: "", nums: [], verse });
+    setWordAction("");
+    setSharePickerOpen(false);
+  };
+
   const openWord = (ch: number, text: string, nums: string[], verse: number) => {
     setPanelOpen(false);
     setWordSel({ ch, text, nums, verse });
@@ -1503,16 +1519,21 @@ export default function Reader({
                             📜 {t("reader.context")}
                           </button>
                         )}
-                        {refs?.map((ref, i) => (
+                        {/* One chip, not seven. The references themselves
+                            live in the word sheet now — a verse averages 7.4
+                            of them, which was three or four wrapped rows
+                            under every single verse. */}
+                        {refs && refs.length > 0 && (
                           <button
-                            key={i}
                             type="button"
                             className="xref-chip"
-                            onClick={() => jumpToRef(ch, ref, v.verse)}
+                            onClick={() => openVerseRefs(ch, v.verse)}
+                            aria-label={t("reader.crossRefs")}
+                            title={t("reader.crossRefs")}
                           >
-                            {refChipLabel(ref)}
+                            🔗 {refs.length}
                           </button>
-                        ))}
+                        )}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
@@ -1637,9 +1658,12 @@ export default function Reader({
         <div className="glass lex-sheet" role="dialog" aria-label={wordSel.text}>
           <div className="lex-head">
             <span className="lex-lemma">
-              {lexFor(wordSel.nums[0])?.lemma ?? wordSel.text}
+              {wordSel.nums.length === 0
+                ? `${bookName} ${wordSel.ch}:${wordSel.verse}`
+                : (lexFor(wordSel.nums[0])?.lemma ?? wordSel.text)}
             </span>
-            {lexCounts?.[wordSel.nums[0]] !== undefined && (
+            {wordSel.nums.length > 0 &&
+              lexCounts?.[wordSel.nums[0]] !== undefined && (
               <button
                 type="button"
                 className="lex-count lex-count-btn"
@@ -1651,7 +1675,7 @@ export default function Reader({
                 })}{" "}
                 →
               </button>
-            )}
+              )}
             <button
               type="button"
               className="lex-close"
@@ -1661,6 +1685,33 @@ export default function Reader({
               ✕
             </button>
           </div>
+          {/* the verse's cross-references, wherever this sheet was opened from */}
+          {refsAt(wordSel.ch, wordSel.verse).length > 0 && (
+            <div className="lex-xrefs">
+              <p className="lex-meta">
+                🔗 {t("reader.crossRefs")}
+                {wordSel.nums.length > 0 &&
+                  ` · ${bookName} ${wordSel.ch}:${wordSel.verse}`}
+              </p>
+              <div className="xref-chips">
+                {refsAt(wordSel.ch, wordSel.verse).map((ref, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="xref-chip"
+                    onClick={() => {
+                      setWordSel(null);
+                      jumpToRef(wordSel.ch, ref, wordSel.verse);
+                    }}
+                  >
+                    {refChipLabel(ref)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {wordSel.nums.length > 0 && (
+          <>
           <div className="plan-filters lex-tabs">
             <button
               type="button"
@@ -1873,6 +1924,8 @@ export default function Reader({
                 </div>
               )}
             </div>
+          )}
+          </>
           )}
         </div>
       )}
