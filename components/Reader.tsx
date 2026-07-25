@@ -6,6 +6,7 @@ import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
   getBook,
+  lxxPsalm,
   type ChapterData,
 } from "@/lib/bible";
 import { api } from "@/lib/client";
@@ -88,6 +89,9 @@ export default function Reader({
     verse: number;
   } | null>(null);
   const [wordAction, setWordAction] = useState("");
+  // Septuagint text for the open chapter (Old Testament only)
+  const [lxx, setLxx] = useState<Record<number, string> | null>(null);
+  const [lxxLoading, setLxxLoading] = useState(false);
   const [sharePeers, setSharePeers] = useState<
     { userId: string; displayName: string; icon?: string }[] | null
   >(null);
@@ -286,6 +290,20 @@ export default function Reader({
     setWordSel({ text, nums, verse });
     setWordAction("");
     setSharePickerOpen(false);
+    // Old Testament: bring in the Septuagint rendering of this chapter
+    if (bookNr <= 39 && lxx === null && !lxxLoading) {
+      setLxxLoading(true);
+      const lxxChapter = bookNr === 19 ? lxxPsalm(chapter) : chapter;
+      fetch(`/api/bible/lxx/${bookNr}/${lxxChapter}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((json: ChapterData) => {
+          const map: Record<number, string> = {};
+          for (const v of json.verses) map[v.verse] = v.text;
+          setLxx(map);
+        })
+        .catch(() => setLxx({}))
+        .finally(() => setLxxLoading(false));
+    }
     // load the lexicon for this testament (and counts) on first use
     if (bookNr <= 39 && !lexHeb) {
       fetch("/lexicon/hebrew.json")
@@ -310,6 +328,18 @@ export default function Reader({
   const lexFor = (num: string): LexEntry | undefined =>
     (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
 
+  /**
+   * The Septuagint line for the open verse. The LXX counts psalm
+   * superscriptions as verses where the KJV doesn't, so when the Greek
+   * chapter is longer we shift by the difference.
+   */
+  const lxxLine = (): string | null => {
+    if (!wordSel || !lxx || !data) return null;
+    const drift = Object.keys(lxx).length - data.verses.length;
+    const offset = bookNr === 19 && drift > 0 ? drift : 0;
+    return lxx[wordSel.verse + offset] ?? lxx[wordSel.verse] ?? null;
+  };
+
   /** Plain-text rendering of the open word study, for copy/share/note. */
   const wordSummary = (): string => {
     if (!wordSel) return "";
@@ -324,6 +354,8 @@ export default function Reader({
       );
       if (entry.def) parts.push(entry.def.trim());
     }
+    const greek = lxxLine();
+    if (greek) parts.push(`LXX: ${greek.trim()}`);
     parts.push("— Communion");
     return parts.join("\n");
   };
@@ -680,6 +712,7 @@ export default function Reader({
   // a new chapter closes any open word translation
   useEffect(() => {
     setWordSel(null);
+    setLxx(null);
   }, [bookNr, chapter, study, translation]);
 
   const book = getBook(bookNr)!;
@@ -1154,6 +1187,21 @@ export default function Reader({
               );
             })}
           </div>
+          {bookNr <= 39 && (lxxLoading || lxxLine()) && (
+            <div className="lxx-block">
+              <p className="lex-meta lxx-head">
+                ☩ {t("reader.lxx")}{" "}
+                <span className="lxx-note">{t("reader.lxxNote")}</span>
+              </p>
+              {lxxLoading ? (
+                <p className="skeleton">{t("common.loading")}</p>
+              ) : (
+                <p className="lxx-text" lang="el">
+                  {lxxLine()}
+                </p>
+              )}
+            </div>
+          )}
           <div className="lex-actions">
             <button type="button" className="btn btn-sm" onClick={copyWord}>
               📋 {t("reader.copy")}

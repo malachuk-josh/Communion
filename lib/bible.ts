@@ -24,7 +24,23 @@ export function isTranslation(id: string): boolean {
 // Study-mode sources (not shown in the translation dropdown):
 // Hebrew OT, Greek NT, and Young's Literal Translation for the
 // direct-English line. All share KJV-aligned book numbering.
-export const STUDY_IDS = ["codex", "textusreceptus", "ylt"];
+export const STUDY_IDS = ["codex", "textusreceptus", "ylt", "lxx"];
+
+/**
+ * The Septuagint numbers the Psalms differently from the Hebrew: it joins
+ * Hebrew 9–10 and 114–115, and splits 116 and 147. Between those seams the
+ * LXX runs one chapter behind. Returns the LXX chapter for a Hebrew one.
+ */
+export function lxxPsalm(chapter: number): number {
+  if (chapter <= 8) return chapter;
+  if (chapter <= 10) return 9;
+  if (chapter <= 113) return chapter - 1;
+  if (chapter <= 115) return 113;
+  if (chapter === 116) return 114;
+  if (chapter <= 146) return chapter - 1;
+  if (chapter === 147) return 146;
+  return chapter;
+}
 
 export function originalSourceFor(bookNr: number): string {
   return bookNr <= 39 ? "codex" : "textusreceptus";

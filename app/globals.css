@@ -2049,6 +2049,29 @@ button.menu-tile {
   color: var(--gold);
 }
 
+.lxx-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.lxx-head {
+  margin-bottom: 4px;
+}
+
+.lxx-note {
+  font-style: italic;
+  opacity: 0.75;
+}
+
+.lxx-text {
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-height: 18vh;
+  overflow-y: auto;
+}
+
 .lex-actions {
   display: flex;
   flex-wrap: wrap;
