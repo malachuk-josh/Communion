@@ -287,6 +287,8 @@ const dictionaries = {
     "reader.newCollectionShort": "New collection…",
     "reader.unsorted": "Unsorted",
     "reader.collEmpty": "Empty — move bookmarks here with ✎.",
+    "reader.gospelTrack":
+      "Four steps through the good news — read them in order, or share the collection with a friend.",
     "reader.shareCollection": "Share",
     "reader.shareCopied": "Link copied",
     "reader.deleteCollection": "Delete collection",
@@ -722,6 +724,8 @@ const dictionaries = {
     "reader.newCollectionShort": "Nueva colección…",
     "reader.unsorted": "Sin clasificar",
     "reader.collEmpty": "Vacía — mueve marcadores aquí con ✎.",
+    "reader.gospelTrack":
+      "Cuatro pasos por las buenas nuevas — léelos en orden o comparte la colección con alguien.",
     "reader.shareCollection": "Compartir",
     "reader.shareCopied": "Enlace copiado",
     "reader.deleteCollection": "Eliminar colección",

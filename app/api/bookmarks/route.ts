@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
+import { seedDefaultCollections } from "@/lib/defaultCollections";
 
 // Verse bookmarks with optional labels and study collections.
 // Hash value per "book:chapter:verse" key: JSON {t: savedAt, l?: label,
@@ -31,6 +32,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const kv = db();
+  // first visit plants the default "The Gospel" collection
+  const lang = new URL(req.url).searchParams.get("lang");
+  await seedDefaultCollections(userId, lang === "es").catch(() => {});
   const [rawBookmarks, rawCollections] = await Promise.all([
     kv.hgetall(keys.userBookmarks(userId)),
     kv.hgetall(keys.userCollections(userId)),

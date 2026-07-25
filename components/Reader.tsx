@@ -146,12 +146,14 @@ export default function Reader({
     api<{
       bookmarks: Record<string, BmEntry>;
       collections: Record<string, BmCollection>;
-    }>("/api/bookmarks")
+    }>(`/api/bookmarks?lang=${lang}`)
       .then((res) => {
         setBookmarks(res.bookmarks);
         setCollections(res.collections);
       })
       .catch(() => {});
+    // lang only decides the wording of the seeded default collection
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // restore last reading position and text size
@@ -1500,10 +1502,12 @@ export default function Reader({
             ) : (
               <div className="bookmark-list">
                 {[
-                  ...Object.entries(collections).map(([id, coll]) => ({
-                    id,
-                    name: coll.name,
-                  })),
+                  ...Object.entries(collections)
+                    .map(([id, coll]) => ({ id, name: coll.name }))
+                    // the seeded gospel track leads (see lib/defaultCollections)
+                    .sort((a, b) =>
+                      a.id === "gospel" ? -1 : b.id === "gospel" ? 1 : 0
+                    ),
                   { id: "", name: t("reader.unsorted") },
                 ].map((group) => {
                   const rows = Object.entries(bookmarks)
@@ -1541,6 +1545,9 @@ export default function Reader({
                           )}
                         </span>
                       </div>
+                      {group.id === "gospel" && rows.length > 0 && (
+                        <p className="cal-hint">{t("reader.gospelTrack")}</p>
+                      )}
                       {rows.length === 0 ? (
                         <p className="cal-hint">{t("reader.collEmpty")}</p>
                       ) : (

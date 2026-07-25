@@ -196,6 +196,7 @@ export const keys = {
   userPushSubs: (userId: string) => `user:${userId}:push`,
   userBookmarks: (userId: string) => `user:${userId}:bookmarks`,
   userCollections: (userId: string) => `user:${userId}:collections`,
+  userSeeds: (userId: string) => `user:${userId}:seeds`,
   sharedCollection: (token: string) => `shared:${token}`,
   convMessages: (convId: string) => `conv:${convId}`,
   userConvs: (userId: string) => `user:${userId}:convs`,
