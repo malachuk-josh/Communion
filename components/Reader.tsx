@@ -31,9 +31,14 @@ const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
 const DEFAULT_VERSE = 20;
 
-const SCALE_MIN = 0.85;
-const SCALE_MAX = 1.75;
-const SCALE_STEP = 0.15;
+// Text size is a point size, the way type has always been set — 14 pt, not
+// 112%. A multiplier had no natural stopping places, so a pinch slid through
+// a continuum and the smallest movement changed the text.
+const PT_MIN = 10;
+const PT_MAX = 30;
+const PT_DEFAULT = 14;
+/** How far you must spread your fingers to gain one point. */
+const PINCH_STEP = 1.12;
 
 interface SearchResult {
   bookNr: number;
@@ -127,10 +132,10 @@ export default function Reader({
   const readRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [scale, setScale] = useState(1);
-  const scaleRef = useRef(1);
-  const pinchRef = useRef<{ d: number; s: number } | null>(null);
-  const [pinchPct, setPinchPct] = useState<number | null>(null);
+  const [pt, setPt] = useState(PT_DEFAULT);
+  const ptRef = useRef(PT_DEFAULT);
+  const pinchRef = useRef<{ d: number; pt: number } | null>(null);
+  const [pinchShow, setPinchShow] = useState<number | null>(null);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -345,12 +350,23 @@ export default function Reader({
         // first visit: land on the founding verse, gently highlighted
         setHighlightVerse(DEFAULT_VERSE);
       }
-      const savedScale = Number(
-        window.localStorage.getItem("communion.textScale")
-      );
-      if (savedScale >= SCALE_MIN && savedScale <= SCALE_MAX) {
-        setScale(savedScale);
-        scaleRef.current = savedScale;
+      const savedPt = Number(window.localStorage.getItem("communion.textPt"));
+      if (savedPt >= PT_MIN && savedPt <= PT_MAX) {
+        setPt(savedPt);
+        ptRef.current = savedPt;
+      } else {
+        // carried over from when this was a multiplier: 1.0 was the default,
+        // so the same reader lands on the same default point size
+        const old = Number(window.localStorage.getItem("communion.textScale"));
+        if (old > 0) {
+          const migrated = Math.min(
+            PT_MAX,
+            Math.max(PT_MIN, Math.round(old * PT_DEFAULT))
+          );
+          setPt(migrated);
+          ptRef.current = migrated;
+          window.localStorage.setItem("communion.textPt", String(migrated));
+        }
       }
     } catch {
       // corrupted storage — start fresh at the default passage
@@ -503,34 +519,31 @@ export default function Reader({
       );
     const onStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        pinchRef.current = { d: dist(e.touches), s: scaleRef.current };
+        pinchRef.current = { d: dist(e.touches), pt: ptRef.current };
       }
     };
     const onMove = (e: TouchEvent) => {
       const pinch = pinchRef.current;
       if (!pinch || e.touches.length !== 2) return;
       e.preventDefault();
-      const next =
-        Math.round(
-          Math.min(
-            SCALE_MAX,
-            Math.max(SCALE_MIN, pinch.s * (dist(e.touches) / pinch.d))
-          ) * 100
-        ) / 100;
-      if (next !== scaleRef.current) {
-        scaleRef.current = next;
-        setScale(next);
+      // Whole points, counted from where the pinch began. Each point costs a
+      // deliberate 12% spread, and the log keeps closing your fingers worth
+      // exactly as much as opening them.
+      const steps = Math.round(
+        Math.log(dist(e.touches) / pinch.d) / Math.log(PINCH_STEP)
+      );
+      const next = Math.min(PT_MAX, Math.max(PT_MIN, pinch.pt + steps));
+      if (next !== ptRef.current) {
+        ptRef.current = next;
+        setPt(next);
       }
-      setPinchPct(Math.round(next * 100));
+      setPinchShow(next);
     };
     const onEnd = (e: TouchEvent) => {
       if (e.touches.length < 2 && pinchRef.current) {
         pinchRef.current = null;
-        window.localStorage.setItem(
-          "communion.textScale",
-          String(scaleRef.current)
-        );
-        window.setTimeout(() => setPinchPct(null), 800);
+        window.localStorage.setItem("communion.textPt", String(ptRef.current));
+        window.setTimeout(() => setPinchShow(null), 800);
       }
     };
     el.addEventListener("touchstart", onStart, { passive: true });
@@ -1286,11 +1299,11 @@ export default function Reader({
   };
 
   const zoom = (delta: number) => {
-    const next = Math.round((scale + delta) * 100) / 100;
-    if (next < SCALE_MIN || next > SCALE_MAX) return;
-    setScale(next);
-    scaleRef.current = next;
-    window.localStorage.setItem("communion.textScale", String(next));
+    const next = pt + delta;
+    if (next < PT_MIN || next > PT_MAX) return;
+    setPt(next);
+    ptRef.current = next;
+    window.localStorage.setItem("communion.textPt", String(next));
   };
 
   const runSearch = async (e: React.FormEvent) => {
@@ -1445,7 +1458,7 @@ export default function Reader({
           <article
             key={`${bookNr}-${ch}`}
             className={`scripture${study ? " study" : ""}`}
-            style={{ fontSize: `calc(1.12rem * ${scale})` }}
+            style={{ fontSize: `${pt}pt` }}
           >
             <h2 className="chap-head" data-ch={ch}>
               {bookName} {ch}
@@ -1648,9 +1661,9 @@ export default function Reader({
         ›
       </button>
 
-      {pinchPct !== null && (
+      {pinchShow !== null && (
         <div className="glass pinch-hint" aria-hidden="true">
-          {pinchPct}%
+          {pinchShow} pt
         </div>
       )}
 
@@ -2440,18 +2453,18 @@ export default function Reader({
                     <button
                       type="button"
                       className="btn btn-sm"
-                      onClick={() => zoom(-SCALE_STEP)}
-                      disabled={scale - SCALE_STEP < SCALE_MIN}
+                      onClick={() => zoom(-1)}
+                      disabled={pt <= PT_MIN}
                       aria-label={t("reader.smaller")}
                     >
                       A−
                     </button>
-                    <span className="zoom-value">{Math.round(scale * 100)}%</span>
+                    <span className="zoom-value">{pt} pt</span>
                     <button
                       type="button"
                       className="btn btn-sm"
-                      onClick={() => zoom(SCALE_STEP)}
-                      disabled={scale + SCALE_STEP > SCALE_MAX}
+                      onClick={() => zoom(1)}
+                      disabled={pt >= PT_MAX}
                       aria-label={t("reader.larger")}
                     >
                       A+
