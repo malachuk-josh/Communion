@@ -1069,6 +1069,28 @@ html.navhide .chap-arrow {
   height: 1px;
 }
 
+/* section headings inside a chapter — quiet small caps, the way a print
+   Bible sets a pericope title */
+.section-head {
+  font-family: var(--sans);
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  line-height: 1.4;
+  margin: 1.1em 0 0.35em;
+}
+
+.section:first-child > .section-head,
+.verse-block:first-child > .section-head {
+  margin-top: 0.2em;
+}
+
+.section + .section {
+  margin-top: 0.2em;
+}
+
 /* transient badge while pinch-zooming the text */
 .pinch-hint {
   position: fixed;

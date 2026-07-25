@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   BOOKS,
   DEFAULT_TRANSLATION,
@@ -8,6 +8,7 @@ import {
   getBook,
   lxxPsalm,
   type ChapterData,
+  type Verse,
 } from "@/lib/bible";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -68,12 +69,20 @@ export default function Reader({
   const [data, setData] = useState<ChapterData | null>(null);
   // chapters appended below the current one by continuous scroll (same book)
   const [extra, setExtra] = useState<{ ch: number; data: ChapterData }[]>([]);
+  // and the ones pulled in above it, oldest first
+  const [before, setBefore] = useState<{ ch: number; data: ChapterData }[]>([]);
   // the chapter currently in view — trails the scroll, drives the pager,
   // the header indicator, and the saved reading position
   const [viewChapter, setViewChapter] = useState(
     initialChapter ?? DEFAULT_CHAPTER
   );
   const loadingMoreRef = useRef(false);
+  const loadingPrevRef = useRef(false);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  /** page height captured just before a chapter is prepended */
+  const prependFrom = useRef<number | null>(null);
+  /** upward loading only arms once the reader has moved off the top */
+  const hasScrolledRef = useRef(false);
   // bumped on every jump so stale continuous-scroll fetches drop themselves
   const genRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -131,6 +140,11 @@ export default function Reader({
   > | null>(null);
   // which chapter's context modal is open (null: closed)
   const [contextOpen, setContextOpen] = useState<number | null>(null);
+  // section headings per chapter: [{ v: first verse, en, es }, …]
+  const [heads, setHeads] = useState<Record<
+    string,
+    { v: number; en: string; es: string }[]
+  > | null>(null);
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -259,6 +273,7 @@ export default function Reader({
     const controller = new AbortController();
     genRef.current += 1;
     setExtra([]);
+    setBefore([]);
     setViewChapter(chapter);
     setLoading(true);
     setError(false);
@@ -321,6 +336,58 @@ export default function Reader({
     observer.observe(el);
     return () => observer.disconnect();
   }, [loading, error, data, extra.length, chapter, bookNr, translation]);
+
+  // …and the same in reverse: reaching the top of the column pulls in the
+  // chapter before it. Only after the reader has moved off the top, so
+  // opening a chapter doesn't silently push it down the page.
+  useEffect(() => {
+    const el = topSentinelRef.current;
+    if (!el || loading || error || !data) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (!hasScrolledRef.current || loadingPrevRef.current) return;
+        const prev = (before[0]?.ch ?? chapter) - 1;
+        if (prev < 1) return;
+        loadingPrevRef.current = true;
+        const gen = genRef.current;
+        fetch(`/api/bible/${translation}/${bookNr}/${prev}`)
+          .then((res) => (res.ok ? res.json() : Promise.reject()))
+          .then((json: ChapterData) => {
+            if (genRef.current !== gen) return; // reader jumped meanwhile
+            // hold the reader's place: the page is about to grow upward
+            prependFrom.current = document.documentElement.scrollHeight;
+            setBefore((list) => [{ ch: prev, data: json }, ...list]);
+          })
+          .catch(() => {})
+          .finally(() => {
+            loadingPrevRef.current = false;
+          });
+      },
+      { rootMargin: "900px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, error, data, before, chapter, bookNr, translation]);
+
+  // scroll by exactly what was inserted above, before the browser paints
+  useLayoutEffect(() => {
+    const from = prependFrom.current;
+    if (from === null) return;
+    prependFrom.current = null;
+    const grew = document.documentElement.scrollHeight - from;
+    if (grew > 0) window.scrollTo({ top: window.scrollY + grew });
+  }, [before]);
+
+  // arm upward loading once the reader is clear of the top of the column
+  useEffect(() => {
+    hasScrolledRef.current = false;
+    const onScroll = () => {
+      if (window.scrollY > 40) hasScrolledRef.current = true;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [bookNr, chapter, translation]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -483,6 +550,43 @@ export default function Reader({
       cancelled = true;
     };
   }, [study, bookNr]);
+
+  // section headings, one static file per book — the same shape as the
+  // chapter context, keyed by chapter then by the verse a section opens on.
+  // Not gated on study mode: these read as part of the text.
+  useEffect(() => {
+    let cancelled = false;
+    setHeads(null);
+    fetch(`/headings/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (!cancelled) setHeads(json);
+      })
+      .catch(() => {
+        if (!cancelled) setHeads({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookNr]);
+
+  /** Section title opening at this verse, if any. */
+  const headAt = (ch: number, verse: number): string | undefined => {
+    const entry = heads?.[String(ch)]?.find((s) => s.v === verse);
+    if (!entry) return undefined;
+    return (lang === "es" ? entry.es : entry.en) || entry.en;
+  };
+
+  /** Split a chapter into its sections, each with the title that opens it. */
+  const runsOf = (ch: number, verses: Verse[]) => {
+    const runs: { title?: string; verses: Verse[] }[] = [];
+    for (const v of verses) {
+      const title = headAt(ch, v.verse);
+      if (title || runs.length === 0) runs.push({ title, verses: [v] });
+      else runs[runs.length - 1].verses.push(v);
+    }
+    return runs;
+  };
 
   const toggleStudy = () => {
     const next = !study;
@@ -992,6 +1096,8 @@ export default function Reader({
     if (c === chapter) {
       genRef.current += 1;
       setExtra([]);
+      setBefore([]);
+      hasScrolledRef.current = false;
       setViewChapter(c);
       window.scrollTo({ top: 0 });
     } else {
@@ -1152,8 +1258,12 @@ export default function Reader({
         </p>
       )}
 
+      {/* nearing this line loads the chapter before the column */}
+      <div ref={topSentinelRef} className="chap-sentinel" aria-hidden="true" />
+
       <div ref={readRef}>
         {[
+          ...before.map((e) => ({ ch: e.ch, d: e.data as ChapterData | null })),
           { ch: chapter, d: loading || error ? null : data },
           ...extra.map((e) => ({ ch: e.ch, d: e.data as ChapterData | null })),
         ].map(({ ch, d }) => (
@@ -1178,6 +1288,7 @@ export default function Reader({
                   const key = `${ch}:${v.verse}`;
                   const refs = xrefs?.[key];
                   const note = notes[key];
+                  const title = headAt(ch, v.verse);
                   return (
                     <div
                       key={v.verse}
@@ -1188,6 +1299,7 @@ export default function Reader({
                           : ""
                       }`}
                     >
+                      {title && <h3 className="section-head">{title}</h3>}
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
                         {strongsTokens?.[key]
@@ -1312,22 +1424,28 @@ export default function Reader({
                 })}
               </div>
             ) : (
-              <p>
-                {d.verses.map((v) => (
-                  <span
-                    key={v.verse}
-                    id={ch === chapter ? `v-${v.verse}` : undefined}
-                    className={
-                      ch === chapter && highlightVerse === v.verse
-                        ? "verse-highlight"
-                        : undefined
-                    }
-                  >
-                    <sup className="verse-num">{v.verse}</sup>
-                    {v.text}{" "}
-                  </span>
-                ))}
-              </p>
+              // one paragraph per section, so a heading can open each one
+              runsOf(ch, d.verses).map((run, i) => (
+                <div key={i} className="section">
+                  {run.title && <h3 className="section-head">{run.title}</h3>}
+                  <p>
+                    {run.verses.map((v) => (
+                      <span
+                        key={v.verse}
+                        id={ch === chapter ? `v-${v.verse}` : undefined}
+                        className={
+                          ch === chapter && highlightVerse === v.verse
+                            ? "verse-highlight"
+                            : undefined
+                        }
+                      >
+                        <sup className="verse-num">{v.verse}</sup>
+                        {v.text}{" "}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              ))
             )}
           </article>
         ))}
