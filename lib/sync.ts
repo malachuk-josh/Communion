@@ -72,6 +72,8 @@ export async function adoptIdentity(who: string | undefined): Promise<boolean> {
   const local = await readLocalState();
   if (!local || !local.who || local.who === who) return false;
   await clearLocalData();
+  // the API cache holds the previous account's answers too
+  await import("@/lib/offline").then((m) => m.clearApiCache()).catch(() => {});
   return true;
 }
 

@@ -62,6 +62,13 @@ export async function POST(req: Request) {
     ...ops.filter((o) => o?.kind !== "collection.set"),
   ];
 
+  // Read each hash once and keep a working copy. A 200-op batch was issuing
+  // 200 round trips for the same bookmark hash.
+  const marks: Record<string, string> =
+    (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
+  const colls: Record<string, string> =
+    (await kv.hgetall(keys.userCollections(userId))) ?? {};
+
   for (const op of ordered) {
     try {
       switch (op?.kind) {
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
             rejected++;
             break;
           }
-          const existing = (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
+          const existing = marks;
           // make room the same way the toggle route does: oldest goes first
           if (!(op.key in existing) && Object.keys(existing).length >= MAX_BOOKMARKS) {
             const savedAt = (raw: string): number => {
@@ -84,7 +91,10 @@ export async function POST(req: Request) {
             const oldest = Object.entries(existing).sort(
               (a, b) => savedAt(a[1]) - savedAt(b[1])
             )[0];
-            if (oldest) await kv.hdel(keys.userBookmarks(userId), oldest[0]);
+            if (oldest) {
+              await kv.hdel(keys.userBookmarks(userId), oldest[0]);
+              delete marks[oldest[0]];
+            }
           }
           const entry: { t: number; l?: string; c?: string } = {
             t: Number(op.t) || Date.now(),
@@ -92,14 +102,14 @@ export async function POST(req: Request) {
           const label = op.l?.trim().slice(0, 120);
           if (label) entry.l = label;
           if (op.c) {
-            const colls = (await kv.hgetall(keys.userCollections(userId))) ?? {};
             // a collection created in the same batch is already here; one
             // that never existed is dropped rather than dangling. hasOwnProperty
             // because "constructor" and friends are `in` every object.
             if (Object.prototype.hasOwnProperty.call(colls, op.c)) entry.c = op.c;
           }
+          marks[op.key] = JSON.stringify(entry);
           await kv.hset(keys.userBookmarks(userId), {
-            [op.key]: JSON.stringify(entry),
+            [op.key]: marks[op.key],
           });
           applied++;
           break;
@@ -110,6 +120,7 @@ export async function POST(req: Request) {
             break;
           }
           await kv.hdel(keys.userBookmarks(userId), op.key);
+          delete marks[op.key];
           applied++; // deleting what is already gone is still success
           break;
         }
@@ -119,7 +130,6 @@ export async function POST(req: Request) {
             rejected++;
             break;
           }
-          const colls = (await kv.hgetall(keys.userCollections(userId))) ?? {};
           const known = Object.prototype.hasOwnProperty.call(colls, op.id);
           if (!known && Object.keys(colls).length >= MAX_COLLECTIONS) {
             rejected++;
@@ -133,8 +143,9 @@ export async function POST(req: Request) {
               // corrupted entry — replace it
             }
           }
+          colls[op.id] = JSON.stringify(value);
           await kv.hset(keys.userCollections(userId), {
-            [op.id]: JSON.stringify(value),
+            [op.id]: colls[op.id],
           });
           applied++;
           break;
@@ -145,8 +156,8 @@ export async function POST(req: Request) {
             break;
           }
           await kv.hdel(keys.userCollections(userId), op.id);
+          delete colls[op.id];
           // detach its bookmarks, exactly as the collection route does
-          const marks = (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
           const updates: Record<string, string> = {};
           for (const [key, raw] of Object.entries(marks)) {
             try {
@@ -154,6 +165,7 @@ export async function POST(req: Request) {
               if (entry?.c === op.id) {
                 delete entry.c;
                 updates[key] = JSON.stringify(entry);
+                marks[key] = updates[key];
               }
             } catch {
               // leave unparseable entries alone

@@ -154,6 +154,12 @@ export async function requestPersistence(): Promise<boolean> {
   }
 }
 
+/** Forget cached per-user API answers — used when the account changes. */
+export async function clearApiCache(): Promise<void> {
+  if (!supportsOffline()) return;
+  await caches.delete("communion-api-v1");
+}
+
 /** Drop everything downloaded. The app still works, it just re-fetches. */
 export async function clearDownloads(): Promise<void> {
   if (!supportsOffline()) return;

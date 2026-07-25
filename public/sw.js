@@ -39,6 +39,8 @@ const API_PATHS = ["/api/plans/progress", "/offline-manifest.json"];
 
 /** Where the shell cache records which build populated it. */
 const BUILD_MARK = "/__shell-build";
+/** …and where the data cache records which dataset version it holds. */
+const DATA_MARK = "/__data-stamp";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -61,7 +63,9 @@ async function dropStaleShell() {
   try {
     const res = await fetch("/offline-manifest.json", { cache: "no-store" });
     if (!res.ok) return;
-    const built = (await res.json()).built;
+    const manifest = await res.json();
+    const built = manifest.built;
+    await dropStaleData(manifest.dataStamp);
     if (!built) return;
     const shell = await caches.open(SHELL);
     const markUrl = new URL(BUILD_MARK, self.location.origin).toString();
@@ -85,6 +89,29 @@ async function dropStaleShell() {
   }
 }
 
+/**
+ * The dataset files are immutable in practice, so the data cache is not
+ * versioned per deploy — re-downloading 30MB because a button moved would be
+ * absurd. But a file can be *corrected*, and cache-first would then serve the
+ * old one forever. The manifest carries a stamp over every file's path and
+ * size; when that moves, what we hold is genuinely out of date.
+ */
+async function dropStaleData(stamp) {
+  if (!stamp) return;
+  try {
+    const data = await caches.open(DATA);
+    const markUrl = new URL(DATA_MARK, self.location.origin).toString();
+    const seen = await data.match(markUrl);
+    const previous = seen ? await seen.text() : null;
+    if (previous === stamp) return;
+    if (previous !== null) await caches.delete(DATA);
+    const fresh = await caches.open(DATA);
+    await fresh.put(markUrl, new Response(stamp));
+  } catch {
+    // nothing to be done offline; the next activation tries again
+  }
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -101,6 +128,7 @@ self.addEventListener("activate", (event) => {
 
 const isData = (url) =>
   url.origin === self.location.origin &&
+  url.pathname !== DATA_MARK &&
   DATA_PATHS.some((p) => url.pathname.startsWith(p));
 
 const isApi = (url) =>

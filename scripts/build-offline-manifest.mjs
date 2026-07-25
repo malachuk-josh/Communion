@@ -4,6 +4,7 @@
 //
 // Runs from `npm run prebuild`.
 
+import { createHash } from "crypto";
 import { readdirSync, statSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 
@@ -53,16 +54,32 @@ const study = merge(
   listDir("bdb")
 );
 
+const tiers = {
+  reading,
+  study,
+  ...Object.fromEntries(
+    Object.entries(translations).map(([id, t]) => [`translation:${id}`, t])
+  ),
+};
+
+// Every file's path and size. This moves only when the datasets themselves
+// change, which is what the service worker keys its data cache on — code
+// deploys must not cost anyone a re-download.
+const dataStamp = createHash("sha256")
+  .update(
+    Object.values(tiers)
+      .flatMap((t) => t.urls)
+      .sort()
+      .join("|") + Object.values(tiers).map((t) => t.bytes).join("|")
+  )
+  .digest("hex")
+  .slice(0, 12);
+
 const manifest = {
   // full timestamp: the service worker uses this to tell builds apart
   built: new Date().toISOString(),
-  tiers: {
-    reading,
-    study,
-    ...Object.fromEntries(
-      Object.entries(translations).map(([id, t]) => [`translation:${id}`, t])
-    ),
-  },
+  dataStamp,
+  tiers,
 };
 
 writeFileSync(
