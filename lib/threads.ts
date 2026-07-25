@@ -117,6 +117,55 @@ export async function listUserThreads(
   return all.sort((a, b) => b.lastAt - a.lastAt);
 }
 
+/**
+ * Remove one post from a discussion. Allowed for its author, and for the
+ * Fellowship's admin moderating. Returns false when the post isn't theirs.
+ */
+export async function deletePost(
+  threadId: string,
+  postId: string,
+  userId: string,
+  isAdmin: boolean
+): Promise<boolean> {
+  const kv = db();
+  const raw = await kv.zrangebyscore(
+    keys.threadPosts(threadId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  for (const item of raw) {
+    try {
+      const post = JSON.parse(item) as ThreadPost;
+      if (post.id !== postId) continue;
+      if (post.from !== userId && !isAdmin) return false;
+      await kv.zrem(keys.threadPosts(threadId), item);
+
+      // keep the thread summary honest about its reply count and preview
+      const remaining = raw
+        .filter((r) => r !== item)
+        .map((r) => {
+          try {
+            return JSON.parse(r) as ThreadPost;
+          } catch {
+            return null;
+          }
+        })
+        .filter((p): p is ThreadPost => p !== null)
+        .sort((a, b) => a.ts - b.ts);
+      const last = remaining[remaining.length - 1];
+      await kv.hset(keys.thread(threadId), {
+        replies: Math.max(remaining.length - 1, 0),
+        lastText: last?.text?.slice(0, 120) ?? "",
+        ...(last ? { lastAt: last.ts } : {}),
+      });
+      return true;
+    } catch {
+      // corrupted entry — keep looking
+    }
+  }
+  return false;
+}
+
 /** Remove a discussion and its posts. */
 export async function deleteThread(
   threadId: string,

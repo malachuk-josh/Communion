@@ -34,6 +34,7 @@ export async function GET(
     churchName: church?.name ?? "",
     myUserId: userId,
     canDelete: meta.createdBy === userId || role === "founder",
+    isAdmin: role === "founder",
   });
 }
 

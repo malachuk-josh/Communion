@@ -32,6 +32,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
   const { lang, t } = useI18n();
   const router = useRouter();
   const [canDelete, setCanDelete] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [meta, setMeta] = useState<ThreadMeta | null>(null);
   const [posts, setPosts] = useState<ThreadPost[]>([]);
   const [myUserId, setMyUserId] = useState("");
@@ -49,12 +50,14 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       posts: ThreadPost[];
       myUserId: string;
       canDelete: boolean;
+      isAdmin: boolean;
     }>(`/api/threads/${threadId}`)
       .then((res) => {
         setMeta(res.thread);
         setPosts(res.posts);
         setMyUserId(res.myUserId);
         setCanDelete(res.canDelete);
+        setIsAdmin(res.isAdmin);
       })
       .catch(() => setNotFound(true));
   }, [threadId]);
@@ -66,6 +69,19 @@ export default function ThreadView({ threadId }: { threadId: string }) {
     const timer = window.setInterval(load, 8000);
     return () => window.clearInterval(timer);
   }, [load]);
+
+  const removePost = async (postId: string) => {
+    if (!window.confirm(t("threads.deletePostConfirm"))) return;
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    try {
+      await api(`/api/threads/${threadId}/posts/${postId}`, {
+        method: "DELETE",
+      });
+    } catch {
+      setError(t("reader.error"));
+      load();
+    }
+  };
 
   const post = async () => {
     const text = draft.trim();
@@ -145,6 +161,17 @@ export default function ThreadView({ threadId }: { threadId: string }) {
                 minute: "2-digit",
               })}
             </span>
+            {(p.from === myUserId || isAdmin) && (
+              <button
+                type="button"
+                className="chip-remove"
+                aria-label={t("threads.deletePost")}
+                title={t("threads.deletePost")}
+                onClick={() => removePost(p.id)}
+              >
+                ✕
+              </button>
+            )}
           </div>
           {p.text && <p className="post-text">{p.text}</p>}
           {p.attach && (
