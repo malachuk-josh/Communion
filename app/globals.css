@@ -1308,6 +1308,84 @@ button.menu-tile {
   margin: 0;
 }
 
+/* ---- admin dashboard (owner only, desktop-first) ---- */
+.admin-tile {
+  display: none;
+}
+
+.admin-mobile-note {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .admin-tile {
+    display: flex;
+  }
+
+  .admin-mobile-note {
+    display: none;
+  }
+}
+
+.admin-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.admin-stat {
+  text-align: center;
+  padding: 14px 10px;
+}
+
+.admin-stat strong {
+  display: block;
+  font-size: 1.7rem;
+  color: var(--gold);
+  font-family: var(--serif);
+}
+
+.admin-stat small {
+  color: var(--ink-dim);
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.admin-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink-dim);
+  padding: 6px 12px 8px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.admin-table td {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--glass-border);
+  vertical-align: top;
+}
+
+.admin-sub {
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  white-space: normal;
+  max-width: 320px;
+}
+
+.admin-expand td {
+  white-space: normal;
+}
+
 .notif-list {
   display: grid;
   gap: 4px;

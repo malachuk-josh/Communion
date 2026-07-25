@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
 // The Menu tab: a hub of tiles for profile, notifications, settings, about,
@@ -18,6 +19,14 @@ const TILES: { href: string; emoji: string; key: string }[] = [
 export default function MenuHub() {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // the admin tile only appears for the app owner, and only on desktop
+  useEffect(() => {
+    api<{ isOwner?: boolean }>("/api/profile")
+      .then((res) => setIsOwner(!!res.isOwner))
+      .catch(() => {});
+  }, []);
 
   const shareApp = async () => {
     const message = t("menu.shareMessage", {
@@ -65,6 +74,16 @@ export default function MenuHub() {
             <span className="menu-tile-arrow">→</span>
           </Link>
         ))}
+        {isOwner && (
+          <Link href="/admin" className="glass card menu-tile admin-tile">
+            <span className="menu-tile-emoji">🛠</span>
+            <span className="menu-tile-body">
+              <strong>Admin</strong>
+              <small>Users, fellowships, and activity — desktop only</small>
+            </span>
+            <span className="menu-tile-arrow">→</span>
+          </Link>
+        )}
         <button type="button" className="glass card menu-tile" onClick={shareApp}>
           <span className="menu-tile-emoji">📲</span>
           <span className="menu-tile-body">

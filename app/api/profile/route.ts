@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
+import { isOwner } from "@/lib/admin";
 import { isProfileIcon } from "@/lib/profileIcons";
 import { pushEnabled } from "@/lib/push";
 import { isValidPhone, smsEnabled } from "@/lib/sms";
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
     smsReminders: profile.smsReminders === "1",
     pushAvailable: pushEnabled(),
     smsAvailable: smsEnabled(),
+    isOwner: isOwner(userId),
   });
 }
 
