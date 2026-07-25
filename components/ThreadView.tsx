@@ -4,6 +4,7 @@
 // scripture reference or a shared bookmark/note/word study.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -29,6 +30,8 @@ interface ThreadMeta {
 
 export default function ThreadView({ threadId }: { threadId: string }) {
   const { lang, t } = useI18n();
+  const router = useRouter();
+  const [canDelete, setCanDelete] = useState(false);
   const [meta, setMeta] = useState<ThreadMeta | null>(null);
   const [posts, setPosts] = useState<ThreadPost[]>([]);
   const [myUserId, setMyUserId] = useState("");
@@ -45,11 +48,13 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       thread: ThreadMeta;
       posts: ThreadPost[];
       myUserId: string;
+      canDelete: boolean;
     }>(`/api/threads/${threadId}`)
       .then((res) => {
         setMeta(res.thread);
         setPosts(res.posts);
         setMyUserId(res.myUserId);
+        setCanDelete(res.canDelete);
       })
       .catch(() => setNotFound(true));
   }, [threadId]);
@@ -99,7 +104,30 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       <Link href={`/churches/${meta.churchId}`} className="passage-link back-link">
         ← {t("threads.backToFellowship")}
       </Link>
-      <h1 className="page-title">{meta.title}</h1>
+      <div className="section-head">
+        <h1 className="page-title" style={{ margin: 0 }}>
+          {meta.title}
+        </h1>
+        {canDelete && (
+          <button
+            type="button"
+            className="rsvp-btn"
+            aria-label={t("threads.delete")}
+            title={t("threads.delete")}
+            onClick={async () => {
+              if (!window.confirm(t("threads.deleteConfirm"))) return;
+              try {
+                await api(`/api/threads/${threadId}`, { method: "DELETE" });
+                router.push(`/churches/${meta.churchId}`);
+              } catch {
+                setError(t("reader.error"));
+              }
+            }}
+          >
+            🗑
+          </button>
+        )}
+      </div>
       <p className="subtitle">
         {t("threads.startedBy", { name: meta.createdByName })}
       </p>

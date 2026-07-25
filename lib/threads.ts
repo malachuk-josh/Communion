@@ -101,6 +101,33 @@ export async function listThreads(churchId: string): Promise<ThreadSummary[]> {
     .sort((a, b) => b.lastAt - a.lastAt);
 }
 
+/** Every discussion across the Fellowships a user belongs to, newest first. */
+export async function listUserThreads(
+  userId: string
+): Promise<(ThreadSummary & { churchName: string })[]> {
+  const kv = db();
+  const churchIds = await kv.smembers(keys.userChurches(userId));
+  const all: (ThreadSummary & { churchName: string })[] = [];
+  for (const churchId of churchIds) {
+    const church = await kv.hgetall(keys.church(churchId));
+    if (!church?.name) continue;
+    const threads = await listThreads(churchId);
+    all.push(...threads.map((th) => ({ ...th, churchName: church.name })));
+  }
+  return all.sort((a, b) => b.lastAt - a.lastAt);
+}
+
+/** Remove a discussion and its posts. */
+export async function deleteThread(
+  threadId: string,
+  churchId: string
+): Promise<void> {
+  const kv = db();
+  await kv.zrem(keys.churchThreads(churchId), threadId);
+  await kv.del(keys.threadPosts(threadId));
+  await kv.del(keys.thread(threadId));
+}
+
 export async function getThreadMeta(
   threadId: string
 ): Promise<ThreadSummary | null> {

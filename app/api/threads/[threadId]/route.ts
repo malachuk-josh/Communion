@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth";
 import { getChurch, getRole } from "@/lib/churches";
 import {
   addPost,
+  deleteThread,
   getPosts,
   getThreadMeta,
   validateAttach,
@@ -26,12 +27,36 @@ export async function GET(
     return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
   const church = await getChurch(meta.churchId);
+  const role = await getRole(meta.churchId, userId);
   return NextResponse.json({
     thread: meta,
     posts: await getPosts(threadId),
     churchName: church?.name ?? "",
     myUserId: userId,
+    canDelete: meta.createdBy === userId || role === "founder",
   });
+}
+
+/** Delete a discussion — its author or the Fellowship's founder. */
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ threadId: string }> }
+) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { threadId } = await params;
+  const meta = await getThreadMeta(threadId);
+  if (!meta) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const role = await getRole(meta.churchId, userId);
+  if (meta.createdBy !== userId && role !== "founder") {
+    return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  }
+  await deleteThread(threadId, meta.churchId);
+  return NextResponse.json({ ok: true });
 }
 
 /** Reply to a thread. */

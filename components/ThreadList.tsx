@@ -12,6 +12,7 @@ import AttachPicker, { attachRef, type Attach } from "@/components/AttachPicker"
 interface ThreadSummary {
   id: string;
   title: string;
+  createdBy: string;
   createdByName: string;
   lastAt: number;
   replies: number;
@@ -21,6 +22,8 @@ interface ThreadSummary {
 export default function ThreadList({ churchId }: { churchId: string }) {
   const { lang, t } = useI18n();
   const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
+  const [myUserId, setMyUserId] = useState("");
+  const [myRole, setMyRole] = useState("");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -30,10 +33,26 @@ export default function ThreadList({ churchId }: { churchId: string }) {
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
-    api<{ threads: ThreadSummary[] }>(`/api/churches/${churchId}/threads`)
-      .then((res) => setThreads(res.threads))
+    api<{ threads: ThreadSummary[]; myUserId: string; myRole: string }>(
+      `/api/churches/${churchId}/threads`
+    )
+      .then((res) => {
+        setThreads(res.threads);
+        setMyUserId(res.myUserId);
+        setMyRole(res.myRole);
+      })
       .catch(() => setThreads([]));
   }, [churchId]);
+
+  const remove = async (id: string) => {
+    if (!window.confirm(t("threads.deleteConfirm"))) return;
+    setThreads((prev) => prev?.filter((th) => th.id !== id) ?? null);
+    try {
+      await api(`/api/threads/${id}`, { method: "DELETE" });
+    } catch {
+      load();
+    }
+  };
 
   useEffect(load, [load]);
 
@@ -143,27 +162,39 @@ export default function ThreadList({ churchId }: { churchId: string }) {
         <div className="glass card empty">{t("threads.empty")}</div>
       ) : (
         threads.map((th) => (
-          <Link
-            key={th.id}
-            href={`/churches/${churchId}/threads/${th.id}`}
-            className="glass card conv-row"
-          >
-            <span className="conv-avatar">💬</span>
-            <span className="conv-body">
-              <strong>{th.title}</strong>
-              <small>
-                {th.createdByName}
-                {th.lastText ? ` · ${th.lastText}` : ""}
-              </small>
-            </span>
-            <span className="conv-time">
-              {th.replies > 0 && `${th.replies} · `}
-              {new Date(th.lastAt).toLocaleDateString(
-                lang === "es" ? "es" : "en",
-                { month: "short", day: "numeric" }
-              )}
-            </span>
-          </Link>
+          <div key={th.id} className="glass card conv-row">
+            <Link
+              href={`/churches/${churchId}/threads/${th.id}`}
+              className="conv-row-link"
+            >
+              <span className="conv-avatar">💬</span>
+              <span className="conv-body">
+                <strong>{th.title}</strong>
+                <small>
+                  {th.createdByName}
+                  {th.lastText ? ` · ${th.lastText}` : ""}
+                </small>
+              </span>
+              <span className="conv-time">
+                {th.replies > 0 && `${th.replies} · `}
+                {new Date(th.lastAt).toLocaleDateString(
+                  lang === "es" ? "es" : "en",
+                  { month: "short", day: "numeric" }
+                )}
+              </span>
+            </Link>
+            {(th.createdBy === myUserId || myRole === "founder") && (
+              <button
+                type="button"
+                className="chip-remove"
+                aria-label={t("threads.delete")}
+                title={t("threads.delete")}
+                onClick={() => remove(th.id)}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         ))
       )}
     </>

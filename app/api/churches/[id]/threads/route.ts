@@ -13,10 +13,15 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
-  if (!(await getRole(id, userId))) {
+  const role = await getRole(id, userId);
+  if (!role) {
     return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
-  return NextResponse.json({ threads: await listThreads(id), myUserId: userId });
+  return NextResponse.json({
+    threads: await listThreads(id),
+    myUserId: userId,
+    myRole: role,
+  });
 }
 
 export async function POST(

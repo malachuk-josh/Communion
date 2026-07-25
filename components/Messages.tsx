@@ -25,10 +25,21 @@ interface Contact {
   icon?: string;
 }
 
+interface ThreadRow {
+  id: string;
+  churchId: string;
+  churchName: string;
+  title: string;
+  lastText: string;
+  lastAt: number;
+  replies: number;
+}
+
 
 export default function Messages() {
   const { lang, t } = useI18n();
   const [convs, setConvs] = useState<ConvSummary[] | null>(null);
+  const [threads, setThreads] = useState<ThreadRow[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [showNew, setShowNew] = useState(false);
@@ -37,11 +48,13 @@ export default function Messages() {
     api<{
       conversations: ConvSummary[];
       contacts: Contact[];
+      threads: ThreadRow[];
       myUserId: string;
     }>("/api/messages")
       .then((res) => {
         setConvs(res.conversations);
         setContacts(res.contacts);
+        setThreads(res.threads ?? []);
         setMyUserId(res.myUserId);
       })
       .catch(() => setConvs([]));
@@ -95,40 +108,76 @@ export default function Messages() {
 
       {convs === null ? (
         <p className="skeleton">{t("common.loading")}</p>
-      ) : convs.length === 0 ? (
+      ) : convs.length === 0 && threads.length === 0 ? (
         <div className="glass card empty">
           {contacts.length === 0
             ? t("messages.noContacts")
             : t("messages.empty")}
         </div>
       ) : (
-        convs.map((conv) => (
-          <Link
-            key={conv.peerId}
-            href={`/menu/messages/${conv.peerId}`}
-            className="glass card conv-row"
-          >
-            <span className="conv-avatar">{conv.peerIcon || "🙏"}</span>
-            <span className="conv-body">
-              <strong>
-                {conv.peerName}
-                {conv.unread > 0 && (
-                  <span className="conv-unread">{conv.unread}</span>
-                )}
-              </strong>
-              <small>
-                {conv.lastFrom === myUserId ? `${t("messages.you")}: ` : ""}
-                {conv.lastText}
-              </small>
-            </span>
-            <span className="conv-time">
-              {new Date(conv.ts).toLocaleDateString(
-                lang === "es" ? "es" : "en",
-                { month: "short", day: "numeric" }
-              )}
-            </span>
-          </Link>
-        ))
+        // direct messages and Fellowship discussions share one list,
+        // ordered by whichever spoke last
+        [
+          ...convs.map((c) => ({ kind: "dm" as const, ts: c.ts, dm: c })),
+          ...threads.map((th) => ({
+            kind: "thread" as const,
+            ts: th.lastAt,
+            thread: th,
+          })),
+        ]
+          .sort((a, b) => b.ts - a.ts)
+          .map((row) =>
+            row.kind === "dm" ? (
+              <Link
+                key={`dm-${row.dm.peerId}`}
+                href={`/menu/messages/${row.dm.peerId}`}
+                className="glass card conv-row"
+              >
+                <span className="conv-avatar">{row.dm.peerIcon || "🙏"}</span>
+                <span className="conv-body">
+                  <strong>
+                    {row.dm.peerName}
+                    {row.dm.unread > 0 && (
+                      <span className="conv-unread">{row.dm.unread}</span>
+                    )}
+                  </strong>
+                  <small>
+                    {row.dm.lastFrom === myUserId
+                      ? `${t("messages.you")}: `
+                      : ""}
+                    {row.dm.lastText}
+                  </small>
+                </span>
+                <span className="conv-time">
+                  {new Date(row.ts).toLocaleDateString(
+                    lang === "es" ? "es" : "en",
+                    { month: "short", day: "numeric" }
+                  )}
+                </span>
+              </Link>
+            ) : (
+              <Link
+                key={`th-${row.thread.id}`}
+                href={`/churches/${row.thread.churchId}/threads/${row.thread.id}`}
+                className="glass card conv-row"
+              >
+                <span className="conv-avatar">💬</span>
+                <span className="conv-body">
+                  <strong>{row.thread.title}</strong>
+                  <small>
+                    ⛪ {row.thread.churchName}
+                    {row.thread.lastText ? ` · ${row.thread.lastText}` : ""}
+                  </small>
+                </span>
+                <span className="conv-time">
+                  {new Date(row.ts).toLocaleDateString(
+                    lang === "es" ? "es" : "en",
+                    { month: "short", day: "numeric" }
+                  )}
+                </span>
+              </Link>
+            )
+          )
       )}
       <p className="notice">{t("messages.hint")}</p>
     </div>

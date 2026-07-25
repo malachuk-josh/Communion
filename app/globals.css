@@ -1246,6 +1246,14 @@ button.menu-tile {
   font-size: 1.45rem;
 }
 
+.conv-row-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
 .conv-body {
   flex: 1;
   min-width: 0;
