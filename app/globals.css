@@ -404,9 +404,12 @@ a {
   border-color: var(--glass-border-bright);
 }
 
-/* study mode: the same ✦ the chapter heading wears while it is on */
+/* study mode: the same ✦ the chapter heading wears while it is on. The
+   glyph is small inside its em box, so it needs the extra size to read as
+   a star rather than a dot. */
 .study-toggle {
-  font-size: 0.85rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .study-toggle.on {
