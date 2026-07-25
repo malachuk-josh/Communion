@@ -92,9 +92,6 @@ export default function Nav() {
       ? positionBook.es
       : positionBook.en
     : "";
-  // compact form for narrow screens: "Deuteronomy" → "Deut."
-  const bookAbbr =
-    bookName.length > 8 ? `${bookName.slice(0, 4).trimEnd()}.` : bookName;
   const showPassage = pathname === "/" && position && positionBook;
 
   // closing the control sheet hands focus back to the chip that opened it —
@@ -200,36 +197,13 @@ export default function Nav() {
             >
               {/* only the book name may shrink; the chapter and the caret,
                   which is the chip's whole affordance, never truncate */}
-              <span className="pn-name">
-                <span className="pn-full">{bookName}</span>
-                <span className="pn-abbr">{bookAbbr}</span>
-              </span>
+              <span className="pn-name">{bookName}</span>
               <span className="pn-tail">
                 {position!.chapter}
                 <span className="pn-caret" aria-hidden>
                   ⌄
                 </span>
               </span>
-            </button>
-          )}
-          {showPassage && (
-            <button
-              type="button"
-              role="switch"
-              aria-checked={study}
-              className={`theme-toggle study-toggle${study ? " on" : ""}`}
-              onClick={toggleStudy}
-              aria-label={t("reader.study")}
-              title={t("reader.study")}
-            >
-              {/* drawn rather than typed: the ✦ glyph sits off-centre in its
-                  em box, and by a different amount in every fallback font */}
-              <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 1.4c.62 5.98 4.6 9.96 10.6 10.6-6 .62-9.98 4.6-10.6 10.6-.62-6-4.6-9.98-10.6-10.6C7.4 11.36 11.38 7.38 12 1.4Z"
-                />
-              </svg>
             </button>
           )}
           <Link
@@ -258,6 +232,26 @@ export default function Nav() {
             </button>
           )}
           {!isWord && <AuthControls />}
+          {showPassage && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={study}
+              className={`theme-toggle study-toggle${study ? " on" : ""}`}
+              onClick={toggleStudy}
+              aria-label={t("reader.study")}
+              title={t("reader.study")}
+            >
+              {/* drawn rather than typed: the ✦ glyph sits off-centre in its
+                  em box, and by a different amount in every fallback font */}
+              <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 1.4c.62 5.98 4.6 9.96 10.6 10.6-6 .62-9.98 4.6-10.6 10.6-.62-6-4.6-9.98-10.6-10.6C7.4 11.36 11.38 7.38 12 1.4Z"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </nav>
 

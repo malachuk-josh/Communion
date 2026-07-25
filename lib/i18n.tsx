@@ -300,8 +300,8 @@ const dictionaries = {
     "reader.sendToFellowship": "Table",
     "reader.sent": "Sent",
     "reader.posted": "Posted to the discussion",
-    "reader.shareDirect": "A person",
-    "reader.shareGathering": "A Gathering",
+    "reader.shareDirect": "Believer",
+    "reader.shareGathering": "Gathering",
     "reader.newDiscussion": "New discussion",
     "reader.noGatherings":
       "Join or start a Gathering and its discussions show up here.",
@@ -794,8 +794,8 @@ const dictionaries = {
     "reader.sendToFellowship": "Mesa",
     "reader.sent": "Enviado",
     "reader.posted": "Publicado en la conversación",
-    "reader.shareDirect": "Una persona",
-    "reader.shareGathering": "Una Comunidad",
+    "reader.shareDirect": "Creyente",
+    "reader.shareGathering": "Comunidad",
     "reader.newDiscussion": "Nueva conversación",
     "reader.noGatherings":
       "Únete o inicia una Comunidad y sus conversaciones aparecerán aquí.",

@@ -345,10 +345,6 @@ a {
   transform: rotate(180deg);
 }
 
-.pn-abbr {
-  display: none;
-}
-
 @media (max-width: 639px) {
   /* single-line header: the passage chip abbreviates and, at the extreme,
      ellipsizes — nothing ever wraps controls onto a second row */
@@ -369,17 +365,16 @@ a {
   .lang-toggle {
     flex-shrink: 0;
   }
-  /* the clipping lives on .pn-name, not here — overflow:hidden on the chip
-     would cut off its own enlarged tap target */
+  /* The chip takes the room between the wordmark and the study star, which
+     sits at the far edge. With the theme and account buttons gone from The
+     Word there is enough of it that book names no longer need shortening —
+     .pn-name still ellipsizes if a long one ever meets a narrow phone.
+     The clipping lives there, not here: overflow:hidden on the chip would
+     cut off its own enlarged tap target. */
   .nav-passage {
     min-width: 0;
-    flex-shrink: 1;
-  }
-  .pn-full {
-    display: none;
-  }
-  .pn-abbr {
-    display: inline;
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }
 
