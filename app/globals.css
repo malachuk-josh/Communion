@@ -1397,6 +1397,40 @@ button.menu-tile {
   text-align: right;
 }
 
+.bubble-del {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-1);
+  color: var(--ink-dim);
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bubble:hover .bubble-del,
+.bubble:focus-within .bubble-del {
+  opacity: 1;
+}
+
+/* touch devices have no hover — keep it discreetly visible */
+@media (hover: none) {
+  .bubble-del {
+    opacity: 0.55;
+  }
+}
+
+.thread-head h1 {
+  flex: 1;
+  min-width: 0;
+}
+
 .composer {
   position: sticky;
   bottom: calc(64px + env(safe-area-inset-bottom, 0px));

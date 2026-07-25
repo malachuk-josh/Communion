@@ -3,6 +3,8 @@ import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
 import {
+  clearConversation,
+  deleteMessage,
   getThread,
   markRead,
   sendMessage,
@@ -88,4 +90,36 @@ export async function POST(
   }
   const message = await sendMessage(userId, peerId, text, attach);
   return NextResponse.json({ message }, { status: 201 });
+}
+
+/**
+ * With { messageId }: delete that message (author only). Without it:
+ * clear the whole conversation from this user's inbox and history.
+ */
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ peerId: string }> }
+) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { peerId } = await params;
+  const body = (await req.json().catch(() => null)) as {
+    messageId?: string;
+  } | null;
+
+  if (body?.messageId) {
+    const ok = await deleteMessage(userId, peerId, body.messageId);
+    if (!ok) {
+      return NextResponse.json(
+        { error: "You can only delete your own messages" },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  await clearConversation(userId, peerId);
+  return NextResponse.json({ ok: true });
 }

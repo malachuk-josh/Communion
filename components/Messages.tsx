@@ -60,6 +60,16 @@ export default function Messages() {
       .catch(() => setConvs([]));
   }, []);
 
+  const clearChat = async (peerId: string) => {
+    if (!window.confirm(t("messages.clearConfirm"))) return;
+    setConvs((prev) => prev?.filter((c) => c.peerId !== peerId) ?? null);
+    try {
+      await api(`/api/messages/${peerId}`, { method: "DELETE" });
+    } catch {
+      // transient — the next load shows the truth
+    }
+  };
+
   const openConvPeers = new Set(convs?.map((c) => c.peerId) ?? []);
   const newContacts = contacts.filter((c) => !openConvPeers.has(c.userId));
 
@@ -128,33 +138,43 @@ export default function Messages() {
           .sort((a, b) => b.ts - a.ts)
           .map((row) =>
             row.kind === "dm" ? (
-              <Link
-                key={`dm-${row.dm.peerId}`}
-                href={`/menu/messages/${row.dm.peerId}`}
-                className="glass card conv-row"
-              >
-                <span className="conv-avatar">{row.dm.peerIcon || "🙏"}</span>
-                <span className="conv-body">
-                  <strong>
-                    {row.dm.peerName}
-                    {row.dm.unread > 0 && (
-                      <span className="conv-unread">{row.dm.unread}</span>
+              <div key={`dm-${row.dm.peerId}`} className="glass card conv-row">
+                <Link
+                  href={`/menu/messages/${row.dm.peerId}`}
+                  className="conv-row-link"
+                >
+                  <span className="conv-avatar">{row.dm.peerIcon || "🙏"}</span>
+                  <span className="conv-body">
+                    <strong>
+                      {row.dm.peerName}
+                      {row.dm.unread > 0 && (
+                        <span className="conv-unread">{row.dm.unread}</span>
+                      )}
+                    </strong>
+                    <small>
+                      {row.dm.lastFrom === myUserId
+                        ? `${t("messages.you")}: `
+                        : ""}
+                      {row.dm.lastText}
+                    </small>
+                  </span>
+                  <span className="conv-time">
+                    {new Date(row.ts).toLocaleDateString(
+                      lang === "es" ? "es" : "en",
+                      { month: "short", day: "numeric" }
                     )}
-                  </strong>
-                  <small>
-                    {row.dm.lastFrom === myUserId
-                      ? `${t("messages.you")}: `
-                      : ""}
-                    {row.dm.lastText}
-                  </small>
-                </span>
-                <span className="conv-time">
-                  {new Date(row.ts).toLocaleDateString(
-                    lang === "es" ? "es" : "en",
-                    { month: "short", day: "numeric" }
-                  )}
-                </span>
-              </Link>
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={t("messages.clearChat")}
+                  title={t("messages.clearChat")}
+                  onClick={() => clearChat(row.dm.peerId)}
+                >
+                  ✕
+                </button>
+              </div>
             ) : (
               <Link
                 key={`th-${row.thread.id}`}

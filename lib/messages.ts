@@ -99,6 +99,12 @@ export async function listConversations(
   return convs.sort((a, b) => b.ts - a.ts);
 }
 
+/** When this user last cleared the conversation (0 = never). */
+async function clearedAt(userId: string, convId: string): Promise<number> {
+  const profile = await db().hgetall(keys.user(userId));
+  return Number(profile?.[`cleared:${convId}`]) || 0;
+}
+
 export async function getThread(
   userId: string,
   peerId: string,
@@ -106,9 +112,10 @@ export async function getThread(
 ): Promise<ChatMessage[]> {
   const kv = db();
   const convId = convIdFor(userId, peerId);
+  const floor = await clearedAt(userId, convId);
   const raw = await kv.zrangebyscore(
     keys.convMessages(convId),
-    since,
+    Math.max(since, floor + (floor ? 1 : 0)),
     Number.MAX_SAFE_INTEGER
   );
   const messages: ChatMessage[] = [];
@@ -120,6 +127,79 @@ export async function getThread(
     }
   }
   return messages.sort((a, b) => a.ts - b.ts);
+}
+
+/** Remove one message from the shared thread — its author only. */
+export async function deleteMessage(
+  userId: string,
+  peerId: string,
+  messageId: string
+): Promise<boolean> {
+  const kv = db();
+  const convId = convIdFor(userId, peerId);
+  const raw = await kv.zrangebyscore(
+    keys.convMessages(convId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  for (const item of raw) {
+    try {
+      const message = JSON.parse(item) as ChatMessage;
+      if (message.id !== messageId) continue;
+      if (message.from !== userId) return false;
+      await kv.zrem(keys.convMessages(convId), item);
+      // keep both inboxes honest about what the last message now is
+      const remaining = raw
+        .filter((r) => r !== item)
+        .map((r) => {
+          try {
+            return JSON.parse(r) as ChatMessage;
+          } catch {
+            return null;
+          }
+        })
+        .filter((m): m is ChatMessage => m !== null)
+        .sort((a, b) => a.ts - b.ts);
+      const last = remaining[remaining.length - 1];
+      for (const side of [userId, peerId]) {
+        const summaries = (await kv.hgetall(keys.userConvs(side))) ?? {};
+        if (!summaries[convId]) continue;
+        try {
+          const summary = JSON.parse(summaries[convId]) as ConvSummary;
+          if (last) {
+            summary.lastText = last.attach ? `📖 ${last.text}` : last.text;
+            summary.lastFrom = last.from;
+            summary.ts = last.ts;
+          } else {
+            summary.lastText = "";
+          }
+          await kv.hset(keys.userConvs(side), {
+            [convId]: JSON.stringify(summary),
+          });
+        } catch {
+          // corrupted summary — leave it
+        }
+      }
+      return true;
+    } catch {
+      // corrupted entry — keep looking
+    }
+  }
+  return false;
+}
+
+/**
+ * Hide a conversation from this user's inbox and history. The other
+ * person keeps their copy; a new message brings the thread back.
+ */
+export async function clearConversation(
+  userId: string,
+  peerId: string
+): Promise<void> {
+  const kv = db();
+  const convId = convIdFor(userId, peerId);
+  await kv.hset(keys.user(userId), { [`cleared:${convId}`]: Date.now() });
+  await kv.hdel(keys.userConvs(userId), convId);
 }
 
 /** Reset the viewer's unread counter for one conversation. */

@@ -4,6 +4,7 @@
 // composer pinned above the bottom nav.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
@@ -33,6 +34,7 @@ interface ShareItem {
 
 export default function MessageThread({ peerId }: { peerId: string }) {
   const { lang, t } = useI18n();
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [peerName, setPeerName] = useState("…");
@@ -114,6 +116,29 @@ export default function MessageThread({ peerId }: { peerId: string }) {
     }
   };
 
+  const removeMessage = async (id: string) => {
+    if (!window.confirm(t("messages.deleteConfirm"))) return;
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+    try {
+      await api(`/api/messages/${peerId}`, {
+        method: "DELETE",
+        body: { messageId: id },
+      });
+    } catch {
+      setError(t("reader.error"));
+    }
+  };
+
+  const clearChat = async () => {
+    if (!window.confirm(t("messages.clearConfirm"))) return;
+    try {
+      await api(`/api/messages/${peerId}`, { method: "DELETE" });
+      router.push("/menu/messages");
+    } catch {
+      setError(t("reader.error"));
+    }
+  };
+
   const openPicker = () => {
     setPickerOpen((v) => !v);
     if (shareItems === null) {
@@ -185,6 +210,15 @@ export default function MessageThread({ peerId }: { peerId: string }) {
         </Link>
         <span className="conv-avatar">{peerIcon || "🙏"}</span>
         <h1>{peerName}</h1>
+        <button
+          type="button"
+          className="rsvp-btn"
+          onClick={clearChat}
+          aria-label={t("messages.clearChat")}
+          title={t("messages.clearChat")}
+        >
+          🗑
+        </button>
       </div>
 
       <div className="thread-scroll">
@@ -231,6 +265,17 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                       { hour: "numeric", minute: "2-digit" }
                     )}
                   </span>
+                  {m.from === myUserId && (
+                    <button
+                      type="button"
+                      className="bubble-del"
+                      onClick={() => removeMessage(m.id)}
+                      aria-label={t("messages.deleteMessage")}
+                      title={t("messages.deleteMessage")}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
             );
