@@ -240,20 +240,24 @@ export default function Nav() {
           >
             ☰
           </Link>
-          <button
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label={
-              theme === "dark"
-                ? "Switch to grey scale"
-                : theme === "grey"
-                  ? "Switch to light mode"
-                  : "Switch to dark mode"
-            }
-          >
-            {theme === "dark" ? "📰" : theme === "grey" ? "☀️" : "🌙"}
-          </button>
-          <AuthControls />
+          {/* The Word keeps its header for reading: the passage and study
+              mode only. Theme and account live on every other tab. */}
+          {!isWord && (
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={
+                theme === "dark"
+                  ? "Switch to grey scale"
+                  : theme === "grey"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+              }
+            >
+              {theme === "dark" ? "📰" : theme === "grey" ? "☀️" : "🌙"}
+            </button>
+          )}
+          {!isWord && <AuthControls />}
         </div>
       </nav>
 
