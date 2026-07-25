@@ -98,7 +98,9 @@ export default function Reader({
   const [deepSource, setDeepSource] = useState<"strongs" | "absmith">(
     "strongs"
   );
-  const [deep, setDeep] = useState<Record<string, { d: string }>>({});
+  const [deep, setDeep] = useState<
+    Record<string, { d: string; extra?: string }>
+  >({});
   const [deepLoading, setDeepLoading] = useState(false);
   const [sharePeers, setSharePeers] = useState<
     { userId: string; displayName: string; icon?: string }[] | null
@@ -336,17 +338,39 @@ export default function Reader({
   const lexFor = (num: string): LexEntry | undefined =>
     (num.startsWith("H") ? lexHeb : lexGrk)?.[num];
 
-  /** Fetch the Abbott-Smith bucket holding this number, once. */
+  /**
+   * Load the fuller lexicon bucket for this number: Abbott-Smith for Greek,
+   * and for Hebrew both Brown-Driver-Briggs and the brief entry.
+   */
   const loadDeep = (num: string) => {
     const bucket = `${num.slice(0, 1)}${Math.floor(Number(num.slice(1)) / 500)}`;
     if (deep[num] !== undefined || deepLoading) return;
     setDeepLoading(true);
-    fetch(`/absmith/${bucket}.json`)
-      .then((res) => (res.ok ? res.json() : {}))
-      .then((data: Record<string, { d: string }>) =>
-        setDeep((prev) => ({ ...prev, ...data }))
+    const sources = num.startsWith("H")
+      ? [`/bdb/${bucket}.json`, `/absmith/${bucket}.json`]
+      : [`/absmith/${bucket}.json`];
+    Promise.all(
+      sources.map((url) =>
+        fetch(url)
+          .then((res) => (res.ok ? res.json() : {}))
+          .catch(() => ({}))
       )
-      .catch(() => {})
+    )
+      .then(([primary, secondary]) => {
+        const merged: Record<string, { d: string; extra?: string }> = {};
+        for (const [key, value] of Object.entries(
+          primary as Record<string, { d: string }>
+        )) {
+          merged[key] = { d: value.d };
+        }
+        for (const [key, value] of Object.entries(
+          (secondary ?? {}) as Record<string, { d: string }>
+        )) {
+          if (merged[key]) merged[key].extra = value.d;
+          else merged[key] = { d: value.d };
+        }
+        setDeep((prev) => ({ ...prev, ...merged }));
+      })
       .finally(() => setDeepLoading(false));
   };
 
@@ -1199,7 +1223,7 @@ export default function Reader({
               onClick={() => showDeep(wordSel.nums[0])}
             >
               {wordSel.nums[0].startsWith("H")
-                ? t("reader.srcBrief")
+                ? t("reader.srcBdb")
                 : t("reader.srcAbsmith")}
             </button>
           </div>
@@ -1214,7 +1238,17 @@ export default function Reader({
                       <p className="lex-sub-lemma">{lexFor(num)?.lemma}</p>
                     )}
                     {deep[num] ? (
-                      <p className="absmith-text">{deep[num].d}</p>
+                      <>
+                        <p className="absmith-text">{deep[num].d}</p>
+                        {deep[num].extra && (
+                          <>
+                            <p className="lex-meta absmith-divider">
+                              {t("reader.srcBrief")}
+                            </p>
+                            <p className="absmith-text">{deep[num].extra}</p>
+                          </>
+                        )}
+                      </>
                     ) : (
                       <p className="cal-hint">{t("reader.srcMissing")}</p>
                     )}
