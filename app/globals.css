@@ -1426,6 +1426,24 @@ mark {
   margin-top: 0.3em;
 }
 
+/* The poems that turn every line rather than every stanza — Lamentations 1, 2
+   and 4, Proverbs 31, and the alphabetic psalms. The letter travels with the
+   verse number instead of standing over the verse, so twenty-two of them read
+   as one poem rather than as twenty-two headings. */
+.acrostic-line {
+  color: var(--gold);
+  font-size: 1.05em;
+  line-height: 1;
+  margin-right: 0.4em;
+  /* Two things at once, which is what isolate-override is for. Isolate: the
+     Hebrew must not drag the verse number or the punctuation around it into
+     right-to-left order. Override: where a verse carries two or three letters,
+     they are numbering it, and must run the way the line is read — left to
+     itself a Hebrew run turns round and aleph-beth reads beth-aleph. */
+  direction: ltr;
+  unicode-bidi: isolate-override;
+}
+
 /* One verse, one line. The number hangs in the margin and the wrapped lines
    align under the text rather than under the number — what a printed Bible
    does, and the reason the indent is negative on top of the padding. */

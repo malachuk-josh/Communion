@@ -5,12 +5,12 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
-  acrosticLetter,
   getBook,
   lxxPsalm,
   type ChapterData,
   type Verse,
 } from "@/lib/bible";
+import { acrosticAt } from "@/lib/acrostic";
 import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
@@ -881,17 +881,42 @@ export default function Reader({
   };
 
   /**
-   * The Hebrew letter opening a stanza of Psalm 119, centred above it. The
+   * The Hebrew letter opening a stanza, centred above it — Psalm 119 and
+   * Lamentations 3, the two poems built in stanzas rather than lines. The
    * letter and not its name: "Aleph" is a transliteration of the mark, and it
    * is the mark that the poem is built on.
    */
   const stanzaMark = (ch: number, verse: number) => {
-    const letter = acrosticLetter(bookNr, ch, verse);
-    if (!letter) return null;
+    const mark = acrosticAt(bookNr, ch, verse);
+    if (mark?.style !== "stanza") return null;
     return (
       <div className="acrostic" lang="he" dir="rtl">
-        {letter}
+        {mark.letters.join("")}
       </div>
+    );
+  };
+
+  /**
+   * The same thing for the poems that turn every line rather than every
+   * stanza: a letter beside the verse number instead of a heading over it.
+   * Twenty-two headings down a twenty-two verse chapter would read as
+   * twenty-two chapters, and the shape would be lost in the marking of it.
+   *
+   * Psalms 111 and 112 turn twice or three times inside one verse; there is no
+   * way to split an English verse where the Hebrew half-line falls, so the
+   * verse carries the letters it covers.
+   */
+  const lineMark = (ch: number, verse: number) => {
+    const mark = acrosticAt(bookNr, ch, verse);
+    if (mark?.style !== "verse") return null;
+    return (
+      <span className="acrostic-line" lang="he">
+        {/* Thin space, spelled out: a word space between two letters reads as
+            two marks rather than one verse's worth. The order they end up in
+            is settled in CSS \u2014 left to itself a run of Hebrew turns round, and
+            a verse marked aleph-beth would read beth-aleph. */}
+        {mark.letters.join("\u2009")}
+      </span>
     );
   };
 
@@ -1719,6 +1744,7 @@ export default function Reader({
                       {title && <h3 className="section-head">{title}</h3>}
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
+                        {lineMark(ch, v.verse)}
                         {strongsTokens?.[key]
                           ? strongsTokens[key].map((tok, i) => {
                               if (!tok[1]) return <span key={i}>{tok[0]}</span>;
@@ -1884,6 +1910,7 @@ export default function Reader({
                         }`}
                       >
                         <sup className="verse-num">{v.verse}</sup>
+                        {lineMark(ch, v.verse)}
                         {v.text}
                         {mark && (
                           <sup className="verse-mark" title={mark}>
