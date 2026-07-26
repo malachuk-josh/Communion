@@ -60,10 +60,31 @@ const LICENSED: Translation[] = [
   },
 ];
 
-/** Compiled in, so an unconfigured build cannot offer what it cannot fetch. */
+/**
+ * Whether a flag says yes.
+ *
+ * Anything that is not plainly a no counts: "1", "true", "yes", "on", and
+ * whatever a phone's clipboard put a space on the end of. This started life
+ * as a comparison against "1" and cost a deployment — the value had reached
+ * Vercel with something invisible attached, the comparison failed, the build
+ * folded the whole clause away as unreachable, and the translation simply did
+ * not appear with nothing anywhere to say why. A setting whose only job is to
+ * mean "on" should not have one spelling.
+ */
+const on = (value?: string): boolean => {
+  const said = (value ?? "").trim().toLowerCase();
+  return said !== "" && said !== "0" && said !== "false" && said !== "off";
+};
+
+/**
+ * Compiled in, so an unconfigured build cannot offer what it cannot fetch.
+ * The env lookups have to stay written out in full: the build substitutes the
+ * text `process.env.NEXT_PUBLIC_ESV`, and anything cleverer is a name it never
+ * sees and therefore never replaces.
+ */
 const enabled = (id: string): boolean =>
-  (id === "esv" && process.env.NEXT_PUBLIC_ESV === "1") ||
-  (id === "nkjv" && process.env.NEXT_PUBLIC_NKJV === "1");
+  (id === "esv" && on(process.env.NEXT_PUBLIC_ESV)) ||
+  (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV));
 
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,
