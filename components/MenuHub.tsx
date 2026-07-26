@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import Icon, { type IconName } from "@/components/Icon";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
-// The Menu tab: a hub of tiles for profile, notifications, settings, about,
+// The Menu tab: a hub of tiles for the journal, the calendar, settings, about,
 // and sharing the app itself.
+//
+// Downloading for offline used to be a tile of its own. It is a thing you set
+// up once and then forget, which is what the settings screen is for, so it
+// lives there now — and the invitation takes the place it left, directly under
+// settings, where it is the likeliest thing anyone came to this screen to do.
 
 const TILES: { href: string; icon: IconName; key: string }[] = [
   { href: "/menu/journal", icon: "scroll", key: "journal" },
   { href: "/calendar", icon: "calendar", key: "calendar" },
   { href: "/menu/settings", icon: "gear", key: "settings" },
-  { href: "/menu/offline", icon: "download", key: "offline" },
   { href: "/menu/about", icon: "dove", key: "about" },
 ];
 
@@ -66,14 +70,34 @@ export default function MenuHub() {
       <p className="subtitle">{t("menu.subtitle")}</p>
       <div className="menu-tiles">
         {TILES.map((tile) => (
-          <Link key={tile.key} href={tile.href} className="glass card menu-tile">
-            <span className="menu-tile-emoji"><Icon name={tile.icon} /></span>
-            <span className="menu-tile-body">
-              <strong>{t(`menu.${tile.key}` as MessageKey)}</strong>
-              <small>{t(`menu.${tile.key}Desc` as MessageKey)}</small>
-            </span>
-            <span className="menu-tile-arrow">→</span>
-          </Link>
+          <Fragment key={tile.key}>
+            <Link href={tile.href} className="glass card menu-tile">
+              <span className="menu-tile-emoji"><Icon name={tile.icon} /></span>
+              <span className="menu-tile-body">
+                <strong>{t(`menu.${tile.key}` as MessageKey)}</strong>
+                <small>{t(`menu.${tile.key}Desc` as MessageKey)}</small>
+              </span>
+              <span className="menu-tile-arrow">→</span>
+            </Link>
+            {/* not a link, so it cannot live in the list — but it belongs
+                directly under settings, so it is placed rather than appended */}
+            {tile.key === "settings" && (
+              <button
+                type="button"
+                className="glass card menu-tile"
+                onClick={shareApp}
+              >
+                <span className="menu-tile-emoji"><Icon name="phone" /></span>
+                <span className="menu-tile-body">
+                  <strong>{t("menu.share")}</strong>
+                  <small>
+                    {copied ? `✓ ${t("reader.shareCopied")}` : t("menu.shareDesc")}
+                  </small>
+                </span>
+                <span className="menu-tile-arrow">→</span>
+              </button>
+            )}
+          </Fragment>
         ))}
         {isOwner && (
           <Link href="/admin" className="glass card menu-tile admin-tile">
@@ -85,16 +109,6 @@ export default function MenuHub() {
             <span className="menu-tile-arrow">→</span>
           </Link>
         )}
-        <button type="button" className="glass card menu-tile" onClick={shareApp}>
-          <span className="menu-tile-emoji"><Icon name="phone" /></span>
-          <span className="menu-tile-body">
-            <strong>{t("menu.share")}</strong>
-            <small>
-              {copied ? `✓ ${t("reader.shareCopied")}` : t("menu.shareDesc")}
-            </small>
-          </span>
-          <span className="menu-tile-arrow">→</span>
-        </button>
       </div>
     </div>
   );

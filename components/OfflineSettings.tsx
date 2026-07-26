@@ -1,8 +1,12 @@
 "use client";
 
-// Menu → Offline. Download Communion onto the phone, a tier at a time, and
+// Settings → Offline. Download Communion onto the phone, a tier at a time, and
 // see what it costs. The service worker stores the files; this screen only
 // asks and reports.
+//
+// It opens inside the settings screen rather than as a page of its own, so it
+// can be handed a flag saying "you are not the page here" and leave the title
+// and the way back to whatever is.
 
 import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/Icon";
@@ -31,7 +35,12 @@ interface Row {
   have: number;
 }
 
-export default function OfflineSettings() {
+export default function OfflineSettings({
+  embedded = false,
+}: {
+  /** true when this is a section of the settings screen, not a screen */
+  embedded?: boolean;
+}) {
   const { t, lang } = useI18n();
   const [manifest, setManifest] = useState<OfflineManifest | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -149,9 +158,13 @@ export default function OfflineSettings() {
 
   return (
     <div>
-      <BackToMenu />
-      <h1 className="page-title">{t("offline.title")}</h1>
-      <p className="subtitle">{t("offline.subtitle")}</p>
+      {!embedded && (
+        <>
+          <BackToMenu />
+          <h1 className="page-title">{t("offline.title")}</h1>
+          <p className="subtitle">{t("offline.subtitle")}</p>
+        </>
+      )}
 
       {error && <p className="notice">{error}</p>}
 

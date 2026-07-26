@@ -13,6 +13,7 @@ import {
 import { api, saveName } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
+import OfflineSettings from "@/components/OfflineSettings";
 import ReminderSettings from "@/components/ReminderSettings";
 import type { Church, Role } from "@/lib/types";
 
@@ -63,10 +64,19 @@ export default function Settings() {
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [offlineOpen, setOfflineOpen] = useState(false);
 
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
     setTheme(current === "light" || current === "grey" ? current : "dark");
+    // arriving from "download for offline" elsewhere in the app: open the
+    // section that was asked for, and put it on screen
+    if (window.location.hash === "#offline") {
+      setOfflineOpen(true);
+      requestAnimationFrame(() =>
+        document.getElementById("offline")?.scrollIntoView({ block: "start" })
+      );
+    }
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
@@ -228,6 +238,34 @@ export default function Settings() {
       </div>
 
       <ReminderSettings />
+
+      {/* Downloading the whole Bible is a thing you do once and then forget,
+          which is why it stopped being a tile of its own. Folded shut until
+          asked for, because opened it is longer than the rest of this screen
+          put together. */}
+      <div className="section-head" id="offline">
+        <h2>{t("menu.offline")}</h2>
+      </div>
+      <div className="glass card">
+        <div className="pref-row">
+          <span>{t("menu.offlineDesc")}</span>
+          <button
+            type="button"
+            className="btn btn-sm"
+            aria-expanded={offlineOpen}
+            aria-controls="offline-panel"
+            onClick={() => setOfflineOpen((open) => !open)}
+          >
+            <Icon name="download" />{" "}
+            {offlineOpen ? t("common.done") : t("offline.manage")}
+          </button>
+        </div>
+      </div>
+      {offlineOpen && (
+        <div id="offline-panel">
+          <OfflineSettings embedded />
+        </div>
+      )}
 
       <div className="section-head">
         <h2>{t("settings.myChurches")}</h2>

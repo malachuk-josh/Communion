@@ -426,7 +426,7 @@ export default function Concordance({
               {/* one offer to download, however many books are missing */}
               {anyMissing && (
                 <p className="conc-note cal-hint">
-                  <Link href="/menu/offline">{t("offline.download")} →</Link>
+                  <Link href="/menu/settings#offline">{t("offline.download")} →</Link>
                 </p>
               )}
 
