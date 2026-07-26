@@ -14,7 +14,7 @@ import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
-import { useReading } from "@/lib/reading";
+import { STUDY_WILL_CHANGE, useReading } from "@/lib/reading";
 import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
 import { readOutbox } from "@/lib/localStore";
 import {
@@ -133,7 +133,7 @@ export default function Reader({
     initialChapter ?? DEFAULT_CHAPTER
   );
   /** where a chapter heading sat before something grew above it */
-  const holdRef = useRef<{ ch: number; top: number } | null>(null);
+  const holdRef = useRef<{ sel: string; top: number } | null>(null);
   /** the chapter on screen, readable from inside a fetch callback */
   const viewChapterRef = useRef(1);
   /** the chapter asked for, readable from the book load that ignores it */
@@ -385,9 +385,39 @@ export default function Reader({
    * before the setState that causes the growth.
    */
   const holdAnchor = (ch: number) => {
-    const el = document.querySelector<HTMLElement>(`.chap-head[data-ch="${ch}"]`);
-    if (el) holdRef.current = { ch, top: el.getBoundingClientRect().top };
+    const sel = `.chap-head[data-ch="${ch}"]`;
+    const el = document.querySelector<HTMLElement>(sel);
+    if (el) holdRef.current = { sel, top: el.getBoundingClientRect().top };
   };
+
+  /**
+   * Pin the verse the reader is actually looking at, rather than the chapter
+   * heading above it. A heading is enough when a whole chapter moves, but not
+   * when the text between the heading and their eyes grows — turning study
+   * mode on inside Psalm 119 carried the reader seventeen verses back with
+   * the heading held perfectly still.
+   *
+   * The anchor is `data-v`, which both the plain and the study markup carry:
+   * the elements themselves are not the same ones across that switch.
+   */
+  const holdVerse = () => {
+    for (const el of document.querySelectorAll<HTMLElement>("[data-v]")) {
+      const top = el.getBoundingClientRect().top;
+      // the first one at or below the top edge is the one being read
+      if (top >= 0) {
+        holdRef.current = { sel: `[data-v="${el.dataset.v}"]`, top };
+        return;
+      }
+    }
+  };
+
+  // The star in the header says so a moment before the switch lands, which
+  // is the only moment the old layout can still be measured.
+  useEffect(() => {
+    const onWillChange = () => holdVerse();
+    window.addEventListener(STUDY_WILL_CHANGE, onWillChange);
+    return () => window.removeEventListener(STUDY_WILL_CHANGE, onWillChange);
+  }, []);
 
   /** Put the reader at the top of a chapter, clear of the sticky header. */
   const placeAt = (ch: number) => {
@@ -463,13 +493,11 @@ export default function Reader({
     const held = holdRef.current;
     if (!held) return;
     holdRef.current = null;
-    const el = document.querySelector<HTMLElement>(
-      `.chap-head[data-ch="${held.ch}"]`
-    );
+    const el = document.querySelector<HTMLElement>(held.sel);
     if (!el) return;
     const moved = el.getBoundingClientRect().top - held.top;
     if (moved !== 0) window.scrollBy(0, moved);
-  }, [heads, xrefs, strongsTokens, notes, context]);
+  }, [study, heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -566,7 +594,7 @@ export default function Reader({
       .then((res) => (res.ok ? res.json() : {}))
       .then((json: Record<string, number[][]>) => {
         if (cancelled) return;
-        holdAnchor(viewChapterRef.current);
+        holdVerse();
         setXrefs(json);
       })
       .catch(() => {
@@ -585,7 +613,7 @@ export default function Reader({
     setEditingNote(null);
     readLocalNotes(bookNr).then((local) => {
       if (cancelled || !local) return;
-      holdAnchor(viewChapterRef.current);
+      holdVerse();
       setNotes(local);
     });
     readOutbox()
@@ -600,7 +628,7 @@ export default function Reader({
       })
       .then((res) => {
         if (cancelled || !res) return;
-        holdAnchor(viewChapterRef.current);
+        holdVerse();
         setNotes(res.notes);
         void writeLocalNotes(bookNr, res.notes);
       })
@@ -622,7 +650,7 @@ export default function Reader({
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
         if (cancelled) return;
-        holdAnchor(viewChapterRef.current);
+        holdVerse();
         setStrongsTokens(json);
       })
       .catch(() => {
@@ -644,7 +672,7 @@ export default function Reader({
         if (cancelled) return;
         // this adds a context chip to every verse in the column, including the
         // ones above the viewport — hold the reader's place across it
-        holdAnchor(viewChapterRef.current);
+        holdVerse();
         setContext(json);
       })
       .catch(() => {
@@ -665,7 +693,7 @@ export default function Reader({
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
         if (cancelled) return;
-        holdAnchor(viewChapterRef.current);
+        holdVerse();
         setHeads(json);
       })
       .catch(() => {
@@ -1485,6 +1513,7 @@ export default function Reader({
                     <div
                       key={v.verse}
                       id={ch === chapter ? `v-${v.verse}` : undefined}
+                      data-v={`${ch}:${v.verse}`}
                       className={`verse-block${
                         ch === chapter && highlightVerse === v.verse
                           ? " verse-highlight"
@@ -1632,6 +1661,7 @@ export default function Reader({
                         <span
                           key={v.verse}
                           id={ch === chapter ? `v-${v.verse}` : undefined}
+                          data-v={`${ch}:${v.verse}`}
                           className={
                             ch === chapter && highlightVerse === v.verse
                               ? "verse-highlight"

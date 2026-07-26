@@ -14,6 +14,9 @@ import {
   useState,
 } from "react";
 
+/** Fired the instant before study mode flips, while the old layout still stands. */
+export const STUDY_WILL_CHANGE = "communion:study-will-change";
+
 export interface ReadingPosition {
   bookNr: number;
   chapter: number;
@@ -54,6 +57,10 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleStudy = useCallback(() => {
+    // Study mode changes the height of every verse in the book, so the reader
+    // has to note where they are BEFORE the switch — once React has committed
+    // it, the old layout is gone and there is nothing left to measure against.
+    window.dispatchEvent(new Event(STUDY_WILL_CHANGE));
     setStudy((on) => {
       try {
         window.localStorage.setItem("communion.studyMode", on ? "0" : "1");
