@@ -69,14 +69,6 @@ export default function Settings() {
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
     setTheme(current === "light" || current === "grey" ? current : "dark");
-    // arriving from "download for offline" elsewhere in the app: open the
-    // section that was asked for, and put it on screen
-    if (window.location.hash === "#offline") {
-      setOfflineOpen(true);
-      requestAnimationFrame(() =>
-        document.getElementById("offline")?.scrollIntoView({ block: "start" })
-      );
-    }
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
@@ -84,6 +76,18 @@ export default function Settings() {
       .then((res) => setDisplayName(res.displayName))
       .catch(() => {})
       .finally(() => setNameLoaded(true));
+  }, []);
+
+  // "Download for offline" elsewhere in the app opens straight onto that
+  // screen. The hashchange listener is not spare: arriving here from another
+  // route mounts this and the first line is enough, but following the same
+  // link while already on settings changes only the hash, and Next keeps the
+  // component mounted — without it, nothing at all would happen.
+  useEffect(() => {
+    const open = () => setOfflineOpen(window.location.hash === "#offline");
+    open();
+    window.addEventListener("hashchange", open);
+    return () => window.removeEventListener("hashchange", open);
   }, []);
 
   const saveDisplayName = async () => {
@@ -143,11 +147,36 @@ export default function Settings() {
     }
   };
 
+  // Offline takes the whole screen while it is open rather than unfolding
+  // inside it: it is a page's worth of tiers and sizes, and reading it through
+  // a hole halfway down a longer page is reading it badly.
+  if (offlineOpen) {
+    return (
+      <OfflineSettings
+        onBack={() => setOfflineOpen(false)}
+        backLabel={t("settings.title")}
+      />
+    );
+  }
+
   return (
     <div>
       <BackToMenu />
-      <h1 className="page-title">{t("settings.title")}</h1>
-      <p className="subtitle">{t("settings.subtitle")}</p>
+      {/* The way to the download screen sits with the title, not buried under
+          the sections — it is a place to go, not a preference to set. */}
+      <div className="settings-head">
+        <div>
+          <h1 className="page-title">{t("settings.title")}</h1>
+          <p className="subtitle">{t("settings.subtitle")}</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-sm settings-offline-btn"
+          onClick={() => setOfflineOpen(true)}
+        >
+          <Icon name="download" /> {t("menu.offline")}
+        </button>
+      </div>
 
       {/* First, and on its own: the one setting people come back to change,
           and the only one whose effect is visible the moment it is pressed. */}
@@ -238,34 +267,6 @@ export default function Settings() {
       </div>
 
       <ReminderSettings />
-
-      {/* Downloading the whole Bible is a thing you do once and then forget,
-          which is why it stopped being a tile of its own. Folded shut until
-          asked for, because opened it is longer than the rest of this screen
-          put together. */}
-      <div className="section-head" id="offline">
-        <h2>{t("menu.offline")}</h2>
-      </div>
-      <div className="glass card">
-        <div className="pref-row">
-          <span>{t("menu.offlineDesc")}</span>
-          <button
-            type="button"
-            className="btn btn-sm"
-            aria-expanded={offlineOpen}
-            aria-controls="offline-panel"
-            onClick={() => setOfflineOpen((open) => !open)}
-          >
-            <Icon name="download" />{" "}
-            {offlineOpen ? t("common.done") : t("offline.manage")}
-          </button>
-        </div>
-      </div>
-      {offlineOpen && (
-        <div id="offline-panel">
-          <OfflineSettings embedded />
-        </div>
-      )}
 
       <div className="section-head">
         <h2>{t("settings.myChurches")}</h2>

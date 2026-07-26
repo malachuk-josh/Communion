@@ -4,9 +4,10 @@
 // see what it costs. The service worker stores the files; this screen only
 // asks and reports.
 //
-// It opens inside the settings screen rather than as a page of its own, so it
-// can be handed a flag saying "you are not the page here" and leave the title
-// and the way back to whatever is.
+// It is reached from the settings screen and takes it over while it is open —
+// its own page, in the place of one, rather than a section unfolding halfway
+// down. So it is handed the way back rather than assuming one: given `onBack`
+// it returns to settings, and without it to the menu.
 
 import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/Icon";
@@ -36,10 +37,12 @@ interface Row {
 }
 
 export default function OfflineSettings({
-  embedded = false,
+  onBack,
+  backLabel,
 }: {
-  /** true when this is a section of the settings screen, not a screen */
-  embedded?: boolean;
+  /** where the way back goes, when it is not the menu */
+  onBack?: () => void;
+  backLabel?: string;
 }) {
   const { t, lang } = useI18n();
   const [manifest, setManifest] = useState<OfflineManifest | null>(null);
@@ -158,13 +161,19 @@ export default function OfflineSettings({
 
   return (
     <div>
-      {!embedded && (
-        <>
-          <BackToMenu />
-          <h1 className="page-title">{t("offline.title")}</h1>
-          <p className="subtitle">{t("offline.subtitle")}</p>
-        </>
+      {onBack ? (
+        <button
+          type="button"
+          className="passage-link back-link"
+          onClick={onBack}
+        >
+          ← {backLabel ?? t("menu.title")}
+        </button>
+      ) : (
+        <BackToMenu />
       )}
+      <h1 className="page-title">{t("offline.title")}</h1>
+      <p className="subtitle">{t("offline.subtitle")}</p>
 
       {error && <p className="notice">{error}</p>}
 

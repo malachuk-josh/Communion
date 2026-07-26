@@ -2733,6 +2733,28 @@ button.menu-tile {
   font-family: var(--serif);
 }
 
+/* The settings title, with the way to the download screen beside it. Wraps to
+   its own line on a narrow phone rather than squeezing the title. */
+.settings-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* the title takes the room that is left, so the button stays on its line
+   rather than being pushed under the subtitle on a narrow phone */
+.settings-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-offline-btn {
+  flex: none;
+  margin-top: 10px;
+  white-space: nowrap;
+}
+
 /* How far a bookmark runs. Sits above the collections, because how much of
    the passage you are keeping is decided before where you file it. */
 .bm-through {
