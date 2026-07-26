@@ -21,31 +21,66 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
+  /** the bar is up because it was asked for, not because we are near the top */
+  const [summoned, setSummoned] = useState(false);
+  /** where the page was when it was asked for */
+  const summonedAt = useRef<number | null>(null);
 
-  // In The Word, reading down tucks the bottom nav away for an unbroken
-  // page; a brisk upward flick (or nearing the top) brings it back. A slow
-  // upward drift keeps it hidden — that's still reading, not reaching.
+  /**
+   * How tall one verse is, here, now.
+   *
+   * The bar comes back for a tap and goes away again as soon as reading
+   * resumes — and "reading resumes" is a verse, not a number of pixels. A
+   * verse is two lines in Proverbs and twelve in Esther, so it is measured off
+   * the page rather than guessed at, from whatever is under the middle of the
+   * screen. Clamped at both ends: without a floor a one-line verse makes the
+   * bar impossible to keep, and without a ceiling a long one makes it feel
+   * stuck open.
+   */
+  const verseHeight = () => {
+    const mid = document.elementFromPoint(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
+    const verse = mid?.closest<HTMLElement>("[data-v]");
+    const h = verse?.getBoundingClientRect().height ?? 0;
+    return Math.min(Math.max(h || 90, 48), 260);
+  };
+
+  // In The Word, reading down tucks the bottom nav away for an unbroken page.
+  // It comes back near the top of a book, or when the button below asks for
+  // it; scrolling on past a verse sends it away again.
   useEffect(() => {
     if (pathname !== "/") {
       setNavHidden(false);
+      setSummoned(false);
       return;
     }
-    let lastY = window.scrollY;
-    let lastT = performance.now();
     const onScroll = () => {
       const y = window.scrollY;
-      const now = performance.now();
-      const dy = y - lastY;
-      const speed = -dy / Math.max(1, now - lastT); // px/ms upward
-      if (y < 130) setNavHidden(false);
-      else if (dy > 4) setNavHidden(true);
-      else if (dy < 0 && (speed > 0.9 || -dy > 110)) setNavHidden(false);
-      lastY = y;
-      lastT = now;
+      if (y < 130) {
+        summonedAt.current = null;
+        setSummoned(false);
+        setNavHidden(false);
+        return;
+      }
+      if (summonedAt.current !== null) {
+        if (Math.abs(y - summonedAt.current) <= verseHeight()) return;
+        summonedAt.current = null;
+        setSummoned(false);
+      }
+      setNavHidden(true);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
+
+  /** Bring the bar back, and remember from where. */
+  const summonNav = () => {
+    summonedAt.current = window.scrollY;
+    setSummoned(true);
+    setNavHidden(false);
+  };
 
   // the reader's floating chapter arrows drop into the freed space
   useEffect(() => {
@@ -264,6 +299,21 @@ export default function Nav() {
           </div>
         </div>
       </nav>
+
+      {/* What the bar leaves behind. Small, centred, and always in the same
+          place, so that getting the nav back is a thing you can see rather
+          than a gesture you have to have been told about. */}
+      {navHidden && (
+        <button
+          type="button"
+          className="nav-peek glass"
+          onClick={summonNav}
+          aria-label={t("nav.showBar")}
+          title={t("nav.showBar")}
+        >
+          <Icon name="menu" />
+        </button>
+      )}
 
       <nav
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}

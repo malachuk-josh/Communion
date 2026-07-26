@@ -540,6 +540,39 @@ html.reading body::-webkit-scrollbar {
   transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
+/* The stand-in for the tucked-away bar: the same place, a fraction of the
+   size. Sits where the bar's centre was, so summoning it feels like the bar
+   growing back out of the button rather than arriving from somewhere else. */
+.nav-peek {
+  position: fixed;
+  bottom: max(4px, calc(env(safe-area-inset-bottom, 0px) - 6px));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  z-index: 40;
+  width: 46px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  animation: peek-in 0.2s ease;
+}
+
+.nav-peek:hover,
+.nav-peek:focus-visible {
+  color: var(--gold);
+}
+
+@keyframes peek-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 /* reading down The Word tucks the bar out of sight (see Nav.tsx) */
 .bottom-nav.nav-hidden {
   transform: translateY(calc(100% + 16px));
