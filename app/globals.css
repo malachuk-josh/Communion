@@ -230,16 +230,27 @@ html.reading body::-webkit-scrollbar {
 .nav-inner {
   max-width: 880px;
   margin: 0 auto;
-  padding: 12px 16px;
+  /* 15% taller than it was: the 39px control plus 14px either side is 67px,
+     against 58px before. Type and controls are scaled by the same 15%. */
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
 }
 
+/* the theme toggle and the account badge finish the header, hard right */
+.nav-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .brand {
   font-family: var(--serif);
-  font-size: 1.35rem;
+  font-size: 1.55rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   background: linear-gradient(100deg, var(--ink), var(--gold));
   -webkit-background-clip: text;
@@ -254,9 +265,10 @@ html.reading body::-webkit-scrollbar {
 }
 
 .nav-link {
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: 999px;
-  font-size: 0.92rem;
+  font-size: 1.06rem;
+  font-weight: 500;
   color: var(--ink-dim);
   transition: background 0.2s, color 0.2s;
 }
@@ -378,7 +390,7 @@ html.reading body::-webkit-scrollbar {
     gap: 10px;
   }
   .brand {
-    font-size: 1.15rem;
+    font-size: 1.32rem;
   }
   /* the signed-out "Sign in" button must not wrap to two lines */
   .nav-inner > .btn {
@@ -409,9 +421,9 @@ html.reading body::-webkit-scrollbar {
   background: var(--glass);
   color: var(--ink-dim);
   font: inherit;
-  font-size: 0.95rem;
-  width: 34px;
-  height: 34px;
+  font-size: 1.09rem;
+  width: 39px;
+  height: 39px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1088,6 +1100,27 @@ mark {
   border-bottom: 1px solid var(--glass-border);
 }
 
+.sp-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.sp-search-btn.on {
+  color: var(--gold);
+  border-color: var(--gold-soft);
+  background: var(--gold-soft);
+}
+
 .sp-where {
   font-family: var(--serif);
   font-size: 1.05rem;
@@ -1182,6 +1215,14 @@ mark {
   font-weight: 600;
   padding: 12px 16px;
   border-bottom: 1px solid var(--glass-border);
+  /* the list is long and the books alone do not say which testament you are
+     in, so the heading rides the top of the scroller until the next one
+     pushes it off. -1px hides the seam its own border would leave. */
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  /* opaque, not translucent: the book rows slide underneath it */
+  background: var(--bg-0);
 }
 
 .bn-book {
@@ -3210,4 +3251,14 @@ button.menu-tile {
 .lex-sheet input,
 .sp-body input {
   scroll-margin-block: 16px 24px;
+}
+
+/* A verse carrying a note or a bookmark wears a small star where an asterisk
+   would go, so plain reading still shows you where you have been. */
+.verse-mark {
+  font-size: 0.58em;
+  color: var(--gold);
+  margin-left: 0.15em;
+  vertical-align: super;
+  line-height: 0;
 }

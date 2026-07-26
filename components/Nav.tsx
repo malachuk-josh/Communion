@@ -19,7 +19,6 @@ export default function Nav() {
   const wasOpen = useRef(false);
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
-  const [pendingNotifs, setPendingNotifs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
 
   // In The Word, reading down tucks the bottom nav away for an unbroken
@@ -52,24 +51,21 @@ export default function Nav() {
     document.documentElement.classList.toggle("navhide", navHidden);
   }, [navHidden]);
 
-  // pending badge: unread messages + unseen notifications. Refreshes on
-  // navigation, on returning to the app, and every 45s; mirrors to the
-  // app icon badge where the platform supports it.
+  // pending badge: unread direct messages. Refreshes on navigation, on
+  // returning to the app, and every 45s; mirrors to the app icon badge where
+  // the platform supports it.
   useEffect(() => {
     let cancelled = false;
     const refresh = () => {
-      api<{ messages: number; notifications: number; total: number }>(
-        "/api/messages/unread"
-      )
+      api<{ messages: number }>("/api/messages/unread")
         .then((res) => {
           if (cancelled) return;
           setPendingMsgs(res.messages);
-          setPendingNotifs(res.notifications);
           const nav = navigator as Navigator & {
             setAppBadge?: (n: number) => Promise<void>;
             clearAppBadge?: () => Promise<void>;
           };
-          if (res.total > 0) nav.setAppBadge?.(res.total).catch(() => {});
+          if (res.messages > 0) nav.setAppBadge?.(res.messages).catch(() => {});
           else nav.clearAppBadge?.().catch(() => {});
         })
         .catch(() => {});
@@ -217,6 +213,7 @@ export default function Nav() {
               </span>
             </button>
           )}
+          <div className="nav-end">
           <Link
             href="/menu"
             className={`theme-toggle settings-gear${isMenu ? " settings-active" : ""}`}
@@ -263,6 +260,7 @@ export default function Nav() {
               </svg>
             </button>
           )}
+          </div>
         </div>
       </nav>
 
@@ -298,9 +296,6 @@ export default function Nav() {
         >
           <span className="bn-icon"><Icon name="menu" /></span>
           <span>{t("nav.menu")}</span>
-          {pendingNotifs > 0 && (
-            <span className="nav-badge bn-badge">{pendingNotifs}</span>
-          )}
         </Link>
       </nav>
     </>

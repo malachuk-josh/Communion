@@ -94,6 +94,18 @@ function deepLinkFromUrl():
   };
 }
 
+/** The study-mode star, drawn so it sits centred in its box at any size. */
+function StudyStar() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 1.4c.62 5.98 4.6 9.96 10.6 10.6-6 .62-9.98 4.6-10.6 10.6-.62-6-4.6-9.98-10.6-10.6C7.4 11.36 11.38 7.38 12 1.4Z"
+      />
+    </svg>
+  );
+}
+
 export default function Reader({
   initialBook,
   initialChapter,
@@ -137,6 +149,8 @@ export default function Reader({
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
   const [pinchShow, setPinchShow] = useState<number | null>(null);
+  /** the navigator's search field, folded away behind an icon until asked for */
+  const [searchOpen, setSearchOpen] = useState(false);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -562,9 +576,9 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
-  // study mode: load this user's notes for the open book
+  // this user's notes for the open book. Loaded in plain mode as well as
+  // study mode: a verse you have written on is marked in both.
   useEffect(() => {
-    if (!study) return;
     let cancelled = false;
     setNotes({});
     setEditingNote(null);
@@ -595,7 +609,7 @@ export default function Reader({
     return () => {
       cancelled = true;
     };
-  }, [study, bookNr]);
+  }, [bookNr]);
 
   // study mode + KJV: tokenized text where every word knows its original
   // Hebrew/Greek word (Strong's numbers), enabling tap-for-translation
@@ -660,6 +674,15 @@ export default function Reader({
       cancelled = true;
     };
   }, [bookNr]);
+
+  /**
+   * What this verse is marked with, if anything — the note's own text, or
+   * "Bookmark". Used to put a small star where an asterisk would go, so a
+   * verse you have written on is findable without turning study mode on.
+   */
+  const markOf = (ch: number, verse: number): string | null =>
+    notes[`${ch}:${verse}`] ||
+    (bookmarks[`${bookNr}:${ch}:${verse}`] ? t("reader.bookmark") : null);
 
   /** Section title opening at this verse, if any. */
   const headAt = (ch: number, verse: number): string | undefined => {
@@ -1363,6 +1386,7 @@ export default function Reader({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("search.placeholder")}
         maxLength={60}
+        autoFocus={fromSheet}
       />
       <button
         className="btn btn-sm"
@@ -1601,20 +1625,28 @@ export default function Reader({
                 <div key={i} className="section">
                   {run.title && <h3 className="section-head">{run.title}</h3>}
                   <p>
-                    {run.verses.map((v) => (
-                      <span
-                        key={v.verse}
-                        id={ch === chapter ? `v-${v.verse}` : undefined}
-                        className={
-                          ch === chapter && highlightVerse === v.verse
-                            ? "verse-highlight"
-                            : undefined
-                        }
-                      >
-                        <sup className="verse-num">{v.verse}</sup>
-                        {v.text}{" "}
-                      </span>
-                    ))}
+                    {run.verses.map((v) => {
+                      const mark = markOf(ch, v.verse);
+                      return (
+                        <span
+                          key={v.verse}
+                          id={ch === chapter ? `v-${v.verse}` : undefined}
+                          className={
+                            ch === chapter && highlightVerse === v.verse
+                              ? "verse-highlight"
+                              : undefined
+                          }
+                        >
+                          <sup className="verse-num">{v.verse}</sup>
+                          {v.text}
+                          {mark && (
+                            <sup className="verse-mark" title={mark}>
+                              <StudyStar />
+                            </sup>
+                          )}{" "}
+                        </span>
+                      );
+                    })}
                   </p>
                 </div>
               ))
@@ -2354,6 +2386,16 @@ export default function Reader({
               </span>
               <button
                 type="button"
+                className={`sp-search-btn${searchOpen ? " on" : ""}`}
+                onClick={() => setSearchOpen((open) => !open)}
+                aria-expanded={searchOpen}
+                aria-label={t("search.button")}
+                title={t("search.button")}
+              >
+                <Icon name="search" />
+              </button>
+              <button
+                type="button"
                 className="lex-count lex-count-btn"
                 onClick={() => {
                   setPanelOpen(false);
@@ -2375,7 +2417,7 @@ export default function Reader({
             {/* pinned: search, translation and bookmarks stay put while the
                 book list scrolls under them */}
             <div className="sp-fixed">
-              <div className="sp-pad">{searchBar(true)}</div>
+              {searchOpen && <div className="sp-pad">{searchBar(true)}</div>}
               <div className="sp-pad sp-top">
                 <select
                   className="sp-trans"

@@ -10,7 +10,6 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 // and sharing the app itself.
 
 const TILES: { href: string; icon: IconName; key: string }[] = [
-  { href: "/menu/notifications", icon: "bell", key: "notifications" },
   { href: "/calendar", icon: "calendar", key: "calendar" },
   { href: "/menu/profile", icon: "person", key: "profile" },
   { href: "/menu/settings", icon: "gear", key: "settings" },
