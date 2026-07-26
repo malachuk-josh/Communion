@@ -189,7 +189,7 @@ export default function Reader({
   >({});
   const [deepLoading, setDeepLoading] = useState(false);
   const [sharePeers, setSharePeers] = useState<
-    { userId: string; displayName: string; icon?: string }[] | null
+    { userId: string; displayName: string }[] | null
   >(null);
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   // sharing to The Table: straight to a person, or into a Gathering's discussion
@@ -239,6 +239,8 @@ export default function Reader({
   const [searching, setSearching] = useState(false);
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
   const sheetRef = useRef<HTMLDivElement>(null);
+  /** the "Found in N verses" pill, so closing the concordance returns here */
+  const concBtnRef = useRef<HTMLButtonElement>(null);
 
   // keep the sticky header's passage indicator in sync with the chapter
   // actually on screen, which trails continuous scrolling
@@ -256,6 +258,7 @@ export default function Reader({
   useEffect(() => {
     if (!panelOpen) return;
     setWordSel(null);
+    setConcFor(null);
     setBmSheet(null);
     setContextOpen(null);
     setEditingNote(null);
@@ -928,7 +931,7 @@ export default function Reader({
   const openSharePicker = () => {
     setSharePickerOpen((v) => !v);
     if (sharePeers === null) {
-      api<{ contacts: { userId: string; displayName: string; icon?: string }[] }>(
+      api<{ contacts: { userId: string; displayName: string }[] }>(
         "/api/messages"
       )
         .then((res) => setSharePeers(res.contacts))
@@ -1286,6 +1289,13 @@ export default function Reader({
     setLxx(null);
   }, [bookNr, chapter, study, translation]);
 
+  // Leaving study mode, or changing translation, takes the concordance with
+  // it. Deliberately not folded into the effect above: a chapter change must
+  // NOT close it, or a tap on a result would shut the sidebar it came from.
+  useEffect(() => {
+    setConcFor(null);
+  }, [study, translation]);
+
   const book = getBook(bookNr)!;
   const bookName = lang === "es" ? book.es : book.en;
   const transAbbrev =
@@ -1428,7 +1438,7 @@ export default function Reader({
   );
 
   return (
-    <div className={panelOpen ? "reader-open" : undefined}>
+    <div className={panelOpen || concFor ? "reader-open" : undefined}>
       {results !== null && searchBar(false)}
 
       {results !== null && (
@@ -1740,6 +1750,7 @@ export default function Reader({
               lexCounts?.[wordSel.nums[0]] !== undefined && (
               <button
                 type="button"
+                ref={concBtnRef}
                 className="lex-count lex-count-btn"
                 onClick={() => setConcFor(wordSel.nums[0])}
                 title={t("reader.concOpen")}
@@ -1946,7 +1957,6 @@ export default function Reader({
                         className="chip"
                         onClick={() => sendWordTo(p.userId)}
                       >
-                        {p.icon && <span className="chip-icon">{p.icon}</span>}
                         {p.displayName}
                       </button>
                     ))}
@@ -2009,9 +2019,13 @@ export default function Reader({
           num={concFor}
           lemma={lexFor(concFor)?.lemma ?? ""}
           translit={lexFor(concFor)?.translit ?? ""}
-          onClose={() => setConcFor(null)}
+          onClose={() => {
+            setConcFor(null);
+            requestAnimationFrame(() => concBtnRef.current?.focus());
+          }}
           onPick={(b, c, v) => {
             setConcFor(null);
+            setPanelOpen(false);
             setWordSel(null);
             setBackStack((prev) =>
               [

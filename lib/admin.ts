@@ -36,7 +36,6 @@ export interface AdminGathering {
 export interface AdminUser {
   userId: string;
   displayName: string;
-  icon?: string;
   email?: string;
   createdAt?: number;
   lastSignInAt?: number;
@@ -165,7 +164,6 @@ export async function buildSummary(): Promise<AdminSummary> {
       return {
         userId,
         displayName: profile.displayName || clerk?.name || "Believer",
-        icon: profile.icon || undefined,
         email: clerk?.email,
         createdAt: clerk?.createdAt,
         lastSignInAt: clerk?.lastSignInAt,

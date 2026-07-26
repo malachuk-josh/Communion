@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 import { isOwner } from "@/lib/admin";
-import { isProfileIcon } from "@/lib/profileIcons";
 import { pushEnabled } from "@/lib/push";
 import { isValidPhone, smsEnabled } from "@/lib/sms";
 
@@ -17,7 +16,6 @@ export async function GET(req: Request) {
   const profile = (await db().hgetall(keys.user(userId))) ?? {};
   return NextResponse.json({
     displayName: profile.displayName ?? "",
-    icon: profile.icon ?? "",
     phone: profile.phone ?? "",
     smsReminders: profile.smsReminders === "1",
     planReminder: profile.planReminder === "off" ? "off" : "on",
@@ -35,7 +33,6 @@ export async function POST(req: Request) {
   }
   const body = (await req.json().catch(() => null)) as {
     displayName?: string;
-    icon?: string;
     phone?: string;
     smsReminders?: boolean;
     planReminderHour?: number | "off";
@@ -52,12 +49,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
     updates.displayName = name;
-  }
-  if (body.icon !== undefined) {
-    if (body.icon && !isProfileIcon(body.icon)) {
-      return NextResponse.json({ error: "Unknown icon" }, { status: 400 });
-    }
-    updates.icon = body.icon;
   }
   if (body.phone !== undefined) {
     let phone = body.phone.replace(/[\s().-]/g, "");

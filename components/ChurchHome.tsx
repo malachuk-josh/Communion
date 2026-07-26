@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Icon, { SESSION_ICON, type IconName } from "@/components/Icon";
+import Icon, { SESSION_ICON } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { SignInButton } from "@clerk/nextjs";
@@ -142,7 +142,6 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
       <div className="chips">
         {church.members.map((m) => (
           <span key={m.userId} className="chip">
-            {m.icon && <span className="chip-icon">{m.icon}</span>}
             {m.displayName}
             {m.role === "founder" && (
               <span className="role">★ {t("churches.founder")}</span>
@@ -209,7 +208,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           </div>
           {church.requests.map((r) => (
             <div key={r.userId} className="glass session request-row">
-              <span className="session-icon"><Icon name={(r.icon as IconName) || "prayer"} /></span>
+              <span className="session-icon"><Icon name="person" /></span>
               <div className="session-body">
                 <h3>{r.displayName}</h3>
               </div>
@@ -414,7 +413,7 @@ function SessionCard({
 }: {
   event: WorshipEvent;
   churchName: string;
-  members: { userId: string; displayName: string; icon?: string }[];
+  members: { userId: string; displayName: string }[];
   myUserId: string;
   canCancel: boolean;
   onEdit: () => void;
@@ -425,7 +424,7 @@ function SessionCard({
   const goingCount = Object.values(event.rsvps).filter((s) => s === "going").length;
   const nameOf = (uid: string) => {
     const m = members.find((mm) => mm.userId === uid);
-    return m ? `${m.icon ? `${m.icon} ` : ""}${m.displayName}` : "Believer";
+    return m?.displayName ?? "Believer";
   };
   const goingNames = Object.entries(event.rsvps)
     .filter(([, s]) => s === "going")

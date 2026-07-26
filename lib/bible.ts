@@ -42,6 +42,98 @@ export function lxxPsalm(chapter: number): number {
   return chapter;
 }
 
+/**
+ * The Septuagint carries each psalm's superscription as verse 1. This is the
+ * resulting offset (LXX verse − Hebrew verse) for the psalms whose LXX chapter
+ * maps one-to-one onto a Hebrew one; the four seams above are handled
+ * separately. Derived from the shipped files rather than computed at runtime,
+ * because LXX Psalm 115 is missing verse 5 — an array length is not a verse
+ * count.
+ */
+const LXX_PSALM_TITLE: Record<number, number> = {
+  3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 11: 1, 17: 1, 18: 1, 19: 1,
+  20: 1, 21: 1, 29: 1, 30: 1, 33: 1, 35: 1, 37: 1, 38: 1, 39: 1, 40: 1,
+  41: 1, 43: 1, 44: 1, 45: 1, 46: 1, 47: 1, 48: 1, 50: 2, 51: 2, 52: 1,
+  53: 2, 54: 1, 55: 1, 56: 1, 57: 1, 58: 1, 59: 2, 60: 1, 61: 1, 62: 1,
+  63: 1, 64: 1, 66: 1, 67: 1, 68: 1, 69: 1, 74: 1, 75: 1, 76: 1, 79: 1,
+  80: 1, 82: 1, 83: 1, 84: 1, 87: 1, 88: 1, 91: 1, 101: 1, 107: 1,
+  139: 1, 141: 1,
+};
+
+export interface MappedRef {
+  chapter: number;
+  verse: number;
+  /** true where the two numberings differ and a seam has been applied */
+  mapped: boolean;
+}
+
+/**
+ * The King James address for a Septuagint one.
+ *
+ * lxxPsalm() above is the forward map and cannot simply be inverted: the LXX
+ * joins Hebrew 9+10 and 114+115 and splits 116 and 147, so four LXX chapters
+ * answer to two Hebrew ones each. It is also blind to the superscription,
+ * which shifts the verse as well as the chapter. This is chapter- and
+ * verse-aware, and it is what a tap on a Septuagint concordance row must go
+ * through before it reaches the reader — the reader reads the King James.
+ *
+ * `mapped: false` means the address passes through untouched. That is right
+ * for most books and is the only honest answer for the few whose Greek text
+ * is rearranged with no closed-form map — Jeremiah above all, where a third
+ * of the chapters sit somewhere else entirely.
+ */
+export function kjvFromLxx(
+  bookNr: number,
+  chapter: number,
+  verse: number
+): MappedRef {
+  if (bookNr === 19) {
+    // LXX 9 runs Hebrew 9 (title + 20 verses) straight into Hebrew 10
+    if (chapter === 9) {
+      return verse <= 21
+        ? { chapter: 9, verse: Math.max(1, verse - 1), mapped: true }
+        : { chapter: 10, verse: verse - 21, mapped: true };
+    }
+    // LXX 113 runs Hebrew 114 (8 verses) into Hebrew 115
+    if (chapter === 113) {
+      return verse <= 8
+        ? { chapter: 114, verse, mapped: true }
+        : { chapter: 115, verse: verse - 8, mapped: true };
+    }
+    // Hebrew 116 was split in two, and Hebrew 147 likewise
+    if (chapter === 114) return { chapter: 116, verse, mapped: true };
+    if (chapter === 115) return { chapter: 116, verse: verse + 9, mapped: true };
+    if (chapter === 116) return { chapter: 117, verse, mapped: true };
+    if (chapter === 146) return { chapter: 147, verse, mapped: true };
+    if (chapter === 147) return { chapter: 147, verse: verse + 11, mapped: true };
+    // the LXX has a Psalm 151; the King James stops at 150
+    if (chapter === 151) return { chapter: 150, verse: 1, mapped: true };
+    const title = LXX_PSALM_TITLE[chapter] ?? 0;
+    const heb = chapter <= 8 || chapter >= 148 ? chapter : chapter + 1;
+    return {
+      // a row that points at the superscription has no Hebrew verse of its
+      // own; verse 1 is where it belongs
+      verse: Math.max(1, verse - title),
+      chapter: heb,
+      mapped: heb !== chapter || title > 0,
+    };
+  }
+  // Joel: the Greek keeps Hebrew's four chapters, the King James has three
+  if (bookNr === 29) {
+    if (chapter === 3) return { chapter: 2, verse: verse + 27, mapped: true };
+    if (chapter === 4) return { chapter: 3, verse, mapped: true };
+    return { chapter, verse, mapped: false };
+  }
+  // Malachi: one Greek chapter 3 covers King James 3 and 4
+  if (bookNr === 39) {
+    if (chapter === 3 && verse > 18) {
+      return { chapter: 4, verse: verse - 18, mapped: true };
+    }
+    return { chapter, verse, mapped: false };
+  }
+  return { chapter, verse, mapped: false };
+}
+
 export function originalSourceFor(bookNr: number): string {
   return bookNr <= 39 ? "codex" : "textusreceptus";
 }

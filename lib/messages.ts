@@ -25,7 +25,6 @@ export interface ChatMessage {
 export interface ConvSummary {
   peerId: string;
   peerName: string;
-  peerIcon?: string;
   lastText: string;
   lastFrom: string;
   ts: number;
@@ -35,21 +34,15 @@ export interface ConvSummary {
 export interface Contact {
   userId: string;
   displayName: string;
-  icon?: string;
 }
 
 export function convIdFor(a: string, b: string): string {
   return [a, b].sort().join("~");
 }
 
-async function profileOf(
-  userId: string
-): Promise<{ name: string; icon?: string }> {
+async function profileOf(userId: string): Promise<{ name: string }> {
   const profile = await db().hgetall(keys.user(userId));
-  return {
-    name: profile?.displayName || "Believer",
-    icon: profile?.icon || undefined,
-  };
+  return { name: profile?.displayName || "Believer" };
 }
 
 /** Everyone who shares at least one Church with the user. */
@@ -62,11 +55,7 @@ export async function listContacts(userId: string): Promise<Contact[]> {
     for (const memberId of Object.keys(members)) {
       if (memberId === userId || seen.has(memberId)) continue;
       const p = await profileOf(memberId);
-      seen.set(memberId, {
-        userId: memberId,
-        displayName: p.name,
-        icon: p.icon,
-      });
+      seen.set(memberId, { userId: memberId, displayName: p.name });
     }
   }
   return [...seen.values()].sort((a, b) =>
@@ -251,7 +240,6 @@ export async function sendMessage(
     [convId]: JSON.stringify({
       peerId: to,
       peerName: toProfile.name,
-      peerIcon: toProfile.icon,
       lastText: preview,
       lastFrom: from,
       ts: message.ts,
@@ -273,7 +261,6 @@ export async function sendMessage(
     [convId]: JSON.stringify({
       peerId: from,
       peerName: fromProfile.name,
-      peerIcon: fromProfile.icon,
       lastText: preview,
       lastFrom: from,
       ts: message.ts,
@@ -283,7 +270,7 @@ export async function sendMessage(
 
   // best-effort push to the recipient
   await sendPushToUser(to, {
-    title: `${fromProfile.icon ? `${fromProfile.icon} ` : "💬 "}${fromProfile.name}`,
+    title: fromProfile.name,
     body: preview,
     url: `/menu/messages/${from}`,
     tag: `dm-${convId}`,

@@ -12,7 +12,6 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 const TILES: { href: string; icon: IconName; key: string }[] = [
   { href: "/menu/journal", icon: "scroll", key: "journal" },
   { href: "/calendar", icon: "calendar", key: "calendar" },
-  { href: "/menu/profile", icon: "person", key: "profile" },
   { href: "/menu/settings", icon: "gear", key: "settings" },
   { href: "/menu/offline", icon: "download", key: "offline" },
   { href: "/menu/about", icon: "dove", key: "about" },

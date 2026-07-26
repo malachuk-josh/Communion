@@ -27,7 +27,6 @@ interface Gathering {
 interface AdminUser {
   userId: string;
   displayName: string;
-  icon?: string;
   email?: string;
   createdAt?: number;
   lastSignInAt?: number;
@@ -194,7 +193,6 @@ export default function AdminDashboard() {
             {data.users.map((u) => (
               <tr key={u.userId}>
                 <td>
-                  {u.icon ? `${u.icon} ` : ""}
                   {u.displayName}
                   <div className="admin-sub">{u.userId}</div>
                 </td>

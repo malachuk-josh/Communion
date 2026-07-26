@@ -4,7 +4,7 @@
 // composer pinned above the bottom nav.
 
 import Link from "next/link";
-import Icon, { type IconName } from "@/components/Icon";
+import Icon from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBook } from "@/lib/bible";
@@ -39,7 +39,6 @@ export default function MessageThread({ peerId }: { peerId: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [peerName, setPeerName] = useState("…");
-  const [peerIcon, setPeerIcon] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -69,13 +68,11 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       messages: ChatMessage[];
       myUserId: string;
       peerName: string;
-      peerIcon: string | null;
     }>(`/api/messages/${peerId}`)
       .then((res) => {
         if (cancelled) return;
         setMyUserId(res.myUserId);
         setPeerName(res.peerName);
-        setPeerIcon(res.peerIcon);
         merge(res.messages);
         setLoaded(true);
       })
@@ -209,7 +206,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
         <Link href="/menu/messages" className="passage-link">
           ←
         </Link>
-        <span className="conv-avatar"><Icon name={(peerIcon as IconName) || "prayer"} /></span>
+        <span className="conv-avatar"><Icon name="person" /></span>
         <h1>{peerName}</h1>
         <button
           type="button"

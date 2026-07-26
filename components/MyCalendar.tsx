@@ -93,8 +93,7 @@ export default function MyCalendar() {
                     )}
                   </p>
                   {(() => {
-                    const label = (a: { name: string; icon?: string }) =>
-                      `${a.icon ? `${a.icon} ` : ""}${a.name}`;
+                    const label = (a: { name: string }) => a.name;
                     const going = (event.attendees ?? [])
                       .filter((a) => a.status === "going")
                       .map(label);

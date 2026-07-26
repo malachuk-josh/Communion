@@ -32,7 +32,6 @@ export async function GET(
     messages,
     myUserId: userId,
     peerName: profile?.displayName || "Believer",
-    peerIcon: profile?.icon || null,
   });
 }
 

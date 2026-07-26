@@ -136,7 +136,6 @@ async function getMembers(churchId: string): Promise<Member[]> {
         userId,
         role: (role === "founder" ? "founder" : "member") as Role,
         displayName: profile?.displayName ?? "Believer",
-        icon: profile?.icon || undefined,
       };
     })
   );
@@ -205,14 +204,10 @@ export async function getChurchDetail(
   if (role === "founder") {
     const raw = (await db().hgetall(keys.churchRequests(churchId))) ?? {};
     detail.requests = await Promise.all(
-      Object.entries(raw).map(async ([uid, name]) => {
-        const profile = await db().hgetall(keys.user(uid));
-        return {
-          userId: uid,
-          displayName: name || "Believer",
-          icon: profile?.icon || undefined,
-        };
-      })
+      Object.entries(raw).map(async ([uid, name]) => ({
+        userId: uid,
+        displayName: name || "Believer",
+      }))
     );
   }
   return detail;
@@ -240,16 +235,12 @@ export async function listUserEvents(
   const kv = db();
   const churchIds = await kv.smembers(keys.userChurches(userId));
   const all: (WorshipEvent & { churchName: string })[] = [];
-  const profileCache = new Map<string, { name: string; icon?: string }>();
-  const profileOf = async (
-    uid: string
-  ): Promise<{ name: string; icon?: string }> => {
+  const profileCache = new Map<string, { name: string }>();
+  const profileOf = async (uid: string): Promise<{ name: string }> => {
     const hit = profileCache.get(uid);
     if (hit) return hit;
-    const profile = await kv.hgetall(keys.user(uid));
     const entry = {
-      name: profile?.displayName || "Believer",
-      icon: profile?.icon || undefined,
+      name: (await kv.hgetall(keys.user(uid)))?.displayName || "Believer",
     };
     profileCache.set(uid, entry);
     return entry;
@@ -262,7 +253,7 @@ export async function listUserEvents(
       const attendees = await Promise.all(
         Object.entries(event.rsvps).map(async ([uid, status]) => {
           const p = await profileOf(uid);
-          return { name: p.name, icon: p.icon, status };
+          return { name: p.name, status };
         })
       );
       all.push({ ...event, attendees, churchName: church.name });

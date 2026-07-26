@@ -2255,38 +2255,6 @@ button.menu-tile {
   font-size: 0.9rem;
 }
 
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
-  gap: 8px;
-  margin: 4px 0 8px;
-}
-
-.icon-choice {
-  font-size: 1.35rem;
-  padding: 8px 0;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  background: var(--glass);
-  cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    border-color 0.12s ease;
-}
-
-.icon-choice:hover {
-  transform: translateY(-2px);
-}
-
-.icon-choice.active {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold);
-}
-
-.chip-icon {
-  margin-right: 4px;
-}
-
 .back-pill {
   position: fixed;
   left: 0;
@@ -2657,55 +2625,153 @@ button.menu-tile {
   color: var(--gold);
 }
 
-/* sits above the word sheet that opened it (beats the later
-   .modal-overlay rule on specificity) */
-.modal-overlay.conc-overlay {
-  z-index: 80;
+/* ---- the concordance, folded out from the right edge -------------------
+   The navigator's mirror. .side-panel above carries the shared geometry —
+   position, top, bottom: var(--kb), the safe-area padding, the flex column,
+   the glass — and everything here flips its handedness. These rules MUST
+   stay below .side-panel: the two selectors have equal specificity, so
+   source order is what decides, and above it every override is lost. */
+.conc-scrim {
+  z-index: 79; /* over the word sheet at 70 that opened it */
 }
 
-.concordance {
-  max-width: 560px;
+.conc-panel {
+  /* .side-panel sets left: 0, and in a left-to-right page left + width beat
+     right — without this the "right sidebar" opens on the left */
+  left: auto;
+  right: 0;
+  z-index: 80;
+  /* wider than the navigator's 390px: this one holds whole verses, and at
+     460px a line runs to about the 55 characters the clamp assumes */
+  width: min(92vw, 460px);
+  border-radius: 22px 0 0 22px;
+  border-left: 1px solid var(--glass-border);
+  border-right: none;
+  box-shadow: -14px 0 44px rgba(0, 0, 0, 0.5);
+  animation: fold-out-right 0.26s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+/* like fold-out, no `to` and no fill: the resting state is where it lives */
+@keyframes fold-out-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+.conc-meta {
+  padding: 0 16px 10px;
+}
+
+.conc-note {
+  padding: 8px 16px 10px;
+  margin: 0;
+}
+
+.conc-tabs {
+  padding: 0 16px 12px;
+  margin: 0;
 }
 
 .conc-list {
   display: grid;
   gap: 2px;
-  max-height: calc(var(--vvh, 100dvh) * 0.52);
-  overflow-y: auto;
-  margin: 8px 0;
+  padding: 8px 10px;
+  /* no height cap and no scroller of its own — .sp-body is the scroller, and
+     it is the one lib/viewport.tsx knows how to lift off the keyboard */
 }
 
 .conc-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  width: 100%;
-  text-align: left;
-  background: none;
   border: 1px solid transparent;
   border-radius: 10px;
-  padding: 7px 9px;
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
 }
 
 .conc-row:hover {
   border-color: var(--glass-border);
 }
 
-.conc-ref {
-  color: var(--gold);
-  font-size: 0.88rem;
-  white-space: nowrap;
+.conc-row:focus-within {
+  border-color: var(--gold);
 }
 
-.conc-word {
-  color: var(--ink-dim);
-  font-size: 0.84rem;
+.conc-go {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 9px 10px 7px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.conc-ref {
+  display: block;
+  color: var(--gold);
+  font-size: 0.86rem;
+  margin-bottom: 3px;
+}
+
+/* the King James address, on a Septuagint row whose numbering differs */
+.conc-kjv-ref {
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  margin-left: 6px;
+}
+
+/* four lines is enough to place a verse; the rest is a tap away. All four
+   declarations are load-bearing — drop overflow and nothing clamps, and the
+   Septuagint has a verse 3,528 characters long that would fill the panel. */
+.conc-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+.conc-text.open {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.conc-text.lxx {
+  font-family: var(--sans);
+  font-size: 0.92rem;
+}
+
+.conc-expand {
+  display: block;
+  margin: 0 10px 8px auto;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.conc-expand:hover {
+  color: var(--gold);
+}
+
+/* why a verse is not here: no connection, or not in this text */
+.conc-status {
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+/* a line's worth of nothing, so rows do not jump as text lands */
+.conc-waiting {
+  display: block;
+  height: 1.45em;
 }
 
 /* the verse's cross-references, moved here out of the reading column */

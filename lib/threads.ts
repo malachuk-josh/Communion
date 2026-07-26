@@ -19,7 +19,6 @@ export interface ThreadPost {
   id: string;
   from: string;
   fromName: string;
-  fromIcon?: string;
   text: string;
   ts: number;
   attach?: PostAttach;
@@ -66,10 +65,7 @@ export function validateAttach(raw: unknown): PostAttach | null | "invalid" {
 
 async function profileOf(userId: string) {
   const profile = await db().hgetall(keys.user(userId));
-  return {
-    name: profile?.displayName || "Believer",
-    icon: profile?.icon || undefined,
-  };
+  return { name: profile?.displayName || "Believer" };
 }
 
 export async function listThreads(churchId: string): Promise<ThreadSummary[]> {
@@ -258,7 +254,6 @@ export async function createThread(
       id: randomUUID().replace(/-/g, "").slice(0, 12),
       from: userId,
       fromName: author.name,
-      fromIcon: author.icon,
       text,
       ts: now,
       ...(attach ? { attach } : {}),
@@ -303,7 +298,6 @@ export async function addPost(
     id: randomUUID().replace(/-/g, "").slice(0, 12),
     from: userId,
     fromName: author.name,
-    fromIcon: author.icon,
     text,
     ts: now,
     ...(attach ? { attach } : {}),

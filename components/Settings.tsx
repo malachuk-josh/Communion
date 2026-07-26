@@ -3,7 +3,14 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/client";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
+import { api, saveName } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
 import ReminderSettings from "@/components/ReminderSettings";
@@ -11,10 +18,51 @@ import type { Church, Role } from "@/lib/types";
 
 type MyChurch = Church & { myRole: Role; memberCount: number };
 
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+/** Clerk's own account controls, or the sign-in door if you are signed out. */
+function ClerkAccount() {
+  const { t } = useI18n();
+  const { user } = useUser();
+  return (
+    <>
+      <SignedIn>
+        <div className="pref-row">
+          <span>
+            {t("profile.signedInAs")}{" "}
+            <strong>
+              {user?.primaryEmailAddress?.emailAddress ?? user?.fullName ?? ""}
+            </strong>
+            <br />
+            <small className="cal-hint">{t("profile.accountHint")}</small>
+          </span>
+          <UserButton />
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <div className="pref-row">
+          <span>
+            <small className="cal-hint">{t("profile.signedOutHint")}</small>
+          </span>
+          <SignInButton mode="modal">
+            <button className="btn btn-sm btn-primary">{t("auth.signIn")}</button>
+          </SignInButton>
+        </div>
+      </SignedOut>
+    </>
+  );
+}
+
 export default function Settings() {
   const { lang, setLang, t } = useI18n();
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [churches, setChurches] = useState<MyChurch[] | null>(null);
+  // your name, which used to live on its own Profile screen
+  const [displayName, setDisplayName] = useState("");
+  const [nameLoaded, setNameLoaded] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  const [nameError, setNameError] = useState("");
 
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
@@ -22,7 +70,31 @@ export default function Settings() {
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
+    api<{ displayName: string }>("/api/profile")
+      .then((res) => setDisplayName(res.displayName))
+      .catch(() => {})
+      .finally(() => setNameLoaded(true));
   }, []);
+
+  const saveDisplayName = async () => {
+    if (savingName || !displayName.trim()) return;
+    setSavingName(true);
+    setNameSaved(false);
+    setNameError("");
+    try {
+      await api("/api/profile", {
+        method: "POST",
+        body: { displayName: displayName.trim() },
+      });
+      saveName(displayName); // prefill guest-mode prompts too
+      setNameSaved(true);
+      setTimeout(() => setNameSaved(false), 2500);
+    } catch (e) {
+      setNameError((e as Error).message);
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const applyTheme = (next: "dark" | "light" | "grey") => {
     setTheme(next);
@@ -66,6 +138,43 @@ export default function Settings() {
       <BackToMenu />
       <h1 className="page-title">{t("settings.title")}</h1>
       <p className="subtitle">{t("settings.subtitle")}</p>
+
+      <div className="section-head">
+        <h2>{t("settings.you")}</h2>
+      </div>
+      <div className="glass card">
+        <label className="field">
+          <span>{t("profile.displayName")}</span>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder={nameLoaded ? t("churches.yourName") : "…"}
+            maxLength={60}
+          />
+        </label>
+        <p className="cal-hint">{t("profile.displayNameHint")}</p>
+        {nameError && <p className="error-text">{nameError}</p>}
+        <div className="modal-actions" style={{ justifyContent: "flex-start" }}>
+          <button
+            className="btn btn-primary"
+            onClick={saveDisplayName}
+            disabled={savingName || !displayName.trim()}
+          >
+            {nameSaved ? `✓ ${t("settings.saved")}` : t("common.save")}
+          </button>
+        </div>
+      </div>
+
+      <div className="section-head">
+        <h2>{t("profile.account")}</h2>
+      </div>
+      <div className="glass card">
+        {clerkEnabled ? (
+          <ClerkAccount />
+        ) : (
+          <p className="cal-hint">{t("profile.guestHint")}</p>
+        )}
+      </div>
 
       <div className="section-head">
         <h2>{t("settings.preferences")}</h2>

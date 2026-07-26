@@ -4,7 +4,7 @@
 // members to start a new conversation.
 
 import Link from "next/link";
-import Icon, { type IconName } from "@/components/Icon";
+import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
@@ -13,7 +13,6 @@ import BackToMenu from "@/components/BackToMenu";
 interface ConvSummary {
   peerId: string;
   peerName: string;
-  peerIcon?: string;
   lastText: string;
   lastFrom: string;
   ts: number;
@@ -23,7 +22,6 @@ interface ConvSummary {
 interface Contact {
   userId: string;
   displayName: string;
-  icon?: string;
 }
 
 interface ThreadRow {
@@ -108,7 +106,6 @@ export default function Messages() {
                   href={`/menu/messages/${c.userId}`}
                   className="chip"
                 >
-                  {c.icon && <span className="chip-icon">{c.icon}</span>}
                   {c.displayName}
                 </Link>
               ))}
@@ -144,7 +141,7 @@ export default function Messages() {
                   href={`/menu/messages/${row.dm.peerId}`}
                   className="conv-row-link"
                 >
-                  <span className="conv-avatar"><Icon name={(row.dm.peerIcon as IconName) || "prayer"} /></span>
+                  <span className="conv-avatar"><Icon name="person" /></span>
                   <span className="conv-body">
                     <strong>
                       {row.dm.peerName}

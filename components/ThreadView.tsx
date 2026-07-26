@@ -4,7 +4,7 @@
 // scripture reference or a shared bookmark/note/word study.
 
 import Link from "next/link";
-import Icon, { type IconName } from "@/components/Icon";
+import Icon from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
@@ -15,7 +15,6 @@ interface ThreadPost {
   id: string;
   from: string;
   fromName: string;
-  fromIcon?: string;
   text: string;
   ts: number;
   attach?: Attach;
@@ -151,7 +150,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       {posts.map((p) => (
         <div key={p.id} className="glass card post-row">
           <div className="post-head">
-            <span className="conv-avatar"><Icon name={(p.fromIcon as IconName) || "prayer"} /></span>
+            <span className="conv-avatar"><Icon name="person" /></span>
             <strong>{p.from === myUserId ? t("messages.you") : p.fromName}</strong>
             <span className="conv-time">
               {new Date(p.ts).toLocaleString(lang === "es" ? "es" : "en", {

@@ -93,6 +93,78 @@ export async function fetchBook(
   return { translation, bookNr, chapters };
 }
 
+export interface VerseRef {
+  bookNr: number;
+  chapter: number;
+  verse: number;
+}
+
+export interface VerseBatch {
+  /** verse text for every reference that resolved, keyed by verseKey() */
+  verses: Map<string, string>;
+  /** books whose file could not be loaded at all — offline, or missing */
+  missingBooks: Set<number>;
+}
+
+export const verseKey = (
+  bookNr: number,
+  chapter: number,
+  verse: number
+): string => `${bookNr}:${chapter}:${verse}`;
+
+/**
+ * Text for a scattered list of verses.
+ *
+ * The concordance needs this: a list of references spread across the whole
+ * Bible, whose text has to be shown without asking for each one. References
+ * are grouped by book because the file on disk already holds a whole book —
+ * sixty verses spanning six books cost six requests, not sixty. Everything
+ * goes through loadBook, so a book the reader already opened costs nothing,
+ * and two callers asking at once share the one request.
+ *
+ * Never throws, and never falls back to /api/bible: that route is not in the
+ * service worker's cache, so offline it would be a slow failure per verse
+ * rather than an immediate one per book. A book that cannot be read comes
+ * back in `missingBooks` for the caller to say so.
+ */
+export async function fetchVerses(
+  translation: string,
+  refs: VerseRef[]
+): Promise<VerseBatch> {
+  const verses = new Map<string, string>();
+  const missingBooks = new Set<number>();
+  if (!isTranslation(translation) && translation !== "lxx") {
+    return { verses, missingBooks };
+  }
+  const byBook = new Map<number, VerseRef[]>();
+  for (const ref of refs) {
+    const list = byBook.get(ref.bookNr);
+    if (list) list.push(ref);
+    else byBook.set(ref.bookNr, [ref]);
+  }
+  await Promise.all(
+    [...byBook].map(async ([bookNr, list]) => {
+      let book: BookFile;
+      try {
+        book = await loadBook(translation, bookNr);
+      } catch {
+        missingBooks.add(bookNr);
+        return;
+      }
+      for (const ref of list) {
+        // a chapter the file genuinely lacks — LXX Malachi 4 is an empty
+        // array, and the Greek runs past the English in a few places
+        const rows = book[String(ref.chapter)];
+        const row = rows?.find(([verse]) => verse === ref.verse);
+        if (row) {
+          verses.set(verseKey(ref.bookNr, ref.chapter, ref.verse), row[1]);
+        }
+      }
+    })
+  );
+  return { verses, missingBooks };
+}
+
 export interface LocalSearchResult {
   bookNr: number;
   chapter: number;
