@@ -1408,6 +1408,15 @@ mark {
   color: var(--gold);
 }
 
+/* One verse, one line. The number hangs in the margin and the wrapped lines
+   align under the text rather than under the number — what a printed Bible
+   does, and the reason the indent is negative on top of the padding. */
+.verse-line {
+  margin: 0 0 0.3em;
+  padding-left: 1.9em;
+  text-indent: -1.9em;
+}
+
 .verse-num {
   font-family: var(--sans);
   font-size: 0.68em;

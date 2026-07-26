@@ -1832,35 +1832,37 @@ export default function Reader({
                 })}
               </div>
             ) : (
-              // one paragraph per section, so a heading can open each one
+              // A section per heading, and inside it a verse per line. The
+              // verses used to run together inside one paragraph; a line each
+              // is easier to find a reference in, and it gives the machinery
+              // that holds the reader's place a real box to measure rather
+              // than the union of an inline run's line boxes.
               runsOf(ch, verses).map((run, i) => (
                 <div key={i} className="section">
                   {run.title && <h3 className="section-head">{run.title}</h3>}
-                  <p>
-                    {run.verses.map((v) => {
-                      const mark = markOf(ch, v.verse);
-                      return (
-                        <span
-                          key={v.verse}
-                          id={ch === chapter ? `v-${v.verse}` : undefined}
-                          data-v={`${ch}:${v.verse}`}
-                          className={
-                            ch === chapter && highlightVerse === v.verse
-                              ? "verse-highlight"
-                              : undefined
-                          }
-                        >
-                          <sup className="verse-num">{v.verse}</sup>
-                          {v.text}
-                          {mark && (
-                            <sup className="verse-mark" title={mark}>
-                              <StudyStar />
-                            </sup>
-                          )}{" "}
-                        </span>
-                      );
-                    })}
-                  </p>
+                  {run.verses.map((v) => {
+                    const mark = markOf(ch, v.verse);
+                    return (
+                      <p
+                        key={v.verse}
+                        id={ch === chapter ? `v-${v.verse}` : undefined}
+                        data-v={`${ch}:${v.verse}`}
+                        className={`verse-line${
+                          ch === chapter && highlightVerse === v.verse
+                            ? " verse-highlight"
+                            : ""
+                        }`}
+                      >
+                        <sup className="verse-num">{v.verse}</sup>
+                        {v.text}
+                        {mark && (
+                          <sup className="verse-mark" title={mark}>
+                            <StudyStar />
+                          </sup>
+                        )}
+                      </p>
+                    );
+                  })}
                 </div>
               ))
             )}
