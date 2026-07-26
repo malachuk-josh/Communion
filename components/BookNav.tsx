@@ -5,12 +5,14 @@
 // and opening a chapter unfolds its verses under it — so finding a passage
 // feels like turning to it rather than picking from three dropdowns.
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { BOOKS } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
 import { fetchBook } from "@/lib/scripture";
 
 const LAST_OT_BOOK = 39;
+/** Chapters to a row. Must match repeat(N) on .bn-ch-row in globals.css. */
+const PER_ROW = 5;
 
 export default function BookNav({
   bookNr,
@@ -98,6 +100,20 @@ export default function BookNav({
     onChapter(book, c);
   };
 
+  /** The chapters of a book, in the rows they are drawn in. */
+  const chapterRows = (chapters: number): number[][] => {
+    const rows: number[][] = [];
+    for (let c = 1; c <= chapters; c += PER_ROW) {
+      rows.push(
+        Array.from(
+          { length: Math.min(PER_ROW, chapters - c + 1) },
+          (_, i) => c + i
+        )
+      );
+    }
+    return rows;
+  };
+
   const verseGrid = (book: number, c: number) => {
     const n = counts[book]?.[c];
     return (
@@ -158,37 +174,41 @@ export default function BookNav({
                 </span>
               </button>
               {open && (
-                <>
-                  {/* The verses are NOT inside this grid. Put them there and
-                      the full-width row splits it: the tapped chapter's row
-                      is left half empty and every chapter after it restarts
-                      below. The chapter grid keeps its own shape, and the
-                      verses hang under the whole of it. */}
-                  <div className="bn-chapters">
-                    {Array.from({ length: book.chapters }, (_, i) => i + 1).map(
-                      (c) => {
-                        const chapterOpen = openChapter === c;
-                        return (
-                          <button
-                            key={c}
-                            type="button"
-                            className={`bn-ch${
-                              here && c === chapter ? " current" : ""
-                            }${chapterOpen ? " open" : ""}`}
-                            onClick={() => pickChapter(book.nr, c)}
-                            aria-expanded={chapterOpen}
-                            aria-current={
-                              here && c === chapter ? "page" : undefined
-                            }
-                          >
-                            {c}
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
-                  {openChapter !== null && verseGrid(book.nr, openChapter)}
-                </>
+                <div className="bn-chapters">
+                  {/* The rows are drawn one at a time rather than left to one
+                      grid's auto-placement, so the verses can open between
+                      two of them. Inside a single grid a full-width row can
+                      only land in the next free cell, which splits the
+                      tapped chapter's row and restarts the rest below it. */}
+                  {chapterRows(book.chapters).map((row) => (
+                    <Fragment key={row[0]}>
+                      <div className="bn-ch-row">
+                        {row.map((c) => {
+                          const chapterOpen = openChapter === c;
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              className={`bn-ch${
+                                here && c === chapter ? " current" : ""
+                              }${chapterOpen ? " open" : ""}`}
+                              onClick={() => pickChapter(book.nr, c)}
+                              aria-expanded={chapterOpen}
+                              aria-current={
+                                here && c === chapter ? "page" : undefined
+                              }
+                            >
+                              {c}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {openChapter !== null &&
+                        row.includes(openChapter) &&
+                        verseGrid(book.nr, openChapter)}
+                    </Fragment>
+                  ))}
+                </div>
               )}
             </div>
           );

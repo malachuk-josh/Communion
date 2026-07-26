@@ -1274,11 +1274,19 @@ mark {
   transform: rotate(180deg);
 }
 
+/* the block that holds a book's chapter rows, and the verses opened between
+   two of them */
 .bn-chapters {
+  padding: 2px 14px 12px 24px;
+}
+
+/* One row of chapters. Drawn a row at a time rather than as one grid so the
+   verse grid can be inserted between rows; repeat(5) here must match
+   PER_ROW in components/BookNav.tsx, or the columns stop lining up. */
+.bn-ch-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 2px;
-  padding: 2px 14px 12px 24px;
 }
 
 .bn-ch {
@@ -1304,17 +1312,16 @@ mark {
   box-shadow: inset 0 0 0 1px var(--glass-border);
 }
 
-/* Verses sit under the whole chapter grid, never inside it: a full-width row
-   placed among the chapters splits them, leaving the tapped chapter's row
-   half empty and restarting the rest below it. The insets match
-   .bn-chapters so the two blocks line up. Six to a row, because verse
+/* The verses open immediately under the row holding the chapter that was
+   tapped — not at the foot of the book, where you would have to hunt for
+   them past a hundred and fifty chapters. Six to a row, because verse
    numbers run past 100 in a few psalms and the column has to hold three
    digits. */
 .bn-verses {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 2px;
-  margin: 0 14px 12px 24px;
+  margin: 5px 0 7px;
   padding: 6px 4px;
   border-radius: 12px;
   background: var(--glass);
