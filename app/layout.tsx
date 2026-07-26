@@ -45,6 +45,11 @@ export const viewport: Viewport = {
   // extend the page under the status bar so the strip above the header is
   // painted by the app's own background in every theme
   viewportFit: "cover",
+  // Safari has always resized only the visual viewport when the keyboard
+  // opens, and Chrome for Android has done the same since 108. Saying so
+  // pins Firefox 132+ and anything later to that one model, so
+  // lib/viewport.tsx has a single behaviour to measure instead of two.
+  interactiveWidget: "resizes-visual",
 };
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;

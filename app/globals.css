@@ -1139,7 +1139,10 @@ mark {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-bottom: max(
+    16px,
+    calc(16px + env(safe-area-inset-bottom, 0px) - var(--kb, 0px))
+  );
 }
 
 .sp-pad {
@@ -2171,7 +2174,7 @@ button.menu-tile {
 .share-list {
   display: grid;
   gap: 4px;
-  max-height: 40vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.4);
   overflow-y: auto;
 }
 
@@ -2292,7 +2295,7 @@ button.menu-tile {
 .bookmark-list {
   display: grid;
   gap: 6px;
-  max-height: 50vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.5);
   overflow-y: auto;
 }
 
@@ -2436,7 +2439,12 @@ button.menu-tile {
   border-bottom: none;
   /* the sheet covers the bottom nav, so it only needs room for the home
      indicator — not a full nav's worth of padding */
-  padding: 16px 18px calc(8px + env(safe-area-inset-bottom));
+  /* max(), never a sum: env(safe-area-inset-bottom) does not update when the
+     keyboard opens, so adding it to a sheet already lifted by --kb reserves
+     34px of dead strip above the keyboard. Once --kb clears the home
+     indicator there is nothing left to leave room for. */
+  padding: 16px 18px
+    max(8px, calc(8px + env(safe-area-inset-bottom, 0px) - var(--kb, 0px)));
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
   max-width: 760px;
   margin: 0 auto;
@@ -2570,7 +2578,7 @@ button.menu-tile {
 }
 
 .attach-picker .share-list {
-  max-height: 30vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.3);
 }
 
 .attach-chip-row {
@@ -2590,7 +2598,7 @@ button.menu-tile {
 
 .bm-coll-chips {
   margin: 6px 0 10px;
-  max-height: 22vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.22);
   overflow-y: auto;
 }
 
@@ -2644,7 +2652,7 @@ button.menu-tile {
 .conc-list {
   display: grid;
   gap: 2px;
-  max-height: 52vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.52);
   overflow-y: auto;
   margin: 8px 0;
 }
@@ -2712,7 +2720,7 @@ button.menu-tile {
   font-family: var(--serif);
   font-size: 1rem;
   line-height: 1.5;
-  max-height: 18vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.18);
   overflow-y: auto;
 }
 
@@ -2757,7 +2765,7 @@ button.menu-tile {
 
 .lex-peers {
   margin-top: 8px;
-  max-height: 30vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.3);
   overflow-y: auto;
 }
 
