@@ -1099,9 +1099,22 @@ mark {
   flex-direction: column;
   border-radius: 0 22px 22px 0;
   border-left: none;
+  /* The open edge, in the app's own accent rather than the platform's.
+     The panel takes focus when it opens, so that Escape closes it and the tab
+     order starts inside — and the browser draws its own ring for that, which
+     on iOS is a blue that belongs to no theme here. Worse, it is a
+     :focus-visible ring, so it came and went depending on how the panel had
+     been opened. This edge is always drawn, and follows the theme: gold in
+     dark and light, and the grey theme's own accent in grey. */
+  border-color: var(--gold);
   box-shadow: 14px 0 44px rgba(0, 0, 0, 0.5);
   padding: env(safe-area-inset-top) 0 0;
   animation: fold-out 0.26s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+.side-panel:focus,
+.side-panel:focus-visible {
+  outline: none;
 }
 
 @keyframes fold-out {
@@ -2828,7 +2841,9 @@ button.menu-tile {
      460px a line runs to about the 55 characters the clamp assumes */
   width: min(92vw, 460px);
   border-radius: 22px 0 0 22px;
-  border-left: 1px solid var(--glass-border);
+  /* the accent edge again, on the side this panel opens from — the shorthand
+     would otherwise put the plain glass border back over it */
+  border-left: 1px solid var(--gold);
   border-right: none;
   box-shadow: -14px 0 44px rgba(0, 0, 0, 0.5);
   animation: fold-out-right 0.26s cubic-bezier(0.22, 0.8, 0.3, 1);
