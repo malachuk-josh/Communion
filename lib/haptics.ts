@@ -72,14 +72,20 @@ let taptic: HTMLLabelElement | null = null;
  * created and clicked in the same tick has not been through layout, and iOS
  * gives nothing for it. So this is called on startup and the element waits.
  *
- * Off-screen rather than display:none — a control that is not being laid out
- * is not a control iOS will animate, and the haptic rides on the animation.
+ * And it has to be a control iOS is really drawing. The haptic is not a
+ * consequence of the checkbox changing value — it is part of the animation of
+ * the switch sliding across, so anything that stops that animation stops the
+ * haptic with it. display:none, visibility:hidden, opacity:0 and a clipped
+ * one-pixel box all qualify, which is how the first version of this failed.
+ * So it is drawn at the size it asks for, just past the left edge of the
+ * screen, where there is nothing to see and nothing to touch.
  */
 export function primeHaptics(): void {
   if (taptic || typeof document === "undefined") return;
   const input = document.createElement("input");
   input.type = "checkbox";
-  // the attribute iOS 17.4 looks for; unknown attributes are ignored elsewhere
+  // the attribute Safari 17.4 looks for; ignored everywhere else, where this
+  // is an ordinary off-screen checkbox nobody will ever meet
   input.setAttribute("switch", "");
   input.id = "communion-taptic";
   input.tabIndex = -1;
@@ -88,11 +94,31 @@ export function primeHaptics(): void {
   label.htmlFor = input.id;
   label.setAttribute("aria-hidden", "true");
   const box = document.createElement("div");
+  box.setAttribute("aria-hidden", "true");
   box.style.cssText =
-    "position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
+    "position:fixed;left:-140px;bottom:12px;width:90px;height:48px;z-index:-1";
   box.append(input, label);
   document.body.append(box);
   taptic = label;
+}
+
+/**
+ * Which engine this device will use, if any.
+ *
+ * "ios" is a guess and is described as one. The switch is on the page whether
+ * or not it buzzes and there is no way to ask it, so nothing here promises
+ * anything: it needs iOS 17.4 or later, and iOS does not honour it in every
+ * context — an app opened from the home screen is not the same browsing
+ * context as a Safari tab.
+ */
+export function hapticEngine(): "vibration" | "ios" | "none" {
+  if (typeof navigator === "undefined") return "none";
+  if (typeof navigator.vibrate === "function") return "vibration";
+  const ios =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // iPadOS calls itself a Mac; the touch points give it away
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return ios ? "ios" : "none";
 }
 
 /**

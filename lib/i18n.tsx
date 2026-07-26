@@ -21,6 +21,9 @@ const dictionaries = {
     "settings.haptics": "Haptic feedback",
     "settings.hapticsOn": "On",
     "settings.hapticsOff": "Off",
+    "settings.hapticsIos":
+      "On iPhone and iPad this uses a system control, which needs iOS 17.4 or later and may do nothing in an app opened from the home screen. Press On to test.",
+    "settings.hapticsNone": "This device has no haptics the browser can reach.",
     "settings.themeLight": "Light",
     "settings.themeDark": "Dark",
     "settings.myChurches": "My Gatherings",
@@ -593,6 +596,9 @@ const dictionaries = {
     "settings.haptics": "Respuesta háptica",
     "settings.hapticsOn": "Activada",
     "settings.hapticsOff": "Desactivada",
+    "settings.hapticsIos":
+      "En iPhone y iPad esto usa un control del sistema, que requiere iOS 17.4 o posterior y puede no hacer nada en una app abierta desde la pantalla de inicio. Pulsa Activada para probar.",
+    "settings.hapticsNone": "Este dispositivo no tiene háptica accesible desde el navegador.",
     "settings.themeLight": "Claro",
     "settings.themeDark": "Oscuro",
     "settings.myChurches": "Mis Comunidades",

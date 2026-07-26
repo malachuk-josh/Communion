@@ -540,6 +540,16 @@ html.reading body::-webkit-scrollbar {
   transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
+/* A caveat under a preference's name — why the switch beside it may do
+   nothing on this device. */
+.pref-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 /* The stand-in for the tucked-away bar: the same place, a fraction of the
    size. Sits where the bar's centre was, so summoning it feels like the bar
    growing back out of the button rather than arriving from somewhere else. */
