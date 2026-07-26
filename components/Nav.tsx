@@ -197,13 +197,14 @@ export default function Nav() {
           <Link href="/" className="brand" onClick={wordClick}>
             Communion
           </Link>
+          {/* the same order as the bar below, so the two never disagree about
+              where a destination lives */}
           <div className="nav-links">
             <Link
-              href="/"
-              className={`nav-link${isWord ? " active" : ""}`}
-              onClick={wordClick}
+              href="/discover"
+              className={`nav-link${isDiscover ? " active" : ""}`}
             >
-              {t("nav.reader")}
+              {t("nav.discover")}
             </Link>
             <Link
               href="/churches"
@@ -212,10 +213,11 @@ export default function Nav() {
               {t("nav.churches")}
             </Link>
             <Link
-              href="/discover"
-              className={`nav-link${isDiscover ? " active" : ""}`}
+              href="/"
+              className={`nav-link${isWord ? " active" : ""}`}
+              onClick={wordClick}
             >
-              {t("nav.discover")}
+              {t("nav.reader")}
             </Link>
             <Link
               href="/menu/messages"
@@ -319,17 +321,20 @@ export default function Nav() {
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
-        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon"><Icon name="book" /></span>
-          <span>{t("nav.reader")}</span>
+        {/* The Word sits in the middle of the five, under the thumb rather
+            than out at the corner — it is the tab this app is for, and the
+            one reached most often. Discover leads. */}
+        <Link href="/discover" className={isDiscover ? "active" : ""}>
+          <span className="bn-icon"><Icon name="globe" /></span>
+          <span>{t("nav.discover")}</span>
         </Link>
         <Link href="/churches" className={isChurches ? "active" : ""}>
           <span className="bn-icon"><Icon name="church" /></span>
           <span>{t("nav.churches")}</span>
         </Link>
-        <Link href="/discover" className={isDiscover ? "active" : ""}>
-          <span className="bn-icon"><Icon name="globe" /></span>
-          <span>{t("nav.discover")}</span>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
+          <span className="bn-icon"><Icon name="book" /></span>
+          <span>{t("nav.reader")}</span>
         </Link>
         <Link
           href="/menu/messages"
