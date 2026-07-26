@@ -11,6 +11,7 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import { api, saveName } from "@/lib/client";
+import { haptic, hapticsOn, setHapticsOn } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
 import OfflineSettings from "@/components/OfflineSettings";
@@ -65,10 +66,20 @@ export default function Settings() {
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState("");
   const [offlineOpen, setOfflineOpen] = useState(false);
+  const [haptics, setHaptics] = useState(true);
+  /** whether this device has a finger to feel anything with */
+  const [touch, setTouch] = useState(false);
 
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
     setTheme(current === "light" || current === "grey" ? current : "dark");
+    // read after mount: the stored answer is not available while rendering on
+    // the server, and a switch that flips on hydration reads as a glitch
+    setHaptics(hapticsOn());
+    setTouch(
+      navigator.maxTouchPoints > 0 ||
+        window.matchMedia("(pointer: coarse)").matches
+    );
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
@@ -264,6 +275,37 @@ export default function Settings() {
             </button>
           </div>
         </div>
+        {/* Only where there is something to feel. On a desktop the row would
+            be a switch that does nothing, which is worse than no switch. */}
+        {touch && (
+          <div className="pref-row">
+            <span>{t("settings.haptics")}</span>
+            <div className="lang-toggle" role="group">
+              <button
+                className={haptics ? "active" : ""}
+                aria-pressed={haptics}
+                onClick={() => {
+                  setHaptics(true);
+                  setHapticsOn(true);
+                  // answer with the thing itself: pressing On buzzes
+                  haptic("medium");
+                }}
+              >
+                {t("settings.hapticsOn")}
+              </button>
+              <button
+                className={!haptics ? "active" : ""}
+                aria-pressed={!haptics}
+                onClick={() => {
+                  setHaptics(false);
+                  setHapticsOn(false);
+                }}
+              >
+                {t("settings.hapticsOff")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ReminderSettings />

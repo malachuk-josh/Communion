@@ -25,6 +25,7 @@ import {
   parseBmKey,
 } from "@/lib/bookmarkKey";
 import { api } from "@/lib/client";
+import { haptic } from "@/lib/haptics";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
@@ -1340,6 +1341,9 @@ export default function Reader({
     if (removing) delete next[key];
     else next[key] = { t: Date.now() };
     setBookmarks(next);
+    // the one place in the reader worth a tap: a verse has been kept, or let
+    // go, and nothing else on screen says so as immediately
+    haptic("light");
     void writeLocalState({ bookmarks: next });
     void enqueue(
       removing
