@@ -29,6 +29,9 @@ export interface PrayerRequest {
 }
 
 const MAX_TEXT = 1000;
+/** Posts one person may add to the open wall in an hour. */
+const WALL_RATE = 5;
+const WALL_WINDOW_S = 3600;
 const MAX_ANSWER = 1000;
 /** Deep enough for a year of a busy Gathering, shallow enough to stay fast. */
 const MAX_LIST = 300;
@@ -47,12 +50,16 @@ export async function listPrayers(
   churchId: string,
   viewerId: string
 ): Promise<PrayerRequest[]> {
+  return listFrom(keys.churchPrayers(churchId), churchId, viewerId);
+}
+
+async function listFrom(
+  indexKey: string,
+  churchId: string,
+  viewerId: string
+): Promise<PrayerRequest[]> {
   const kv = db();
-  const ids = await kv.zrangebyscore(
-    keys.churchPrayers(churchId),
-    0,
-    Number.MAX_SAFE_INTEGER
-  );
+  const ids = await kv.zrangebyscore(indexKey, 0, Number.MAX_SAFE_INTEGER);
   const rows = await Promise.all(
     ids.slice(-MAX_LIST).map(async (id) => {
       const raw = await kv.hgetall(keys.prayer(id));
@@ -99,6 +106,72 @@ async function notify(
       tag: `prayers-${churchId}`,
     }).catch(() => {});
   }
+}
+
+/**
+ * The open wall: the same records, indexed under no Gathering.
+ *
+ * It is readable and postable by anyone, guests included, which is the point
+ * and also the risk — a members-only list is protected by the membership, and
+ * this one has nothing but what is written here. So: a cap on how many one
+ * person may add in an hour, a cap on how many the wall carries, and the same
+ * length limit as everywhere else. Whoever posted may withdraw it, and so may
+ * the app's owner; there is no founder to moderate an open room.
+ */
+export async function listPublicPrayers(
+  viewerId: string
+): Promise<PrayerRequest[]> {
+  return listFrom(keys.publicPrayers, "", viewerId);
+}
+
+/** Whether this person may post to the wall right now, and how many are left. */
+export async function wallAllowance(
+  userId: string
+): Promise<{ ok: boolean; left: number }> {
+  const used = Number((await db().hgetall(keys.prayerRate(userId)))?.n ?? 0);
+  return { ok: used < WALL_RATE, left: Math.max(0, WALL_RATE - used) };
+}
+
+export async function addPublicPrayer(
+  userId: string,
+  text: string,
+  anonymous: boolean
+): Promise<PrayerRequest | null> {
+  const kv = db();
+  const { ok } = await wallAllowance(userId);
+  if (!ok) return null;
+
+  const id = randomUUID().replace(/-/g, "").slice(0, 12);
+  const now = Date.now();
+  const body = text.trim().slice(0, MAX_TEXT);
+  const fromName = anonymous ? "" : await nameOf(userId);
+
+  await kv.hset(keys.prayer(id), {
+    churchId: "",
+    from: anonymous ? "" : userId,
+    fromName,
+    text: body,
+    ts: now,
+  });
+  await kv.zadd(keys.publicPrayers, now, id);
+
+  // the window starts at the first post and runs an hour from there, so the
+  // allowance refills in one step rather than sliding
+  const rateKey = keys.prayerRate(userId);
+  const used = Number((await kv.hgetall(rateKey))?.n ?? 0);
+  await kv.hset(rateKey, { n: used + 1 });
+  if (used === 0) await kv.expire(rateKey, WALL_WINDOW_S);
+
+  return {
+    id,
+    churchId: "",
+    from: anonymous ? "" : userId,
+    fromName: fromName || "Believer",
+    text: body,
+    ts: now,
+    prayed: 0,
+    iPrayed: false,
+  };
 }
 
 export async function addPrayer(
@@ -205,7 +278,11 @@ export async function deletePrayer(
   const raw = await kv.hgetall(keys.prayer(prayerId));
   if (!raw?.text) return false;
   if (raw.from !== userId && !isAdmin) return false;
-  await kv.zrem(keys.churchPrayers(raw.churchId ?? ""), prayerId);
+  const church = raw.churchId ?? "";
+  await kv.zrem(
+    church ? keys.churchPrayers(church) : keys.publicPrayers,
+    prayerId
+  );
   await kv.del(keys.prayer(prayerId));
   await kv.del(keys.prayerPrayed(prayerId));
   return true;

@@ -111,6 +111,12 @@ const dictionaries = {
     "messages.sharedNote": "Shared note",
     "messages.sharedWord": "Word study",
     "prayers.title": "Prayer list",
+    "prayers.wall": "Prayer wall",
+    "prayers.publicNote":
+      "Anyone using Communion can read this wall and add to it — believers you have never met will see what you write here.",
+    "prayers.wallEmpty":
+      "The wall is open and empty. Ask, and whoever is reading will pray for you.",
+    "prayers.wallLeft": "{n} more requests this hour.",
     "prayers.add": "Ask for prayer",
     "prayers.privacy":
       "Only members of this Gathering can see the prayer list — not visitors, even when the Gathering is public.",
@@ -203,6 +209,9 @@ const dictionaries = {
     "discover.title": "Discover",
     "discover.tabScripture": "Scripture",
     "discover.tabGatherings": "Gatherings",
+    "discover.tabPrayer": "Prayer",
+    "discover.subtitlePrayer":
+      "An open wall. Ask anyone using Communion to pray for you, and pray for them.",
     "discover.subtitleScripture":
       "A verse for today, passages for whatever you're carrying, and a plan to keep you in the Word.",
     "discover.subtitle":
@@ -656,6 +665,12 @@ const dictionaries = {
     "messages.sharedNote": "Nota compartida",
     "messages.sharedWord": "Estudio de palabra",
     "prayers.title": "Lista de oración",
+    "prayers.wall": "Muro de oración",
+    "prayers.publicNote":
+      "Cualquiera que use Communion puede leer este muro y escribir en él — creyentes que no conoces verán lo que escribas aquí.",
+    "prayers.wallEmpty":
+      "El muro está abierto y vacío. Pide, y quien lo esté leyendo orará por ti.",
+    "prayers.wallLeft": "{n} peticiones más esta hora.",
     "prayers.add": "Pedir oración",
     "prayers.privacy":
       "Solo los miembros de esta Comunidad pueden ver la lista de oración — los visitantes no, aunque la Comunidad sea pública.",
@@ -748,6 +763,9 @@ const dictionaries = {
     "discover.title": "Descubre",
     "discover.tabScripture": "Escritura",
     "discover.tabGatherings": "Comunidades",
+    "discover.tabPrayer": "Oración",
+    "discover.subtitlePrayer":
+      "Un muro abierto. Pide oración a cualquiera que use Communion, y ora por ellos.",
     "discover.subtitleScripture":
       "Un versículo para hoy, pasajes para lo que llevas dentro y un plan para permanecer en la Palabra.",
     "discover.subtitle":

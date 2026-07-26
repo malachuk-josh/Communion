@@ -18,6 +18,7 @@ import { getBook, type Verse } from "@/lib/bible";
 import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
 import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
+import PrayerList from "@/components/PrayerList";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import StartGathering from "@/components/StartGathering";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
@@ -34,7 +35,9 @@ function refLabel(ref: VerseRef, lang: Lang): string {
 
 export default function Discover() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"scripture" | "gatherings">("scripture");
+  const [tab, setTab] = useState<"scripture" | "gatherings" | "prayer">(
+    "scripture"
+  );
   const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
   const [gatherings, setGatherings] = useState<Gathering[]>([]);
 
@@ -66,14 +69,26 @@ export default function Discover() {
         >
           <Icon name="church" /> {t("discover.tabGatherings")}
         </button>
+        <button
+          className={tab === "prayer" ? "active" : ""}
+          onClick={() => setTab("prayer")}
+          aria-pressed={tab === "prayer"}
+        >
+          <Icon name="prayer" /> {t("discover.tabPrayer")}
+        </button>
       </div>
       <p className="subtitle">
         {tab === "scripture"
           ? t("discover.subtitleScripture")
-          : t("discover.subtitle")}
+          : tab === "prayer"
+            ? t("discover.subtitlePrayer")
+            : t("discover.subtitle")}
       </p>
 
-      {tab === "scripture" ? (
+      {tab === "prayer" ? (
+        // no churchId: the open wall rather than a Gathering's list
+        <PrayerList />
+      ) : tab === "scripture" ? (
         <>
           <VerseOfDay />
           <TopicsSection />

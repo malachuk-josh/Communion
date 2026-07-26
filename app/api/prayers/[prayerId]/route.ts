@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
+import { isOwner } from "@/lib/admin";
 import { getRole } from "@/lib/churches";
 import {
   answerPrayer,
@@ -9,13 +10,20 @@ import {
   togglePrayed,
 } from "@/lib/prayers";
 
-/** The Gathering a request belongs to, and this user's standing in it. */
+/**
+ * The Gathering a request belongs to, and this user's standing in it.
+ *
+ * A wall post belongs to no Gathering — its churchId is empty — so there is
+ * no membership to check and anyone may pray for it. Moderating it falls to
+ * the app's owner, since an open room has no founder.
+ */
 async function standing(req: Request, prayerId: string) {
   const userId = await getUserId(req);
   if (!userId) return { error: "Unauthorized" as const, status: 401 };
   const raw = await db().hgetall(keys.prayer(prayerId));
   if (!raw?.text) return { error: "Not found" as const, status: 404 };
   const churchId = raw.churchId ?? "";
+  if (!churchId) return { userId, churchId, isAdmin: isOwner(userId) };
   const role = await getRole(churchId, userId);
   if (!role) return { error: "Not a member" as const, status: 403 };
   return { userId, churchId, isAdmin: role === "founder" };

@@ -1,8 +1,13 @@
 "use client";
 
-// The prayer list inside a Gathering. Requests that are still being carried
-// sit at the top; answered ones fall to the bottom and stay, because a list
-// of answered prayer is worth as much as the list of open ones.
+// A prayer list. Requests that are still being carried sit at the top;
+// answered ones fall to the bottom and stay, because a list of answered
+// prayer is worth as much as the list of open ones.
+//
+// Two of them, from one component. With a churchId it is a Gathering's list,
+// members only. Without one it is the open wall in Discover, which anyone
+// including a guest may read and post to. Only where the records live and who
+// may moderate them differ; a prayer request behaves the same either way.
 
 import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
@@ -22,7 +27,11 @@ interface PrayerRequest {
   answer?: string;
 }
 
-export default function PrayerList({ churchId }: { churchId: string }) {
+export default function PrayerList({ churchId }: { churchId?: string }) {
+  const wall = !churchId;
+  const listPath = wall
+    ? "/api/prayers/public"
+    : `/api/churches/${churchId}/prayers`;
   const { lang, t } = useI18n();
   const [prayers, setPrayers] = useState<PrayerRequest[] | null>(null);
   const [myUserId, setMyUserId] = useState("");
@@ -35,18 +44,24 @@ export default function PrayerList({ churchId }: { churchId: string }) {
   /** the request whose answer is being written */
   const [answering, setAnswering] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
+  /** how many more the wall will take from this person this hour */
+  const [left, setLeft] = useState<number | null>(null);
 
   const load = useCallback(() => {
-    api<{ prayers: PrayerRequest[]; myUserId: string; myRole: string }>(
-      `/api/churches/${churchId}/prayers`
-    )
+    api<{
+      prayers: PrayerRequest[];
+      myUserId: string;
+      myRole: string;
+      left?: number;
+    }>(listPath)
       .then((res) => {
         setPrayers(res.prayers);
         setMyUserId(res.myUserId);
         setMyRole(res.myRole);
+        setLeft(res.left ?? null);
       })
       .catch(() => setPrayers([]));
-  }, [churchId]);
+  }, [listPath]);
 
   useEffect(load, [load]);
 
@@ -56,11 +71,12 @@ export default function PrayerList({ churchId }: { churchId: string }) {
     setBusy(true);
     setError("");
     try {
-      const res = await api<{ prayer: PrayerRequest }>(
-        `/api/churches/${churchId}/prayers`,
-        { method: "POST", body: { text: body, anonymous } }
-      );
+      const res = await api<{ prayer: PrayerRequest }>(listPath, {
+        method: "POST",
+        body: { text: body, anonymous },
+      });
       setPrayers((prev) => [res.prayer, ...(prev ?? [])]);
+      setLeft((n) => (n === null ? n : Math.max(0, n - 1)));
       setText("");
       setAnonymous(false);
       setOpen(false);
@@ -250,7 +266,7 @@ export default function PrayerList({ churchId }: { churchId: string }) {
     <>
       <div className="section-head">
         <h2>
-          <Icon name="prayer" /> {t("prayers.title")}
+          <Icon name="prayer" /> {wall ? t("prayers.wall") : t("prayers.title")}
           {openRequests.length > 0 && ` (${openRequests.length})`}
         </h2>
         <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
@@ -259,7 +275,8 @@ export default function PrayerList({ churchId }: { churchId: string }) {
       </div>
 
       <p className="pr-privacy cal-hint">
-        <Icon name="lock" /> {t("prayers.privacy")}
+        <Icon name={wall ? "globe" : "lock"} />{" "}
+        {wall ? t("prayers.publicNote") : t("prayers.privacy")}
       </p>
 
       {open && (
@@ -281,6 +298,11 @@ export default function PrayerList({ churchId }: { churchId: string }) {
             {t("prayers.anonymously")}
           </label>
           {error && <p className="error-text">{error}</p>}
+          {wall && left !== null && left <= 2 && (
+            <p className="cal-hint">
+              {t("prayers.wallLeft", { n: String(left) })}
+            </p>
+          )}
           <div className="pr-actions">
             <button
               type="button"
@@ -304,7 +326,9 @@ export default function PrayerList({ churchId }: { churchId: string }) {
       {prayers === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : prayers.length === 0 ? (
-        <div className="glass card empty">{t("prayers.empty")}</div>
+        <div className="glass card empty">
+          {wall ? t("prayers.wallEmpty") : t("prayers.empty")}
+        </div>
       ) : (
         <>
           {openRequests.map(card)}

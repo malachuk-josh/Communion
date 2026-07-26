@@ -204,6 +204,10 @@ export const keys = {
   planUsers: "plans:users",
   churchThreads: (churchId: string) => `church:${churchId}:threads`,
   churchPrayers: (churchId: string) => `church:${churchId}:prayers`,
+  /** the open wall, which belongs to no Gathering */
+  publicPrayers: "prayers:public",
+  /** how many a person has posted to it lately, so a wall cannot be flooded */
+  prayerRate: (userId: string) => `user:${userId}:prayerRate`,
   prayer: (prayerId: string) => `prayer:${prayerId}`,
   prayerPrayed: (prayerId: string) => `prayer:${prayerId}:prayed`,
   thread: (threadId: string) => `thread:${threadId}`,
