@@ -5,7 +5,7 @@
 // and opening a chapter unfolds its verses under it — so finding a passage
 // feels like turning to it rather than picking from three dropdowns.
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BOOKS } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
 import { fetchBook } from "@/lib/scripture";
@@ -101,7 +101,7 @@ export default function BookNav({
   const verseGrid = (book: number, c: number) => {
     const n = counts[book]?.[c];
     return (
-      <div className="bn-verses">
+      <div className="bn-verses" aria-label={`${t("reader.chapter")} ${c}`}>
         {n ? (
           Array.from({ length: n }, (_, i) => i + 1).map((v) => (
             <button
@@ -158,16 +158,19 @@ export default function BookNav({
                 </span>
               </button>
               {open && (
-                <div className="bn-chapters">
-                  {Array.from({ length: book.chapters }, (_, i) => i + 1).map(
-                    (c) => {
-                      const chapterOpen = openChapter === c;
-                      return (
-                        // a fragment, so the button and the verse row stay
-                        // siblings in the same grid — the verses take a full
-                        // row of their own directly under the chapter tapped
-                        <Fragment key={c}>
+                <>
+                  {/* The verses are NOT inside this grid. Put them there and
+                      the full-width row splits it: the tapped chapter's row
+                      is left half empty and every chapter after it restarts
+                      below. The chapter grid keeps its own shape, and the
+                      verses hang under the whole of it. */}
+                  <div className="bn-chapters">
+                    {Array.from({ length: book.chapters }, (_, i) => i + 1).map(
+                      (c) => {
+                        const chapterOpen = openChapter === c;
+                        return (
                           <button
+                            key={c}
                             type="button"
                             className={`bn-ch${
                               here && c === chapter ? " current" : ""
@@ -180,12 +183,12 @@ export default function BookNav({
                           >
                             {c}
                           </button>
-                          {chapterOpen && verseGrid(book.nr, c)}
-                        </Fragment>
-                      );
-                    }
-                  )}
-                </div>
+                        );
+                      }
+                    )}
+                  </div>
+                  {openChapter !== null && verseGrid(book.nr, openChapter)}
+                </>
               )}
             </div>
           );
