@@ -3527,6 +3527,82 @@ button.menu-tile {
   margin-left: auto;
 }
 
+/* edit and share sit together at the end of a row */
+.jr-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* an open editor takes the whole row; nothing else competes with it */
+.jr-editing .jr-go {
+  gap: 8px;
+}
+
+.jr-edit-field,
+.jr-edit-text {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+
+.jr-edit-text {
+  font-family: var(--sans);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 5.5em;
+}
+
+.jr-edit-field:focus,
+.jr-edit-text:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.jr-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* removing something reads as an ordinary button until you look at it */
+.jr-danger {
+  color: #c2554a;
+}
+
+.jr-danger:hover {
+  border-color: #c2554a;
+}
+
+:root[data-theme="grey"] .jr-danger {
+  color: var(--ink-dim);
+  text-decoration: underline;
+}
+
+/* renaming a collection takes over its heading row */
+.jr-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.jr-rename .jr-edit-field {
+  flex: 1 1 12ch;
+  min-width: 0;
+  font-family: var(--sans);
+}
+
 /* the verse itself, which is the thing that was kept */
 .jr-verse {
   margin: 0;

@@ -22,7 +22,9 @@ import { readOutbox } from "@/lib/localStore";
 import { fetchVerses, verseKey } from "@/lib/scripture";
 import {
   adoptIdentity,
+  enqueue,
   flush,
+  readLocalNotes,
   readLocalNotesAll,
   readLocalState,
   startSync,
@@ -77,6 +79,11 @@ export default function Journal() {
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
   const [copied, setCopied] = useState<string | null>(null);
+  /** the one row open for editing, if any */
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  /** the collection a bookmark is being moved to, while it is being edited */
+  const [draftColl, setDraftColl] = useState("");
 
   // ---- bookmarks, collections and plan progress ---------------------------
   // The same order the reader and Discover use: the device's copy on screen
@@ -267,6 +274,110 @@ export default function Journal() {
     }
   };
 
+  // ---- editing ------------------------------------------------------------
+  // The same writes the reader makes, in the same order: the device's copy
+  // first so the screen never waits, then the outbox. Nothing here talks to
+  // the server directly, so every one of these works with no signal.
+
+  const openEdit = (id: string, text: string, coll = "") => {
+    setEditing(id);
+    setDraft(text);
+    setDraftColl(coll);
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setDraft("");
+    setDraftColl("");
+  };
+
+  /** Rewrite a note, or delete it — an empty one is a deleted one. */
+  const saveNote = (row: NoteRow, text: string) => {
+    const trimmed = text.trim();
+    setNotes((prev) => {
+      const rest = prev.filter(
+        (n) => !(n.b === row.b && n.c === row.c && n.v === row.v)
+      );
+      return trimmed ? [...rest, { ...row, text: trimmed }].sort(byRef) : rest;
+    });
+    const ref = `${row.c}:${row.v}`;
+    // the reader keeps one record per book; read-modify-write that book alone
+    void readLocalNotes(row.b).then((book) => {
+      const next = { ...(book ?? {}) };
+      if (trimmed) next[ref] = trimmed;
+      else delete next[ref];
+      return writeLocalNotes(row.b, next);
+    });
+    void enqueue({
+      kind: "note.set",
+      book: row.b,
+      ref,
+      text: trimmed,
+      ts: Date.now(),
+    });
+    closeEdit();
+  };
+
+  /** Rename a kept verse, or move it to another collection. */
+  const saveBookmark = (key: string, label: string, coll: string) => {
+    const entry: BmEntry = { ...bookmarks[key] };
+    if (label.trim()) entry.l = label.trim().slice(0, 80);
+    else delete entry.l;
+    if (coll) entry.c = coll;
+    else delete entry.c;
+    const next = { ...bookmarks, [key]: entry };
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next });
+    void enqueue({
+      kind: "bookmark.set",
+      key,
+      t: entry.t,
+      l: entry.l,
+      c: entry.c,
+      ts: Date.now(),
+    });
+    closeEdit();
+  };
+
+  const removeBookmark = (key: string, ref: string) => {
+    if (!window.confirm(t("reader.removeBookmarkConfirm", { ref }))) return;
+    const next = { ...bookmarks };
+    delete next[key];
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next });
+    void enqueue({ kind: "bookmark.del", key, ts: Date.now() });
+    closeEdit();
+  };
+
+  const renameCollection = (id: string, name: string) => {
+    const trimmed = name.trim().slice(0, 80);
+    if (!trimmed) return;
+    const next = {
+      ...collections,
+      [id]: { ...collections[id], name: trimmed },
+    };
+    setCollections(next);
+    void writeLocalState({ collections: next });
+    void enqueue({ kind: "collection.set", id, name: trimmed, ts: Date.now() });
+    closeEdit();
+  };
+
+  /** The collection goes; the verses in it stay, unsorted — as in the reader. */
+  const deleteCollection = (id: string) => {
+    if (!window.confirm(t("reader.deleteCollectionConfirm"))) return;
+    const nextColls = { ...collections };
+    delete nextColls[id];
+    const nextMarks: Record<string, BmEntry> = {};
+    for (const [key, entry] of Object.entries(bookmarks)) {
+      nextMarks[key] = entry.c === id ? { ...entry, c: undefined } : entry;
+    }
+    setCollections(nextColls);
+    setBookmarks(nextMarks);
+    void writeLocalState({ bookmarks: nextMarks, collections: nextColls });
+    void enqueue({ kind: "collection.del", id, ts: Date.now() });
+    closeEdit();
+  };
+
   const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
 
   /** One entry: the reference, the verse, and whatever you wrote on it. */
@@ -381,11 +492,52 @@ export default function Journal() {
               <div className="jr-list">
                 {group.rows.map((row) => {
                   const id = `n-${row.b}-${row.c}-${row.v}`;
+                  if (editing === id) {
+                    return (
+                      <div key={id} className="glass card jr-row jr-editing">
+                        <div className="jr-go">
+                          <span className="jr-ref">{refLabel(row, lang)}</span>
+                          <textarea
+                            className="jr-edit-text"
+                            value={draft}
+                            autoFocus
+                            rows={4}
+                            maxLength={1000}
+                            placeholder={t("reader.notePlaceholder")}
+                            onChange={(e) => setDraft(e.target.value)}
+                          />
+                          <div className="jr-edit-actions">
+                            <button
+                              type="button"
+                              className="rsvp-btn"
+                              onClick={closeEdit}
+                            >
+                              {t("session.cancel")}
+                            </button>
+                            <button
+                              type="button"
+                              className="rsvp-btn jr-danger"
+                              onClick={() => saveNote(row, "")}
+                            >
+                              {t("threads.delete")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-primary"
+                              onClick={() => saveNote(row, draft)}
+                            >
+                              {t("common.save")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div key={id} className="glass card jr-row">
-                      {/* the link cannot wrap the share button: one
-                          interactive element inside another is invalid, and
-                          a tap on the button would follow the link too */}
+                      {/* the link cannot wrap the buttons: one interactive
+                          element inside another is invalid, and a tap on a
+                          button would follow the link too */}
                       <Link
                         href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
                         className="jr-go"
@@ -393,12 +545,18 @@ export default function Journal() {
                         <span className="jr-ref">{refLabel(row, lang)}</span>
                         <p className="jr-note">{row.text}</p>
                       </Link>
-                      <ShareButton
-                        copied={copied === id}
-                        label={t("discover.share")}
-                        done={t("reader.copied")}
-                        onClick={() => share(id, entryText(row, row.text))}
-                      />
+                      <span className="jr-actions">
+                        <EditButton
+                          label={t("journal.edit")}
+                          onClick={() => openEdit(id, row.text)}
+                        />
+                        <ShareButton
+                          copied={copied === id}
+                          label={t("discover.share")}
+                          done={t("reader.copied")}
+                          onClick={() => share(id, entryText(row, row.text))}
+                        />
+                      </span>
                     </div>
                   );
                 })}
@@ -419,8 +577,54 @@ export default function Journal() {
             <section key={group.id || "unfiled"} className="jr-group">
               <h2 className="jr-group-head">
                 <Icon name={group.id ? "collection" : "bookmark"} />
-                {group.name}
-                <span className="jr-group-count">{group.rows.length}</span>
+                {editing === `g-edit-${group.id}` ? (
+                  <span className="jr-rename">
+                    <input
+                      className="jr-edit-field"
+                      value={draft}
+                      autoFocus
+                      maxLength={80}
+                      aria-label={t("journal.rename")}
+                      onChange={(e) => setDraft(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="rsvp-btn"
+                      onClick={closeEdit}
+                    >
+                      {t("session.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      className="rsvp-btn jr-danger"
+                      onClick={() => deleteCollection(group.id)}
+                    >
+                      {t("reader.deleteCollection")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      onClick={() => renameCollection(group.id, draft)}
+                    >
+                      {t("common.save")}
+                    </button>
+                  </span>
+                ) : (
+                  <>
+                    {group.name}
+                    <span className="jr-group-count">{group.rows.length}</span>
+                    {/* only a real collection can be renamed — Unfiled is
+                        where a verse sits when it belongs to none */}
+                    {group.id && (
+                      <EditButton
+                        label={t("journal.rename")}
+                        onClick={() =>
+                          openEdit(`g-edit-${group.id}`, group.name)
+                        }
+                      />
+                    )}
+                  </>
+                )}
                 <ShareButton
                   copied={copied === `g-${group.id}`}
                   label={t("journal.shareGroup", { name: group.name })}
@@ -445,13 +649,73 @@ export default function Journal() {
               <div className="jr-list">
                 {group.rows.map((row) => {
                   const scripture = verses[verseKey(row.b, row.c, row.v)];
+                  const ref = refLabel(row, lang);
+                  if (editing === row.key) {
+                    return (
+                      <div
+                        key={row.key}
+                        className="glass card jr-row jr-editing"
+                      >
+                        <div className="jr-go">
+                          <span className="jr-ref">{ref}</span>
+                          {scripture && <p className="jr-verse">{scripture}</p>}
+                          <input
+                            className="jr-edit-field"
+                            value={draft}
+                            autoFocus
+                            maxLength={80}
+                            placeholder={t("reader.labelPlaceholder")}
+                            onChange={(e) => setDraft(e.target.value)}
+                          />
+                          <select
+                            className="jr-edit-field"
+                            value={draftColl}
+                            aria-label={t("reader.addToCollection")}
+                            onChange={(e) => setDraftColl(e.target.value)}
+                          >
+                            <option value="">{t("reader.unsorted")}</option>
+                            {Object.entries(collections).map(([id, coll]) => (
+                              <option key={id} value={id}>
+                                {coll.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="jr-edit-actions">
+                            <button
+                              type="button"
+                              className="rsvp-btn"
+                              onClick={closeEdit}
+                            >
+                              {t("session.cancel")}
+                            </button>
+                            <button
+                              type="button"
+                              className="rsvp-btn jr-danger"
+                              onClick={() => removeBookmark(row.key, ref)}
+                            >
+                              {t("reader.removeBookmark")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-primary"
+                              onClick={() =>
+                                saveBookmark(row.key, draft, draftColl)
+                              }
+                            >
+                              {t("common.save")}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div key={row.key} className="glass card jr-row">
                       <Link
                         href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
                         className="jr-go"
                       >
-                        <span className="jr-ref">{refLabel(row, lang)}</span>
+                        <span className="jr-ref">{ref}</span>
                         {scripture ? (
                           <p className="jr-verse">{scripture}</p>
                         ) : (
@@ -461,14 +725,22 @@ export default function Journal() {
                           <p className="jr-note jr-label">{row.entry.l}</p>
                         )}
                       </Link>
-                      <ShareButton
-                        copied={copied === row.key}
-                        label={t("discover.share")}
-                        done={t("reader.copied")}
-                        onClick={() =>
-                          share(row.key, entryText(row, row.entry.l))
-                        }
-                      />
+                      <span className="jr-actions">
+                        <EditButton
+                          label={t("reader.editLabel")}
+                          onClick={() =>
+                            openEdit(row.key, row.entry.l ?? "", row.entry.c ?? "")
+                          }
+                        />
+                        <ShareButton
+                          copied={copied === row.key}
+                          label={t("discover.share")}
+                          done={t("reader.copied")}
+                          onClick={() =>
+                            share(row.key, entryText(row, row.entry.l))
+                          }
+                        />
+                      </span>
                     </div>
                   );
                 })}
@@ -572,6 +844,21 @@ function PlanRow({
   );
 }
 
+/** A pencil, sized and coloured like the share button beside it. */
+function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="jr-share jr-edit-btn"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <Icon name="note" />
+    </button>
+  );
+}
+
 /** A quiet share affordance that says so when it has fallen back to a copy. */
 function ShareButton({
   copied,
@@ -587,7 +874,7 @@ function ShareButton({
   return (
     <button
       type="button"
-      className={`jr-share${copied ? " done" : ""}`}
+      className={`jr-share jr-share-btn${copied ? " done" : ""}`}
       onClick={onClick}
       aria-label={label}
       title={label}
