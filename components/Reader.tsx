@@ -1592,10 +1592,15 @@ export default function Reader({
                               : ""
                           }`}
                           onClick={() => toggleBookmark(ch, v.verse)}
+                          aria-pressed={!!bookmarks[`${bookNr}:${ch}:${v.verse}`]}
                           aria-label={t("reader.bookmarkToggle")}
                           title={t("reader.bookmarkToggle")}
                         >
-                          <Icon name="bookmark" /> {t("reader.bookmark")}
+                          <Icon
+                            name="bookmark"
+                            filled={!!bookmarks[`${bookNr}:${ch}:${v.verse}`]}
+                          />{" "}
+                          {t("reader.bookmark")}
                         </button>
                         <button
                           type="button"
@@ -1634,6 +1639,16 @@ export default function Reader({
                               onClick={() => setEditingNote(null)}
                             >
                               {t("session.cancel")}
+                            </button>
+                            {/* empties the box without closing it, and
+                                saving an empty box deletes the note */}
+                            <button
+                              type="button"
+                              className="rsvp-btn"
+                              onClick={() => setNoteDraft("")}
+                              disabled={noteDraft.length === 0}
+                            >
+                              {t("reader.clearNote")}
                             </button>
                             <button
                               type="button"

@@ -260,10 +260,13 @@ export default function Icon({
   name,
   className,
   title,
+  filled,
 }: {
   name: IconName;
   className?: string;
   title?: string;
+  /** Fill the shape rather than outline it — a bookmark that is set, say. */
+  filled?: boolean;
 }) {
   const paths = PATHS[name];
   return (
@@ -281,7 +284,11 @@ export default function Icon({
     >
       {title && <title>{title}</title>}
       {paths.map((d, i) => (
-        <path key={i} d={d} fill={FILLED.has(name) ? "currentColor" : "none"} />
+        <path
+          key={i}
+          d={d}
+          fill={filled || FILLED.has(name) ? "currentColor" : "none"}
+        />
       ))}
     </svg>
   );
