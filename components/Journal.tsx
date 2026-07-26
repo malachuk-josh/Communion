@@ -379,20 +379,82 @@ export default function Journal() {
   };
 
   const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
+  /** With a link of its own in the message, the signature need not repeat one. */
+  const SIGNED = "— Communion";
+
+  /**
+   * A link that offers whoever receives it the same verse you kept, and the
+   * choice to keep it too. The address is the whole payload — nothing is
+   * published to say "Psalm 23:1" — so building it costs no round trip, and
+   * the share sheet opens on the same tap that asked for it.
+   */
+  const verseLink = (
+    row: { b: number; c: number; v: number },
+    label?: string
+  ) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const query = new URLSearchParams({
+      b: String(row.b),
+      c: String(row.c),
+      v: String(row.v),
+    });
+    if (label) query.set("l", label);
+    return `${origin}/shared/verse?${query}`;
+  };
 
   /** One entry: the reference, the verse, and whatever you wrote on it. */
   const entryText = (
     row: { b: number; c: number; v: number },
-    said?: string
+    said?: string,
+    link?: string
   ) => {
     const scripture = verses[verseKey(row.b, row.c, row.v)];
     return [
       `${refLabel(row, lang)}${scripture ? ` — ${scripture}` : ""}`,
       said ? `\n${said}` : "",
-      `\n${SIGNATURE}`,
+      link ? `\n\n${link}` : "",
+      `\n${link ? SIGNED : SIGNATURE}`,
     ]
       .filter(Boolean)
       .join("");
+  };
+
+  /**
+   * Share a whole shelf. A collection is too much to spell out in a link, so
+   * it is published as a snapshot and sent as a token — once. The token comes
+   * back on the collection and is reused from then on, which keeps every
+   * later share instant and re-shares the same address rather than a new one.
+   *
+   * Unfiled is not a collection and has nothing to publish; it goes as text.
+   */
+  const shareGroup = async (
+    group: { id: string; name: string },
+    body: string
+  ) => {
+    const id = `g-${group.id}`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const known = group.id ? collections[group.id]?.share : "";
+    if (known) {
+      return share(id, `${body}\n\n${origin}/shared/${known}\n${SIGNED}`);
+    }
+    if (!group.id) return share(id, `${body}\n${SIGNATURE}`);
+    try {
+      const res = await api<{ url: string }>(
+        `/api/collections/${group.id}/share`,
+        { method: "POST" }
+      );
+      const token = res.url.split("/").pop();
+      const next = {
+        ...collections,
+        [group.id]: { ...collections[group.id], share: token },
+      };
+      setCollections(next);
+      void writeLocalState({ collections: next });
+      return share(id, `${body}\n\n${res.url}\n${SIGNED}`);
+    } catch {
+      // offline, or signed out: the verses themselves still send
+      return share(id, `${body}\n${SIGNATURE}`);
+    }
   };
 
   // ---- shaping ------------------------------------------------------------
@@ -554,7 +616,12 @@ export default function Journal() {
                           copied={copied === id}
                           label={t("discover.share")}
                           done={t("reader.copied")}
-                          onClick={() => share(id, entryText(row, row.text))}
+                          onClick={() =>
+                            // the note is your own writing and travels as
+                            // text; the verse it sits on is what the reader
+                            // on the other end can keep
+                            share(id, entryText(row, row.text, verseLink(row)))
+                          }
                         />
                       </span>
                     </div>
@@ -630,8 +697,8 @@ export default function Journal() {
                   label={t("journal.shareGroup", { name: group.name })}
                   done={t("reader.copied")}
                   onClick={() =>
-                    share(
-                      `g-${group.id}`,
+                    shareGroup(
+                      group,
                       [
                         group.name,
                         "",
@@ -639,8 +706,6 @@ export default function Journal() {
                           const text = verses[verseKey(r.b, r.c, r.v)];
                           return `${refLabel(r, lang)}${text ? ` — ${text}` : ""}`;
                         }),
-                        "",
-                        SIGNATURE,
                       ].join("\n")
                     )
                   }
@@ -737,7 +802,15 @@ export default function Journal() {
                           label={t("discover.share")}
                           done={t("reader.copied")}
                           onClick={() =>
-                            share(row.key, entryText(row, row.entry.l))
+                            share(
+                              row.key,
+                              entryText(
+                                row,
+                                row.entry.l,
+                                // the name you kept it under travels with it
+                                verseLink(row, row.entry.l)
+                              )
+                            )
                           }
                         />
                       </span>

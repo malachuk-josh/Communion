@@ -2445,8 +2445,60 @@ button.menu-tile {
 }
 
 .shared-verse {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 12px;
+}
+
+.shared-go {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Keeping a verse and reading it are the same size of decision here, so the
+   keep affordance sits beside the verse rather than under it. */
+.shared-save {
+  flex: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--ink-dim);
+  line-height: 0;
+}
+
+.shared-save:hover:not(:disabled) {
+  color: var(--gold);
+}
+
+.shared-save.done {
+  color: var(--gold);
+  cursor: default;
+}
+
+.shared-save:disabled {
+  opacity: 0.75;
+}
+
+.shared-keep {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.shared-keep-copy {
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+
+.shared-landed {
+  font-size: 0.84rem;
+  color: var(--ink-dim);
 }
 
 .shared-verse .ref {

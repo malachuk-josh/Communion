@@ -1326,7 +1326,17 @@ export default function Reader({
       chDataOf(ch)?.verses.find((v) => v.verse === verse)?.text?.trim() ?? "";
     const ref = `${bookName} ${ch}:${verse}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const payload = `${ref} — ${text}\n${origin}/?b=${bookNr}&c=${ch}&v=${verse}`;
+    // not a deep link into the reader but the shared-verse page, which offers
+    // whoever opens it the same verse and the choice to keep it. The address
+    // carries everything, so no request stands between the tap and the sheet.
+    const query = new URLSearchParams({
+      b: String(bookNr),
+      c: String(ch),
+      v: String(verse),
+    });
+    const label = bookmarks[`${bookNr}:${ch}:${verse}`]?.l;
+    if (label) query.set("l", label);
+    const payload = `${ref} — ${text}\n${origin}/shared/verse?${query}`;
     if (navigator.share) {
       try {
         await navigator.share({ text: payload });
