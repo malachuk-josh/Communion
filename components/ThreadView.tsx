@@ -117,7 +117,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
   }
 
   return (
-    <div>
+    <div className="thread-page">
       <Link href={`/churches/${meta.churchId}`} className="passage-link back-link">
         ← {t("threads.backToFellowship")}
       </Link>
@@ -147,6 +147,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
         {t("threads.startedBy", { name: meta.createdByName })}
       </p>
 
+      <div className="thread-posts">
       {posts.map((p) => (
         <div key={p.id} className="glass card post-row">
           <div className="post-head">
@@ -197,6 +198,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
         </div>
       ))}
       <div ref={bottomRef} />
+      </div>
 
       {attach && (
         <div className="glass card attach-chip-row">

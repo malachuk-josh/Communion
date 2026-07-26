@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { ReadingProvider } from "@/lib/reading";
 import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
+import ViewportInsets from "@/lib/viewport";
 import PushPrompt from "@/components/PushPrompt";
 import OfflineReady from "@/components/OfflineReady";
 import "./globals.css";
@@ -64,6 +65,7 @@ export default function RootLayout({
         />
         <LanguageProvider>
           <ReadingProvider>
+            <ViewportInsets />
             <div className="bg-scene" aria-hidden />
             <PullToRefresh />
             <Nav />

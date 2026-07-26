@@ -224,7 +224,6 @@ export default function Reader({
   const [searching, setSearching] = useState(false);
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [kbInset, setKbInset] = useState(0);
 
   // keep the sticky header's passage indicator in sync with the chapter
   // actually on screen, which trails continuous scrolling
@@ -240,10 +239,7 @@ export default function Reader({
   // the control sheet, the word study and the bookmark sheet all sit at the
   // bottom of the screen: only one of them may be up at a time
   useEffect(() => {
-    if (!panelOpen) {
-      setKbInset(0);
-      return;
-    }
+    if (!panelOpen) return;
     setWordSel(null);
     setBmSheet(null);
     setContextOpen(null);
@@ -253,23 +249,9 @@ export default function Reader({
       if (e.key === "Escape") setPanelOpen(false);
     };
     window.addEventListener("keydown", onKey);
-    // a software keyboard shrinks the visual viewport but leaves fixed
-    // elements pinned to the layout viewport — lift the sheet clear of it
-    const vv = window.visualViewport;
-    const onViewport = () => {
-      if (!vv) return;
-      setKbInset(
-        Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))
-      );
-    };
-    onViewport();
-    vv?.addEventListener("resize", onViewport);
-    vv?.addEventListener("scroll", onViewport);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      vv?.removeEventListener("resize", onViewport);
-      vv?.removeEventListener("scroll", onViewport);
-    };
+    // the keyboard is measured once for the whole app, in lib/viewport.tsx,
+    // and the panel clears it from CSS
+    return () => window.removeEventListener("keydown", onKey);
   }, [panelOpen, setPanelOpen]);
 
   // bookmarks sync across devices per user (guests: per browser)
@@ -2429,7 +2411,7 @@ export default function Reader({
               </div>
             </div>
 
-            <div className="sp-body" style={kbInset ? { paddingBottom: kbInset } : undefined}>
+            <div className="sp-body">
               <BookNav
                 bookNr={bookNr}
                 chapter={viewChapter}

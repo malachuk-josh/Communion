@@ -14,6 +14,11 @@
   --radius: 20px;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Published by ViewportInsets (lib/viewport.tsx) once it has measured the
+     software keyboard. These fallbacks reproduce the layout without one. */
+  --kb: 0px;
+  --vv-top: 0px;
+  --vvh: 100dvh;
 }
 
 * {
@@ -1056,7 +1061,7 @@ mark {
 .side-panel {
   position: fixed;
   top: 0;
-  bottom: 0;
+  bottom: var(--kb, 0px);
   left: 0;
   z-index: 70;
   width: min(88vw, 390px);
@@ -1972,6 +1977,20 @@ button.menu-tile {
   min-height: calc(100dvh - 210px);
 }
 
+/* The reply box is sticky, and sticky can only move inside its own parent.
+   On a topic with one short reply that parent is barely taller than the box
+   itself, so there is nothing to lift into and the keyboard covers it. This
+   gives it the same floor to push against that a message thread has. */
+.thread-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 210px);
+}
+
+.thread-page .thread-posts {
+  flex: 1;
+}
+
 .thread-head {
   display: flex;
   align-items: center;
@@ -2060,7 +2079,14 @@ button.menu-tile {
 
 .composer {
   position: sticky;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  /* 64px clears the bottom nav; with a keyboard up the nav is behind it
+     anyway, so clear the keyboard instead. max(), never a sum: iOS does not
+     zero the safe-area inset when the keyboard opens, and adding the two
+     leaves a 34px dead strip. */
+  bottom: max(
+    calc(64px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--kb, 0px) + 8px)
+  );
   display: flex;
   gap: 8px;
   padding: 8px;
@@ -2355,7 +2381,13 @@ button.menu-tile {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--kb, 0px);
+  /* the sheet never had a cap: a long word study already ran off the top of
+     the screen unreachably. Clamping it to the visible band fixes that and
+     the keyboard case at once. */
+  max-height: calc(var(--vvh, 100dvh) - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 70;
   border-radius: 20px 20px 0 0;
   border-bottom: none;
@@ -2407,7 +2439,7 @@ button.menu-tile {
 }
 
 .lex-body {
-  max-height: 46vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.46);
   overflow-y: auto;
   display: grid;
   gap: 12px;
@@ -2969,12 +3001,18 @@ button.menu-tile {
   align-items: flex-end;
   justify-content: center;
   padding: 16px;
+  padding-top: calc(16px + var(--vv-top, 0px));
+  /* max(), never a sum — see .composer */
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px), var(--kb, 0px));
 }
 
 .modal {
   width: 100%;
   max-width: 560px;
-  max-height: 88dvh;
+  /* 100% is the overlay's content box, i.e. the visible band less its
+     gutters, so it tracks the padding above with no arithmetic to keep in
+     step. 88dvh preserves today's proportions when no keyboard is up. */
+  max-height: min(100%, 88dvh);
   overflow-y: auto;
   padding: 24px;
   animation: rise 0.22s ease-out;
@@ -3161,4 +3199,15 @@ button.menu-tile {
 .icon-cell code {
   font-size: 0.62rem;
   color: var(--ink-faint);
+}
+
+/* scrollIntoView({block:"nearest"}) stops the moment a field fits, which
+   leaves whatever sits under it — usually its Save button — off the bottom
+   of the screen. The trailing margin drags that up with it. */
+.modal input,
+.modal textarea,
+.modal select,
+.lex-sheet input,
+.sp-body input {
+  scroll-margin-block: 16px 24px;
 }
