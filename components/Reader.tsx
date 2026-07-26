@@ -149,6 +149,8 @@ export default function Reader({
   const [pt, setPt] = useState(PT_DEFAULT);
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
+  /** The verse held still for the length of a pinch — see the handler. */
+  const pinchAnchor = useRef<{ sel: string; top: number } | null>(null);
   const [pinchShow, setPinchShow] = useState<number | null>(null);
   /** the navigator's search field, folded away behind an icon until asked for */
   const [searchOpen, setSearchOpen] = useState(false);
@@ -414,6 +416,28 @@ export default function Reader({
     }
   };
 
+  /** The verse crossing a given height — where the fingers are, in a pinch. */
+  const verseAt = (y: number): { sel: string; top: number } | null => {
+    let best: { sel: string; top: number } | null = null;
+    for (const el of document.querySelectorAll<HTMLElement>("[data-v]")) {
+      const box = el.getBoundingClientRect();
+      if (box.bottom < 0) continue;
+      best ??= { sel: `[data-v="${el.dataset.v}"]`, top: box.top };
+      if (box.top <= y) best = { sel: `[data-v="${el.dataset.v}"]`, top: box.top };
+      if (box.top > y) break;
+    }
+    return best;
+  };
+
+  /** Put a held verse back where it was. Safe to call as often as you like. */
+  const restore = (held: { sel: string; top: number } | null) => {
+    if (!held) return;
+    const el = document.querySelector<HTMLElement>(held.sel);
+    if (!el) return;
+    const moved = el.getBoundingClientRect().top - held.top;
+    if (moved !== 0) window.scrollBy(0, moved);
+  };
+
   // The star in the header says so a moment before the switch lands, which
   // is the only moment the old layout can still be measured.
   useEffect(() => {
@@ -495,11 +519,10 @@ export default function Reader({
   useLayoutEffect(() => {
     const held = holdRef.current;
     if (!held) return;
-    holdRef.current = null;
-    const el = document.querySelector<HTMLElement>(held.sel);
-    if (!el) return;
-    const moved = el.getBoundingClientRect().top - held.top;
-    if (moved !== 0) window.scrollBy(0, moved);
+    // A pinch keeps one anchor for the whole gesture and clears it at
+    // touchend; everything else pins once and is done.
+    if (!pinchAnchor.current) holdRef.current = null;
+    restore(held);
   }, [study, pt, heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
@@ -549,6 +572,24 @@ export default function Reader({
     const onStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         pinchRef.current = { d: dist(e.touches), pt: ptRef.current };
+        // The verse between the fingers, chosen once and kept for the whole
+        // gesture. Both halves of that matter.
+        //
+        // Between the fingers, because that is what the reader is looking at
+        // — anchoring the top edge instead lets the words under their thumb
+        // slide away as the column above it changes height.
+        //
+        // Once, because re-deriving it every step is what made zooming out
+        // drift. Each step aimed at wherever the page had just landed, so a
+        // correction that fell a fraction short was never recovered — and
+        // worse, shrinking the text lifts the anchor towards the top edge, so
+        // the moment it crossed, the search picked the NEXT verse down and
+        // the anchor walked forward through the book a step at a time.
+        // Zooming in pushes it the other way, which is why growing the text
+        // always looked fine. One anchor, one fixed goal, no accumulation.
+        pinchAnchor.current = verseAt(
+          (e.touches[0].clientY + e.touches[1].clientY) / 2
+        );
       }
     };
     const onMove = (e: TouchEvent) => {
@@ -565,9 +606,14 @@ export default function Reader({
       if (next !== ptRef.current) {
         // Resizing the type reflows the whole column, so the scroll offset
         // stops meaning what it meant — the verse under your thumb walks up
-        // or down the page, by chapters if you are deep into a book. Pin it
-        // first; the layout effect below puts it back where it was.
-        holdVerse();
+        // or down the page, by chapters if you are deep into a book. The
+        // layout effect below puts the anchor back after every step.
+        if (!pinchAnchor.current) {
+          pinchAnchor.current = verseAt(
+            (e.touches[0].clientY + e.touches[1].clientY) / 2
+          );
+        }
+        holdRef.current = pinchAnchor.current;
         ptRef.current = next;
         setPt(next);
       }
@@ -576,6 +622,23 @@ export default function Reader({
     const onEnd = (e: TouchEvent) => {
       if (e.touches.length < 2 && pinchRef.current) {
         pinchRef.current = null;
+        const anchor = pinchAnchor.current;
+        // Only the gesture ends here. holdRef is deliberately left alone: the
+        // last touchmove can land in the same frame as touchend, so a commit
+        // for it may still be pending, and clearing the anchor now would
+        // throw away the correction for the final — largest — step. The
+        // layout effect clears it once pinchAnchor is gone.
+        pinchAnchor.current = null;
+        // And once more with the fingers off. A programmatic scroll made
+        // during a live touch gesture is not always honoured — iOS owns the
+        // scroller until the gesture ends — so this is the pass that is
+        // guaranteed to land.
+        if (anchor) {
+          requestAnimationFrame(() => {
+            restore(anchor);
+            holdRef.current = null;
+          });
+        }
         window.localStorage.setItem("communion.textPt", String(ptRef.current));
         window.setTimeout(() => setPinchShow(null), 800);
       }
