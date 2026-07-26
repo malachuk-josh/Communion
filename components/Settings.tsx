@@ -139,6 +139,34 @@ export default function Settings() {
       <h1 className="page-title">{t("settings.title")}</h1>
       <p className="subtitle">{t("settings.subtitle")}</p>
 
+      {/* First, and on its own: the one setting people come back to change,
+          and the only one whose effect is visible the moment it is pressed. */}
+      <div className="glass card">
+        <div className="pref-row">
+          <span>{t("settings.theme")}</span>
+          <div className="lang-toggle" role="group">
+            <button
+              className={theme === "dark" ? "active" : ""}
+              onClick={() => applyTheme("dark")}
+            >
+              <Icon name="moon" /> {t("settings.themeDark")}
+            </button>
+            <button
+              className={theme === "grey" ? "active" : ""}
+              onClick={() => applyTheme("grey")}
+            >
+              <Icon name="news" /> {t("settings.themeGrey")}
+            </button>
+            <button
+              className={theme === "light" ? "active" : ""}
+              onClick={() => applyTheme("light")}
+            >
+              <Icon name="sun" /> {t("settings.themeLight")}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="section-head">
         <h2>{t("settings.you")}</h2>
       </div>
@@ -194,29 +222,6 @@ export default function Settings() {
               onClick={() => setLang("es")}
             >
               Español
-            </button>
-          </div>
-        </div>
-        <div className="pref-row">
-          <span>{t("settings.theme")}</span>
-          <div className="lang-toggle" role="group">
-            <button
-              className={theme === "dark" ? "active" : ""}
-              onClick={() => applyTheme("dark")}
-            >
-              <Icon name="moon" /> {t("settings.themeDark")}
-            </button>
-            <button
-              className={theme === "grey" ? "active" : ""}
-              onClick={() => applyTheme("grey")}
-            >
-              <Icon name="news" /> {t("settings.themeGrey")}
-            </button>
-            <button
-              className={theme === "light" ? "active" : ""}
-              onClick={() => applyTheme("light")}
-            >
-              <Icon name="sun" /> {t("settings.themeLight")}
             </button>
           </div>
         </div>
