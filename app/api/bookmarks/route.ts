@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
+import { BM_KEY } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 import { seedDefaultCollections } from "@/lib/defaultCollections";
 
@@ -14,6 +15,8 @@ export interface BookmarkEntry {
   t: number;
   l?: string;
   c?: string;
+  /** position within a hand-sorted collection */
+  o?: number;
 }
 
 function parseEntry(raw: string): BookmarkEntry {
@@ -108,7 +111,7 @@ export async function PATCH(req: Request) {
     label?: string;
     coll?: string;
   } | null;
-  if (!body?.key || !/^\d{1,2}:\d{1,3}:\d{1,3}$/.test(body.key)) {
+  if (!body?.key || !BM_KEY.test(body.key)) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
   const kv = db();

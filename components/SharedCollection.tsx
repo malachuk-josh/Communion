@@ -21,6 +21,7 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { getBook, type ChapterData } from "@/lib/bible";
+import { bmKeyOf, bmRefLabel } from "@/lib/bookmarkKey";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { fetchChapter } from "@/lib/scripture";
 import {
@@ -38,6 +39,8 @@ interface SharedVerse {
   b: number;
   c: number;
   v: number;
+  /** the verse a run reaches; absent when the bookmark is a single verse */
+  end?: number;
   label?: string;
 }
 
@@ -82,12 +85,13 @@ const newId = () =>
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-const verseKeyOf = (x: SharedVerse) => `${x.b}:${x.c}:${x.v}`;
+const verseKeyOf = (x: SharedVerse) =>
+  bmKeyOf(x.b, x.c, x.v, x.end ?? x.v);
 
 const refLabel = (x: SharedVerse, lang: Lang) => {
   const book = getBook(x.b);
   const name = book ? (lang === "es" ? book.es : book.en) : "";
-  return `${name} ${x.c}:${x.v}`;
+  return bmRefLabel(name, { b: x.b, c: x.c, v: x.v, end: x.end ?? x.v });
 };
 
 export default function SharedCollection({
@@ -231,6 +235,16 @@ export default function SharedCollection({
     }
   };
 
+  /** The verse, or a run of them read as the one passage it is. */
+  const textOf = (x: SharedVerse) => {
+    const out: string[] = [];
+    for (let v = x.v; v <= (x.end ?? x.v); v++) {
+      const line = texts[`${x.b}:${x.c}:${v}`];
+      if (line) out.push(line.trim());
+    }
+    return out.join(" ");
+  };
+
   if (invalid) {
     return <p className="empty glass card">{t("shared.invalid")}</p>;
   }
@@ -321,7 +335,7 @@ export default function SharedCollection({
               <Link href={`/?b=${x.b}&c=${x.c}&v=${x.v}`} className="shared-go">
                 <span className="ref">{refLabel(x, lang)}</span>
                 {x.label && <span className="shared-label">{x.label}</span>}
-                <p>{texts[key] ?? "…"}</p>
+                <p>{textOf(x) || "…"}</p>
               </Link>
               <button
                 type="button"

@@ -2733,6 +2733,16 @@ button.menu-tile {
   font-family: var(--serif);
 }
 
+/* How far a bookmark runs. Sits above the collections, because how much of
+   the passage you are keeping is decided before where you file it. */
+.bm-through {
+  margin-bottom: 10px;
+}
+
+.bm-through select {
+  max-width: 55%;
+}
+
 .bm-coll-chips {
   margin: 6px 0 10px;
   max-height: calc(var(--vvh, 100dvh) * 0.22);
@@ -3587,6 +3597,41 @@ button.menu-tile {
 
 .jr-row:hover {
   border-color: var(--glass-border-bright);
+}
+
+/* The handle a collection is rearranged by. It is its own target rather than
+   the whole row, so that a tap still opens the passage and a drag down the
+   page still scrolls it — touch-action tells the browser to leave the gesture
+   alone once it starts here, and nowhere else. */
+.jr-grip {
+  flex: none;
+  margin-top: 2px;
+  padding: 4px 2px;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: grab;
+  line-height: 0;
+  touch-action: none;
+}
+
+.jr-grip:hover,
+.jr-grip:focus-visible {
+  color: var(--gold);
+}
+
+.jr-row.jr-dragging {
+  border-color: var(--gold);
+  cursor: grabbing;
+  /* lifted, and out of the way of the transition the other rows are running */
+  transform: scale(1.01);
+  transition: none;
+  z-index: 2;
+}
+
+.jr-row.jr-dragging .jr-grip {
+  color: var(--gold);
+  cursor: grabbing;
 }
 
 .jr-go {

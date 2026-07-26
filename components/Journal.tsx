@@ -11,11 +11,17 @@
 // one. Every row is a door back into the reader.
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { api } from "@/lib/client";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
+import {
+  bmRefLabel,
+  bmVerses,
+  parseBmKey,
+  type BmRef,
+} from "@/lib/bookmarkKey";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
 import { readOutbox } from "@/lib/localStore";
@@ -43,13 +49,30 @@ interface NoteRow {
   text: string;
 }
 
+interface DragState {
+  /** the collection being rearranged */
+  group: string;
+  /** the bookmark under the finger */
+  key: string;
+  /** that collection's keys in the order they are shown right now */
+  keys: string[];
+}
+
 const bookName = (nr: number, lang: Lang) => {
   const book = getBook(nr);
   return book ? (lang === "es" ? book.es : book.en) : "";
 };
 
-const refLabel = (row: { b: number; c: number; v: number }, lang: Lang) =>
-  `${bookName(row.b, lang)} ${row.c}:${row.v}`;
+const refLabel = (
+  row: { b: number; c: number; v: number; end?: number },
+  lang: Lang
+) =>
+  bmRefLabel(bookName(row.b, lang), {
+    b: row.b,
+    c: row.c,
+    v: row.v,
+    end: row.end ?? row.v,
+  });
 
 const byRef = (
   a: { b: number; c: number; v: number },
@@ -84,6 +107,8 @@ export default function Journal() {
   const [draft, setDraft] = useState("");
   /** the collection a bookmark is being moved to, while it is being edited */
   const [draftColl, setDraftColl] = useState("");
+  /** the row under the finger, and the order the collection is now in */
+  const [drag, setDrag] = useState<DragState | null>(null);
 
   // ---- bookmarks, collections and plan progress ---------------------------
   // The same order the reader and Discover use: the device's copy on screen
@@ -213,10 +238,17 @@ export default function Journal() {
   useEffect(() => {
     const wanted =
       tab === "bookmarks"
-        ? Object.keys(bookmarks)
-            .map((key) => key.split(":").map(Number))
-            .filter(([b, c, v]) => b && c && v)
-            .map(([b, c, v]) => ({ bookNr: b, chapter: c, verse: v }))
+        ? // a run needs every verse in it, not just the one it starts on
+          Object.keys(bookmarks)
+            .map(parseBmKey)
+            .filter((r): r is BmRef => r !== null)
+            .flatMap((r) =>
+              bmVerses(r).map((v) => ({
+                bookNr: r.b,
+                chapter: r.c,
+                verse: v,
+              }))
+            )
         : tab === "notes"
           ? notes.map((n) => ({ bookNr: n.b, chapter: n.c, verse: n.v }))
           : [];
@@ -334,9 +366,169 @@ export default function Journal() {
       t: entry.t,
       l: entry.l,
       c: entry.c,
+      o: entry.o,
       ts: Date.now(),
     });
     closeEdit();
+  };
+
+  /**
+   * Put a collection in the order it is now shown in.
+   *
+   * Every row is numbered from the top rather than only the ones that moved.
+   * A collection is small — two hundred bookmarks is the ceiling for the whole
+   * account — and numbering all of them means the order on the server is the
+   * order on the screen, with no gaps to run out of and no arithmetic to get
+   * wrong on the next drag. Rows already sitting at their number are skipped,
+   * so a drag near the top of a long shelf still sends only a few.
+   */
+  const commitOrder = (keys: string[]) => {
+    const next = { ...bookmarks };
+    let changed = false;
+    keys.forEach((key, at) => {
+      const entry = next[key];
+      if (!entry || entry.o === at) return;
+      next[key] = { ...entry, o: at };
+      changed = true;
+      void enqueue({
+        kind: "bookmark.set",
+        key,
+        t: entry.t,
+        l: entry.l,
+        c: entry.c,
+        o: at,
+        ts: Date.now(),
+      });
+    });
+    if (!changed) return;
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next });
+  };
+
+  /** Move one row within its collection, by drag or by arrow key. */
+  const moveWithin = (keys: string[], from: number, to: number) => {
+    if (from === to || to < 0 || to >= keys.length) return;
+    const next = [...keys];
+    next.splice(to, 0, ...next.splice(from, 1));
+    commitOrder(next);
+  };
+
+  // ---- dragging -----------------------------------------------------------
+  // Pointer events rather than the drag-and-drop API, which Safari on iOS does
+  // not implement — and this is a reader people hold. The row order is
+  // rearranged live under the finger and written once, on release.
+
+  const dragRef = useRef<DragState | null>(null);
+  const pointerY = useRef(0);
+  const listEls = useRef<Record<string, HTMLDivElement | null>>({});
+  const autoScroll = useRef(0);
+  /** drops the window listeners a drag in flight is holding */
+  const release = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    dragRef.current = drag;
+  }, [drag]);
+
+  // leaving the journal mid-drag must not leave listeners or a frame loop
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(autoScroll.current);
+      release.current?.();
+    },
+    []
+  );
+
+  /** Where the finger is now, in the list it is over. */
+  const reorderTo = (y: number) => {
+    const held = dragRef.current;
+    const list = held && listEls.current[held.group];
+    if (!held || !list) return;
+    const rows = [...list.querySelectorAll<HTMLElement>("[data-bm]")];
+    let to = rows.length - 1;
+    for (let i = 0; i < rows.length; i++) {
+      const box = rows[i].getBoundingClientRect();
+      if (y < box.top + box.height / 2) {
+        to = i;
+        break;
+      }
+    }
+    const from = held.keys.indexOf(held.key);
+    if (from === -1 || from === to) return;
+    const keys = [...held.keys];
+    keys.splice(to, 0, ...keys.splice(from, 1));
+    dragRef.current = { ...held, keys };
+    setDrag(dragRef.current);
+  };
+
+  const startDrag = (
+    group: string,
+    key: string,
+    keys: string[],
+    e: React.PointerEvent<HTMLElement>
+  ) => {
+    e.preventDefault();
+    pointerY.current = e.clientY;
+    dragRef.current = { group, key, keys };
+    setDrag(dragRef.current);
+
+    // Window listeners rather than setPointerCapture on the handle. Capture is
+    // the obvious way to do this and it does not survive: rearranging the list
+    // moves the handle's own element in the DOM, and Chromium drops the
+    // capture the first time it happens — the pointerup then lands somewhere
+    // else and the drag never ends. The window is not going anywhere.
+    const onMove = (ev: PointerEvent) => {
+      ev.preventDefault();
+      pointerY.current = ev.clientY;
+      reorderTo(ev.clientY);
+    };
+    const onUp = () => {
+      release.current?.();
+      endDrag();
+    };
+    release.current = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      release.current = null;
+    };
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    // A frame loop rather than work inside pointermove: near the top or bottom
+    // of the screen the list has to keep scrolling while the finger holds
+    // still, and a finger holding still sends no events.
+    const step = () => {
+      if (!dragRef.current) return;
+      const edge = 90;
+      const y = pointerY.current;
+      if (y < edge) window.scrollBy(0, -12);
+      else if (y > window.innerHeight - edge) window.scrollBy(0, 12);
+      reorderTo(y);
+      autoScroll.current = requestAnimationFrame(step);
+    };
+    autoScroll.current = requestAnimationFrame(step);
+  };
+
+  const endDrag = () => {
+    cancelAnimationFrame(autoScroll.current);
+    const held = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (held) commitOrder(held.keys);
+  };
+
+  /** A collection's rows in the order to draw them, drag included. */
+  const orderedRows = <T extends { key: string }>(group: {
+    id: string;
+    rows: T[];
+  }): T[] => {
+    if (drag?.group !== group.id) return group.rows;
+    const byKey = new Map(group.rows.map((r) => [r.key, r]));
+    const moved = drag.keys
+      .map((k) => byKey.get(k))
+      .filter((r): r is T => r !== undefined);
+    // a row that arrived mid-drag has no place in the dragged order yet
+    return moved.length === group.rows.length ? moved : group.rows;
   };
 
   const removeBookmark = (key: string, ref: string) => {
@@ -402,13 +594,23 @@ export default function Journal() {
     return `${origin}/shared/verse?${query}`;
   };
 
+  /** What a bookmark holds, read as one passage however many verses it spans. */
+  const scriptureOf = (row: { b: number; c: number; v: number; end?: number }) => {
+    const out: string[] = [];
+    for (let v = row.v; v <= (row.end ?? row.v); v++) {
+      const line = verses[verseKey(row.b, row.c, v)];
+      if (line) out.push(line.trim());
+    }
+    return out.join(" ");
+  };
+
   /** One entry: the reference, the verse, and whatever you wrote on it. */
   const entryText = (
-    row: { b: number; c: number; v: number },
+    row: { b: number; c: number; v: number; end?: number },
     said?: string,
     link?: string
   ) => {
-    const scripture = verses[verseKey(row.b, row.c, row.v)];
+    const scripture = scriptureOf(row);
     return [
       `${refLabel(row, lang)}${scripture ? ` — ${scripture}` : ""}`,
       said ? `\n${said}` : "",
@@ -470,15 +672,25 @@ export default function Journal() {
     return groups;
   }, [notes]);
 
-  /** Bookmarks grouped under their collection, unfiled ones last. */
+  /**
+   * Bookmarks grouped under their collection, unfiled ones last.
+   *
+   * Within a collection, the order you put them in wins. A collection nobody
+   * has dragged has no orders at all and falls back to canonical order, which
+   * is also what a verse dropped into a hand-sorted collection does until it
+   * is placed — it sorts to the end rather than jumping into the middle.
+   */
   const bookmarkGroups = useMemo(() => {
     const rows = Object.entries(bookmarks)
       .map(([key, entry]) => {
-        const [b, c, v] = key.split(":").map(Number);
-        return { key, b, c, v, entry };
+        const ref = parseBmKey(key);
+        return ref ? { key, ...ref, entry } : null;
       })
-      .filter((row) => row.b && row.c && row.v)
-      .sort(byRef);
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .sort(
+        (a, b) =>
+          (a.entry.o ?? Infinity) - (b.entry.o ?? Infinity) || byRef(a, b)
+      );
     const named = Object.entries(collections)
       .map(([id, coll]) => ({ id, name: coll.name }))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -703,7 +915,7 @@ export default function Journal() {
                         group.name,
                         "",
                         ...group.rows.map((r) => {
-                          const text = verses[verseKey(r.b, r.c, r.v)];
+                          const text = scriptureOf(r);
                           return `${refLabel(r, lang)}${text ? ` — ${text}` : ""}`;
                         }),
                       ].join("\n")
@@ -711,10 +923,18 @@ export default function Journal() {
                   }
                 />
               </h2>
-              <div className="jr-list">
-                {group.rows.map((row) => {
-                  const scripture = verses[verseKey(row.b, row.c, row.v)];
+              <div
+                className="jr-list"
+                ref={(el) => {
+                  listEls.current[group.id] = el;
+                }}
+              >
+                {/* while a drag is in flight the shown order is the one under
+                    the finger, not the one on disk */}
+                {orderedRows(group).map((row, at, ordered) => {
+                  const scripture = scriptureOf(row);
                   const ref = refLabel(row, lang);
+                  const keys = ordered.map((r) => r.key);
                   if (editing === row.key) {
                     return (
                       <div
@@ -775,7 +995,37 @@ export default function Journal() {
                     );
                   }
                   return (
-                    <div key={row.key} className="glass card jr-row">
+                    <div
+                      key={row.key}
+                      data-bm={row.key}
+                      className={`glass card jr-row${
+                        drag?.key === row.key ? " jr-dragging" : ""
+                      }`}
+                    >
+                      {ordered.length > 1 && (
+                        <button
+                          type="button"
+                          className="jr-grip"
+                          aria-label={t("journal.reorder", { ref })}
+                          title={t("journal.reorder", { ref })}
+                          onPointerDown={(e) =>
+                            startDrag(group.id, row.key, keys, e)
+                          }
+                          // the same move without a pointer, for a keyboard
+                          // and for anyone who cannot hold a drag steady
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              moveWithin(keys, at, at - 1);
+                            } else if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              moveWithin(keys, at, at + 1);
+                            }
+                          }}
+                        >
+                          <Icon name="menu" />
+                        </button>
+                      )}
                       <Link
                         href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
                         className="jr-go"

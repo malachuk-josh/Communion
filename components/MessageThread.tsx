@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
+import { parseBmKey } from "@/lib/bookmarkKey";
 import { useI18n } from "@/lib/i18n";
 
 interface ChatMessage {
@@ -150,8 +151,10 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       ]).then(([bm, nt]) => {
         const items: ShareItem[] = [];
         for (const [key, entry] of Object.entries(bm.bookmarks)) {
-          const [b, c, v] = key.split(":").map(Number);
-          items.push({ b, c, v, kind: "bookmark", label: entry.l });
+          // a run attaches at the verse it starts on
+          const ref = parseBmKey(key);
+          if (!ref) continue;
+          items.push({ b: ref.b, c: ref.c, v: ref.v, kind: "bookmark", label: entry.l });
         }
         for (const n of nt.notes) {
           items.push({ b: n.b, c: n.c, v: n.v, kind: "note", label: n.text });

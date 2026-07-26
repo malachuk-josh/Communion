@@ -22,6 +22,8 @@ export interface BmEntry {
   t: number;
   l?: string;
   c?: string;
+  /** where it sits when its collection has been put in an order by hand */
+  o?: number;
 }
 export interface BmCollection {
   name: string;

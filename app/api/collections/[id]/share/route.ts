@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getDisplayName, getUserId } from "@/lib/auth";
+import { parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 
 // Publish (or refresh) a public snapshot of a collection. The share token
@@ -25,18 +26,46 @@ export async function POST(
   const token = coll.share ?? randomUUID().replace(/-/g, "").slice(0, 16);
 
   const bookmarks = (await kv.hgetall(keys.userBookmarks(userId))) ?? {};
-  const verses: { b: number; c: number; v: number; label?: string }[] = [];
+  const verses: {
+    b: number;
+    c: number;
+    v: number;
+    end?: number;
+    label?: string;
+    o?: number;
+  }[] = [];
   for (const [key, raw] of Object.entries(bookmarks)) {
     try {
-      const entry = JSON.parse(raw) as { t: number; l?: string; c?: string };
+      const entry = JSON.parse(raw) as {
+        t: number;
+        l?: string;
+        c?: string;
+        o?: number;
+      };
       if (entry.c !== id) continue;
-      const [b, c, v] = key.split(":").map(Number);
-      verses.push({ b, c, v, label: entry.l });
+      const ref = parseBmKey(key);
+      if (!ref) continue;
+      verses.push({
+        b: ref.b,
+        c: ref.c,
+        v: ref.v,
+        ...(ref.end > ref.v ? { end: ref.end } : {}),
+        label: entry.l,
+        ...(Number.isFinite(entry.o) ? { o: entry.o } : {}),
+      });
     } catch {
       // legacy entry — never in a collection
     }
   }
-  verses.sort((a, b) => a.b - b.b || a.c - b.c || a.v - b.v);
+  // a collection put in an order by hand is shared in that order; one that was
+  // never touched keeps the canonical one
+  verses.sort(
+    (a, b) =>
+      (a.o ?? Infinity) - (b.o ?? Infinity) ||
+      a.b - b.b ||
+      a.c - b.c ||
+      a.v - b.v
+  );
 
   const sharedBy = await getDisplayName(req);
   await kv.hset(keys.sharedCollection(token), {

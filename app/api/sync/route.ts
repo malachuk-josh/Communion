@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
+import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
 
@@ -14,23 +15,28 @@ const MAX_BOOKMARKS = 200;
 const MAX_COLLECTIONS = 40;
 
 type Op =
-  | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string }
+  | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string; o?: number }
   | { kind: "bookmark.del"; key: string }
   | { kind: "collection.set"; id: string; name: string }
   | { kind: "collection.del"; id: string }
   | { kind: "note.set"; book: number; ref: string; text: string }
   | { kind: "plan.set"; id: string; done: number; on?: string };
 
-const VERSE_KEY = /^\d{1,2}:\d{1,3}:\d{1,3}$/;
 const NOTE_REF = /^\d{1,3}:\d{1,3}$/;
 const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** A verse key only counts if the book, chapter and verse actually exist. */
+/** A verse key only counts if the book, chapter and verses actually exist. */
 function validVerseKey(key: string): boolean {
-  if (!VERSE_KEY.test(key)) return false;
-  const [b, c, v] = key.split(":").map(Number);
-  const book = getBook(b);
-  return !!book && c >= 1 && c <= book.chapters && v >= 1 && v <= 200;
+  const ref = parseBmKey(key);
+  if (!ref) return false;
+  const book = getBook(ref.b);
+  return (
+    !!book &&
+    ref.c >= 1 &&
+    ref.c <= book.chapters &&
+    ref.v >= 1 &&
+    ref.end <= 200
+  );
 }
 
 /** Whose data would a sync touch? Asked before anything is sent. */
@@ -131,11 +137,15 @@ export async function POST(req: Request) {
               delete marks[oldest[0]];
             }
           }
-          const entry: { t: number; l?: string; c?: string } = {
+          const entry: { t: number; l?: string; c?: string; o?: number } = {
             t: Number(op.t) || Date.now(),
           };
           const label = op.l?.trim().slice(0, 120);
           if (label) entry.l = label;
+          // where a hand-sorted collection puts it. Absent means "not sorted
+          // by hand", which is not the same as "first" — so an undefined
+          // order is dropped rather than written as zero.
+          if (Number.isFinite(op.o)) entry.o = Number(op.o);
           if (op.c) {
             // a collection created in the same batch is already here; one
             // that never existed is dropped rather than dangling. hasOwnProperty
@@ -150,7 +160,7 @@ export async function POST(req: Request) {
           break;
         }
         case "bookmark.del": {
-          if (!VERSE_KEY.test(op.key)) {
+          if (!BM_KEY.test(op.key)) {
             rejected++;
             break;
           }

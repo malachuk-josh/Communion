@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
+import { parseBmKey } from "@/lib/bookmarkKey";
 import { useI18n } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 
@@ -44,8 +45,10 @@ export default function AttachPicker({
     ]).then(([bm, nt]) => {
       const list: Attach[] = [];
       for (const [key, entry] of Object.entries(bm.bookmarks)) {
-        const [b, c, v] = key.split(":").map(Number);
-        list.push({ b, c, v, kind: "bookmark", label: entry.l });
+        // a run attaches at the verse it starts on
+        const ref = parseBmKey(key);
+        if (!ref) continue;
+        list.push({ b: ref.b, c: ref.c, v: ref.v, kind: "bookmark", label: entry.l });
       }
       for (const n of nt.notes) {
         list.push({ b: n.b, c: n.c, v: n.v, kind: "note", label: n.text });

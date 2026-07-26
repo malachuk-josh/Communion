@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
@@ -11,6 +18,12 @@ import {
   type Verse,
 } from "@/lib/bible";
 import { acrosticAt } from "@/lib/acrostic";
+import {
+  bmIndex,
+  bmKeyOf,
+  bmRefLabel,
+  parseBmKey,
+} from "@/lib/bookmarkKey";
 import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
@@ -66,6 +79,8 @@ interface BmEntry {
   t: number;
   l?: string;
   c?: string;
+  /** position within a hand-sorted collection — set in the journal */
+  o?: number;
 }
 
 interface BmCollection {
@@ -228,9 +243,12 @@ export default function Reader({
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [newCollFor, setNewCollFor] = useState<string | null>(null);
   const [newCollDraft, setNewCollDraft] = useState("");
-  const [bmSheet, setBmSheet] = useState<{ c: number; v: number } | null>(
-    null
-  );
+  /** the bookmark being organised: where it starts, and where it runs to */
+  const [bmSheet, setBmSheet] = useState<{
+    c: number;
+    v: number;
+    end: number;
+  } | null>(null);
   const [bmSheetColl, setBmSheetColl] = useState("");
   const [bmSheetMsg, setBmSheetMsg] = useState("");
   const [editingBm, setEditingBm] = useState<string | null>(null);
@@ -865,13 +883,22 @@ export default function Reader({
   }, [bookNr]);
 
   /**
+   * Which bookmark holds a given verse — the verse's own, or the range it
+   * falls inside. Built once per change to the set rather than searched per
+   * verse: every verse on screen asks this while it renders.
+   */
+  const bmAt = useMemo(() => bmIndex(Object.keys(bookmarks)), [bookmarks]);
+  const bmKeyAt = (ch: number, verse: number): string | undefined =>
+    bmAt.get(`${bookNr}:${ch}:${verse}`);
+
+  /**
    * What this verse is marked with, if anything — the note's own text, or
    * "Bookmark". Used to put a small star where an asterisk would go, so a
    * verse you have written on is findable without turning study mode on.
    */
   const markOf = (ch: number, verse: number): string | null =>
     notes[`${ch}:${verse}`] ||
-    (bookmarks[`${bookNr}:${ch}:${verse}`] ? t("reader.bookmark") : null);
+    (bmKeyAt(ch, verse) ? t("reader.bookmark") : null);
 
   /** Section title opening at this verse, if any. */
   const headAt = (ch: number, verse: number): string | undefined => {
@@ -1303,8 +1330,12 @@ export default function Reader({
   };
 
   const toggleBookmark = (ch: number, verse: number) => {
-    const key = `${bookNr}:${ch}:${verse}`;
-    const removing = key in bookmarks;
+    // Pressing a verse that is part of a run takes the whole run: the run is
+    // the bookmark, and half of one is not a thing that can be kept. The sheet
+    // is where a run is shortened, which is where you would go to shorten it.
+    const held = bmKeyAt(ch, verse);
+    const key = held ?? bmKeyOf(bookNr, ch, verse);
+    const removing = !!held;
     const next = { ...bookmarks };
     if (removing) delete next[key];
     else next[key] = { t: Date.now() };
@@ -1318,12 +1349,46 @@ export default function Reader({
     // saving a verse opens the organise/share sheet; removing just removes
     if (!removing) {
       setPanelOpen(false);
-      setBmSheet({ c: ch, v: verse });
+      setBmSheet({ c: ch, v: verse, end: verse });
       setBmSheetColl("");
       setBmSheetMsg("");
-    } else if (bmSheet?.c === ch && bmSheet.v === verse) {
+    } else if (bmSheet && parseBmKey(key)?.c === bmSheet.c) {
       setBmSheet(null);
     }
+  };
+
+  /**
+   * Stretch or shrink the run this bookmark holds.
+   *
+   * The range lives in the key, so changing it is a different bookmark: the
+   * old key goes and the new one arrives carrying everything the old one had —
+   * when it was saved, what it was called, which collection it was filed in,
+   * and where it sat in that collection's order.
+   */
+  const setBookmarkEnd = (ch: number, verse: number, end: number) => {
+    const from = bmKeyOf(bookNr, ch, verse);
+    const to = bmKeyOf(bookNr, ch, verse, end);
+    if (from === to && !(to in bookmarks)) return;
+    const held = bmKeyAt(ch, verse) ?? from;
+    const entry: BmEntry = { ...(bookmarks[held] ?? { t: Date.now() }) };
+    const next = { ...bookmarks };
+    delete next[held];
+    next[to] = entry;
+    setBookmarks(next);
+    void writeLocalState({ bookmarks: next });
+    if (held !== to) {
+      void enqueue({ kind: "bookmark.del", key: held, ts: Date.now() });
+    }
+    void enqueue({
+      kind: "bookmark.set",
+      key: to,
+      t: entry.t,
+      l: entry.l,
+      c: entry.c,
+      o: entry.o,
+      ts: Date.now(),
+    });
+    setBmSheet({ c: ch, v: verse, end });
   };
 
   /** Create a collection by name and return its id (for the bookmark sheet). */
@@ -1346,10 +1411,13 @@ export default function Reader({
     return id;
   };
 
-  const shareVerse = async (ch: number, verse: number) => {
-    const text =
-      chDataOf(ch)?.verses.find((v) => v.verse === verse)?.text?.trim() ?? "";
-    const ref = `${bookName} ${ch}:${verse}`;
+  const shareVerse = async (ch: number, verse: number, end = verse) => {
+    // a run shares as a run: every verse in it, and the reference that says so
+    const text = (chDataOf(ch)?.verses ?? [])
+      .filter((v) => v.verse >= verse && v.verse <= end)
+      .map((v) => v.text.trim())
+      .join(" ");
+    const ref = bmRefLabel(bookName, { b: bookNr, c: ch, v: verse, end });
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     // not a deep link into the reader but the shared-verse page, which offers
     // whoever opens it the same verse and the choice to keep it. The address
@@ -1359,7 +1427,8 @@ export default function Reader({
       c: String(ch),
       v: String(verse),
     });
-    const label = bookmarks[`${bookNr}:${ch}:${verse}`]?.l;
+    if (end > verse) query.set("e", String(end));
+    const label = bookmarks[bmKeyOf(bookNr, ch, verse, end)]?.l;
     if (label) query.set("l", label);
     const payload = `${ref} — ${text}\n${origin}/shared/verse?${query}`;
     if (navigator.share) {
@@ -1441,12 +1510,14 @@ export default function Reader({
   };
 
   const jumpToBookmark = (key: string) => {
-    const [b, c, v] = key.split(":").map(Number);
+    const ref = parseBmKey(key);
+    if (!ref) return;
     setBookmarksOpen(false);
     setBackStack([]);
-    setBookNr(b);
-    setChapter(c);
-    setHighlightVerse(v);
+    setBookNr(ref.b);
+    setChapter(ref.c);
+    // a run lands on its first verse, which is where you would start reading
+    setHighlightVerse(ref.v);
   };
 
   const refChipLabel = (ref: number[]) => {
@@ -1809,18 +1880,18 @@ export default function Reader({
                         <button
                           type="button"
                           className={`xref-chip note-chip${
-                            bookmarks[`${bookNr}:${ch}:${v.verse}`]
+                            bmKeyAt(ch, v.verse)
                               ? " has-note"
                               : ""
                           }`}
                           onClick={() => toggleBookmark(ch, v.verse)}
-                          aria-pressed={!!bookmarks[`${bookNr}:${ch}:${v.verse}`]}
+                          aria-pressed={!!bmKeyAt(ch, v.verse)}
                           aria-label={t("reader.bookmarkToggle")}
                           title={t("reader.bookmarkToggle")}
                         >
                           <Icon
                             name="bookmark"
-                            filled={!!bookmarks[`${bookNr}:${ch}:${v.verse}`]}
+                            filled={!!bmKeyAt(ch, v.verse)}
                           />{" "}
                           {t("reader.bookmark")}
                         </button>
@@ -2266,7 +2337,13 @@ export default function Reader({
         <div className="glass lex-sheet bm-sheet" role="dialog">
           <div className="lex-head">
             <span className="lex-lemma bm-sheet-title">
-              <Icon name="bookmark" /> {bookName} {bmSheet.c}:{bmSheet.v}
+              <Icon name="bookmark" />{" "}
+              {bmRefLabel(bookName, {
+                b: bookNr,
+                c: bmSheet.c,
+                v: bmSheet.v,
+                end: bmSheet.end,
+              })}
             </span>
             <button
               type="button"
@@ -2277,10 +2354,34 @@ export default function Reader({
               ✕
             </button>
           </div>
+          {/* A sentence rarely ends where a verse does. The run starts at the
+              verse that was pressed and can be drawn out to the end of the
+              chapter — no further, because a reference that crossed into the
+              next chapter would need two chapter numbers to say so. */}
+          <div className="pref-row bm-through">
+            <span>{t("reader.bmThrough")}</span>
+            <select
+              value={bmSheet.end}
+              aria-label={t("reader.bmThrough")}
+              onChange={(e) =>
+                setBookmarkEnd(bmSheet.c, bmSheet.v, Number(e.target.value))
+              }
+            >
+              {(chDataOf(bmSheet.c)?.verses ?? [])
+                .filter((x) => x.verse >= bmSheet.v)
+                .map((x) => (
+                  <option key={x.verse} value={x.verse}>
+                    {x.verse === bmSheet.v
+                      ? t("reader.bmThisVerse")
+                      : `${bmSheet.c}:${x.verse}`}
+                  </option>
+                ))}
+            </select>
+          </div>
           <p className="cal-label">{t("reader.addToCollection")}</p>
           <div className="chips bm-coll-chips">
             {Object.entries(collections).map(([id, coll]) => {
-              const key = `${bookNr}:${bmSheet.c}:${bmSheet.v}`;
+              const key = bmKeyOf(bookNr, bmSheet.c, bmSheet.v, bmSheet.end);
               const active = bookmarks[key]?.c === id;
               return (
                 <button
@@ -2312,7 +2413,7 @@ export default function Reader({
                 const id = await createCollectionNamed(name);
                 setBmSheetColl("");
                 if (id) {
-                  updateBookmark(`${bookNr}:${bmSheet.c}:${bmSheet.v}`, {
+                  updateBookmark(bmKeyOf(bookNr, bmSheet.c, bmSheet.v, bmSheet.end), {
                     coll: id,
                   });
                   setBmSheetMsg(t("reader.addedTo", { name }));
@@ -2328,7 +2429,7 @@ export default function Reader({
                 const id = await createCollectionNamed(name);
                 setBmSheetColl("");
                 if (id) {
-                  updateBookmark(`${bookNr}:${bmSheet.c}:${bmSheet.v}`, {
+                  updateBookmark(bmKeyOf(bookNr, bmSheet.c, bmSheet.v, bmSheet.end), {
                     coll: id,
                   });
                   setBmSheetMsg(t("reader.addedTo", { name }));
@@ -2343,7 +2444,7 @@ export default function Reader({
             <button
               type="button"
               className="btn btn-sm"
-              onClick={() => shareVerse(bmSheet.c, bmSheet.v)}
+              onClick={() => shareVerse(bmSheet.c, bmSheet.v, bmSheet.end)}
             >
               <Icon name="share" /> {t("discover.share")}
             </button>
@@ -2438,7 +2539,8 @@ export default function Reader({
                         <p className="cal-hint">{t("reader.collEmpty")}</p>
                       ) : (
                         rows.map(([key, entry]) => {
-                          const [b, c, v] = key.split(":").map(Number);
+                          const ref = parseBmKey(key);
+                          if (!ref) return null;
                           return (
                             <div key={key} className="bookmark-row">
                               <button
@@ -2446,7 +2548,7 @@ export default function Reader({
                                 className="bookmark-jump"
                                 onClick={() => jumpToBookmark(key)}
                               >
-                                <Icon name="book" /> {bookNameOf(b)} {c}:{v}
+                                <Icon name="book" /> {bmRefLabel(bookNameOf(ref.b), ref)}
                                 {entry.l && (
                                   <span className="bm-label">{entry.l}</span>
                                 )}
@@ -2469,7 +2571,10 @@ export default function Reader({
                                 aria-label={t("reader.removeBookmark")}
                                 title={t("reader.removeBookmark")}
                                 onClick={() => {
-                                  const where = `${bookNameOf(b)} ${c}:${v}`;
+                                  const where = bmRefLabel(
+                                    bookNameOf(ref.b),
+                                    ref
+                                  );
                                   if (
                                     !window.confirm(
                                       t("reader.removeBookmarkConfirm", {

@@ -179,7 +179,7 @@ export async function clearLocalData(): Promise<void> {
 
 /** Every change the app can make to your own data, as a replayable record. */
 export type SyncOp =
-  | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string; ts: number }
+  | { kind: "bookmark.set"; key: string; t: number; l?: string; c?: string; o?: number; ts: number }
   | { kind: "bookmark.del"; key: string; ts: number }
   | { kind: "collection.set"; id: string; name: string; ts: number }
   | { kind: "collection.del"; id: string; ts: number }
