@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
-import { scrollToChapterTop, useReading } from "@/lib/reading";
+import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 
@@ -109,22 +109,18 @@ export default function Nav() {
     setTheme(current === "light" || current === "grey" ? current : "dark");
   }, []);
 
-  // Already reading? The Word tab glides to the top of this chapter, and
-  // tapping it again straight after opens the navigator. The first tap still
-  // acts at once — waiting to see whether a second one is coming would put a
-  // third of a second of lag on the common case.
-  const lastWordTap = useRef(0);
+  /**
+   * Already reading? Opening The Word again opens the navigator.
+   *
+   * It used to glide to the top of the chapter and want a second tap inside a
+   * third of a second for the navigator, which meant the thing people wanted
+   * was the thing they had to know about — and the thing they got by accident
+   * threw away where they were reading. One tap, one door.
+   */
   const wordClick = (e: React.MouseEvent) => {
     if (pathname !== "/") return;
     e.preventDefault();
-    const now = Date.now();
-    if (now - lastWordTap.current < 350) {
-      lastWordTap.current = 0;
-      setPanelOpen(true);
-      return;
-    }
-    lastWordTap.current = now;
-    scrollToChapterTop(position?.chapter);
+    setPanelOpen(true);
   };
 
   // cycles dark → grey → light → dark; the icon shows what comes next
