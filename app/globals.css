@@ -1297,6 +1297,52 @@ mark {
   color: var(--ink);
 }
 
+/* the chapter whose verses are open below it */
+.bn-ch.open {
+  background: var(--gold-soft);
+  color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
+}
+
+/* Verses take a full row of the chapter grid, directly under the chapter
+   that was tapped — 1 / -1 is what keeps them anchored there rather than
+   flowing into the next free cell. Six to a row, because verse numbers run
+   past 100 in a few psalms and the column has to hold three digits. */
+.bn-verses {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  margin: 4px 0 6px;
+  padding: 6px 4px;
+  border-radius: 12px;
+  background: var(--glass);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
+}
+
+.bn-v {
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 9px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bn-v:hover {
+  background: var(--glass-strong);
+  color: var(--gold);
+}
+
+.bn-v-wait {
+  grid-column: 1 / -1;
+  padding: 8px 6px;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
 .bn-ch.current {
   background: var(--gold-soft);
   color: var(--gold);

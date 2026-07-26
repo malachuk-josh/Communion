@@ -2516,8 +2516,13 @@ export default function Reader({
               <BookNav
                 bookNr={bookNr}
                 chapter={viewChapter}
-                onPick={(b, c) => {
-                  setPanelOpen(false);
+                translation={translation}
+                // A chapter moves the reader but leaves the panel standing,
+                // because the verses for that chapter open underneath it and
+                // there would be nothing to pick from otherwise. Anyone who
+                // only wanted the chapter is already there; the scrim
+                // dismisses.
+                onChapter={(b, c) => {
                   if (b === bookNr) {
                     jumpChapter(c);
                     return;
@@ -2526,6 +2531,15 @@ export default function Reader({
                   setBackStack([]);
                   setBookNr(b);
                   setChapter(c);
+                }}
+                onVerse={(b, c, v) => {
+                  setPanelOpen(false);
+                  setBackStack([]);
+                  if (b !== bookNr) setBookNr(b);
+                  // the v-N anchors only exist on the open chapter, so this
+                  // has to land before the highlight is asked to find one
+                  setChapter(c);
+                  setHighlightVerse(v);
                 }}
               />
 
