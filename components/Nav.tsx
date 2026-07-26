@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
-import { primeHaptics } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
@@ -133,10 +132,6 @@ export default function Nav() {
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
     setTheme(current === "light" || current === "grey" ? current : "dark");
-    // iOS taps its Taptic Engine through a control, and a control built and
-    // clicked in one tick has not been laid out yet. Build it now so the
-    // first tap of the session is as solid as the rest.
-    primeHaptics();
   }, []);
 
   /**

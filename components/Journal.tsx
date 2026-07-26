@@ -15,7 +15,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { api } from "@/lib/client";
-import { haptic } from "@/lib/haptics";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import {
   bmRefLabel,
@@ -471,9 +470,6 @@ export default function Journal() {
     pointerY.current = e.clientY;
     dragRef.current = { group, key, keys };
     setDrag(dragRef.current);
-    // picked up, and — on release — put down. The two taps are what makes a
-    // drag feel like moving an object rather than watching one move.
-    haptic("light");
 
     // Window listeners rather than setPointerCapture on the handle. Capture is
     // the obvious way to do this and it does not survive: rearranging the list
@@ -518,10 +514,7 @@ export default function Journal() {
     const held = dragRef.current;
     dragRef.current = null;
     setDrag(null);
-    if (held) {
-      haptic("medium");
-      commitOrder(held.keys);
-    }
+    if (held) commitOrder(held.keys);
   };
 
   /** A collection's rows in the order to draw them, drag included. */

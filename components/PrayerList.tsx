@@ -12,7 +12,6 @@
 import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { haptic } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
 
 interface PrayerRequest {
@@ -93,8 +92,6 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
    * it is a set of who, not a number — so its answer replaces the guess.
    */
   const pray = async (id: string) => {
-    // saying you have prayed for someone deserves the small acknowledgement
-    haptic("light");
     setPrayers(
       (prev) =>
         prev?.map((p) =>

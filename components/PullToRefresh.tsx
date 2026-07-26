@@ -6,7 +6,6 @@
 // reloads the app. Purely additive — native scrolling is never blocked.
 
 import { useEffect, useRef, useState } from "react";
-import { haptic } from "@/lib/haptics";
 
 const ARM_AT = 60; // scaled pull distance (~130px of finger travel)
 
@@ -15,8 +14,6 @@ export default function PullToRefresh() {
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef<number | null>(null);
   const pullRef = useRef(0);
-  /** whether the last move had the gesture armed, so the tap fires once */
-  const wasArmed = useRef(false);
 
   useEffect(() => {
     const setPullBoth = (value: number) => {
@@ -45,24 +42,13 @@ export default function PullToRefresh() {
         return;
       }
       const delta = e.touches[0].clientY - startY.current;
-      const next = delta > 0 ? Math.min(delta * 0.45, 120) : 0;
-      // one tap as the gesture arms, and one only — the finger crosses the
-      // threshold repeatedly while it hovers there, and buzzing on each
-      // crossing would turn the indicator into a rattle
-      const armed = next >= ARM_AT;
-      if (armed !== wasArmed.current) {
-        wasArmed.current = armed;
-        if (armed) haptic("arm");
-      }
-      setPullBoth(next);
+      setPullBoth(delta > 0 ? Math.min(delta * 0.45, 120) : 0);
     };
 
     const onEnd = () => {
       if (startY.current === null) return;
       startY.current = null;
-      wasArmed.current = false;
       if (pullRef.current >= ARM_AT) {
-        haptic("medium");
         setRefreshing(true);
         window.location.reload();
       } else {
