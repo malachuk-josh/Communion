@@ -2236,6 +2236,7 @@ export default function Reader({
           num={concFor}
           lemma={lexFor(concFor)?.lemma ?? ""}
           translit={lexFor(concFor)?.translit ?? ""}
+          usage={lexFor(concFor)?.kjv ?? ""}
           onClose={() => {
             setConcFor(null);
             requestAnimationFrame(() => concBtnRef.current?.focus());

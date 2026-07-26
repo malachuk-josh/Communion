@@ -17,6 +17,7 @@
 // their words, sometimes into the middle of the next one.
 
 import type { ReactNode } from "react";
+import { matchesUsage } from "@/lib/usage";
 
 /** Only ever used for matching. Every replacement is one character for one. */
 export function foldForMatch(s: string): string {
@@ -35,11 +36,16 @@ const WORDISH = /[0-9A-Za-z]/;
 export default function HighlightedText({
   text,
   needle,
+  words,
 }: {
   text: string;
-  needle: string;
+  /** the exact King James clip for this verse, where one is recorded */
+  needle?: string;
+  /** or, where none is, the English renderings this word is marked by */
+  words?: string[];
 }) {
-  const wanted = needle.trim();
+  if (words && words.length > 0) return <WordMarks text={text} words={words} />;
+  const wanted = (needle ?? "").trim();
   if (!wanted) return <>{text}</>;
   const hay = foldForMatch(text);
   const pin = foldForMatch(wanted);
@@ -81,6 +87,36 @@ export default function HighlightedText({
     out.push(<mark key={i}>{text.slice(at, at + pin.length)}</mark>);
     cursor = at + pin.length;
   });
+  if (cursor < text.length) out.push(text.slice(cursor));
+  return <>{out}</>;
+}
+
+/**
+ * Mark whole words, rather than one known phrase.
+ *
+ * Used where there is no recorded clip to look for — the Septuagint list — and
+ * the question is instead "does the King James reach for one of this word's
+ * English renderings here?". Every word of the verse is tested, so more than
+ * one can be marked, which is right: a verse that says "healed" and "healing"
+ * is saying the word twice.
+ */
+function WordMarks({ text, words }: { text: string; words: string[] }) {
+  const hay = foldForMatch(text);
+  if (hay.length !== text.length) return <>{text}</>;
+
+  const out: ReactNode[] = [];
+  let cursor = 0;
+  let key = 0;
+  // apostrophes stay inside the token so "healeth's" is one word, not two
+  for (const hit of hay.matchAll(/[0-9a-z']+/g)) {
+    const at = hit.index;
+    if (at === undefined || !matchesUsage(hit[0], words)) continue;
+    const end = at + hit[0].length;
+    if (at > cursor) out.push(text.slice(cursor, at));
+    out.push(<mark key={key++}>{text.slice(at, end)}</mark>);
+    cursor = end;
+  }
+  if (cursor === 0) return <>{text}</>;
   if (cursor < text.length) out.push(text.slice(cursor));
   return <>{out}</>;
 }

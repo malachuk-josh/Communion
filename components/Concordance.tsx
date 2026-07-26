@@ -5,15 +5,21 @@
 // word popup's "Found in N verses" pill.
 //
 // Two lists: the King James occurrences of a Strong's number, and the
-// Septuagint occurrences of the same Greek lemma. Both show the whole verse.
-// A reference on its own tells you where to look; the verse tells you what
-// the word is doing, which is the reason to open a concordance at all.
+// Septuagint occurrences of the same Greek lemma. Both show the whole verse,
+// and both show it in English. A reference on its own tells you where to look;
+// the verse tells you what the word is doing, which is the reason to open a
+// concordance at all — and a verse you cannot read tells you neither.
 //
 // The Greek and the English do not share an address. Septuagint rows are
-// stored at Septuagint addresses, so that is where the Greek is fetched from
-// — but this app reads the King James, so a tap goes through kjvFromLxx()
-// first. Getting those two the wrong way round shows the right text and
-// lands somewhere else, or the reverse, and both read as plausible.
+// stored at Septuagint addresses, so every one of them goes through
+// kjvFromLxx() before anything is fetched or opened. Getting that the wrong
+// way round shows one verse and lands on another, and both read as plausible.
+//
+// What can be marked differs between the two. The King James list records the
+// exact words each verse used, so the mark is exact. The Septuagint list
+// records only that the lemma occurs, and the English shown is a translation
+// of the Hebrew rather than of the Greek, so the mark falls back to this
+// word's known English renderings and stays quiet where they part company.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -22,6 +28,7 @@ import Icon from "@/components/Icon";
 import { getBook, kjvFromLxx } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
 import { fetchVerses, verseKey, type VerseRef } from "@/lib/scripture";
+import { usageWords } from "@/lib/usage";
 
 export interface ConcordanceEntry {
   n: number;
@@ -37,10 +44,10 @@ type Tab = "kjv" | "lxx";
 
 interface Row {
   b: number;
-  /** where the text lives — the Septuagint address on the LXX tab */
+  /** the reference as the list stores it — a Septuagint one on the LXX tab */
   c: number;
   v: number;
-  /** where a tap should land: always a King James address */
+  /** where the verse is read from, and where a tap lands: King James, always */
   kc: number;
   kv: number;
   /** true when the two differ and the seam is known */
@@ -52,12 +59,15 @@ export default function Concordance({
   num,
   lemma,
   translit,
+  usage,
   onPick,
   onClose,
 }: {
   num: string;
   lemma: string;
   translit: string;
+  /** the lexicon's King James usage line, for marking Septuagint verses */
+  usage?: string;
   /** already a King James address — the mapping happens in here */
   onPick: (b: number, c: number, v: number) => void;
   onClose: () => void;
@@ -166,7 +176,9 @@ export default function Concordance({
   const shown = rows.slice(0, limit);
   const total = tab === "kjv" ? (entry?.n ?? 0) : (entry?.lxxN ?? 0);
   const hasLxx = (entry?.lxx?.length ?? 0) > 0;
-  const src = tab;
+  /** Both tabs read the King James — only the list of references differs. */
+  const src = "kjv";
+  const marks = useMemo(() => usageWords(usage ?? ""), [usage]);
 
   // Text for what is on screen, grouped by book. Only the visible slice: an
   // entry holds up to 250 references, and pulling every book they touch would
@@ -182,10 +194,10 @@ export default function Concordance({
     const mine = generation.current;
     const wanted = new Map<number, VerseRef[]>();
     for (const r of shown) {
-      const key = `${src}:${verseKey(r.b, r.c, r.v)}`;
+      const key = `${src}:${verseKey(r.b, r.kc, r.kv)}`;
       if (requested.current.has(key)) continue;
       requested.current.add(key);
-      const ref = { bookNr: r.b, chapter: r.c, verse: r.v };
+      const ref = { bookNr: r.b, chapter: r.kc, verse: r.kv };
       const list = wanted.get(r.b);
       if (list) list.push(ref);
       else wanted.set(r.b, [ref]);
@@ -257,21 +269,20 @@ export default function Concordance({
 
   /** The verse, the reason it is not here yet, or the reason it never will be. */
   const bodyOf = (r: Row) => {
-    const key = `${src}:${verseKey(r.b, r.c, r.v)}`;
+    const key = `${src}:${verseKey(r.b, r.kc, r.kv)}`;
     const text = texts[key];
     if (text) {
+      // the King James list knows the words this verse used; the Septuagint
+      // list knows only the lemma, so it marks by this word's renderings
       return tab === "kjv" ? (
         <HighlightedText text={text} needle={r.word} />
       ) : (
-        text
+        <HighlightedText text={text} words={marks} />
       );
     }
     if (failed[`${src}:${r.b}`]) {
-      return (
-        <span className="conc-status">
-          {tab === "lxx" ? t("reader.concLxxOffline") : t("reader.concOffline")}
-        </span>
-      );
+      // one message now, because both tabs are waiting on the same book
+      return <span className="conc-status">{t("reader.concOffline")}</span>;
     }
     if (settled[key]) {
       // the book came back and this verse was not in it — the Greek runs past
@@ -279,6 +290,7 @@ export default function Concordance({
       // carried as verses here
       return <span className="conc-status">{t("reader.concNoVerse")}</span>;
     }
+
     return <span className="conc-waiting">&nbsp;</span>;
   };
 
@@ -387,10 +399,7 @@ export default function Concordance({
                         </span>
                         <span
                           data-row={id}
-                          className={`conc-text${tab === "lxx" ? " lxx" : ""}${
-                            open ? " open" : ""
-                          }`}
-                          lang={tab === "lxx" ? "el" : undefined}
+                          className={`conc-text${open ? " open" : ""}`}
                         >
                           {bodyOf(r)}
                         </span>

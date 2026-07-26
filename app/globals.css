@@ -2891,11 +2891,6 @@ button.menu-tile {
   line-clamp: unset;
 }
 
-.conc-text.lxx {
-  font-family: var(--sans);
-  font-size: 0.92rem;
-}
-
 .conc-expand {
   display: block;
   margin: 0 10px 8px auto;
