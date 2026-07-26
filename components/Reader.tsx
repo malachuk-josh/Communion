@@ -143,6 +143,8 @@ export default function Reader({
   const genRef = useRef(0);
   /** the chapter this reader has already been placed at */
   const placedRef = useRef<string | null>(null);
+  /** the verse to come back to, read once from the remembered position */
+  const restoreVerseRef = useRef<number | null>(null);
   const readRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -338,7 +340,12 @@ export default function Reader({
     try {
       const saved = JSON.parse(
         window.localStorage.getItem("communion.reading") ?? "null"
-      ) as { translation: string; bookNr: number; chapter: number } | null;
+      ) as {
+        translation: string;
+        bookNr: number;
+        chapter: number;
+        verse?: number;
+      } | null;
       if (saved && getBook(saved.bookNr)) {
         if (TRANSLATIONS.some((tr) => tr.id === saved.translation)) {
           setTranslation(saved.translation);
@@ -348,6 +355,9 @@ export default function Reader({
           setBookNr(saved.bookNr);
           setChapter(saved.chapter);
           setViewChapter(saved.chapter);
+          // consumed by the first placement, so coming back lands where they
+          // left rather than at the top of the chapter they left from
+          if (saved.verse) restoreVerseRef.current = saved.verse;
         }
       } else if (!linked) {
         // first visit: land on the founding verse, gently highlighted
@@ -447,18 +457,57 @@ export default function Reader({
   }, []);
 
   /** Put the reader at the top of a chapter, clear of the sticky header. */
-  const placeAt = (ch: number) => {
-    const head = document.querySelector<HTMLElement>(
-      `.chap-head[data-ch="${ch}"]`
-    );
-    if (!head) {
+  const placeAt = (ch: number, verse?: number) => {
+    // a remembered verse if there is one, the chapter's heading otherwise
+    const target =
+      (verse
+        ? document.querySelector<HTMLElement>(`[data-v="${ch}:${verse}"]`)
+        : null) ??
+      document.querySelector<HTMLElement>(`.chap-head[data-ch="${ch}"]`);
+    if (!target) {
       window.scrollTo({ top: 0 });
       return;
     }
     const nav = document.querySelector<HTMLElement>(".nav");
     const clear = (nav?.getBoundingClientRect().height ?? 0) + 10;
-    const top = head.getBoundingClientRect().top + window.scrollY - clear;
+    const top = target.getBoundingClientRect().top + window.scrollY - clear;
     window.scrollTo({ top: Math.max(0, top) });
+  };
+
+  /**
+   * Remember where the reader is, to the verse.
+   *
+   * The chapter alone was not enough: leaving from the middle of Psalm 119
+   * and coming back put them at verse 1, and the longer the chapter the more
+   * of it they had to find again. The verse is only worked out here, when
+   * there is something to save — scanning every verse on every scroll frame
+   * would cost far more than it is worth.
+   */
+  const saveReading = () => {
+    const ch = viewChapterRef.current;
+    const shown = document.querySelectorAll<HTMLElement>("[data-v]");
+    // Nothing on screen to read a verse from: the text has not arrived yet,
+    // or React has already taken it away on the way out. Either way, writing
+    // now would replace a good record with a chapter and no verse.
+    if (shown.length === 0) return;
+    const nav = document.querySelector<HTMLElement>(".nav");
+    // The same line placeAt() aligns to, and for the same reason: save by one
+    // rule and restore by another and every trip through loses a verse. This
+    // asks which verse placeAt() would have to put here to reproduce the
+    // page as it stands, so saving and restoring are inverses.
+    const edge = (nav?.getBoundingClientRect().height ?? 0) + 10;
+    let verse: number | undefined;
+    for (const el of shown) {
+      // the first verse whose top has not yet passed under the header
+      if (el.getBoundingClientRect().top < edge - 4) continue;
+      const [c, v] = (el.dataset.v ?? "").split(":").map(Number);
+      if (c === ch) verse = v;
+      break;
+    }
+    window.localStorage.setItem(
+      "communion.reading",
+      JSON.stringify({ translation, bookNr, chapter: ch, verse })
+    );
   };
 
   useEffect(() => {
@@ -503,11 +552,10 @@ export default function Reader({
     placedRef.current = want;
     setViewChapter(chapter);
     viewChapterRef.current = chapter;
-    placeAt(chapter);
-    window.localStorage.setItem(
-      "communion.reading",
-      JSON.stringify({ translation, bookNr, chapter })
-    );
+    const back = restoreVerseRef.current;
+    restoreVerseRef.current = null;
+    placeAt(chapter, back ?? undefined);
+    saveReading();
   }, [loading, error, chapters, translation, bookNr, chapter]);
 
   // Hold the reader's place when something grows above them. Nothing is
@@ -534,28 +582,44 @@ export default function Reader({
       window.requestAnimationFrame(() => {
         ticking = false;
         let current = chapter;
+        // Capped, not a plain fraction of the screen. At 40% of an iPad's
+        // 1366px a chapter counted as "the one being read" while its heading
+        // was still 546px down the page — so the reader was marked a chapter
+        // ahead of their eyes, and that was the chapter they came back to.
+        const edge = Math.min(window.innerHeight * 0.4, 320);
         for (const head of document.querySelectorAll<HTMLElement>(
           ".chap-head"
         )) {
-          if (head.getBoundingClientRect().top < window.innerHeight * 0.4) {
+          if (head.getBoundingClientRect().top < edge) {
             current = Number(head.dataset.ch) || current;
           }
         }
         setViewChapter((prev) => (prev === current ? prev : current));
+        // and remember the verse, once the thumb has come to rest
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(saveReading, 600);
       });
     };
+    // Leaving is the moment this has to be right, and it is the one moment a
+    // debounce can miss: a tab going away never gets its trailing timer.
+    const onHide = () => {
+      if (document.visibilityState === "hidden") saveReading();
+    };
+    let saveTimer = 0;
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [chapter]);
-
-  // scrolling into a later chapter updates the saved reading position
-  useEffect(() => {
-    if (viewChapter === chapter) return;
-    window.localStorage.setItem(
-      "communion.reading",
-      JSON.stringify({ translation, bookNr, chapter: viewChapter })
-    );
-  }, [viewChapter, chapter, translation, bookNr]);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", saveReading);
+    return () => {
+      window.clearTimeout(saveTimer);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", saveReading);
+      // navigating away inside the app unmounts the reader without ever
+      // hiding the tab, so this is the pass that catches it
+      saveReading();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapter, translation, bookNr]);
 
   // pinch-to-zoom on the scripture column replaces text-size buttons on
   // touch screens; page zoom itself is disabled app-wide, so the gesture
@@ -634,9 +698,17 @@ export default function Reader({
         // scroller until the gesture ends — so this is the pass that is
         // guaranteed to land.
         if (anchor) {
+          // Twice, a frame apart. Once is enough when the steps of a gesture
+          // arrive on separate frames, but a fast pinch can land several in
+          // one — and then the commit for the last and largest of them is
+          // still settling when the first pass measures. The second is a
+          // no-op whenever the first was right.
           requestAnimationFrame(() => {
             restore(anchor);
-            holdRef.current = null;
+            requestAnimationFrame(() => {
+              restore(anchor);
+              holdRef.current = null;
+            });
           });
         }
         window.localStorage.setItem("communion.textPt", String(ptRef.current));
