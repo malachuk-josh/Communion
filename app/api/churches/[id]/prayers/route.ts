@@ -3,7 +3,12 @@ import { getUserId } from "@/lib/auth";
 import { getChurch, getRole } from "@/lib/churches";
 import { addPrayer, listPrayers } from "@/lib/prayers";
 
-/** The prayer list of a Gathering. Members only — this is not public. */
+/**
+ * The prayer list of a Gathering. Members only, and deliberately unlike the
+ * discussions beside it: a public Gathering opens its conversation to anyone
+ * who wanders in, but not the things its members are carrying. Someone has to
+ * be inside before they can read what was asked in confidence.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

@@ -9,7 +9,11 @@ import {
   validateAttach,
 } from "@/lib/threads";
 
-/** One discussion thread with its posts (Gathering members only). */
+/**
+ * One discussion thread with its posts. Open to anyone when the Gathering is
+ * public, closed when it is private — the same rule as the thread list.
+ * Replying and deleting stay members-only.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ threadId: string }> }
@@ -23,18 +27,19 @@ export async function GET(
   if (!meta) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (!(await getRole(meta.churchId, userId))) {
-    return NextResponse.json({ error: "Not a member" }, { status: 403 });
-  }
   const church = await getChurch(meta.churchId);
   const role = await getRole(meta.churchId, userId);
+  if (!role && (!church || church.visibility === "private")) {
+    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  }
   return NextResponse.json({
     thread: meta,
     posts: await getPosts(threadId),
     churchName: church?.name ?? "",
     myUserId: userId,
-    canDelete: meta.createdBy === userId || role === "founder",
+    canDelete: !!role && (meta.createdBy === userId || role === "founder"),
     isAdmin: role === "founder",
+    canPost: !!role,
   });
 }
 

@@ -3,7 +3,12 @@ import { getUserId } from "@/lib/auth";
 import { getChurch, getRole } from "@/lib/churches";
 import { createThread, listThreads, validateAttach } from "@/lib/threads";
 
-/** Discussion threads in a Gathering (members only). */
+/**
+ * Discussion threads in a Gathering. Readable by anyone when the Gathering is
+ * public — that is most of what makes it public, and someone deciding whether
+ * to join should be able to see what is talked about. A private one stays
+ * shut. Writing is members-only either way; see POST below.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -15,11 +20,15 @@ export async function GET(
   const { id } = await params;
   const role = await getRole(id, userId);
   if (!role) {
-    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+    const church = await getChurch(id);
+    if (!church || church.visibility === "private") {
+      return NextResponse.json({ error: "Not a member" }, { status: 403 });
+    }
   }
   return NextResponse.json({
     threads: await listThreads(id),
     myUserId: userId,
+    // null, not "", so the client can tell a visitor from a member
     myRole: role,
   });
 }

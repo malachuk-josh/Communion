@@ -33,6 +33,8 @@ export default function ThreadView({ threadId }: { threadId: string }) {
   const router = useRouter();
   const [canDelete, setCanDelete] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  /** false for someone reading a public Gathering they have not joined */
+  const [canPost, setCanPost] = useState(false);
   const [meta, setMeta] = useState<ThreadMeta | null>(null);
   const [posts, setPosts] = useState<ThreadPost[]>([]);
   const [myUserId, setMyUserId] = useState("");
@@ -51,6 +53,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
       myUserId: string;
       canDelete: boolean;
       isAdmin: boolean;
+      canPost: boolean;
     }>(`/api/threads/${threadId}`)
       .then((res) => {
         setMeta(res.thread);
@@ -58,6 +61,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
         setMyUserId(res.myUserId);
         setCanDelete(res.canDelete);
         setIsAdmin(res.isAdmin);
+        setCanPost(res.canPost);
       })
       .catch(() => setNotFound(true));
   }, [threadId]);
@@ -226,6 +230,9 @@ export default function ThreadView({ threadId }: { threadId: string }) {
         </div>
       )}
       {error && <p className="error-text">{error}</p>}
+      {/* a visitor to a public Gathering may read the discussion; joining is
+          what earns a voice in it */}
+      {canPost && (
       <div className="composer glass">
         <button
           type="button"
@@ -251,6 +258,7 @@ export default function ThreadView({ threadId }: { threadId: string }) {
           ↑
         </button>
       </div>
+      )}
     </div>
   );
 }

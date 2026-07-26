@@ -24,7 +24,8 @@ export default function ThreadList({ churchId }: { churchId: string }) {
   const { lang, t } = useI18n();
   const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
   const [myUserId, setMyUserId] = useState("");
-  const [myRole, setMyRole] = useState("");
+  /** null for someone reading a public Gathering they have not joined */
+  const [myRole, setMyRole] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -34,7 +35,7 @@ export default function ThreadList({ churchId }: { churchId: string }) {
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
-    api<{ threads: ThreadSummary[]; myUserId: string; myRole: string }>(
+    api<{ threads: ThreadSummary[]; myUserId: string; myRole: string | null }>(
       `/api/churches/${churchId}/threads`
     )
       .then((res) => {
@@ -83,12 +84,14 @@ export default function ThreadList({ churchId }: { churchId: string }) {
     <>
       <div className="section-head">
         <h2>{t("threads.title")}</h2>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => setOpen((v) => !v)}
-        >
-          ＋ {t("threads.new")}
-        </button>
+        {myRole && (
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => setOpen((v) => !v)}
+          >
+            ＋ {t("threads.new")}
+          </button>
+        )}
       </div>
 
       {open && (

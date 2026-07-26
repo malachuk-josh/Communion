@@ -276,9 +276,15 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
         </>
       )}
 
+      {/* The prayer list is for members and no one else, even here, where
+          the Gathering is public and everything around it is on show. The
+          discussions are the opposite: being able to read them is most of
+          what makes a Gathering public. */}
       {isMember && <PrayerList churchId={churchId} />}
 
-      {isMember && <ThreadList churchId={churchId} />}
+      {(isMember || church.visibility === "public") && (
+        <ThreadList churchId={churchId} />
+      )}
 
       {showInvite && (
         <InviteModal churchId={churchId} churchName={church.name} onClose={() => setShowInvite(false)} />
