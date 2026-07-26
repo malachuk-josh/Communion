@@ -1100,8 +1100,10 @@ mark {
   border-bottom: 1px solid var(--glass-border);
 }
 
-.sp-search-btn {
+/* the round buttons in the navigator's header: search, and the menu */
+.sp-icon-btn {
   display: inline-flex;
+  text-decoration: none;
   align-items: center;
   justify-content: center;
   width: 34px;
@@ -1115,7 +1117,7 @@ mark {
   font-size: 0.95rem;
 }
 
-.sp-search-btn.on {
+.sp-icon-btn.on {
   color: var(--gold);
   border-color: var(--gold-soft);
   background: var(--gold-soft);

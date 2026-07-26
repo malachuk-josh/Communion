@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DEFAULT_TRANSLATION,
@@ -13,7 +14,7 @@ import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
-import { scrollToChapterTop, useReading } from "@/lib/reading";
+import { useReading } from "@/lib/reading";
 import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
 import { readOutbox } from "@/lib/localStore";
 import {
@@ -2386,7 +2387,7 @@ export default function Reader({
               </span>
               <button
                 type="button"
-                className={`sp-search-btn${searchOpen ? " on" : ""}`}
+                className={`sp-icon-btn${searchOpen ? " on" : ""}`}
                 onClick={() => setSearchOpen((open) => !open)}
                 aria-expanded={searchOpen}
                 aria-label={t("search.button")}
@@ -2394,16 +2395,15 @@ export default function Reader({
               >
                 <Icon name="search" />
               </button>
-              <button
-                type="button"
-                className="lex-count lex-count-btn"
-                onClick={() => {
-                  setPanelOpen(false);
-                  scrollToChapterTop(viewChapter);
-                }}
+              <Link
+                href="/menu"
+                className="sp-icon-btn"
+                onClick={() => setPanelOpen(false)}
+                aria-label={t("nav.menu")}
+                title={t("nav.menu")}
               >
-                ↑ {t("reader.toTop")}
-              </button>
+                <Icon name="menu" />
+              </Link>
               <button
                 type="button"
                 className="lex-close"
