@@ -44,6 +44,7 @@ const SHELL_ROUTES = [
   "/churches",
   "/discover",
   "/menu",
+  "/menu/journal",
   "/menu/offline",
 ];
 

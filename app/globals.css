@@ -73,7 +73,7 @@ html {
 }
 
 :root[data-theme="light"] .nav {
-  background: rgba(247, 240, 224, 0.7);
+  background: rgba(247, 240, 224, 0.97);
 }
 
 /* installed app, light theme: the transparent status bar shows white text,
@@ -158,7 +158,7 @@ html {
 }
 
 :root[data-theme="grey"] .nav {
-  background: rgba(16, 17, 19, 0.6);
+  background: rgba(16, 17, 19, 0.97);
   backdrop-filter: blur(22px) saturate(0);
   -webkit-backdrop-filter: blur(22px) saturate(0);
 }
@@ -223,7 +223,14 @@ html.reading body::-webkit-scrollbar {
   padding-top: env(safe-area-inset-top, 0px);
   backdrop-filter: blur(22px) saturate(1.5);
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  background: rgba(12, 14, 28, 0.55);
+  /* Opaque, and it has to be. In The Word the scripture is full-bleed and
+     runs edge to edge directly beneath this bar; at the old 0.55 the blurred
+     lines came through as soft grey smears that sat beside each nav label and
+     read as a badly-aligned drop shadow. Alpha alone carries this: a browser
+     that quietly drops backdrop-filter (it needs GPU compositing, and not
+     every machine gives it) must still land on a readable header. The blur
+     stays for the sliver that does get through, and for the edge. */
+  background: rgba(12, 14, 28, 0.97);
   border-bottom: 1px solid var(--glass-border);
 }
 
@@ -260,12 +267,20 @@ html.reading body::-webkit-scrollbar {
 
 .nav-links {
   display: flex;
+  /* not the default stretch: the tabs must size to their own text. Stretching
+     made every tab as tall as the tallest one while its label stayed at the
+     top of its box, so the labels sat high in their pills. */
+  align-items: center;
   gap: 4px;
   flex: 1;
 }
 
 .nav-link {
-  padding: 8px 16px;
+  /* an explicit line box, so the label is centred by the padding rather than
+     by whatever leading the fallback font happens to carry */
+  display: block;
+  padding: 9px 16px;
+  line-height: 1.4;
   border-radius: 999px;
   font-size: 1.06rem;
   font-weight: 500;
@@ -278,10 +293,13 @@ html.reading body::-webkit-scrollbar {
   background: var(--glass);
 }
 
+/* an inset ring rather than a border: a real border would make the active tab
+   2px taller and 2px wider than its neighbours, shifting its label off the
+   line the others sit on */
 .nav-link.active {
   color: var(--ink);
   background: var(--glass-strong);
-  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
 }
 
 .lang-toggle {
@@ -3271,4 +3289,146 @@ button.menu-tile {
   margin-left: 0.15em;
   vertical-align: super;
   line-height: 0;
+}
+
+/* ---- My Journal ----------------------------------------------------------
+   One screen for everything this account has made: notes, kept verses and
+   plan progress, each sorted into its own kind. Rows are cards so they read
+   as the same material as the rest of the app, but a good deal quieter —
+   there can be hundreds of them, and .card's 22px would make a wall. */
+.jr-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 6px;
+}
+
+/* no background here: .chip sets one and .chip-active replaces it, and both
+   are single-class selectors, so anything declared later would quietly win */
+.jr-tab {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 14px;
+}
+
+.jr-count {
+  min-width: 1.5em;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.chip-active .jr-count {
+  background: var(--gold-soft);
+}
+
+.jr-group {
+  margin-top: 22px;
+}
+
+.jr-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.jr-group-count {
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.jr-list {
+  display: grid;
+  gap: 10px;
+}
+
+.jr-list-tight {
+  gap: 6px;
+}
+
+/* the sibling rule that spaces stacked cards would fight the grid gap */
+.jr-list .card + .card {
+  margin-top: 0;
+}
+
+.jr-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+a.jr-row:hover {
+  border-color: var(--glass-border-bright);
+  transform: translateY(-1px);
+}
+
+.jr-ref {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: var(--gold);
+}
+
+/* three lines is enough to recognise a note by; the reader has the whole of
+   it, and that is one tap away */
+.jr-note {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.jr-plan {
+  gap: 8px;
+}
+
+.jr-plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jr-plan-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.jr-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-top: 18px;
+  color: var(--ink-dim);
+}
+
+.jr-empty p {
+  margin: 0;
+}
+
+.jr-more {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 0.9rem;
 }

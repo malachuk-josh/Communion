@@ -142,6 +142,8 @@ export function readLocalNotes(book: number): Promise<Record<string, string> | n
   return getLocal<Record<string, string>>(NOTES_STORE, book);
 }
 
+export { readAllNotes as readLocalNotesAll } from "@/lib/localStore";
+
 export function writeLocalNotes(
   book: number,
   notes: Record<string, string>

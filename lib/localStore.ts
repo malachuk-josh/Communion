@@ -135,6 +135,40 @@ export async function dropOutbox(seqs: number[]): Promise<void> {
   }
 }
 
+/**
+ * Every book's notes this device is holding, keyed by book number.
+ *
+ * The reader stores one record per book, so there is no single place that
+ * knows what you have written across the whole Bible. The journal needs
+ * exactly that, and needs it offline, so read the keys and the values in one
+ * transaction — getAll() alone loses which book each record belongs to.
+ */
+export async function readAllNotes(): Promise<
+  Record<number, Record<string, string>>
+> {
+  try {
+    const db = await open();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(NOTES_STORE, "readonly");
+      const store = tx.objectStore(NOTES_STORE);
+      const keys = store.getAllKeys();
+      const values = store.getAll();
+      tx.oncomplete = () => {
+        const out: Record<number, Record<string, string>> = {};
+        keys.result.forEach((key, i) => {
+          const book = Number(key);
+          const value = values.result[i] as Record<string, string>;
+          if (book && value) out[book] = value;
+        });
+        resolve(out);
+      };
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    return {};
+  }
+}
+
 /** Forget everything this device holds — used when the account changes. */
 export async function clearLocalData(): Promise<void> {
   memoryQueue.length = 0;
