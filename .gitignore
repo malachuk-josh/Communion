@@ -4,6 +4,9 @@ out/
 build/
 .env
 .env*.local
+# and any copy of one — a .bak of .env.local slipped past the line above
+.env*.local.*
+*.bak
 .vercel
 next-env.d.ts
 *.tsbuildinfo
