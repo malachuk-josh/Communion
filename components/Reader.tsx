@@ -500,7 +500,7 @@ export default function Reader({
     if (!el) return;
     const moved = el.getBoundingClientRect().top - held.top;
     if (moved !== 0) window.scrollBy(0, moved);
-  }, [study, heads, xrefs, strongsTokens, notes, context]);
+  }, [study, pt, heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -563,6 +563,11 @@ export default function Reader({
       );
       const next = Math.min(PT_MAX, Math.max(PT_MIN, pinch.pt + steps));
       if (next !== ptRef.current) {
+        // Resizing the type reflows the whole column, so the scroll offset
+        // stops meaning what it meant — the verse under your thumb walks up
+        // or down the page, by chapters if you are deep into a book. Pin it
+        // first; the layout effect below puts it back where it was.
+        holdVerse();
         ptRef.current = next;
         setPt(next);
       }
@@ -575,15 +580,30 @@ export default function Reader({
         window.setTimeout(() => setPinchShow(null), 800);
       }
     };
+    // WebKit's own pinch-to-zoom, which is a separate gesture stack from
+    // touch events: preventDefault on touchmove does not touch it, and
+    // Safari has ignored user-scalable=no in a browser tab since iOS 10. Left
+    // alone it magnifies the page underneath the resize, which pans the
+    // visual viewport and reads as losing your place — worst on an iPad,
+    // where the spread is wide enough to cross Safari's threshold. Only on
+    // the reading column, and only because the app answers the same gesture
+    // with something better.
+    const stopGesture = (e: Event) => e.preventDefault();
     el.addEventListener("touchstart", onStart, { passive: true });
     el.addEventListener("touchmove", onMove, { passive: false });
     el.addEventListener("touchend", onEnd, { passive: true });
     el.addEventListener("touchcancel", onEnd, { passive: true });
+    el.addEventListener("gesturestart", stopGesture);
+    el.addEventListener("gesturechange", stopGesture);
+    el.addEventListener("gestureend", stopGesture);
     return () => {
       el.removeEventListener("touchstart", onStart);
       el.removeEventListener("touchmove", onMove);
       el.removeEventListener("touchend", onEnd);
       el.removeEventListener("touchcancel", onEnd);
+      el.removeEventListener("gesturestart", stopGesture);
+      el.removeEventListener("gesturechange", stopGesture);
+      el.removeEventListener("gestureend", stopGesture);
     };
   }, []);
 
@@ -1346,6 +1366,8 @@ export default function Reader({
   const zoom = (delta: number) => {
     const next = pt + delta;
     if (next < PT_MIN || next > PT_MAX) return;
+    // same reflow as a pinch, same need to hold the reader's place
+    holdVerse();
     setPt(next);
     ptRef.current = next;
     window.localStorage.setItem("communion.textPt", String(next));

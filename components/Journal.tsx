@@ -15,10 +15,11 @@ import { useEffect, useMemo, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { api } from "@/lib/client";
-import { getBook } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
 import { readOutbox } from "@/lib/localStore";
+import { fetchVerses, verseKey } from "@/lib/scripture";
 import {
   adoptIdentity,
   flush,
@@ -72,6 +73,10 @@ export default function Journal() {
     {}
   );
   const [plans, setPlans] = useState<Record<string, number>>({});
+  /** scripture for the verses kept, keyed by verseKey() */
+  const [verses, setVerses] = useState<Record<string, string>>({});
+  /** which row's share just landed on the clipboard */
+  const [copied, setCopied] = useState<string | null>(null);
 
   // ---- bookmarks, collections and plan progress ---------------------------
   // The same order the reader and Discover use: the device's copy on screen
@@ -192,6 +197,93 @@ export default function Journal() {
     };
   }, []);
 
+  // ---- scripture for the verses kept --------------------------------------
+  // A reference on its own is a lookup; the verse is the thing you kept. It is
+  // what a bookmark row shows, and what a share of either kind carries. Only
+  // fetched for the tab actually open, and in one call — fetchVerses groups by
+  // book, so a shelf spread across the Bible costs one request per book rather
+  // than one per verse.
+  useEffect(() => {
+    const wanted =
+      tab === "bookmarks"
+        ? Object.keys(bookmarks)
+            .map((key) => key.split(":").map(Number))
+            .filter(([b, c, v]) => b && c && v)
+            .map(([b, c, v]) => ({ bookNr: b, chapter: c, verse: v }))
+        : tab === "notes"
+          ? notes.map((n) => ({ bookNr: n.b, chapter: n.c, verse: n.v }))
+          : [];
+    const refs = wanted.filter(
+      (r) => verses[verseKey(r.bookNr, r.chapter, r.verse)] === undefined
+    );
+    if (refs.length === 0) return;
+    let cancelled = false;
+    // whichever translation the reader was last left in
+    let translation = DEFAULT_TRANSLATION;
+    try {
+      const saved = JSON.parse(
+        window.localStorage.getItem("communion.reading") ?? "null"
+      ) as { translation?: string } | null;
+      if (saved?.translation) translation = saved.translation;
+    } catch {
+      // nothing saved, or corrupted — the default stands
+    }
+    void fetchVerses(translation, refs).then((batch) => {
+      if (cancelled || batch.verses.size === 0) return;
+      setVerses((prev) => {
+        const next = { ...prev };
+        for (const [key, text] of batch.verses) next[key] = text;
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // `verses` is written here and only read to skip what is already in hand
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, bookmarks, notes]);
+
+  /**
+   * Hand a passage to whatever the device shares with. The native sheet where
+   * there is one, the clipboard where there is not — the same ladder the
+   * reader's word study uses, minus the SMS fallback, because a journal entry
+   * is as often going into a document as into a message.
+   */
+  const share = async (id: string, text: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch {
+        // cancelled, or refused — fall through and copy instead
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      window.setTimeout(() => setCopied((c) => (c === id ? null : c)), 2200);
+    } catch {
+      // no clipboard either; nothing useful left to do quietly
+    }
+  };
+
+  const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
+
+  /** One entry: the reference, the verse, and whatever you wrote on it. */
+  const entryText = (
+    row: { b: number; c: number; v: number },
+    said?: string
+  ) => {
+    const scripture = verses[verseKey(row.b, row.c, row.v)];
+    return [
+      `${refLabel(row, lang)}${scripture ? ` — ${scripture}` : ""}`,
+      said ? `\n${said}` : "",
+      `\n${SIGNATURE}`,
+    ]
+      .filter(Boolean)
+      .join("");
+  };
+
   // ---- shaping ------------------------------------------------------------
 
   /** Notes grouped under their book, in canonical order. */
@@ -287,16 +379,29 @@ export default function Journal() {
                 <span className="jr-group-count">{group.rows.length}</span>
               </h2>
               <div className="jr-list">
-                {group.rows.map((row) => (
-                  <Link
-                    key={`${row.c}:${row.v}`}
-                    href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
-                    className="glass card jr-row"
-                  >
-                    <span className="jr-ref">{refLabel(row, lang)}</span>
-                    <p className="jr-note">{row.text}</p>
-                  </Link>
-                ))}
+                {group.rows.map((row) => {
+                  const id = `n-${row.b}-${row.c}-${row.v}`;
+                  return (
+                    <div key={id} className="glass card jr-row">
+                      {/* the link cannot wrap the share button: one
+                          interactive element inside another is invalid, and
+                          a tap on the button would follow the link too */}
+                      <Link
+                        href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
+                        className="jr-go"
+                      >
+                        <span className="jr-ref">{refLabel(row, lang)}</span>
+                        <p className="jr-note">{row.text}</p>
+                      </Link>
+                      <ShareButton
+                        copied={copied === id}
+                        label={t("discover.share")}
+                        done={t("reader.copied")}
+                        onClick={() => share(id, entryText(row, row.text))}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ))
@@ -316,18 +421,57 @@ export default function Journal() {
                 <Icon name={group.id ? "collection" : "bookmark"} />
                 {group.name}
                 <span className="jr-group-count">{group.rows.length}</span>
+                <ShareButton
+                  copied={copied === `g-${group.id}`}
+                  label={t("journal.shareGroup", { name: group.name })}
+                  done={t("reader.copied")}
+                  onClick={() =>
+                    share(
+                      `g-${group.id}`,
+                      [
+                        group.name,
+                        "",
+                        ...group.rows.map((r) => {
+                          const text = verses[verseKey(r.b, r.c, r.v)];
+                          return `${refLabel(r, lang)}${text ? ` — ${text}` : ""}`;
+                        }),
+                        "",
+                        SIGNATURE,
+                      ].join("\n")
+                    )
+                  }
+                />
               </h2>
-              <div className="jr-list jr-list-tight">
-                {group.rows.map((row) => (
-                  <Link
-                    key={row.key}
-                    href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
-                    className="glass card jr-row"
-                  >
-                    <span className="jr-ref">{refLabel(row, lang)}</span>
-                    {row.entry.l && <p className="jr-note">{row.entry.l}</p>}
-                  </Link>
-                ))}
+              <div className="jr-list">
+                {group.rows.map((row) => {
+                  const scripture = verses[verseKey(row.b, row.c, row.v)];
+                  return (
+                    <div key={row.key} className="glass card jr-row">
+                      <Link
+                        href={`/?b=${row.b}&c=${row.c}&v=${row.v}`}
+                        className="jr-go"
+                      >
+                        <span className="jr-ref">{refLabel(row, lang)}</span>
+                        {scripture ? (
+                          <p className="jr-verse">{scripture}</p>
+                        ) : (
+                          <p className="jr-verse jr-verse-wait">&nbsp;</p>
+                        )}
+                        {row.entry.l && (
+                          <p className="jr-note jr-label">{row.entry.l}</p>
+                        )}
+                      </Link>
+                      <ShareButton
+                        copied={copied === row.key}
+                        label={t("discover.share")}
+                        done={t("reader.copied")}
+                        onClick={() =>
+                          share(row.key, entryText(row, row.entry.l))
+                        }
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ))
@@ -425,6 +569,32 @@ function PlanRow({
     </Link>
   ) : (
     <div className="glass card jr-row jr-plan">{body}</div>
+  );
+}
+
+/** A quiet share affordance that says so when it has fallen back to a copy. */
+function ShareButton({
+  copied,
+  label,
+  done,
+  onClick,
+}: {
+  copied: boolean;
+  label: string;
+  done: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`jr-share${copied ? " done" : ""}`}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <Icon name={copied ? "check" : "share"} />
+      {copied && <span className="jr-share-done">{done}</span>}
+    </button>
   );
 }
 

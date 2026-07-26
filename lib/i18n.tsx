@@ -86,6 +86,7 @@ const dictionaries = {
       "No bookmarks yet. Keep a verse in The Word and it will appear here.",
     "journal.noPlans":
       "No reading plan under way. Pick one in Discover and your progress shows up here.",
+    "journal.shareGroup": "Share {name}",
     "journal.openWord": "Open The Word",
     "journal.browsePlans": "Browse reading plans",
     "messages.title": "The Table",
@@ -607,6 +608,7 @@ const dictionaries = {
       "Todavía no hay marcadores. Guarda un versículo en La Palabra y aparecerá aquí.",
     "journal.noPlans":
       "No tienes ningún plan en curso. Elige uno en Descubre y verás tu progreso aquí.",
+    "journal.shareGroup": "Compartir {name}",
     "journal.openWord": "Abrir La Palabra",
     "journal.browsePlans": "Ver planes de lectura",
     "messages.title": "La Mesa",

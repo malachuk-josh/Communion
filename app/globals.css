@@ -3474,18 +3474,78 @@ button.menu-tile {
   margin-top: 0;
 }
 
+/* the row is a container now: a link that fills it, and a share button that
+   sits beside — the button cannot live inside the link */
 .jr-row {
-  display: grid;
-  gap: 4px;
-  padding: 12px 16px;
-  text-decoration: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 10px 12px 16px;
   color: inherit;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-a.jr-row:hover {
+.jr-row:hover {
   border-color: var(--glass-border-bright);
-  transform: translateY(-1px);
+}
+
+.jr-go {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.jr-share {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.jr-share:hover {
+  color: var(--gold);
+  background: var(--glass);
+}
+
+.jr-share.done {
+  color: var(--gold);
+}
+
+.jr-group-head .jr-share {
+  margin-left: auto;
+}
+
+/* the verse itself, which is the thing that was kept */
+.jr-verse {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* a line's worth of nothing while the text is on its way, so the list does
+   not jump as verses land */
+.jr-verse-wait {
+  min-height: 1.5em;
+}
+
+/* a bookmark's own label sits under the verse, quieter than it */
+.jr-label {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
 }
 
 .jr-ref {
