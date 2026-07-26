@@ -229,7 +229,8 @@ function PlansSection() {
   // the handlers need what progress is *now*, not what it was when they were
   // built: two quick taps on "mark read" should count as two days
   const progressRef = useRef<Record<string, number>>({});
-  const [filter, setFilter] = useState<string>("all");
+  // no "everything" chip: the plans open on the first category
+  const [filter, setFilter] = useState<string>(PLAN_CATEGORIES[0]);
 
   const apply = (next: Record<string, number>) => {
     progressRef.current = next;
@@ -308,9 +309,7 @@ function PlansSection() {
   const shown =
     filter === "mine"
       ? started
-      : filter === "all"
-        ? PLANS
-        : PLANS.filter((p) => p.category === filter);
+      : PLANS.filter((p) => p.category === filter);
 
   const dayLabel = (day: { readings: { b: number; c: number }[] }) => {
     const refs = day.readings.map((r) =>
@@ -326,7 +325,7 @@ function PlansSection() {
       </div>
       <p className="subtitle plans-lead">{t("discover.plansLead")}</p>
       <div className="plan-filters">
-        {(["all", ...PLAN_CATEGORIES] as const).map((key) => (
+        {PLAN_CATEGORIES.map((key) => (
           <button
             key={key}
             type="button"
