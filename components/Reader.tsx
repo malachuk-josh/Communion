@@ -17,6 +17,7 @@ import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { STUDY_WILL_CHANGE, useReading } from "@/lib/reading";
 import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
+import { pushVisit } from "@/lib/history";
 import { readOutbox } from "@/lib/localStore";
 import {
   adoptIdentity,
@@ -1264,6 +1265,7 @@ export default function Reader({
     setBookNr(ref[0]);
     setChapter(ref[1]);
     setHighlightVerse(ref[2]);
+    pushVisit(ref[0], ref[1], ref[2]);
   };
 
   const goBack = () => {
@@ -2718,6 +2720,7 @@ export default function Reader({
                   // has to land before the highlight is asked to find one
                   setChapter(c);
                   setHighlightVerse(v);
+                  pushVisit(b, c, v);
                 }}
               />
 

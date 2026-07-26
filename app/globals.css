@@ -3840,3 +3840,36 @@ button.menu-tile {
   margin: -4px 0 12px;
   font-size: 0.85rem;
 }
+
+/* ---- the navigator's history ---------------------------------------------
+   Where the reader has been sent, under a heading that behaves exactly like
+   the two testaments above it. */
+.bn-history-count {
+  margin-left: 8px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.bn-history {
+  display: grid;
+  padding: 4px 0 10px;
+}
+
+.bn-history-row {
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  text-align: left;
+  padding: 10px 16px 10px 24px;
+  cursor: pointer;
+}
+
+.bn-history-row:hover {
+  background: var(--glass);
+  color: var(--gold);
+}

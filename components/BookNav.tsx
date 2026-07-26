@@ -6,7 +6,8 @@
 // feels like turning to it rather than picking from three dropdowns.
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import { BOOKS } from "@/lib/bible";
+import { BOOKS, getBook } from "@/lib/bible";
+import { readHistory, type Visit } from "@/lib/history";
 import { useI18n } from "@/lib/i18n";
 import { fetchBook } from "@/lib/scripture";
 
@@ -42,8 +43,18 @@ export default function BookNav({
   );
   /** books whose text could not be read, so the grid can say so */
   const [noCounts, setNoCounts] = useState<Record<number, boolean>>({});
+  /** where the reader has been sent, read once when the navigator opens */
+  const [history, setHistory] = useState<Visit[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const currentRef = useRef<HTMLDivElement>(null);
   const asked = useRef(new Set<string>());
+
+  // localStorage is not readable while rendering on the server, and the list
+  // cannot change underneath an open navigator — every way of adding to it
+  // closes the panel first — so once, on mount, is exactly right.
+  useEffect(() => {
+    setHistory(readHistory());
+  }, []);
 
   // Bring the open book a third of the way down the panel, but never scroll
   // past the top — for Genesis that would push the search field out of view.
@@ -228,6 +239,43 @@ export default function BookNav({
         "nt",
         t("reader.newTestament"),
         BOOKS.filter((b) => b.nr > LAST_OT_BOOK)
+      )}
+
+      {/* Below the two testaments, and sticky like them: where you have been
+          sent, as opposed to where you have scrolled. */}
+      {history.length > 0 && (
+        <div>
+          <button
+            type="button"
+            className="bn-testament"
+            aria-expanded={historyOpen}
+            onClick={() => setHistoryOpen((v) => !v)}
+          >
+            <span>
+              {t("reader.history")}
+              <span className="bn-history-count">{history.length}</span>
+            </span>
+            <span className={`bn-caret${historyOpen ? " open" : ""}`}>⌄</span>
+          </button>
+          {historyOpen && (
+            <div className="bn-history">
+              {history.map((h) => {
+                const book = getBook(h.b);
+                if (!book) return null;
+                return (
+                  <button
+                    key={`${h.b}:${h.c}:${h.v}`}
+                    type="button"
+                    className="bn-history-row"
+                    onClick={() => onVerse(h.b, h.c, h.v)}
+                  >
+                    {lang === "es" ? book.es : book.en} {h.c}:{h.v}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </nav>
   );
