@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
+  acrosticLetter,
   getBook,
   lxxPsalm,
   type ChapterData,
@@ -878,6 +879,21 @@ export default function Reader({
     return (lang === "es" ? entry.es : entry.en) || entry.en;
   };
 
+  /**
+   * The Hebrew letter opening a stanza of Psalm 119, centred above it. The
+   * letter and not its name: "Aleph" is a transliteration of the mark, and it
+   * is the mark that the poem is built on.
+   */
+  const stanzaMark = (ch: number, verse: number) => {
+    const letter = acrosticLetter(bookNr, ch, verse);
+    if (!letter) return null;
+    return (
+      <div className="acrostic" lang="he" dir="rtl">
+        {letter}
+      </div>
+    );
+  };
+
   /** Split a chapter into its sections, each with the title that opens it. */
   const runsOf = (ch: number, verses: Verse[]) => {
     const runs: { title?: string; verses: Verse[] }[] = [];
@@ -1687,6 +1703,7 @@ export default function Reader({
                           : ""
                       }`}
                     >
+                      {stanzaMark(ch, v.verse)}
                       {title && <h3 className="section-head">{title}</h3>}
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
@@ -1843,8 +1860,9 @@ export default function Reader({
                   {run.verses.map((v) => {
                     const mark = markOf(ch, v.verse);
                     return (
+                      <Fragment key={v.verse}>
+                      {stanzaMark(ch, v.verse)}
                       <p
-                        key={v.verse}
                         id={ch === chapter ? `v-${v.verse}` : undefined}
                         data-v={`${ch}:${v.verse}`}
                         className={`verse-line${
@@ -1861,6 +1879,7 @@ export default function Reader({
                           </sup>
                         )}
                       </p>
+                      </Fragment>
                     );
                   })}
                 </div>

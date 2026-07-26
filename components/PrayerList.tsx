@@ -258,6 +258,10 @@ export default function PrayerList({ churchId }: { churchId: string }) {
         </button>
       </div>
 
+      <p className="pr-privacy cal-hint">
+        <Icon name="lock" /> {t("prayers.privacy")}
+      </p>
+
       {open && (
         <div className="glass card pr-compose">
           <textarea

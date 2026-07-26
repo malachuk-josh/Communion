@@ -1408,6 +1408,24 @@ mark {
   color: var(--gold);
 }
 
+/* The Hebrew letter opening a stanza of Psalm 119. Centred, and outside the
+   hanging indent the verses sit in — it belongs to the stanza, not to the
+   line under it. */
+.acrostic {
+  margin: 1.1em 0 0.45em;
+  text-align: center;
+  font-size: 1.6em;
+  line-height: 1;
+  color: var(--gold);
+  /* the psalm opens on one, and nothing should push it off the top */
+  text-indent: 0;
+}
+
+.verse-block:first-child > .acrostic,
+.section:first-child > .acrostic {
+  margin-top: 0.3em;
+}
+
 /* One verse, one line. The number hangs in the margin and the wrapped lines
    align under the text rather than under the number — what a printed Bible
    does, and the reason the indent is negative on top of the padding. */
@@ -3812,4 +3830,13 @@ button.menu-tile {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+/* who can see the prayer list, said where it is asked about */
+.pr-privacy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 12px;
+  font-size: 0.85rem;
 }

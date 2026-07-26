@@ -134,6 +134,33 @@ export function kjvFromLxx(
   return { chapter, verse, mapped: false };
 }
 
+/**
+ * Psalm 119 is an acrostic: twenty-two stanzas of eight verses, each stanza's
+ * lines all beginning with the same Hebrew letter, in order. Printed Bibles
+ * mark the stanzas with the letter, and without it the psalm reads as one
+ * undifferentiated 176-verse block — the shape is the poem.
+ *
+ * The letters themselves, not their names: the name is a transliteration of
+ * the thing rather than the thing.
+ */
+const ALEPHBET = [
+  "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ",
+  "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת",
+];
+
+/** The Hebrew letter opening a stanza, when this verse opens one. */
+export function acrosticLetter(
+  bookNr: number,
+  chapter: number,
+  verse: number
+): string | null {
+  // Several psalms and the first four chapters of Lamentations are acrostics
+  // too, but only 119 is stanzaic, and only 119 is marked this way in print.
+  if (bookNr !== 19 || chapter !== 119) return null;
+  if (verse < 1 || verse > 176 || (verse - 1) % 8 !== 0) return null;
+  return ALEPHBET[(verse - 1) / 8] ?? null;
+}
+
 export function originalSourceFor(bookNr: number): string {
   return bookNr <= 39 ? "codex" : "textusreceptus";
 }

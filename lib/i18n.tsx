@@ -112,6 +112,8 @@ const dictionaries = {
     "messages.sharedWord": "Word study",
     "prayers.title": "Prayer list",
     "prayers.add": "Ask for prayer",
+    "prayers.privacy":
+      "Only members of this Gathering can see the prayer list — not visitors, even when the Gathering is public.",
     "prayers.placeholder": "What can your Gathering pray for?",
     "prayers.anonymously": "Ask without my name on it",
     "prayers.anonymous": "Someone in this Gathering",
@@ -654,6 +656,8 @@ const dictionaries = {
     "messages.sharedWord": "Estudio de palabra",
     "prayers.title": "Lista de oración",
     "prayers.add": "Pedir oración",
+    "prayers.privacy":
+      "Solo los miembros de esta Comunidad pueden ver la lista de oración — los visitantes no, aunque la Comunidad sea pública.",
     "prayers.placeholder": "¿Por qué puede orar tu Comunidad?",
     "prayers.anonymously": "Pedir sin mi nombre",
     "prayers.anonymous": "Alguien de esta Comunidad",
