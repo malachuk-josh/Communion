@@ -21,9 +21,7 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
-  /** the bar is up because it was asked for, not because we are near the top */
-  const [summoned, setSummoned] = useState(false);
-  /** where the page was when it was asked for */
+  /** where the page was when the bar was asked for; null when it was not */
   const summonedAt = useRef<number | null>(null);
 
   /**
@@ -47,28 +45,21 @@ export default function Nav() {
     return Math.min(Math.max(h || 90, 48), 260);
   };
 
-  // In The Word, reading down tucks the bottom nav away for an unbroken page.
-  // It comes back near the top of a book, or when the button below asks for
-  // it; scrolling on past a verse sends it away again.
+  // In The Word the bar starts away and stays away — the page is for reading,
+  // and the button it leaves behind is how it is asked back. It used to appear
+  // near the top of a book, which meant it arrived unbidden every time a
+  // chapter was opened. Every other tab simply has it.
   useEffect(() => {
+    summonedAt.current = null;
     if (pathname !== "/") {
       setNavHidden(false);
-      setSummoned(false);
       return;
     }
+    setNavHidden(true);
     const onScroll = () => {
-      const y = window.scrollY;
-      if (y < 130) {
-        summonedAt.current = null;
-        setSummoned(false);
-        setNavHidden(false);
-        return;
-      }
-      if (summonedAt.current !== null) {
-        if (Math.abs(y - summonedAt.current) <= verseHeight()) return;
-        summonedAt.current = null;
-        setSummoned(false);
-      }
+      if (summonedAt.current === null) return;
+      if (Math.abs(window.scrollY - summonedAt.current) <= verseHeight()) return;
+      summonedAt.current = null;
       setNavHidden(true);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -78,7 +69,6 @@ export default function Nav() {
   /** Bring the bar back, and remember from where. */
   const summonNav = () => {
     summonedAt.current = window.scrollY;
-    setSummoned(true);
     setNavHidden(false);
   };
 
