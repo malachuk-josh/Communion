@@ -14,6 +14,7 @@ import {
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
+import PrayerList from "@/components/PrayerList";
 import ThreadList from "@/components/ThreadList";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
@@ -274,6 +275,8 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           )}
         </>
       )}
+
+      {isMember && <PrayerList churchId={churchId} />}
 
       {isMember && <ThreadList churchId={churchId} />}
 

@@ -3681,3 +3681,119 @@ button.menu-tile {
   margin-top: 18px;
   font-size: 0.9rem;
 }
+
+/* ---- the prayer list -----------------------------------------------------
+   A Gathering's open requests, and the answered ones kept below them. */
+.pr-compose,
+.pr-card {
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.pr-compose textarea,
+.pr-answer-edit textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 11px 13px;
+  resize: vertical;
+}
+
+.pr-compose textarea:focus,
+.pr-answer-edit textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* an answered request stays on the list, but stops asking for attention */
+.pr-card.answered {
+  opacity: 0.72;
+}
+
+.pr-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pr-who {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+
+.pr-anon {
+  font-style: italic;
+}
+
+.pr-when {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.pr-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.pr-text {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.pr-answer {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 0.92rem;
+}
+
+.pr-actions,
+.pr-answer-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-answer-edit {
+  display: grid;
+  gap: 8px;
+}
+
+/* "I am praying for this" is a state, so it holds its colour once pressed —
+   and a border as well as a colour, for the grey theme */
+.pr-pray.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.pr-count {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-divider {
+  margin: 22px 0 10px;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
