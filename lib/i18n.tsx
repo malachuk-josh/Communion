@@ -45,6 +45,8 @@ const dictionaries = {
       "Strong's tagged text, Hebrew and Greek lexicons, the concordance, Abbott-Smith, Brown-Driver-Briggs and the Septuagint.",
     "offline.translationDesc": "A complete translation.",
     "offline.download": "Download",
+    "offline.licensed":
+      "{names} cannot be downloaded. They are read a chapter at a time from their publishers, who allow only a few chapters to be held on a device, so they need a connection.",
     "offline.waiting": "{n} changes waiting to sync",
     "offline.waitingDesc":
       "Notes and bookmarks you saved without a connection. They'll go up on their own the next time you're online.",
@@ -442,6 +444,8 @@ const dictionaries = {
     "search.results": "{count} verses found",
     "search.limited": "showing the first {count}",
     "search.close": "Close results",
+    "search.searchedIn":
+      "Searched the {name} — this translation is read a chapter at a time and cannot be searched whole.",
     "verse.matthew": "For where two or three are gathered together in my name, there am I in the midst of them.",
     "verse.matthewRef": "Matthew 18:20",
     "churches.title": "Your Gatherings",
@@ -614,6 +618,8 @@ const dictionaries = {
       "El texto con códigos Strong, los léxicos hebreo y griego, la concordancia, Abbott-Smith, Brown-Driver-Briggs y la Septuaginta.",
     "offline.translationDesc": "Una traducción completa.",
     "offline.download": "Descargar",
+    "offline.licensed":
+      "{names} no se pueden descargar. Se leen capítulo por capítulo desde sus editoriales, que solo permiten guardar unos pocos capítulos en el dispositivo, así que necesitan conexión.",
     "offline.waiting": "{n} cambios pendientes de sincronizar",
     "offline.waitingDesc":
       "Notas y marcadores que guardaste sin conexión. Se enviarán solos la próxima vez que tengas señal.",
@@ -1009,6 +1015,8 @@ const dictionaries = {
     "search.none": "No se encontraron versículos.",
     "search.results": "{count} versículos encontrados",
     "search.limited": "mostrando los primeros {count}",
+    "search.searchedIn":
+      "Se buscó en la {name} — esta traducción se lee capítulo por capítulo y no puede buscarse entera.",
     "search.close": "Cerrar resultados",
     "verse.matthew": "Porque donde están dos o tres congregados en mi nombre, allí estoy en medio de ellos.",
     "verse.matthewRef": "Mateo 18:20",

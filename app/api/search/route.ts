@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
-import { isTranslation } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, isLicensed, isTranslation } from "@/lib/bible";
 
 /** A book file: chapter number → [verse, text] pairs. */
 type BookFile = Record<string, [number, string][]>;
@@ -49,8 +49,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid search" }, { status: 400 });
   }
 
+  // A borrowed translation ships no files to scan, and fetching all sixty-six
+  // books from its publisher to search them is both a quota and a breach. The
+  // King James answers instead — a search is for finding the place, and the
+  // reader shows the place in whatever is open — and the reply says so.
+  const from = isLicensed(translation) ? DEFAULT_TRANSLATION : translation;
+
   try {
-    const books = await loadTranslation(translation);
+    const books = await loadTranslation(from);
     const needle = normalize(query);
     const results: {
       bookNr: number;
@@ -74,7 +80,7 @@ export async function GET(req: Request) {
       }
     });
 
-    return NextResponse.json({ results, total });
+    return NextResponse.json({ results, total, searchedIn: from });
   } catch {
     return NextResponse.json(
       { error: "Scripture source unavailable" },

@@ -6,7 +6,7 @@
 // feels like turning to it rather than picking from three dropdowns.
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import { BOOKS, getBook } from "@/lib/bible";
+import { BOOKS, DEFAULT_TRANSLATION, getBook, isLicensed } from "@/lib/bible";
 import { readHistory, type Visit } from "@/lib/history";
 import { useI18n } from "@/lib/i18n";
 import { fetchBook } from "@/lib/scripture";
@@ -76,11 +76,17 @@ export default function BookNav({
    * grid appears and the chapter tap stands on its own.
    */
   const loadCounts = (book: number) => {
-    const key = `${translation}/${book}`;
+    // A borrowed translation has no book to count from, and asking its
+    // publisher for one is exactly what it does not permit. The King James
+    // stands in: these translations follow the same versification, and where
+    // one of them omits a verse the grid offers a number that lands on the
+    // verse before it, which is what a printed Bible does too.
+    const from = isLicensed(translation) ? DEFAULT_TRANSLATION : translation;
+    const key = `${from}/${book}`;
     if (asked.current.has(key)) return;
     asked.current.add(key);
     setNoCounts((prev) => (prev[book] ? { ...prev, [book]: false } : prev));
-    fetchBook(translation, book)
+    fetchBook(from, book)
       .then((data) => {
         const perChapter: Record<number, number> = {};
         for (const ch of data.chapters) {

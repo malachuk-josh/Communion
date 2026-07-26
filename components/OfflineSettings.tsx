@@ -278,6 +278,19 @@ export default function OfflineSettings({
         </div>
       )}
 
+      {/* The borrowed translations are absent from the list above because
+          there is nothing to download — say why, rather than let someone hunt
+          for a tier that was never going to be there. */}
+      {TRANSLATIONS.some((x) => x.licensed) && (
+        <p className="notice offline-note">
+          {t("offline.licensed", {
+            names: TRANSLATIONS.filter((x) => x.licensed)
+              .map((x) => x.abbrev)
+              .join(", "),
+          })}
+        </p>
+      )}
+
       <p className="notice offline-note">
         {t("offline.note" as MessageKey)}
       </p>

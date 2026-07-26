@@ -3,13 +3,55 @@
 // book, cached by the browser and the service worker — reading works offline
 // once a book has been seen (or downloaded from the offline screen).
 
-import { STUDY_IDS, isTranslation, type ChapterData, type Verse } from "./bible";
+import {
+  STUDY_IDS,
+  isLicensed,
+  isTranslation,
+  type ChapterData,
+  type Verse,
+} from "./bible";
 
 type BookFile = Record<string, [number, string][]>;
 
 // per-session memory cache so chapter-to-chapter movement inside a book
 // costs zero requests
 const books = new Map<string, Promise<BookFile>>();
+
+/**
+ * What a licensed translation is allowed to leave behind.
+ *
+ * Crossway and API.Bible both cap local storage at about five hundred verses,
+ * so this cache is capped at a number of chapters that cannot exceed it —
+ * twelve of the longest chapters in the Bible would, so the count is low and
+ * the eviction is oldest-first. It lives in memory only: nothing licensed
+ * reaches IndexedDB, the service worker, or the offline download, and closing
+ * the tab is the end of it.
+ */
+const LICENSED_CHAPTERS = 8;
+/** And it does not outlive a sitting, whatever the tab does. */
+const LICENSED_TTL_MS = 30 * 60 * 1000;
+
+const licensedCache = new Map<string, { at: number; data: ChapterData }>();
+
+function takeLicensed(key: string): ChapterData | null {
+  const hit = licensedCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > LICENSED_TTL_MS) {
+    licensedCache.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function keepLicensed(key: string, data: ChapterData): void {
+  licensedCache.set(key, { at: Date.now(), data });
+  // Map iterates in insertion order, so the first key is the oldest
+  while (licensedCache.size > LICENSED_CHAPTERS) {
+    const oldest = licensedCache.keys().next().value;
+    if (oldest === undefined) break;
+    licensedCache.delete(oldest);
+  }
+}
 
 function loadBook(translation: string, bookNr: number): Promise<BookFile> {
   const key = `${translation}/${bookNr}`;
@@ -36,6 +78,18 @@ export async function fetchChapter(
   bookNr: number,
   chapter: number
 ): Promise<ChapterData> {
+  // borrowed text: always from the route, never from a file, and only what is
+  // still inside the window the licence allows this device to hold
+  if (isLicensed(translation)) {
+    const key = `${translation}/${bookNr}/${chapter}`;
+    const held = takeLicensed(key);
+    if (held) return held;
+    const res = await fetch(`/api/bible/${translation}/${bookNr}/${chapter}`);
+    if (!res.ok) throw new Error("chapter unavailable");
+    const data = (await res.json()) as ChapterData;
+    keepLicensed(key, data);
+    return data;
+  }
   if (isTranslation(translation) || translation === "lxx") {
     try {
       const book = await loadBook(translation, bookNr);
@@ -77,6 +131,9 @@ export async function fetchBook(
   translation: string,
   bookNr: number
 ): Promise<BookChapters> {
+  // There is no whole book to be had for a licensed translation, and this
+  // throwing is how the reader learns to ask a chapter at a time instead.
+  if (isLicensed(translation)) throw new Error("licensed: chapter at a time");
   if (!isTranslation(translation) && translation !== "lxx") {
     throw new Error("unknown translation");
   }
@@ -136,6 +193,39 @@ export async function fetchVerses(
   if (!isTranslation(translation) && translation !== "lxx") {
     return { verses, missingBooks };
   }
+  // A licensed translation has no book to group by, so the grouping is by
+  // chapter — the journal's shelf of scattered verses becomes one request per
+  // distinct chapter rather than one per book. Verses beyond what the cache
+  // may hold simply come back empty, and the caller shows the reference.
+  if (isLicensed(translation)) {
+    const byChapter = new Map<string, VerseRef[]>();
+    for (const ref of refs) {
+      const at = `${ref.bookNr}:${ref.chapter}`;
+      const list = byChapter.get(at);
+      if (list) list.push(ref);
+      else byChapter.set(at, [ref]);
+    }
+    await Promise.all(
+      [...byChapter].map(async ([, list]) => {
+        try {
+          const data = await fetchChapter(
+            translation,
+            list[0].bookNr,
+            list[0].chapter
+          );
+          for (const ref of list) {
+            const row = data.verses.find((v) => v.verse === ref.verse);
+            if (row) {
+              verses.set(verseKey(ref.bookNr, ref.chapter, ref.verse), row.text);
+            }
+          }
+        } catch {
+          missingBooks.add(list[0].bookNr);
+        }
+      })
+    );
+    return { verses, missingBooks };
+  }
   const byBook = new Map<number, VerseRef[]>();
   for (const ref of refs) {
     const list = byBook.get(ref.bookNr);
@@ -181,7 +271,7 @@ export async function searchLocal(
   translation: string,
   query: string,
   limit = 50
-): Promise<{ results: LocalSearchResult[]; total: number }> {
+): Promise<{ results: LocalSearchResult[]; total: number; searchedIn: string }> {
   const normalize = (s: string) =>
     s
       .toLowerCase()
@@ -190,10 +280,17 @@ export async function searchLocal(
   const q = normalize(query);
   const results: LocalSearchResult[] = [];
   let total = 0;
+  // A licensed translation has no files to scan, and asking its publisher for
+  // all sixty-six books in order to scan them would be both a day's quota and
+  // the very thing the licence exists to prevent. Search the King James
+  // instead: the point of a search is to find the place, and the reader shows
+  // the place in whatever translation is open. The caller says which text the
+  // results came from.
+  const from = isLicensed(translation) ? "kjv" : translation;
   for (let bookNr = 1; bookNr <= 66; bookNr++) {
     let book: BookFile;
     try {
-      book = await loadBook(translation, bookNr);
+      book = await loadBook(from, bookNr);
     } catch {
       continue; // not cached and no network — skip
     }
@@ -208,5 +305,5 @@ export async function searchLocal(
       }
     }
   }
-  return { results, total };
+  return { results, total, searchedIn: from };
 }

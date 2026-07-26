@@ -13,6 +13,8 @@ import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
   getBook,
+  getTranslation,
+  isLicensed,
   lxxPsalm,
   type ChapterData,
   type Verse,
@@ -259,6 +261,8 @@ export default function Reader({
   >([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
+  /** which text answered the search — not always the one being read */
+  const [searchedIn, setSearchedIn] = useState("");
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
@@ -530,6 +534,12 @@ export default function Reader({
     );
   };
 
+  // A licensed translation is read a chapter at a time, so a change of
+  // chapter is a new fetch — for the other four the whole book is already
+  // here and this must not fire on a scroll.
+  const streamed = isLicensed(translation);
+  const streamedChapter = streamed ? chapter : 0;
+
   useEffect(() => {
     genRef.current += 1;
     const gen = genRef.current;
@@ -541,7 +551,8 @@ export default function Reader({
       .then((book) =>
         book.chapters.map((c) => ({ ch: c.chapter, verses: c.verses }))
       )
-      // no static file for this text: fall back to the one chapter asked for
+      // no book to be had — a study text with no static file, or one of the
+      // borrowed translations, which are only ever served a chapter at a time
       .catch(() =>
         fetchChapter(translation, bookNr, chapterRef.current).then((json) => [
           { ch: json.chapter, verses: json.verses },
@@ -557,7 +568,7 @@ export default function Reader({
         setError(true);
         setLoading(false);
       });
-  }, [translation, bookNr]);
+  }, [translation, bookNr, streamedChapter]);
 
   /**
    * Put the reader at the chapter they asked for. This runs before paint, so
@@ -1647,15 +1658,18 @@ export default function Reader({
       const json = (await res.json()) as {
         results: SearchResult[];
         total: number;
+        searchedIn?: string;
       };
       setResults(json.results);
       setSearchTotal(json.total);
+      setSearchedIn(json.searchedIn ?? translation);
     } catch {
       // offline: scan the static book files already on this device
       try {
         const local = await searchLocal(translation, q);
         setResults(local.results);
         setSearchTotal(local.total);
+        setSearchedIn(local.searchedIn);
       } catch {
         setResults([]);
         setSearchTotal(0);
@@ -1744,6 +1758,16 @@ export default function Reader({
               ✕
             </button>
           </div>
+          {/* the search may have been answered by a different text than the
+              one being read; say which, rather than let the wording look
+              subtly wrong against the passage it opens */}
+          {searchedIn && searchedIn !== translation && (
+            <p className="cal-hint search-in">
+              {t("search.searchedIn", {
+                name: getTranslation(searchedIn)?.abbrev ?? searchedIn,
+              })}
+            </p>
+          )}
           {results.map((r) => (
             <button
               key={`${r.bookNr}-${r.chapter}-${r.verse}`}
@@ -1997,6 +2021,30 @@ export default function Reader({
             )}
           </article>
         ))}
+
+        {/* The notice the licence asks for, under the text it covers. Both
+            publishers require it wherever their words appear, and Crossway
+            requires the link with it. */}
+        {getTranslation(translation)?.notice && (
+          <p className="scripture-notice">
+            {getTranslation(translation)!.notice}
+            {getTranslation(translation)!.noticeHref && (
+              <>
+                {" "}
+                <a
+                  href={getTranslation(translation)!.noticeHref}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {getTranslation(translation)!.noticeHref!.replace(
+                    /^https?:\/\//,
+                    ""
+                  )}
+                </a>
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       <button

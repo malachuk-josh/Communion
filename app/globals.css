@@ -540,6 +540,21 @@ html.reading body::-webkit-scrollbar {
   transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
+/* The copyright line a borrowed translation is shown under. Quiet, but never
+   hidden — it is a condition of the text being there at all. */
+.scripture-notice {
+  margin: 28px auto 8px;
+  max-width: var(--measure, 42rem);
+  padding: 0 4px;
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.scripture-notice a {
+  color: inherit;
+}
+
 /* The stand-in for the tucked-away bar: the same place, a fraction of the
    size. Sits where the bar's centre was, so summoning it feels like the bar
    growing back out of the button rather than arriving from somewhere else. */

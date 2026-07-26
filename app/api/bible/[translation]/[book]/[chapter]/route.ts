@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { STUDY_IDS, getBook, isTranslation } from "@/lib/bible";
+import { STUDY_IDS, getBook, isLicensed, isTranslation } from "@/lib/bible";
+import { fetchLicensed, licensedKey, reportFums } from "@/lib/licensed";
 
 const GETBIBLE_BASE = "https://api.getbible.net/v2";
 
@@ -25,6 +26,40 @@ export async function GET(
     chapterNr > bookMeta.chapters
   ) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
+  }
+
+  // A translation still in copyright, fetched from its publisher with a key
+  // that stays here. Cached at the edge for an hour and no longer: it keeps
+  // this app inside a free tier measured in thousands of calls, without ever
+  // amounting to a copy of a book sitting somewhere it should not.
+  if (isLicensed(translation)) {
+    const key = licensedKey(translation);
+    if (!key) {
+      return NextResponse.json({ error: "Not configured" }, { status: 501 });
+    }
+    try {
+      const passage = await fetchLicensed(translation, key, bookNr, chapterNr);
+      if (passage.fumsId) void reportFums(passage.fumsId);
+      return NextResponse.json(
+        {
+          translation,
+          bookNr,
+          chapter: chapterNr,
+          verses: passage.verses,
+        },
+        {
+          headers: {
+            "cache-control":
+              "public, s-maxage=3600, stale-while-revalidate=600",
+          },
+        }
+      );
+    } catch {
+      return NextResponse.json(
+        { error: "Scripture source unavailable" },
+        { status: 502 }
+      );
+    }
   }
 
   try {

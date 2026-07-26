@@ -6,19 +6,83 @@ export interface Translation {
   name: string;
   abbrev: string;
   lang: "en" | "es";
+  /**
+   * A translation still in copyright, read a chapter at a time from its
+   * publisher and never kept. Everything about how it is fetched, cached,
+   * searched and downloaded differs from the four that are in the public
+   * domain, so the difference is named once here and asked about everywhere
+   * else.
+   */
+  licensed?: boolean;
+  /** the notice the licence requires wherever its text appears */
+  notice?: string;
+  /** and the link that has to sit beside it, where one is required */
+  noticeHref?: string;
 }
 
-export const TRANSLATIONS: Translation[] = [
+/** Ours to ship: shipped whole, as files, and readable with no signal. */
+const PUBLIC_DOMAIN: Translation[] = [
   { id: "kjv", name: "King James Version", abbrev: "KJV", lang: "en" },
   { id: "asv", name: "American Standard Version", abbrev: "ASV", lang: "en" },
   { id: "web", name: "World English Bible", abbrev: "WEB", lang: "en" },
   { id: "valera", name: "Reina Valera 1909", abbrev: "RV1909", lang: "es" },
 ];
 
+/**
+ * Borrowed, on terms.
+ *
+ * Each appears only where its key is configured — the flags are compiled in,
+ * so a build without them has no dropdown entry, no route and no way to ask
+ * for text nobody is licensed to serve. Both publishers cap what may be held
+ * locally at around five hundred verses, which is why neither can be shipped
+ * as files or downloaded for offline reading, and why both are marked here
+ * rather than simply added to the list above.
+ */
+const LICENSED: Translation[] = [
+  {
+    id: "esv",
+    name: "English Standard Version",
+    abbrev: "ESV",
+    lang: "en",
+    licensed: true,
+    notice:
+      "Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.",
+    noticeHref: "https://www.esv.org",
+  },
+  {
+    id: "nkjv",
+    name: "New King James Version",
+    abbrev: "NKJV",
+    lang: "en",
+    licensed: true,
+    notice:
+      "Scripture taken from the New King James Version®. Copyright © 1982 by Thomas Nelson. Used by permission. All rights reserved.",
+  },
+];
+
+/** Compiled in, so an unconfigured build cannot offer what it cannot fetch. */
+const enabled = (id: string): boolean =>
+  (id === "esv" && process.env.NEXT_PUBLIC_ESV === "1") ||
+  (id === "nkjv" && process.env.NEXT_PUBLIC_NKJV === "1");
+
+export const TRANSLATIONS: Translation[] = [
+  ...PUBLIC_DOMAIN,
+  ...LICENSED.filter((t) => enabled(t.id)),
+];
+
 export const DEFAULT_TRANSLATION = "kjv";
 
 export function isTranslation(id: string): boolean {
   return TRANSLATIONS.some((t) => t.id === id);
+}
+
+export function getTranslation(id: string): Translation | undefined {
+  return TRANSLATIONS.find((t) => t.id === id);
+}
+
+/** Borrowed text: one chapter at a time, nothing kept, nothing downloaded. */
+export function isLicensed(id: string): boolean {
+  return !!getTranslation(id)?.licensed;
 }
 
 // Study-mode sources (not shown in the translation dropdown):
