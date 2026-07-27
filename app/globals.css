@@ -406,6 +406,17 @@ html.reading body::-webkit-scrollbar {
   .nav-inner {
     flex-wrap: nowrap;
     gap: 10px;
+    /* Shorter on a phone, and shorter by removing space rather than by
+       shrinking anything in it. Measured, the bar is 14 + 39 + 14: the 39 is
+       the control row, the brand is 33 and the passage chip 34, and there is
+       nothing else — no slack beyond the padding at all. So the padding is
+       the only thing that can go, and everything keeps its size. 8 either
+       side puts the header at 55px instead of 67, which is a whole line of
+       scripture back on a small screen.
+
+       The safe-area inset is on .nav, not here, so a notch still clears. */
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
   .brand {
     font-size: 1.32rem;
