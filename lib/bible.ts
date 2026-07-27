@@ -38,6 +38,20 @@ const PUBLIC_DOMAIN: Translation[] = [
  * as files or downloaded for offline reading, and why both are marked here
  * rather than simply added to the list above.
  */
+/**
+ * Which NASB.
+ *
+ * The 1995 and 2020 editions are the same translation to a reader and two
+ * different copyright lines to the Lockman Foundation, and printing the wrong
+ * years is a breach of the licence rather than a typo. The flag that turns the
+ * translation on carries the answer: NEXT_PUBLIC_NASB=1995 says so, anything
+ * else means the edition currently licensed.
+ */
+const nasbYears = (): string =>
+  (process.env.NEXT_PUBLIC_NASB ?? "").includes("1995")
+    ? "1960, 1971, 1977, 1995"
+    : "1960, 1971, 1977, 1995, 2020";
+
 const LICENSED: Translation[] = [
   {
     id: "esv",
@@ -57,6 +71,15 @@ const LICENSED: Translation[] = [
     licensed: true,
     notice:
       "Scripture taken from the New King James Version®. Copyright © 1982 by Thomas Nelson. Used by permission. All rights reserved.",
+  },
+  {
+    id: "nasb",
+    name: "New American Standard Bible",
+    abbrev: "NASB",
+    lang: "en",
+    licensed: true,
+    notice: `Scripture quotations taken from the New American Standard Bible® (NASB), Copyright © ${nasbYears()} by The Lockman Foundation. Used by permission. All rights reserved.`,
+    noticeHref: "https://www.lockman.org",
   },
 ];
 
@@ -84,7 +107,8 @@ const on = (value?: string): boolean => {
  */
 const enabled = (id: string): boolean =>
   (id === "esv" && on(process.env.NEXT_PUBLIC_ESV)) ||
-  (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV));
+  (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV)) ||
+  (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB));
 
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,

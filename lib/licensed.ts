@@ -24,10 +24,26 @@ export interface LicensedChapter {
   fumsId?: string;
 }
 
+/**
+ * The translations reached through API.Bible, as opposed to the ESV, which
+ * Crossway serves itself. They share one key and one adapter and differ only
+ * in which catalogue id they are asked for by.
+ */
+const API_BIBLE = ["nkjv", "nasb"];
+
+/** The catalogue id a translation is addressed by, if one is configured. */
+function apiBibleId(id: string): string | undefined {
+  // written out rather than looked up: these are read on the server, but the
+  // habit of naming the variable in full is what keeps them findable
+  if (id === "nkjv") return process.env.API_BIBLE_NKJV_ID || undefined;
+  if (id === "nasb") return process.env.API_BIBLE_NASB_ID || undefined;
+  return undefined;
+}
+
 /** Whether a licensed translation is configured at all. */
 export function licensedKey(id: string): string | undefined {
   if (id === "esv") return process.env.ESV_API_KEY || undefined;
-  if (id === "nkjv") return process.env.API_BIBLE_KEY || undefined;
+  if (API_BIBLE.includes(id)) return process.env.API_BIBLE_KEY || undefined;
   return undefined;
 }
 
@@ -194,12 +210,12 @@ export function fetchLicensed(
   chapter: number
 ): Promise<LicensedChapter> {
   if (id === "esv") return fetchEsv(key, bookNr, chapter);
-  if (id === "nkjv") {
-    const bibleId = process.env.API_BIBLE_NKJV_ID;
-    if (!bibleId) return Promise.reject(new Error("no NKJV bible id"));
-    return fetchApiBible(key, bibleId, bookNr, chapter);
+  if (!API_BIBLE.includes(id)) {
+    return Promise.reject(new Error("not a licensed translation"));
   }
-  return Promise.reject(new Error("not a licensed translation"));
+  const bibleId = apiBibleId(id);
+  if (!bibleId) return Promise.reject(new Error(`no ${id} bible id`));
+  return fetchApiBible(key, bibleId, bookNr, chapter);
 }
 
 /**
