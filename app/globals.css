@@ -2264,6 +2264,28 @@ button.menu-tile {
   flex-shrink: 0;
 }
 
+/* Choosing who an entry goes to, opened under the entry itself rather than
+   over the page: the journal expands in place everywhere else it asks a
+   question, and a sheet here would be the only thing that covered the list. */
+.jr-send {
+  display: grid;
+  gap: 10px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--glass-border);
+  margin-top: 10px;
+  /* The row is a flex line — handle, passage, actions. Left to itself this
+     panel became a fourth column and squeezed the verse beside it to one word
+     per line. It belongs under the row, so it takes the full width and forces
+     the wrap that puts it there. */
+  flex: 0 0 100%;
+  width: 100%;
+}
+
+.jr-send .chips {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
 .notif-label {
   display: flex;
   align-items: center;
@@ -3781,6 +3803,8 @@ button.menu-tile {
 .jr-row {
   display: flex;
   align-items: flex-start;
+  /* so the send picker can take a line of its own beneath the entry */
+  flex-wrap: wrap;
   gap: 8px;
   padding: 12px 10px 12px 16px;
   color: inherit;

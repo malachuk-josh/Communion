@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth";
+import { getDisplayName, getUserId } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 import { isOwner } from "@/lib/admin";
 import { pushEnabled } from "@/lib/push";
@@ -15,6 +15,28 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const profile = (await db().hgetall(keys.user(userId))) ?? {};
+
+  /*
+   * Adopt the name the account already has.
+   *
+   * displayName was only ever written by starting a Gathering, accepting an
+   * invite, or typing it into this screen — so somebody who signed in and read
+   * their Bible had none at all. That was invisible while the only use of a
+   * name was labelling a member list, and became a real fault the moment the
+   * directory existed: with nothing stored they were unlisted, and unlisted
+   * looked exactly like having asked for privacy, which they had not.
+   *
+   * Clerk knows who they are. Take that, once, and keep it — so the directory
+   * can find them, and so conversations stop calling them "Believer".
+   */
+  if (!profile.displayName) {
+    const known = await getDisplayName(req);
+    if (known && known !== "Believer") {
+      profile.displayName = known;
+      await db().hset(keys.user(userId), { displayName: known });
+    }
+  }
+
   // Listing is kept in step here as well as on write, so the directory fills
   // itself from ordinary use — everyone who opens their settings is listed by
   // doing so, and nobody needs a migration to become findable.

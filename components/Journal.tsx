@@ -106,6 +106,8 @@ export default function Journal() {
   // read once on mount rather than at render: the server has no navigator, and
   // deciding this during the first paint would hydrate differently than it drew
   const [canText, setCanText] = useState(false);
+  /** which entry is choosing a recipient, by the same id the row uses */
+  const [sendFor, setSendFor] = useState<string | null>(null);
   /** the one row open for editing, if any */
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -853,7 +855,20 @@ export default function Journal() {
                             }
                           />
                         )}
+                        <SendButton
+                          label={t("journal.sendToTable")}
+                          onClick={() =>
+                            setSendFor((cur) => (cur === id ? null : id))
+                          }
+                        />
                       </span>
+                      {sendFor === id && (
+                        <SendPanel
+                          attach={{ b: row.b, c: row.c, v: row.v, kind: "note", label: row.text }}
+                          refText={refLabel(row, lang)}
+                          onClose={() => setSendFor(null)}
+                        />
+                      )}
                     </div>
                   );
                 })}
@@ -1095,7 +1110,28 @@ export default function Journal() {
                             }
                           />
                         )}
+                        <SendButton
+                          label={t("journal.sendToTable")}
+                          onClick={() =>
+                            setSendFor((cur) =>
+                              cur === row.key ? null : row.key
+                            )
+                          }
+                        />
                       </span>
+                      {sendFor === row.key && (
+                        <SendPanel
+                          attach={{
+                            b: row.b,
+                            c: row.c,
+                            v: row.v,
+                            kind: "bookmark",
+                            label: row.entry.l,
+                          }}
+                          refText={refLabel(row, lang)}
+                          onClose={() => setSendFor(null)}
+                        />
+                      )}
                     </div>
                   );
                 })}
@@ -1220,6 +1256,140 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
  * messaging app to open: on a laptop this button would be a dead end, and the
  * share sheet next to it already does the right thing there.
  */
+
+/**
+ * Hand a passage to somebody at the Table.
+ *
+ * The composer inside a conversation could already attach a bookmark or a
+ * note, but only once you were in the conversation — which meant the journal,
+ * where those things actually live, could share to everywhere except the one
+ * place inside this app. This is that missing direction: from the entry to the
+ * person, rather than from the person to the entry.
+ *
+ * People you are already talking with come first and need no typing. The rest
+ * of the directory is behind the same search the Table uses.
+ */
+function SendPanel({
+  attach,
+  refText,
+  onClose,
+}: {
+  attach: { b: number; c: number; v: number; kind: "bookmark" | "note"; label?: string };
+  refText: string;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [q, setQ] = useState("");
+  const [people, setPeople] = useState<{ userId: string; displayName: string }[] | null>(null);
+  const [busy, setBusy] = useState("");
+  const [sent, setSent] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      Promise.all([
+        api<{ conversations: { peerId: string; peerName: string }[] }>(
+          "/api/messages"
+        ).catch(() => ({ conversations: [] })),
+        api<{ users: { userId: string; displayName: string }[] }>(
+          `/api/users?q=${encodeURIComponent(q.trim())}`
+        ).catch(() => ({ users: [] })),
+      ]).then(([mine, all]) => {
+        if (cancelled) return;
+        const seen = new Map<string, string>();
+        for (const c of mine.conversations ?? []) seen.set(c.peerId, c.peerName);
+        for (const u of all.users ?? []) if (!seen.has(u.userId)) seen.set(u.userId, u.displayName);
+        const term = q.trim().toLowerCase();
+        setPeople(
+          [...seen]
+            .map(([userId, displayName]) => ({ userId, displayName }))
+            .filter((p) => !term || p.displayName.toLowerCase().includes(term))
+        );
+      });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [q]);
+
+  const send = async (peerId: string, name: string) => {
+    if (busy) return;
+    setBusy(peerId);
+    setError("");
+    try {
+      await api(`/api/messages/${peerId}`, {
+        method: "POST",
+        body: { text: refText, attach },
+      });
+      setSent(name);
+      window.setTimeout(onClose, 1400);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <div className="jr-send">
+      {sent ? (
+        <p className="cal-hint">{t("journal.sentTo", { name: sent })}</p>
+      ) : (
+        <>
+          <input
+            className="input"
+            type="search"
+            autoComplete="off"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("messages.findPlaceholder")}
+            aria-label={t("messages.findAnyone")}
+          />
+          {people === null ? (
+            <p className="skeleton">{t("common.loading")}</p>
+          ) : people.length === 0 ? (
+            <p className="cal-hint">{t("messages.findNone")}</p>
+          ) : (
+            <div className="chips">
+              {people.map((p) => (
+                <button
+                  key={p.userId}
+                  type="button"
+                  className="chip"
+                  disabled={!!busy}
+                  onClick={() => send(p.userId, p.displayName)}
+                >
+                  {p.displayName}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <p className="error-text">{error}</p>}
+          <button type="button" className="btn btn-sm" onClick={onClose}>
+            {t("session.cancel")}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SendButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="jr-share jr-share-btn"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <Icon name="envelope" />
+    </button>
+  );
+}
+
 function TextButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
