@@ -9,7 +9,7 @@ export interface Translation {
   /**
    * A translation still in copyright, read a chapter at a time from its
    * publisher and never kept. Everything about how it is fetched, cached,
-   * searched and downloaded differs from the four that are in the public
+   * searched and downloaded differs from the ones that are in the public
    * domain, so the difference is named once here and asked about everywhere
    * else.
    */
@@ -23,8 +23,6 @@ export interface Translation {
 /** Ours to ship: shipped whole, as files, and readable with no signal. */
 const PUBLIC_DOMAIN: Translation[] = [
   { id: "kjv", name: "King James Version", abbrev: "KJV", lang: "en" },
-  { id: "asv", name: "American Standard Version", abbrev: "ASV", lang: "en" },
-  { id: "web", name: "World English Bible", abbrev: "WEB", lang: "en" },
   // the only translation here that is not in English, and the picker is the
   // one place a reader finds that out before opening it
   { id: "valera", name: "Reina Valera (Spanish)", abbrev: "RV1909", lang: "es" },

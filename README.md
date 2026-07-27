@@ -8,7 +8,7 @@
 
 ### 📖 Bible Reader
 - Multiple translations, defaulting to the **King James Version (KJV)**
-- Public-domain-first translation set (KJV, ASV, WEB; Reina-Valera 1909 for Spanish)
+- Public-domain-first translation set (KJV; Reina-Valera 1909 for Spanish)
 - Full UI language toggle — **English and Spanish** at launch
 - Mobile and desktop responsive, glassmorphism ("sleek glass polish") UI
 
@@ -34,7 +34,7 @@
 
 ## Data Credits
 
-- Scripture text: public-domain translations served via [getBible](https://getbible.net) (KJV, ASV, WEB, Reina Valera 1909)
+- Scripture text: public-domain translations served via [getBible](https://getbible.net) (KJV, Reina Valera 1909)
 - Cross-references (Study Mode): [OpenBible.info](https://www.openbible.info/labs/cross-references/) cross-reference dataset, CC-BY, keyed to KJV versification
 
 ## Project Status

@@ -11,7 +11,9 @@
 // which marks all of this explicitly: \p opens a paragraph, \q1..\q4 open a
 // line of poetry. Its versification is the King James', the same as every text
 // here, so a break at 2:14 falls at 2:14 in all of them. What is taken is the
-// structure and not a word of the text.
+// structure and not a word of the text — which is why this outlived the WEB
+// itself being dropped from the app: nothing of the translation is used, only
+// where its typesetters put the breaks, and that is public domain too.
 //
 // Poetry is kept apart from prose deliberately. Isaiah, Jeremiah and the minor
 // prophets are mostly verse, and running verse together as paragraphs loses the

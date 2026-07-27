@@ -540,8 +540,8 @@ export default function Reader({
   };
 
   // A licensed translation is read a chapter at a time, so a change of
-  // chapter is a new fetch — for the other four the whole book is already
-  // here and this must not fire on a scroll.
+  // chapter is a new fetch — for the ones shipped as files the whole book is
+  // already here and this must not fire on a scroll.
   const streamed = isLicensed(translation);
   const streamedChapter = streamed ? chapter : 0;
 

@@ -41,8 +41,6 @@ const reading = merge(
 );
 
 const translations = {
-  asv: listDir("bible/asv"),
-  web: listDir("bible/web"),
   valera: listDir("bible/valera"),
 };
 
