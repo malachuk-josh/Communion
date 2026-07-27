@@ -4,6 +4,7 @@ import { db, keys } from "@/lib/db";
 import { isOwner } from "@/lib/admin";
 import { pushEnabled } from "@/lib/push";
 import { isValidPhone, smsEnabled } from "@/lib/sms";
+import { syncListing } from "@/lib/directory";
 
 // Reminder preferences: phone number + SMS opt-in, and feature availability
 // flags so Settings can show accurate state per deployment.
@@ -14,8 +15,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const profile = (await db().hgetall(keys.user(userId))) ?? {};
+  // Listing is kept in step here as well as on write, so the directory fills
+  // itself from ordinary use — everyone who opens their settings is listed by
+  // doing so, and nobody needs a migration to become findable.
+  await syncListing(userId, profile).catch(() => {});
   return NextResponse.json({
     displayName: profile.displayName ?? "",
+    private: profile.private === "1",
     phone: profile.phone ?? "",
     smsReminders: profile.smsReminders === "1",
     planReminder: profile.planReminder === "off" ? "off" : "on",
@@ -33,6 +39,7 @@ export async function POST(req: Request) {
   }
   const body = (await req.json().catch(() => null)) as {
     displayName?: string;
+    private?: boolean;
     phone?: string;
     smsReminders?: boolean;
     planReminderHour?: number | "off";
@@ -49,6 +56,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
     updates.displayName = name;
+  }
+  if (body.private !== undefined) {
+    updates.private = body.private ? "1" : "";
   }
   if (body.phone !== undefined) {
     let phone = body.phone.replace(/[\s().-]/g, "");
@@ -83,5 +93,9 @@ export async function POST(req: Request) {
     updates.planReminderTz = body.planReminderTz.slice(0, 64);
   }
   await db().hset(keys.user(userId), updates);
+  // The name or the setting may just have changed; the directory is derived
+  // from both, so it is rebuilt from what the profile now says rather than
+  // patched from what this request happened to carry.
+  await syncListing(userId, await db().hgetall(keys.user(userId)));
   return NextResponse.json({ ok: true });
 }

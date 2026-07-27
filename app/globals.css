@@ -1935,6 +1935,11 @@ html.navhide .chap-arrow {
   justify-content: space-between;
   gap: 12px;
   margin: 26px 0 12px;
+  /* The Table carries two buttons now, and on a narrow phone they squeezed the
+     title until "THE TABLE" broke over two lines. Wrapping lets the actions
+     take a line of their own instead, and costs nothing on the headings that
+     carry one button or none — they never reach the point of wrapping. */
+  flex-wrap: wrap;
 }
 
 .section-head h2 {

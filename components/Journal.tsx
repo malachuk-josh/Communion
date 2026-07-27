@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { api } from "@/lib/client";
+import { canTextMessage, textMessage } from "@/lib/share";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import {
   bmRefLabel,
@@ -102,6 +103,9 @@ export default function Journal() {
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
   const [copied, setCopied] = useState<string | null>(null);
+  // read once on mount rather than at render: the server has no navigator, and
+  // deciding this during the first paint would hydrate differently than it drew
+  const [canText, setCanText] = useState(false);
   /** the one row open for editing, if any */
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -281,6 +285,10 @@ export default function Journal() {
     // `verses` is written here and only read to skip what is already in hand
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, bookmarks, notes]);
+
+  useEffect(() => {
+    setCanText(canTextMessage());
+  }, []);
 
   /**
    * Hand a passage to whatever the device shares with. The native sheet where
@@ -835,6 +843,16 @@ export default function Journal() {
                             share(id, entryText(row, row.text, verseLink(row)))
                           }
                         />
+                        {canText && (
+                          <TextButton
+                            label={t("journal.textIt")}
+                            onClick={() =>
+                              textMessage(
+                                entryText(row, row.text, verseLink(row))
+                              )
+                            }
+                          />
+                        )}
                       </span>
                     </div>
                   );
@@ -1063,6 +1081,20 @@ export default function Journal() {
                             )
                           }
                         />
+                        {canText && (
+                          <TextButton
+                            label={t("journal.textIt")}
+                            onClick={() =>
+                              textMessage(
+                                entryText(
+                                  row,
+                                  row.entry.l,
+                                  verseLink(row, row.entry.l)
+                                )
+                              )
+                            }
+                          />
+                        )}
                       </span>
                     </div>
                   );
@@ -1183,6 +1215,25 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
 }
 
 /** A quiet share affordance that says so when it has fallen back to a copy. */
+/**
+ * The same payload, straight into a text message. Shown only where there is a
+ * messaging app to open: on a laptop this button would be a dead end, and the
+ * share sheet next to it already does the right thing there.
+ */
+function TextButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="jr-share jr-share-btn"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <Icon name="chat" />
+    </button>
+  );
+}
+
 function ShareButton({
   copied,
   label,

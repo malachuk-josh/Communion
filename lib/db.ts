@@ -202,6 +202,14 @@ export const keys = {
   userConvs: (userId: string) => `user:${userId}:convs`,
   userNotifs: (userId: string) => `user:${userId}:notifs`,
   planUsers: "plans:users",
+  /**
+   * Everyone who can be found by name: userId → display name.
+   *
+   * A hash rather than a set, so a search reads one key instead of one per
+   * user, and so that going private is a deletion rather than a flag anybody
+   * has to remember to check. Absent from here is exactly what private means.
+   */
+  directory: "users:directory",
   churchThreads: (churchId: string) => `church:${churchId}:threads`,
   churchPrayers: (churchId: string) => `church:${churchId}:prayers`,
   /** the open wall, which belongs to no Gathering */

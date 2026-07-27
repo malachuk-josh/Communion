@@ -60,6 +60,8 @@ export default function Settings() {
   const [churches, setChurches] = useState<MyChurch[] | null>(null);
   // your name, which used to live on its own Profile screen
   const [displayName, setDisplayName] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [savingPrivate, setSavingPrivate] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
@@ -72,8 +74,11 @@ export default function Settings() {
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
-    api<{ displayName: string }>("/api/profile")
-      .then((res) => setDisplayName(res.displayName))
+    api<{ displayName: string; private: boolean }>("/api/profile")
+      .then((res) => {
+        setDisplayName(res.displayName);
+        setIsPrivate(res.private);
+      })
       .catch(() => {})
       .finally(() => setNameLoaded(true));
   }, []);
@@ -89,6 +94,23 @@ export default function Settings() {
     window.addEventListener("hashchange", open);
     return () => window.removeEventListener("hashchange", open);
   }, []);
+
+  /**
+   * Saved the moment it is switched rather than behind a Save button: this is
+   * the one setting on the page where a person may be in a hurry, and leaving
+   * it half-applied because they navigated away would be the wrong failure.
+   */
+  const savePrivate = async (next: boolean) => {
+    setIsPrivate(next);
+    setSavingPrivate(true);
+    try {
+      await api("/api/profile", { method: "POST", body: { private: next } });
+    } catch {
+      setIsPrivate(!next); // it did not take; say so by putting it back
+    } finally {
+      setSavingPrivate(false);
+    }
+  };
 
   const saveDisplayName = async () => {
     if (savingName || !displayName.trim()) return;
@@ -230,6 +252,22 @@ export default function Settings() {
             {nameSaved ? `✓ ${t("settings.saved")}` : t("common.save")}
           </button>
         </div>
+      </div>
+
+      <div className="section-head">
+        <h2>{t("settings.privacy")}</h2>
+      </div>
+      <div className="glass card">
+        <label className="toggle-row" style={{ margin: 0 }}>
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => savePrivate(e.target.checked)}
+            disabled={!nameLoaded || savingPrivate}
+          />
+          {t("settings.privateProfile")}
+        </label>
+        <p className="cal-hint">{t("settings.privateProfileHint")}</p>
       </div>
 
       <div className="section-head">

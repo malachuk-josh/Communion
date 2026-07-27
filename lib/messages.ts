@@ -63,14 +63,24 @@ export async function listContacts(userId: string): Promise<Contact[]> {
   );
 }
 
-export async function sharesChurch(a: string, b: string): Promise<boolean> {
+/**
+ * Whether there is somebody at this address.
+ *
+ * The Table used to refuse anyone outside your own Gatherings, and that rule —
+ * whatever else it did — meant a recipient was always a real person. With it
+ * gone, a made-up id would open a conversation with nobody: a summary in the
+ * sender's inbox, a name of "Believer", and messages into a room no one is in.
+ *
+ * Anyone who has used this app has a name stored, whether they set it in
+ * settings or gave it when they joined a Gathering. An open conversation
+ * counts too, so a thread that predates this can never be closed by it.
+ */
+export async function isReachable(from: string, to: string): Promise<boolean> {
   const kv = db();
-  const [mine, theirs] = await Promise.all([
-    kv.smembers(keys.userChurches(a)),
-    kv.smembers(keys.userChurches(b)),
-  ]);
-  const theirSet = new Set(theirs);
-  return mine.some((id) => theirSet.has(id));
+  const profile = await kv.hgetall(keys.user(to));
+  if (profile?.displayName) return true;
+  const convs = await kv.hgetall(keys.userConvs(from));
+  return !!convs?.[convIdFor(from, to)];
 }
 
 export async function listConversations(

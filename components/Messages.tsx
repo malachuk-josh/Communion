@@ -73,6 +73,10 @@ export default function Messages() {
   const [showNew, setShowNew] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<NotifEntry[] | null>(null);
+  /** the directory search: what was typed, who came back, and whether asking */
+  const [find, setFind] = useState("");
+  const [found, setFound] = useState<Contact[] | null>(null);
+  const [finding, setFinding] = useState(false);
 
   useEffect(() => {
     api<{
@@ -99,6 +103,32 @@ export default function Messages() {
       // transient — the next load shows the truth
     }
   };
+
+  // The directory, searched as you type. Debounced because every keystroke
+  // would otherwise be a request, and the answers arrive out of order when
+  // they are: the timer is cleared on each change so only the last one asks.
+  useEffect(() => {
+    if (!showNew) return;
+    const term = find.trim();
+    setFinding(true);
+    const timer = window.setTimeout(() => {
+      api<{ users: Contact[] }>(
+        `/api/users?q=${encodeURIComponent(term)}`
+      )
+        .then((res) => {
+          // people already in your Gatherings are offered above; showing them
+          // twice makes the list look like it has duplicates in it
+          const known = new Set(contacts.map((c) => c.userId));
+          setFound(res.users.filter((u) => !known.has(u.userId)));
+        })
+        .catch(() => setFound([]))
+        .finally(() => setFinding(false));
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      setFinding(false);
+    };
+  }, [find, showNew, contacts]);
 
   const toggleHistory = () => {
     const opening = !showHistory;
@@ -143,7 +173,11 @@ export default function Messages() {
               ? `← ${t("messages.conversations")}`
               : t("messages.history")}
           </button>
-          {!showHistory && contacts.length > 0 && (
+          {/* Always offered. It used to appear only once you shared a
+              Gathering with somebody, which was the right gate when that was
+              the only way to message anyone — and is exactly the wrong one now
+              that the point is reaching believers you share nothing with. */}
+          {!showHistory && (
             <button
               type="button"
               className="btn btn-sm btn-primary"
@@ -192,11 +226,42 @@ export default function Messages() {
           <p className="cal-label" style={{ marginBottom: 8 }}>
             {t("messages.pickContact")}
           </p>
-          {newContacts.length === 0 ? (
-            <p className="cal-hint">{t("messages.allStarted")}</p>
-          ) : (
-            <div className="chips">
+          {/* Your Gatherings first, because those are the people you are most
+              likely to be looking for and they need no typing. */}
+          {newContacts.length > 0 && (
+            <div className="chips" style={{ marginBottom: 12 }}>
               {newContacts.map((c) => (
+                <Link
+                  key={c.userId}
+                  href={`/menu/messages/${c.userId}`}
+                  className="chip"
+                >
+                  {c.displayName}
+                </Link>
+              ))}
+            </div>
+          )}
+          <label className="cal-label" htmlFor="find-believer">
+            {t("messages.findAnyone")}
+          </label>
+          <input
+            id="find-believer"
+            className="input"
+            type="search"
+            autoComplete="off"
+            value={find}
+            onChange={(e) => setFind(e.target.value)}
+            placeholder={t("messages.findPlaceholder")}
+          />
+          {finding ? (
+            <p className="skeleton">{t("common.loading")}</p>
+          ) : found === null ? (
+            <p className="cal-hint">{t("messages.findHint")}</p>
+          ) : found.length === 0 ? (
+            <p className="cal-hint">{t("messages.findNone")}</p>
+          ) : (
+            <div className="chips" style={{ marginTop: 10 }}>
+              {found.map((c) => (
                 <Link
                   key={c.userId}
                   href={`/menu/messages/${c.userId}`}

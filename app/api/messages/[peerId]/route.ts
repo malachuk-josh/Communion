@@ -6,9 +6,9 @@ import {
   clearConversation,
   deleteMessage,
   getThread,
+  isReachable,
   markRead,
   sendMessage,
-  sharesChurch,
   type ChatMessage,
 } from "@/lib/messages";
 
@@ -81,11 +81,16 @@ export async function POST(
   if (!text) {
     return NextResponse.json({ error: "Empty message" }, { status: 400 });
   }
-  if (!(await sharesChurch(userId, peerId))) {
-    return NextResponse.json(
-      { error: "You can only message members of your Gatherings" },
-      { status: 403 }
-    );
+  // Anyone may be written to. The Table used to reach only as far as your own
+  // Gatherings, which is the right rule for a room and the wrong one for a
+  // congregation: believers meet outside the groups they have joined.
+  //
+  // Being unlisted does not close the door either — a private profile is not
+  // findable by search, which is what the person asked for, but a conversation
+  // they are already in and a Gathering they already share still work. Privacy
+  // here is about discovery, not about refusing to be spoken to.
+  if (!(await isReachable(userId, peerId))) {
+    return NextResponse.json({ error: "No such believer" }, { status: 404 });
   }
   const message = await sendMessage(userId, peerId, text, attach);
   return NextResponse.json({ message }, { status: 201 });
