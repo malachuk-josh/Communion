@@ -513,3 +513,72 @@ export async function setRsvp(
   await kv.hset(keys.eventRsvps(eventId), { [userId]: status });
   return { churchId: raw.churchId };
 }
+
+/**
+ * Delete a Gathering, and everything that only existed because it did.
+ *
+ * A Gathering is not one record. It is a hash of its own, a hash of members,
+ * a sorted set of sessions, one of prayers, one of discussions — each of which
+ * has a hash and a set of posts behind it — a set of pending join requests,
+ * and an entry in every member's list of the Gatherings they are in, and in
+ * the index Discover reads. Removing the first of those and stopping is how a
+ * deleted Gathering keeps appearing on people's Gatherings screens and in
+ * Discover, pointing at nothing.
+ *
+ * Members are read before anything is dropped, because the member hash is
+ * what says whose lists have to be corrected — delete it first and there is no
+ * longer any way to know.
+ *
+ * Invite tokens are left. They are keyed by the token rather than by the
+ * Gathering, so they cannot be enumerated from here, and one that outlives its
+ * Gathering resolves to nothing and reads as expired — which it is.
+ */
+export async function deleteChurch(churchId: string): Promise<void> {
+  const kv = db();
+  const members = Object.keys((await kv.hgetall(keys.churchMembers(churchId))) ?? {});
+
+  const threadIds = await kv.zrangebyscore(
+    keys.churchThreads(churchId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  for (const id of threadIds) {
+    await kv.del(keys.threadPosts(id));
+    await kv.del(keys.thread(id));
+  }
+
+  const eventIds = await kv.zrangebyscore(
+    keys.churchEvents(churchId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  for (const id of eventIds) {
+    await kv.del(keys.eventRsvps(id));
+    await kv.del(keys.event(id));
+  }
+
+  // Prayers asked inside a Gathering are indexed only here — there is no
+  // second list they also belong to, so once this set goes the requests
+  // themselves are unreachable, and unreachable is not the same as gone.
+  const prayerIds = await kv.zrangebyscore(
+    keys.churchPrayers(churchId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  for (const id of prayerIds) {
+    await kv.del(keys.prayerPrayed(id));
+    await kv.del(keys.prayer(id));
+  }
+
+  await kv.del(keys.churchThreads(churchId));
+  await kv.del(keys.churchEvents(churchId));
+  await kv.del(keys.churchPrayers(churchId));
+  await kv.del(keys.churchRequests(churchId));
+  await kv.del(keys.churchMembers(churchId));
+  await kv.del(keys.church(churchId));
+
+  for (const userId of members) {
+    await kv.srem(keys.userChurches(userId), churchId);
+  }
+  await kv.srem(keys.allChurches, churchId);
+}

@@ -20,56 +20,43 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
-  /** where the page was when the bar was asked for; null when it was not */
-  const summonedAt = useRef<number | null>(null);
 
   /**
-   * How tall one verse is, here, now.
+   * In The Word, reading down tucks the bottom bar away for an unbroken page;
+   * a brisk upward flick, or nearing the top, brings it back. A slow upward
+   * drift keeps it hidden — that is still reading, not reaching.
    *
-   * The bar comes back for a tap and goes away again as soon as reading
-   * resumes — and "reading resumes" is a verse, not a number of pixels. A
-   * verse is two lines in Proverbs and twelve in Esther, so it is measured off
-   * the page rather than guessed at, from whatever is under the middle of the
-   * screen. Clamped at both ends: without a floor a one-line verse makes the
-   * bar impossible to keep, and without a ceiling a long one makes it feel
-   * stuck open.
+   * This is the gesture that was here before, restored. It was replaced by a
+   * small button left behind when the bar tucked away, on the reasoning that a
+   * flick is a gesture nobody is told about. The button was easy to find and
+   * wrong to use: it put a thing on the page to be aimed at, in the one place
+   * that is meant to be nothing but the text.
+   *
+   * The bar starts visible again with it. Hiding at the outset was only
+   * tolerable while the button was there to ask it back; without one, a reader
+   * who never flicks would never learn the bar exists.
    */
-  const verseHeight = () => {
-    const mid = document.elementFromPoint(
-      window.innerWidth / 2,
-      window.innerHeight / 2
-    );
-    const verse = mid?.closest<HTMLElement>("[data-v]");
-    const h = verse?.getBoundingClientRect().height ?? 0;
-    return Math.min(Math.max(h || 90, 48), 260);
-  };
-
-  // In The Word the bar starts away and stays away — the page is for reading,
-  // and the button it leaves behind is how it is asked back. It used to appear
-  // near the top of a book, which meant it arrived unbidden every time a
-  // chapter was opened. Every other tab simply has it.
   useEffect(() => {
-    summonedAt.current = null;
     if (pathname !== "/") {
       setNavHidden(false);
       return;
     }
-    setNavHidden(true);
+    let lastY = window.scrollY;
+    let lastT = performance.now();
     const onScroll = () => {
-      if (summonedAt.current === null) return;
-      if (Math.abs(window.scrollY - summonedAt.current) <= verseHeight()) return;
-      summonedAt.current = null;
-      setNavHidden(true);
+      const y = window.scrollY;
+      const now = performance.now();
+      const dy = y - lastY;
+      const speed = -dy / Math.max(1, now - lastT); // px/ms, upward
+      if (y < 130) setNavHidden(false);
+      else if (dy > 4) setNavHidden(true);
+      else if (dy < 0 && (speed > 0.9 || -dy > 110)) setNavHidden(false);
+      lastY = y;
+      lastT = now;
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
-
-  /** Bring the bar back, and remember from where. */
-  const summonNav = () => {
-    summonedAt.current = window.scrollY;
-    setNavHidden(false);
-  };
 
   // the reader's floating chapter arrows drop into the freed space
   useEffect(() => {
@@ -286,21 +273,6 @@ export default function Nav() {
           </div>
         </div>
       </nav>
-
-      {/* What the bar leaves behind. Small, centred, and always in the same
-          place, so that getting the nav back is a thing you can see rather
-          than a gesture you have to have been told about. */}
-      {navHidden && (
-        <button
-          type="button"
-          className="nav-peek glass"
-          onClick={summonNav}
-          aria-label={t("nav.showBar")}
-          title={t("nav.showBar")}
-        >
-          <Icon name="menu" />
-        </button>
-      )}
 
       <nav
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}

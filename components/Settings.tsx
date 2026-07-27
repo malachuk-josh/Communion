@@ -62,6 +62,7 @@ export default function Settings() {
   const [displayName, setDisplayName] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [savingPrivate, setSavingPrivate] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [nameLoaded, setNameLoaded] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
@@ -143,6 +144,29 @@ export default function Settings() {
         "content",
         next === "light" ? "#ede1c8" : next === "grey" ? "#000000" : "#0b0d1a"
       );
+  };
+
+  /**
+   * Delete a Gathering the reader founded.
+   *
+   * Behind a confirmation that has to be read rather than dismissed: this is
+   * the one thing on this page that takes something away from other people —
+   * every member loses it, along with its discussions and its sessions — and
+   * there is nothing to undo it with.
+   */
+  const removeChurch = async (church: MyChurch) => {
+    if (!window.confirm(t("settings.deleteGatheringConfirm", { name: church.name }))) {
+      return;
+    }
+    setDeleting(church.id);
+    try {
+      await api(`/api/churches/${church.id}`, { method: "DELETE" });
+      setChurches((prev) => prev?.filter((c) => c.id !== church.id) ?? null);
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const toggleVisibility = async (church: MyChurch) => {
@@ -346,6 +370,22 @@ export default function Settings() {
                 />
                 <Icon name="lock" /> {t("churches.privateLabel")}
               </label>
+            )}
+            {church.myRole === "founder" && (
+              <div className="settings-church-danger">
+                <button
+                  type="button"
+                  className="btn btn-sm jr-danger"
+                  onClick={() => removeChurch(church)}
+                  disabled={deleting === church.id}
+                >
+                  <Icon name="trash" />{" "}
+                  {deleting === church.id
+                    ? t("common.loading")
+                    : t("settings.deleteGathering")}
+                </button>
+                <p className="cal-hint">{t("settings.deleteGatheringHint")}</p>
+              </div>
             )}
           </div>
         ))
