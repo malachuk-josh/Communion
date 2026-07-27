@@ -43,10 +43,25 @@ function apiBibleId(id: string): string | undefined {
   return undefined;
 }
 
+/**
+ * The translations reached through YouVersion's platform. A third publisher
+ * API with a third set of habits: the version is addressed by a number rather
+ * than a hex string, and the text comes back as markup rather than as prose
+ * with markers in it.
+ */
+const YOUVERSION = ["lsb"];
+
+/** The version number a translation is addressed by, if one is configured. */
+function youVersionId(id: string): string | undefined {
+  if (id === "lsb") return process.env.YOUVERSION_LSB_ID || undefined;
+  return undefined;
+}
+
 /** Whether a licensed translation is configured at all. */
 export function licensedKey(id: string): string | undefined {
   if (id === "esv") return process.env.ESV_API_KEY || undefined;
   if (API_BIBLE.includes(id)) return process.env.API_BIBLE_KEY || undefined;
+  if (YOUVERSION.includes(id)) return process.env.YOUVERSION_APP_KEY || undefined;
   return undefined;
 }
 
@@ -258,6 +273,129 @@ async function fetchApiBible(
   return { verses, fumsId: data.meta?.fumsId };
 }
 
+/**
+ * Turn a chapter of YouVersion's markup into numbered verses.
+ *
+ * Their platform will not hand over a chapter as numbered verses. The verse
+ * endpoints return a verse's identity and no words — "This does not include
+ * the text content; use the Passages endpoint for that" — and the passages
+ * endpoint returns the whole chapter as one string. Asked for that string as
+ * plain text there is nothing in it to say where one verse ends and the next
+ * begins, so it has to be asked for as markup and taken apart here.
+ *
+ * Each verse is marked by a data-usfm reference, BOOK.CHAPTER.VERSE. A verse
+ * carried across a paragraph break is marked twice, so the pieces are gathered
+ * by number rather than assumed to arrive whole and in one place.
+ *
+ * Exported for the tests, which is the only way to be sure of a parser.
+ */
+export function parseVerseMarkup(html: string): {
+  verse: number;
+  text: string;
+}[] {
+  const gathered = new Map<number, string[]>();
+  // Splitting on the whole opening tag yields [before, verse, chunk, …]. It
+  // has to be the whole tag: split on the attribute alone and the rest of the
+  // tag stays behind at the head of every verse.
+  //
+  // Three parts to the reference, not two. The chapter is wrapped in a
+  // data-usfm of its own — JHN.3 — and matching that as though the chapter
+  // number were a verse number invents a verse 3 out of the whole chapter.
+  const parts = html.split(
+    /<[^>]*\bdata-usfm="[A-Za-z0-9]+\.\d{1,3}\.(\d{1,3})"[^>]*>/
+  );
+  for (let i = 1; i < parts.length; i += 2) {
+    const verse = Number(parts[i]);
+    const text = plainText(parts[i + 1] ?? "");
+    if (!text) continue;
+    const had = gathered.get(verse);
+    if (had) had.push(text);
+    else gathered.set(verse, [text]);
+  }
+  return [...gathered.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([verse, runs]) => ({ verse, text: clean(runs.join(" ")) }))
+    .filter((v) => v.text);
+}
+
+/**
+ * The words out of a fragment of markup.
+ *
+ * The verse number is itself an element inside the verse — drop it, or every
+ * verse would begin by saying its own number twice. Headings and notes are
+ * asked not to come; they are dropped here too, because a chapter reference is
+ * the one case where that API turns them on by default and a switch that has
+ * to be remembered is a switch that will one day be forgotten.
+ */
+const plainText = (fragment: string): string =>
+  clean(
+    fragment
+      .replace(
+        /<(\w+)[^>]*class="[^"]*\b(?:label|note|footnote|heading|s\d?|reference)\b[^"]*"[^>]*>[\s\S]*?<\/\1>/g,
+        " "
+      )
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, entity)
+  );
+
+const NAMED: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  ldquo: "“", rdquo: "”", lsquo: "‘", rsquo: "’",
+  mdash: "—", ndash: "–", hellip: "…",
+};
+
+function entity(_: string, body: string): string {
+  if (body.startsWith("#x") || body.startsWith("#X")) {
+    return String.fromCodePoint(parseInt(body.slice(2), 16));
+  }
+  if (body.startsWith("#")) return String.fromCodePoint(Number(body.slice(1)));
+  return NAMED[body.toLowerCase()] ?? `&${body};`;
+}
+
+/**
+ * YouVersion's platform.
+ *
+ * Headings and notes default to *on* for a chapter reference — their
+ * documentation says so plainly — which is the same trap that put stanza
+ * letters inside the NKJV's and the NASB's verses. Both are turned off by
+ * name, and dropped again in the parser for good measure.
+ */
+async function fetchYouVersion(
+  key: string,
+  bibleId: string,
+  bookNr: number,
+  chapter: number
+): Promise<LicensedChapter> {
+  const code = usfmCode(bookNr);
+  if (!code) throw new Error("no such book");
+  const query = new URLSearchParams({
+    format: "html",
+    include_headings: "false",
+    include_notes: "false",
+  });
+  const res = await fetch(
+    `https://api.youversion.com/v1/bibles/${bibleId}/passages/${code}.${chapter}?${query}`,
+    { headers: { "X-YVP-App-Key": key }, cache: "no-store" }
+  );
+  if (!res.ok) throw new Error(`youversion ${res.status}`);
+  const data = (await res.json()) as { content?: string };
+  const body = (data.content ?? "").trim();
+  if (!body) throw new Error("youversion empty");
+  const verses = parseVerseMarkup(body);
+  // Deliberately loud. If their markup is not what this expects, a chapter of
+  // scripture run together as one verse would look almost right on the page,
+  // and almost right is the worst thing a Bible can be.
+  if (!verses.length) throw new Error("youversion: unrecognised passage markup");
+  return {
+    verses: verses
+      .map((v) => ({
+        ...v,
+        text: stripAcrosticHeading(v.text, bookNr, chapter, v.verse),
+      }))
+      .filter((v) => v.text),
+  };
+}
+
 /** One chapter of a licensed translation, or a throw. */
 export function fetchLicensed(
   id: string,
@@ -266,6 +404,11 @@ export function fetchLicensed(
   chapter: number
 ): Promise<LicensedChapter> {
   if (id === "esv") return fetchEsv(key, bookNr, chapter);
+  if (YOUVERSION.includes(id)) {
+    const bibleId = youVersionId(id);
+    if (!bibleId) return Promise.reject(new Error(`no ${id} bible id`));
+    return fetchYouVersion(key, bibleId, bookNr, chapter);
+  }
   if (!API_BIBLE.includes(id)) {
     return Promise.reject(new Error("not a licensed translation"));
   }
