@@ -161,6 +161,34 @@ export function isLicensed(id: string): boolean {
   return !!getTranslation(id)?.licensed;
 }
 
+/**
+ * The books that can be set as running prose.
+ *
+ * Prose needs paragraphs, and a paragraph needs somewhere to break. The only
+ * breaks this app ships are the section headings in public/headings, which
+ * exist for Genesis and for all twenty-seven books of the New Testament and
+ * nowhere else. Set the rest as prose and a chapter becomes one unbroken
+ * block — the wall of text that continuous scrolling was accused of being.
+ * Those books keep a line to a verse until there is something to break them
+ * on.
+ */
+const PARAGRAPHED = new Set([1, ...Array.from({ length: 27 }, (_, i) => 40 + i)]);
+
+/**
+ * …and the books that should never be prose even if headings arrive for them.
+ * A psalm is verse, and verse is set as lines: running Psalm 119 together as
+ * paragraphs would lose the shape the poem is built on. None of these carry
+ * headings today, so this changes nothing now — it is here so that adding
+ * headings for Psalms is not also, accidentally, a decision about how Psalms
+ * is laid out.
+ */
+const POETRY = new Set([18, 19, 20, 21, 22, 25]);
+
+/** Whether this book reads as paragraphs rather than as one line per verse. */
+export function flowsAsProse(bookNr: number): boolean {
+  return PARAGRAPHED.has(bookNr) && !POETRY.has(bookNr);
+}
+
 // Study-mode sources (not shown in the translation dropdown):
 // Hebrew OT, Greek NT, and Young's Literal Translation for the
 // direct-English line. All share KJV-aligned book numbering.

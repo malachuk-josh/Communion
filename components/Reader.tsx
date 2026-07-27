@@ -12,6 +12,7 @@ import {
 import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
+  flowsAsProse,
   getBook,
   getTranslation,
   isLicensed,
@@ -1590,6 +1591,9 @@ export default function Reader({
   const bookName = lang === "es" ? book.es : book.en;
   const transAbbrev =
     TRANSLATIONS.find((tr) => tr.id === translation)?.abbrev ?? "";
+  /* Study mode keeps its line a verse whatever the book: its whole point is
+     that a verse is a thing you can look at on its own. */
+  const prose = !study && flowsAsProse(bookNr);
   const bookNameOf = (nr: number) => {
     const b = getBook(nr);
     return b ? (lang === "es" ? b.es : b.en) : "";
@@ -1811,12 +1815,31 @@ export default function Reader({
             className={`scripture${study ? " study" : ""}`}
             style={{ fontSize: `${pt}pt` }}
           >
-            <h2 className="chap-head" data-ch={ch}>
-              {bookName} {ch}
-              {/* the translation picker moved into the sheet, so the heading
-                  carries which text you're actually reading */}
-              <span className="chap-trans">{transAbbrev}</span>
-            </h2>
+            {/* Prose sets its chapter number as the drop cap that opens it,
+                the way a printed Bible does, so the heading above would only
+                say it twice. It stays in the document all the same: jumping to
+                a chapter scrolls to this, and it is the only thing that knows
+                where a chapter starts. Empty, and no taller than nothing. */}
+            {prose ? (
+              <h2
+                className={`chap-head${ch === 1 ? " book-title" : " chap-anchor"}`}
+                data-ch={ch}
+              >
+                {ch === 1 && (
+                  <>
+                    {bookName}
+                    <span className="chap-trans">{transAbbrev}</span>
+                  </>
+                )}
+              </h2>
+            ) : (
+              <h2 className="chap-head" data-ch={ch}>
+                {bookName} {ch}
+                {/* the translation picker moved into the sheet, so the heading
+                    carries which text you're actually reading */}
+                <span className="chap-trans">{transAbbrev}</span>
+              </h2>
+            )}
             {study ? (
               <div className="study-verses">
                 {verses.map((v) => {
@@ -1987,6 +2010,54 @@ export default function Reader({
               // is easier to find a reference in, and it gives the machinery
               // that holds the reader's place a real box to measure rather
               // than the union of an inline run's line boxes.
+              prose ? (
+                // Running prose: a paragraph to a section, verses inside it as
+                // inline spans rather than as lines of their own. The spans
+                // still carry data-v, which is what holds the reader's place,
+                // marks a bookmark and answers a jump — an inline box reports
+                // the top of its first line, which is the same question being
+                // asked of a block.
+                runsOf(ch, verses).map((run, i) => (
+                  <div key={i} className="section">
+                    {run.title && <h3 className="section-head">{run.title}</h3>}
+                    <p className="prose">
+                      {i === 0 && (
+                        <span className="chap-drop" aria-hidden="true">
+                          {ch}
+                        </span>
+                      )}
+                      {run.verses.map((v) => {
+                        const mark = markOf(ch, v.verse);
+                        // the drop cap already says "1", twice as loudly
+                        const numbered = !(i === 0 && v.verse === 1);
+                        return (
+                          <Fragment key={v.verse}>
+                            <span
+                              id={ch === chapter ? `v-${v.verse}` : undefined}
+                              data-v={`${ch}:${v.verse}`}
+                              className={`prose-v${
+                                ch === chapter && highlightVerse === v.verse
+                                  ? " verse-highlight"
+                                  : ""
+                              }`}
+                            >
+                              {numbered && (
+                                <sup className="verse-num">{v.verse}</sup>
+                              )}
+                              {v.text}
+                              {mark && (
+                                <sup className="verse-mark" title={mark}>
+                                  <StudyStar />
+                                </sup>
+                              )}
+                            </span>{" "}
+                          </Fragment>
+                        );
+                      })}
+                    </p>
+                  </div>
+                ))
+              ) : (
               runsOf(ch, verses).map((run, i) => (
                 <div key={i} className="section">
                   {run.title && <h3 className="section-head">{run.title}</h3>}
@@ -2018,6 +2089,7 @@ export default function Reader({
                   })}
                 </div>
               ))
+              )
             )}
           </article>
         ))}

@@ -1516,6 +1516,69 @@ mark {
   unicode-bidi: isolate-override;
 }
 
+/* ---- prose: the books that have paragraphs to break on ---- */
+
+/* The book's name, once, over its first chapter. Every chapter after it is
+   opened by its drop cap instead — printing the name again above each one
+   would be the same word twenty, fifty, a hundred and fifty times. */
+.chap-head.book-title {
+  display: block;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.85rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 2px 0 26px;
+}
+
+.chap-head.book-title .chap-trans {
+  display: block;
+  margin: 6px 0 0;
+  letter-spacing: 0.16em;
+}
+
+/* A chapter that is not the first still needs somewhere to scroll to. This is
+   that somewhere, and nothing else: the drop cap below it is what a reader
+   sees. */
+.chap-anchor {
+  display: block;
+  height: 0;
+  margin: 26px 0 0;
+  overflow: hidden;
+}
+
+.scripture + .scripture .chap-anchor {
+  margin-top: 30px;
+}
+
+.prose {
+  margin: 0 0 0.55em;
+  text-align: justify;
+  /* justified setting on a phone column will open rivers without it */
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* the chapter number, set into the first two lines of its first paragraph */
+.chap-drop {
+  float: left;
+  font-family: var(--serif);
+  font-size: 3.1em;
+  line-height: 0.86;
+  padding: 0.04em 0.14em 0 0;
+  color: var(--gold);
+}
+
+/* Verses run on. The span is there to be found — bookmarked, jumped to, held
+   in place across a reflow — not to be seen, so it draws nothing itself. */
+.prose-v {
+  /* a highlight on a run that wraps must be painted on every line of it,
+     not once around the union of them */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /* One verse, one line. The number hangs in the margin and the wrapped lines
    align under the text rather than under the number — what a printed Bible
    does, and the reason the indent is negative on top of the padding. */
