@@ -112,6 +112,7 @@ export async function warmOffline(force = false): Promise<void> {
 
     const flat: (() => Promise<unknown>)[] = [
       () => api("/api/messages/unread"),
+      () => api("/api/notifications"),
       () => api("/api/calendar"),
       () => api("/api/discover"),
       () => api("/api/profile"),

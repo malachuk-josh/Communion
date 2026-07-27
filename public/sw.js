@@ -53,6 +53,7 @@ const API_PATHS = [
   "/api/churches", // Gatherings: the list, and each one's members and events
   "/api/threads", // a discussion inside a Gathering
   "/api/messages", // the Table: the inbox, a conversation, the unread count
+  "/api/notifications", // what was missed; the reader re-checks its age
   "/api/calendar",
   "/api/discover",
   "/api/prayers",

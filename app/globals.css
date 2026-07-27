@@ -2175,6 +2175,22 @@ button.menu-tile {
   white-space: normal;
 }
 
+/* the two buttons a section heading can carry, side by side and never wrapped
+   onto the title's line */
+.head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notif-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
 .notif-list {
   display: grid;
   gap: 4px;

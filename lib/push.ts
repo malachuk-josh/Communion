@@ -57,6 +57,16 @@ export interface PushPayload {
   tag?: string;
 }
 
+/**
+ * How long a notification is worth keeping.
+ *
+ * A day. These are things that have already happened — a session starting, a
+ * request to join, a message that by then has been read — and a feed of them
+ * going back weeks is a list nobody scrolls. What it is for is the hour after
+ * a phone was face-down on a table: what did I miss?
+ */
+export const NOTIF_TTL_MS = 24 * 60 * 60 * 1000;
+
 /** Keep an in-app history of every notification, delivered by push or not. */
 async function logNotification(
   userId: string,
@@ -64,18 +74,19 @@ async function logNotification(
 ): Promise<void> {
   const kv = db();
   const key = keys.userNotifs(userId);
-  await kv.zadd(
-    key,
-    Date.now(),
-    JSON.stringify({ ...payload, ts: Date.now() })
-  );
-  // lazy trim: keep roughly the latest 50
-  const all = await kv.zrangebyscore(key, 0, Number.MAX_SAFE_INTEGER);
-  if (all.length > 60) {
-    for (const item of all.slice(0, all.length - 50)) {
-      await kv.zrem(key, item);
-    }
-  }
+  const now = Date.now();
+  await kv.zadd(key, now, JSON.stringify({ ...payload, ts: now }));
+
+  // Drop what has aged out. Writing is the moment to do it: it is the only
+  // moment the set is known to be growing, and it means a busy user's feed is
+  // trimmed by their own traffic rather than by a reader waiting on a page.
+  const stale = await kv.zrangebyscore(key, 0, now - NOTIF_TTL_MS);
+  for (const item of stale) await kv.zrem(key, item);
+
+  // And a TTL over the whole set, so somebody who stops getting notifications
+  // altogether does not leave one behind for good. Refreshed on every write,
+  // with an hour's grace so it never expires an entry still inside its day.
+  await kv.expire(key, Math.ceil(NOTIF_TTL_MS / 1000) + 3600);
 }
 
 /** Send a payload to every device the user subscribed. Returns sends that succeeded. */
