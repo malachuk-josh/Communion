@@ -230,10 +230,11 @@ export default function Reader({
   > | null>(null);
   // which chapter's context modal is open (null: closed)
   const [contextOpen, setContextOpen] = useState<number | null>(null);
-  // section headings per chapter: [{ v: first verse, en, es }, …]
+  // section headings per chapter: [{ v: first verse, en, es? }, …]. Spanish is
+  // optional: the hand-written books have it, the Berean ones do not.
   const [heads, setHeads] = useState<Record<
     string,
-    { v: number; en: string; es: string }[]
+    { v: number; en: string; es?: string }[]
   > | null>(null);
   /** [verse, 1 for poetry] for every run of every chapter of the open book. */
   const [paras, setParas] = useState<Record<string, [number, number][]> | null>(
@@ -939,10 +940,22 @@ export default function Reader({
     (bmKeyAt(ch, verse) ? t("reader.bookmark") : null);
 
   /** Section title opening at this verse, if any. */
+  /**
+   * The heading standing over a verse, in the language being read — and in no
+   * other.
+   *
+   * Genesis and the New Testament carry headings written by hand in both
+   * languages. The other thirty-eight books take theirs from the Berean
+   * Standard Bible, which has three thousand of them and all in English. This
+   * used to fall back to English when there was no Spanish, which was right
+   * when every heading had both; now it would drop an English title into the
+   * middle of the Reina Valera. A Spanish reading gets the headings it has and
+   * silence where it has none, which is what it had before either way.
+   */
   const headAt = (ch: number, verse: number): string | undefined => {
     const entry = heads?.[String(ch)]?.find((s) => s.v === verse);
     if (!entry) return undefined;
-    return (lang === "es" ? entry.es : entry.en) || entry.en;
+    return (lang === "es" ? entry.es : entry.en) || undefined;
   };
 
   /**
