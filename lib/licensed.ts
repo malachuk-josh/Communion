@@ -1,8 +1,10 @@
 // Reading a chapter of somebody else's translation.
 //
-// Two publishers, two APIs, two sets of house rules, one shape at the end of
-// it — the same {verse, text} rows the static files hand over, so nothing
-// above this file has to know which kind of translation it is looking at.
+// Two APIs, several sets of house rules, one shape at the end of it — the same
+// {verse, text} rows the static files hand over, so nothing above this file has
+// to know which kind of translation it is looking at. Crossway serves the ESV
+// itself; API.Bible serves the NKJV and the NASB, which share a key and an
+// adapter and differ in how they punctuate a poem.
 //
 // The keys never leave the server. Both APIs authenticate with a bearer-style
 // header and neither offers per-origin restriction, so a key in the browser is
@@ -12,6 +14,7 @@
 // held at around five hundred verses — a few chapters of anything — so there
 // is deliberately no way to ask this file for a book.
 
+import { acrosticAt } from "@/lib/acrostic";
 import { usfmCode } from "@/lib/usfm";
 import { getBook } from "@/lib/bible";
 
@@ -86,43 +89,93 @@ const clean = (s: string): string =>
     .trim();
 
 /**
- * The letter names printed above an acrostic stanza, in the spellings seen.
- * Longest first: the alternation is leftmost-wins, and "He" is the start of
- * "Heth" as "Tau" is the start of nothing but itself.
- */
-const LETTER_NAME =
-  "Samekh|Samech|Gimmel|Daleth|Tsadde|Aleph|Cheth|Sadhe|Samek|Gimel|Zayin|" +
-  "Dalet|Tsade|Lamed|Qoph|Yodh|Kaph|Caph|Koph|Resh|Shin|Beth|Heth|Teth|Alef|" +
-  "Ayin|Zade|Waw|Vav|Yod|Mem|Nun|Pe|Sin|Tau|Taw|Tav|Bet|Tet|He";
-
-/**
  * Hebrew script, including the presentation forms. Written as escapes so the
  * range reads the same in every editor, whichever way it wants to lay it out.
  */
 const HEBREW = "\\u0590-\\u05FF\\uFB1D-\\uFB4F";
 
 /**
+ * How each letter gets spelled out when a publisher prints its name.
+ *
+ * There is no standard: the NKJV says Samek, Tsadde and Tau where the NASB
+ * says Samekh, Tsadhe and Tav, and both are right. Listed per letter rather
+ * than as one flat set because which name is expected depends on which letter
+ * is due — that is the whole safeguard below.
+ */
+const TRANSLITERATIONS: Record<string, string[]> = {
+  "א": ["Aleph", "Alef"],
+  "ב": ["Beth", "Bet"],
+  "ג": ["Gimel", "Gimmel"],
+  "ד": ["Daleth", "Dalet"],
+  "ה": ["He"],
+  "ו": ["Waw", "Vav"],
+  "ז": ["Zayin"],
+  "ח": ["Heth", "Cheth", "Chet"],
+  "ט": ["Teth", "Tet"],
+  "י": ["Yodh", "Yod"],
+  "כ": ["Kaph", "Caph"],
+  "ל": ["Lamedh", "Lamed"],
+  "מ": ["Mem"],
+  "נ": ["Nun"],
+  "ס": ["Samekh", "Samech", "Samek"],
+  "ע": ["Ayin"],
+  "פ": ["Pe"],
+  "צ": ["Tsadhe", "Tsadde", "Tsade", "Sadhe", "Zade"],
+  "ק": ["Qoph", "Koph"],
+  "ר": ["Resh"],
+  "ש": ["Shin", "Sin"],
+  "ת": ["Tav", "Taw", "Tau"],
+};
+
+/**
  * Take the acrostic heading off the end of a verse.
  *
- * Psalm 119 is printed with the Hebrew letter standing over each stanza, and
- * in USFM that is a \qa heading — which API.Bible's include-titles switch does
- * not cover, so it arrives in the text with no marker of its own. Falling
- * between two verses, it lands on the end of the one before: verse 8 comes
- * back ending "do not forsake me utterly! ב Beth".
+ * The alphabetic poems are printed with each letter standing over its stanza,
+ * and in USFM that is a \qa heading — which API.Bible's include-titles switch
+ * does not cover, so it arrives in the text with no marker of its own. Falling
+ * between two verses, it lands on the end of the one before. The two
+ * publishers print it differently and both leak: the NKJV's verse 8 of Psalm
+ * 119 ends "...forsake me utterly! [bet] Beth", the NASB's ends
+ * "...utterly abandon me! Beth" with no Hebrew character at all.
  *
- * This app draws those letters itself, from lib/acrostic.ts, so the heading is
- * both wrong where it is and already shown where it belongs. Hebrew script
- * never appears in the body of an English translation, which is what makes it
- * safe to cut on sight; the transliteration after it is only taken when it is
- * one of the twenty-two names.
+ * Which is why this cannot simply cut a trailing letter name. "He" is one of
+ * the twenty-two and also an ordinary English word: Isaiah 41:4 ends "I am
+ * He", and a rule that reached for the name alone would quietly edit it.
+ *
+ * So nothing is cut on the strength of the name. lib/acrostic.ts already knows
+ * which verse opens which stanza — the same table that draws these letters
+ * where they belong — and a heading is only taken off a verse when the verse
+ * after it is due to open a stanza, and only when what is trailing is a
+ * spelling of that particular letter. Anywhere else the words are the text.
  */
-const stripAcrosticHeading = (s: string): string =>
-  s
-    // the letter with its name after it, which is how the NKJV prints it
-    .replace(new RegExp(`\\s*[${HEBREW}]+\\s*(?:${LETTER_NAME})\\s*$`), "")
-    // and the bare letter, should a publisher ever send one unnamed
-    .replace(new RegExp(`\\s*[${HEBREW}]+\\s*$`), "")
-    .trim();
+function stripAcrosticHeading(
+  text: string,
+  bookNr: number,
+  chapter: number,
+  verse: number
+): string {
+  let out = text;
+  // The name first, then the letter, because the NKJV prints both and in that
+  // order — take the letter off first and "utterly! [bet] Beth" becomes
+  // "utterly! [bet]", the name gone and the letter stranded.
+  const next = acrosticAt(bookNr, chapter, verse + 1);
+  const names = next?.letters.flatMap((l) => TRANSLITERATIONS[l] ?? []) ?? [];
+  if (names.length) {
+    // capitalised, because a heading is: this must not match a sentence that
+    // happens to end in the word "he"
+    out = out.replace(new RegExp(`\\s*(?:${names.join("|")})\\.?\\s*$`), "");
+  }
+  // Hebrew script is never the body of an English translation, so a stray
+  // letter can go on sight wherever it turns up
+  return out.replace(new RegExp(`\\s*[${HEBREW}]+\\s*$`), "").trim();
+}
+
+/**
+ * The pilcrow the NASB starts a new paragraph with. It marks where a printed
+ * page would break, which this reader decides for itself, and it arrives stuck
+ * to the first word: "[9] ¶How can a young man keep his way pure?"
+ */
+const stripPilcrow = (s: string): string => s.replace(/¶\s*/g, "").trim();
 
 /**
  * Crossway's own API. Free for non-commercial use, 5,000 queries a day, and
@@ -197,7 +250,10 @@ async function fetchApiBible(
   const body = (data.data?.content ?? "").trim();
   if (!body) throw new Error("api.bible empty");
   const verses = parseBracketed(body)
-    .map((v) => ({ ...v, text: stripAcrosticHeading(v.text) }))
+    .map((v) => ({
+      ...v,
+      text: stripAcrosticHeading(stripPilcrow(v.text), bookNr, chapter, v.verse),
+    }))
     .filter((v) => v.text);
   return { verses, fumsId: data.meta?.fumsId };
 }
