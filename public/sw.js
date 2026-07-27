@@ -20,6 +20,7 @@ const DATA_PATHS = [
   "/bible/",
   "/context/",
   "/headings/",
+  "/paragraphs/",
   "/xref/",
   "/strongs/",
   "/lexicon/",

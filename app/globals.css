@@ -1560,7 +1560,7 @@ mark {
   -webkit-hyphens: auto;
 }
 
-/* the chapter number, set into the first two lines of its first paragraph */
+/* the chapter number, set into the first two lines of what opens the chapter */
 .chap-drop {
   float: left;
   font-family: var(--serif);
@@ -1568,6 +1568,18 @@ mark {
   line-height: 0.86;
   padding: 0.04em 0.14em 0 0;
   color: var(--gold);
+}
+
+/* A chapter that opens on poetry sets its number against a line rather than a
+   paragraph. That line hangs an indent for its verse number, which the drop
+   cap is standing in for — so the one line the number falls on gives the
+   indent up rather than trying to reach back through it.
+
+   Not a negative margin: em on the drop cap is its own 3.1em, so -1.9em there
+   is -110px, and the numeral leaves the page to the left. */
+.verse-line.chapter-opener {
+  padding-left: 0;
+  text-indent: 0;
 }
 
 /* Verses run on. The span is there to be found — bookmarked, jumped to, held

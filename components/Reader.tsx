@@ -12,7 +12,6 @@ import {
 import {
   DEFAULT_TRANSLATION,
   TRANSLATIONS,
-  flowsAsProse,
   getBook,
   getTranslation,
   isLicensed,
@@ -236,6 +235,10 @@ export default function Reader({
     string,
     { v: number; en: string; es: string }[]
   > | null>(null);
+  /** [verse, 1 for poetry] for every run of every chapter of the open book. */
+  const [paras, setParas] = useState<Record<string, [number, number][]> | null>(
+    null
+  );
   const [highlightVerse, setHighlightVerse] = useState<number | null>(
     initialVerse ?? null
   );
@@ -894,6 +897,29 @@ export default function Reader({
     };
   }, [bookNr]);
 
+  // Where the paragraphs are, and which runs are poetry. One file per book,
+  // derived from the World English Bible's own markup — see
+  // scripts/build-paragraphs.mjs. Until it arrives the reader stays on a line
+  // per verse: laying a psalm out as prose for a moment and then correcting
+  // itself would be worse than waiting.
+  useEffect(() => {
+    let cancelled = false;
+    setParas(null);
+    fetch(`/paragraphs/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (cancelled) return;
+        holdVerse();
+        setParas(json);
+      })
+      .catch(() => {
+        if (!cancelled) setParas({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookNr]);
+
   /**
    * Which bookmark holds a given verse — the verse's own, or the range it
    * falls inside. Built once per change to the set rather than searched per
@@ -959,13 +985,34 @@ export default function Reader({
     );
   };
 
-  /** Split a chapter into its sections, each with the title that opens it. */
+  /**
+   * Split a chapter into the runs it is actually written in: a paragraph of
+   * prose, a stanza of poetry, or a section under its own title.
+   *
+   * Two sources, and either can open a run. The headings are the hand-written
+   * ones in public/headings; the paragraph marks come from public/paragraphs,
+   * which knows where every paragraph in the Bible begins and whether it is
+   * verse or prose. A run with no mark of its own carries on as whatever the
+   * run before it was — a heading dropped into the middle of a psalm starts a
+   * new section, not a change of genre.
+   */
   const runsOf = (ch: number, verses: Verse[]) => {
-    const runs: { title?: string; verses: Verse[] }[] = [];
+    const marks = new Map(
+      (paras?.[ch] ?? []).map(([v, poetry]) => [v, poetry === 1])
+    );
+    const runs: { title?: string; poetry: boolean; verses: Verse[] }[] = [];
     for (const v of verses) {
       const title = headAt(ch, v.verse);
-      if (title || runs.length === 0) runs.push({ title, verses: [v] });
-      else runs[runs.length - 1].verses.push(v);
+      const opens = marks.has(v.verse);
+      if (title || opens || runs.length === 0) {
+        runs.push({
+          title,
+          poetry: opens
+            ? marks.get(v.verse)!
+            : (runs[runs.length - 1]?.poetry ?? false),
+          verses: [v],
+        });
+      } else runs[runs.length - 1].verses.push(v);
     }
     return runs;
   };
@@ -1591,9 +1638,11 @@ export default function Reader({
   const bookName = lang === "es" ? book.es : book.en;
   const transAbbrev =
     TRANSLATIONS.find((tr) => tr.id === translation)?.abbrev ?? "";
-  /* Study mode keeps its line a verse whatever the book: its whole point is
-     that a verse is a thing you can look at on its own. */
-  const prose = !study && flowsAsProse(bookNr);
+  /* Study mode keeps a line to a verse whatever the book: its whole point is
+     that a verse is a thing you can look at on its own. Everywhere else the
+     text is laid out the way it was written — as soon as there is a file
+     saying how that is. */
+  const prose = !study && paras !== null;
   const bookNameOf = (nr: number) => {
     const b = getBook(nr);
     return b ? (lang === "es" ? b.es : b.en) : "";
@@ -2020,41 +2069,81 @@ export default function Reader({
                 runsOf(ch, verses).map((run, i) => (
                   <div key={i} className="section">
                     {run.title && <h3 className="section-head">{run.title}</h3>}
-                    <p className="prose">
-                      {i === 0 && (
-                        <span className="chap-drop" aria-hidden="true">
-                          {ch}
-                        </span>
-                      )}
-                      {run.verses.map((v) => {
+                    {/* Verse is set as lines and prose as paragraphs, which is
+                        what a printed Bible does and why the two are told
+                        apart in the data. Isaiah is both, chapter by chapter. */}
+                    {run.poetry ? (
+                      run.verses.map((v) => {
                         const mark = markOf(ch, v.verse);
-                        // the drop cap already says "1", twice as loudly
-                        const numbered = !(i === 0 && v.verse === 1);
+                        const opener = i === 0 && v.verse === run.verses[0].verse;
                         return (
                           <Fragment key={v.verse}>
-                            <span
+                            {stanzaMark(ch, v.verse)}
+                            <p
                               id={ch === chapter ? `v-${v.verse}` : undefined}
                               data-v={`${ch}:${v.verse}`}
-                              className={`prose-v${
+                              className={`verse-line${
+                                opener ? " chapter-opener" : ""
+                              }${
                                 ch === chapter && highlightVerse === v.verse
                                   ? " verse-highlight"
                                   : ""
                               }`}
                             >
-                              {numbered && (
-                                <sup className="verse-num">{v.verse}</sup>
+                              {opener && (
+                                <span className="chap-drop" aria-hidden="true">
+                                  {ch}
+                                </span>
                               )}
+                              <sup className="verse-num">{v.verse}</sup>
+                              {lineMark(ch, v.verse)}
                               {v.text}
                               {mark && (
                                 <sup className="verse-mark" title={mark}>
                                   <StudyStar />
                                 </sup>
                               )}
-                            </span>{" "}
+                            </p>
                           </Fragment>
                         );
-                      })}
-                    </p>
+                      })
+                    ) : (
+                      <p className="prose">
+                        {i === 0 && (
+                          <span className="chap-drop" aria-hidden="true">
+                            {ch}
+                          </span>
+                        )}
+                        {run.verses.map((v) => {
+                          const mark = markOf(ch, v.verse);
+                          // the drop cap already says "1", twice as loudly
+                          const numbered = !(i === 0 && v.verse === 1);
+                          return (
+                            <Fragment key={v.verse}>
+                              <span
+                                id={ch === chapter ? `v-${v.verse}` : undefined}
+                                data-v={`${ch}:${v.verse}`}
+                                className={`prose-v${
+                                  ch === chapter && highlightVerse === v.verse
+                                    ? " verse-highlight"
+                                    : ""
+                                }`}
+                              >
+                                {numbered && (
+                                  <sup className="verse-num">{v.verse}</sup>
+                                )}
+                                {v.text}
+                                {mark && (
+                                  <sup className="verse-mark" title={mark}>
+                                    <StudyStar />
+                                  </sup>
+                                )}
+                              </span>{" "}
+                            </Fragment>
+                          );
+                        })}
+                      </p>
+                    )}
                   </div>
                 ))
               ) : (

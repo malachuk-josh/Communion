@@ -35,6 +35,7 @@ function merge(...parts) {
 const reading = merge(
   listDir("bible/kjv"),
   listDir("headings"),
+  listDir("paragraphs"),
   listDir("context"),
   listDir("xref")
 );
