@@ -83,18 +83,6 @@ const LICENSED: Translation[] = [
     notice: `Scripture quotations taken from the New American Standard Bible® (NASB), Copyright © ${nasbYears()} by The Lockman Foundation. Used by permission. All rights reserved.`,
     noticeHref: "https://www.lockman.org",
   },
-  {
-    id: "lsb",
-    name: "Legacy Standard Bible",
-    abbrev: "LSB",
-    lang: "en",
-    licensed: true,
-    // Three Sixteen require this wording, and unlike the others they require
-    // the link to be click-enabled rather than merely printed.
-    notice:
-      "Scripture quotations taken from the (LSB®) Legacy Standard Bible®, Copyright © 2021 by The Lockman Foundation. Used by permission. All rights reserved. Managed in partnership with Three Sixteen Publishing Inc.",
-    noticeHref: "https://lsbible.org",
-  },
 ];
 
 /**
@@ -122,8 +110,7 @@ const on = (value?: string): boolean => {
 const enabled = (id: string): boolean =>
   (id === "esv" && on(process.env.NEXT_PUBLIC_ESV)) ||
   (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV)) ||
-  (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB)) ||
-  (id === "lsb" && on(process.env.NEXT_PUBLIC_LSB));
+  (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB));
 
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,
