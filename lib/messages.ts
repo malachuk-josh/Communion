@@ -7,19 +7,32 @@ import { randomUUID } from "crypto";
 import { db, keys } from "@/lib/db";
 import { sendPushToUser } from "@/lib/push";
 
+/**
+ * What a message carries besides its words.
+ *
+ * A verse attachment is a place in scripture, so it travels as that place and
+ * needs nothing stored anywhere to be readable. A collection has no single
+ * place — it is a shelf of them — so it travels as the token of its published
+ * snapshot instead, and carries the name and size it had when it was sent, so
+ * the card in the thread reads correctly before anything is fetched.
+ */
+export type Attachment =
+  | {
+      kind: "bookmark" | "note" | "word";
+      b: number;
+      c: number;
+      v: number;
+      label?: string;
+    }
+  | { kind: "collection"; token: string; name: string; count: number };
+
 export interface ChatMessage {
   id: string;
   from: string;
   text: string;
   ts: number;
-  /** shared verse card: a bookmark, note, or word translation */
-  attach?: {
-    b: number;
-    c: number;
-    v: number;
-    kind: "bookmark" | "note" | "word";
-    label?: string;
-  };
+  /** a shared card: a verse you kept, a note on one, a word, or a collection */
+  attach?: Attachment;
 }
 
 export interface ConvSummary {

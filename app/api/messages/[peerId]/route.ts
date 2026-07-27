@@ -9,7 +9,7 @@ import {
   isReachable,
   markRead,
   sendMessage,
-  type ChatMessage,
+  type Attachment,
 } from "@/lib/messages";
 
 /** Thread with one person; ?since=ts returns only newer messages. */
@@ -49,34 +49,88 @@ export async function POST(
   }
   const body = (await req.json().catch(() => null)) as {
     text?: string;
-    attach?: ChatMessage["attach"];
+    attach?: Record<string, unknown>;
   } | null;
   let text = body?.text?.trim().slice(0, 2000) ?? "";
 
-  let attach: ChatMessage["attach"];
+  let attach: Attachment | undefined;
   if (body?.attach) {
-    const { b, c, v, kind, label } = body.attach;
-    const book = getBook(Number(b));
-    if (
-      !book ||
-      !c ||
-      !v ||
-      c < 1 ||
-      c > book.chapters ||
-      v < 1 ||
-      v > 200 ||
-      (kind !== "bookmark" && kind !== "note" && kind !== "word")
-    ) {
-      return NextResponse.json({ error: "Invalid attachment" }, { status: 400 });
+    const kind = body.attach.kind;
+    if (kind === "collection") {
+      /*
+       * A collection is sent as nothing but the token of its snapshot, and the
+       * name and size on the card are read from that snapshot rather than
+       * taken from the sender. The card is a claim about what is on the other
+       * end of the link, and a claim the recipient cannot check before tapping
+       * should not be one the sender gets to write.
+       *
+       * Ownership is deliberately not required. A collection you were sent is
+       * a collection you may pass on — that is what being given a link means —
+       * and the snapshot is public to anyone holding the token either way.
+       */
+      const token = String(body.attach.token ?? "");
+      if (!/^[a-f0-9]{16}$/.test(token)) {
+        return NextResponse.json(
+          { error: "Invalid attachment" },
+          { status: 400 }
+        );
+      }
+      const stored = await db().hgetall(keys.sharedCollection(token));
+      if (!stored?.data) {
+        return NextResponse.json(
+          { error: "That collection has not been shared" },
+          { status: 404 }
+        );
+      }
+      let snapshot: { name?: string; verses?: unknown[] };
+      try {
+        snapshot = JSON.parse(stored.data) as typeof snapshot;
+      } catch {
+        return NextResponse.json(
+          { error: "That collection has not been shared" },
+          { status: 404 }
+        );
+      }
+      const name = (snapshot.name ?? "").trim().slice(0, 80) || "Collection";
+      attach = {
+        kind: "collection",
+        token,
+        name,
+        count: Array.isArray(snapshot.verses) ? snapshot.verses.length : 0,
+      };
+      if (!text) text = name;
+    } else {
+      const { b, c, v, label } = body.attach as {
+        b?: number;
+        c?: number;
+        v?: number;
+        label?: string;
+      };
+      const book = getBook(Number(b));
+      if (
+        !book ||
+        !c ||
+        !v ||
+        c < 1 ||
+        c > book.chapters ||
+        v < 1 ||
+        v > 200 ||
+        (kind !== "bookmark" && kind !== "note" && kind !== "word")
+      ) {
+        return NextResponse.json(
+          { error: "Invalid attachment" },
+          { status: 400 }
+        );
+      }
+      attach = {
+        b: Number(b),
+        c: Number(c),
+        v: Number(v),
+        kind,
+        label: label?.trim().slice(0, 1000) || undefined,
+      };
+      if (!text) text = `${book.en} ${c}:${v}`;
     }
-    attach = {
-      b: Number(b),
-      c: Number(c),
-      v: Number(v),
-      kind,
-      label: label?.trim().slice(0, 1000) || undefined,
-    };
-    if (!text) text = `${book.en} ${c}:${v}`;
   }
   if (!text) {
     return NextResponse.json({ error: "Empty message" }, { status: 400 });

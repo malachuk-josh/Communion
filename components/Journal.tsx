@@ -108,6 +108,8 @@ export default function Journal() {
   const [canText, setCanText] = useState(false);
   /** which entry is choosing a recipient, by the same id the row uses */
   const [sendFor, setSendFor] = useState<string | null>(null);
+  /** why a collection could not be readied for sending, if it could not */
+  const [sendGroupError, setSendGroupError] = useState("");
   /** the one row open for editing, if any */
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -632,10 +634,29 @@ export default function Journal() {
   };
 
   /**
-   * Share a whole shelf. A collection is too much to spell out in a link, so
-   * it is published as a snapshot and sent as a token — once. The token comes
-   * back on the collection and is reused from then on, which keeps every
-   * later share instant and re-shares the same address rather than a new one.
+   * Publish a shelf and remember the address it was given.
+   *
+   * A collection is too much to spell out in a link, so it goes as a snapshot
+   * with a token pointing at it. The token is stable — the server hands back
+   * the same one every time — so a shelf shared twice is shared to the same
+   * page rather than to two copies of itself, and every later send skips the
+   * round trip.
+   */
+  const publishCollection = async (id: string): Promise<string> => {
+    const known = collections[id]?.share;
+    if (known) return known;
+    const res = await api<{ url: string }>(`/api/collections/${id}/share`, {
+      method: "POST",
+    });
+    const token = res.url.split("/").pop() ?? "";
+    const next = { ...collections, [id]: { ...collections[id], share: token } };
+    setCollections(next);
+    void writeLocalState({ collections: next });
+    return token;
+  };
+
+  /**
+   * Share a whole shelf with whatever the device shares with.
    *
    * Unfiled is not a collection and has nothing to publish; it goes as text.
    */
@@ -645,27 +666,37 @@ export default function Journal() {
   ) => {
     const id = `g-${group.id}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const known = group.id ? collections[group.id]?.share : "";
-    if (known) {
-      return share(id, `${body}\n\n${origin}/shared/${known}\n${SIGNED}`);
-    }
     if (!group.id) return share(id, `${body}\n${SIGNATURE}`);
     try {
-      const res = await api<{ url: string }>(
-        `/api/collections/${group.id}/share`,
-        { method: "POST" }
-      );
-      const token = res.url.split("/").pop();
-      const next = {
-        ...collections,
-        [group.id]: { ...collections[group.id], share: token },
-      };
-      setCollections(next);
-      void writeLocalState({ collections: next });
-      return share(id, `${body}\n\n${res.url}\n${SIGNED}`);
+      const token = await publishCollection(group.id);
+      return share(id, `${body}\n\n${origin}/shared/${token}\n${SIGNED}`);
     } catch {
       // offline, or signed out: the verses themselves still send
       return share(id, `${body}\n${SIGNATURE}`);
+    }
+  };
+
+  /**
+   * Hand a whole shelf to somebody at the Table.
+   *
+   * The panel cannot open until the collection has an address, since that
+   * address is the whole of what gets sent — so the tap that asks for it is
+   * also the tap that publishes it, and the panel waits on the answer. It is
+   * one round trip, once per collection, and never again for that shelf.
+   */
+  const openGroupSend = async (id: string) => {
+    const key = `g-send-${id}`;
+    if (sendFor === key) {
+      setSendFor(null);
+      return;
+    }
+    setSendFor(key);
+    setSendGroupError("");
+    if (collections[id]?.share) return;
+    try {
+      await publishCollection(id);
+    } catch {
+      setSendGroupError(t("journal.sendGroupUnavailable"));
     }
   };
 
@@ -885,7 +916,10 @@ export default function Journal() {
             cta={t("journal.openWord")}
           />
         ) : (
-          bookmarkGroups.map((group) => (
+          bookmarkGroups.map((group) => {
+            // the address this shelf was published at, if it has been
+            const shelfToken = group.id ? collections[group.id]?.share : "";
+            return (
             <section key={group.id || "unfiled"} className="jr-group">
               <h2 className="jr-group-head">
                 <Icon name={group.id ? "collection" : "bookmark"} />
@@ -955,7 +989,26 @@ export default function Journal() {
                     )
                   }
                 />
+                {/* Unfiled has no shelf to send — it is the absence of one */}
+                {group.id && (
+                  <SendButton
+                    label={t("journal.sendGroupToTable", { name: group.name })}
+                    onClick={() => void openGroupSend(group.id)}
+                  />
+                )}
               </h2>
+              {sendFor === `g-send-${group.id}` &&
+                (shelfToken ? (
+                  <SendPanel
+                    attach={{ kind: "collection", token: shelfToken }}
+                    refText={group.name}
+                    onClose={() => setSendFor(null)}
+                  />
+                ) : sendGroupError ? (
+                  <p className="error-text">{sendGroupError}</p>
+                ) : (
+                  <p className="skeleton">{t("common.loading")}</p>
+                ))}
               <div
                 className="jr-list"
                 ref={(el) => {
@@ -1137,7 +1190,8 @@ export default function Journal() {
                 })}
               </div>
             </section>
-          ))
+            );
+          })
         ))}
 
       {tab === "plans" &&
@@ -1274,7 +1328,17 @@ function SendPanel({
   refText,
   onClose,
 }: {
-  attach: { b: number; c: number; v: number; kind: "bookmark" | "note"; label?: string };
+  attach:
+    | {
+        b: number;
+        c: number;
+        v: number;
+        kind: "bookmark" | "note";
+        label?: string;
+      }
+    /* a shelf, which is not anywhere in scripture — it goes as the address of
+       its published snapshot, and the card is built from that, not from here */
+    | { kind: "collection"; token: string };
   refText: string;
   onClose: () => void;
 }) {

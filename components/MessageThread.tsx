@@ -12,27 +12,42 @@ import { api } from "@/lib/client";
 import { parseBmKey } from "@/lib/bookmarkKey";
 import { useI18n } from "@/lib/i18n";
 
+type Attachment =
+  | {
+      kind: "bookmark" | "note" | "word";
+      b: number;
+      c: number;
+      v: number;
+      label?: string;
+    }
+  | { kind: "collection"; token: string; name: string; count: number };
+
 interface ChatMessage {
   id: string;
   from: string;
   text: string;
   ts: number;
-  attach?: {
-    b: number;
-    c: number;
-    v: number;
-    kind: "bookmark" | "note" | "word";
-    label?: string;
-  };
+  attach?: Attachment;
 }
 
-interface ShareItem {
+type VerseShare = {
+  kind: "bookmark" | "note";
   b: number;
   c: number;
   v: number;
-  kind: "bookmark" | "note";
   label?: string;
-}
+};
+
+/**
+ * Something of yours you can hand to the person you are talking with.
+ *
+ * A verse carries its own address. A collection carries only its id here — the
+ * link it is sent as does not exist until it is picked, and publishing every
+ * shelf you own just to open a picker would be the wrong trade.
+ */
+type ShareItem =
+  | VerseShare
+  | { kind: "collection"; id: string; name: string; count: number };
 
 export default function MessageThread({ peerId }: { peerId: string }) {
   const { lang, t } = useI18n();
@@ -142,25 +157,39 @@ export default function MessageThread({ peerId }: { peerId: string }) {
     setPickerOpen((v) => !v);
     if (shareItems === null) {
       Promise.all([
-        api<{ bookmarks: Record<string, { t: number; l?: string }> }>(
-          "/api/bookmarks"
-        ).catch(() => ({ bookmarks: {} })),
+        api<{
+          bookmarks: Record<string, { t: number; l?: string; c?: string }>;
+          collections: Record<string, { name: string }>;
+        }>("/api/bookmarks").catch(() => ({ bookmarks: {}, collections: {} })),
         api<{ notes: { b: number; c: number; v: number; text: string }[] }>(
           "/api/notes"
         ).catch(() => ({ notes: [] })),
       ]).then(([bm, nt]) => {
-        const items: ShareItem[] = [];
+        const verses: VerseShare[] = [];
+        const filed: Record<string, number> = {};
         for (const [key, entry] of Object.entries(bm.bookmarks)) {
           // a run attaches at the verse it starts on
           const ref = parseBmKey(key);
           if (!ref) continue;
-          items.push({ b: ref.b, c: ref.c, v: ref.v, kind: "bookmark", label: entry.l });
+          if (entry.c) filed[entry.c] = (filed[entry.c] ?? 0) + 1;
+          verses.push({ b: ref.b, c: ref.c, v: ref.v, kind: "bookmark", label: entry.l });
         }
         for (const n of nt.notes) {
-          items.push({ b: n.b, c: n.c, v: n.v, kind: "note", label: n.text });
+          verses.push({ b: n.b, c: n.c, v: n.v, kind: "note", label: n.text });
         }
-        items.sort((a, b) => a.b - b.b || a.c - b.c || a.v - b.v);
-        setShareItems(items);
+        verses.sort((a, b) => a.b - b.b || a.c - b.c || a.v - b.v);
+        // Shelves first, and an empty one is not offered — there would be
+        // nothing on the other end of the link for the person who tapped it.
+        const shelves: ShareItem[] = Object.entries(bm.collections ?? {})
+          .filter(([id]) => (filed[id] ?? 0) > 0)
+          .map(([id, coll]) => ({
+            kind: "collection" as const,
+            id,
+            name: coll.name,
+            count: filed[id],
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setShareItems([...shelves, ...verses]);
       });
     }
   };
@@ -177,21 +206,30 @@ export default function MessageThread({ peerId }: { peerId: string }) {
     setError("");
     setPickerOpen(false);
     try {
+      // A collection is published on the way out, not before: the snapshot it
+      // points at is made from the shelf as it stands now, and the token comes
+      // back the same on every later send, so the same shelf keeps one address.
+      const payload =
+        item.kind === "collection"
+          ? await api<{ url: string }>(`/api/collections/${item.id}/share`, {
+              method: "POST",
+            }).then((res) => ({
+              text: item.name,
+              attach: { kind: "collection", token: res.url.split("/").pop() },
+            }))
+          : {
+              text: refLabel(item),
+              attach: {
+                b: item.b,
+                c: item.c,
+                v: item.v,
+                kind: item.kind,
+                label: item.label,
+              },
+            };
       const res = await api<{ message: ChatMessage }>(
         `/api/messages/${peerId}`,
-        {
-          method: "POST",
-          body: {
-            text: refLabel(item),
-            attach: {
-              b: item.b,
-              c: item.c,
-              v: item.v,
-              kind: item.kind,
-              label: item.label,
-            },
-          },
-        }
+        { method: "POST", body: payload }
       );
       merge([res.message]);
     } catch (e) {
@@ -239,7 +277,30 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                 <div
                   className={`bubble${m.from === myUserId ? " mine" : ""}`}
                 >
-                  {m.attach ? (
+                  {!m.attach ? (
+                    m.text
+                  ) : m.attach.kind === "collection" ? (
+                    /* Not into The Word but onto the shared page, which is
+                       where a collection can be read whole and kept whole —
+                       the reader has no way to show a shelf, only a verse. */
+                    <Link
+                      href={`/shared/${m.attach.token}`}
+                      className="verse-card"
+                    >
+                      <span className="verse-card-kind">
+                        {t("messages.sharedCollection")}
+                      </span>
+                      <strong>
+                        <Icon name="collection" /> {m.attach.name}
+                      </strong>
+                      <em>
+                        {t("messages.collectionVerses", {
+                          count: String(m.attach.count),
+                        })}
+                      </em>
+                      <small>{t("messages.tapToOpen")}</small>
+                    </Link>
+                  ) : (
                     <Link
                       href={`/?b=${m.attach.b}&c=${m.attach.c}&v=${m.attach.v}`}
                       className="verse-card"
@@ -255,8 +316,6 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                       {m.attach.label && <em>{m.attach.label}</em>}
                       <small>{t("messages.tapToRead")}</small>
                     </Link>
-                  ) : (
-                    m.text
                   )}
                   <span className="bubble-time">
                     {new Date(m.ts).toLocaleTimeString(
@@ -302,10 +361,30 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                   className="share-row"
                   onClick={() => sendShare(item)}
                 >
-                  <span><Icon name={item.kind === "note" ? "note" : "bookmark"} /></span>
+                  <span>
+                    <Icon
+                      name={
+                        item.kind === "note"
+                          ? "note"
+                          : item.kind === "collection"
+                            ? "collection"
+                            : "bookmark"
+                      }
+                    />
+                  </span>
                   <span className="share-row-body">
-                    <strong>{refLabel(item)}</strong>
-                    {item.label && <small>{item.label}</small>}
+                    <strong>
+                      {item.kind === "collection" ? item.name : refLabel(item)}
+                    </strong>
+                    {item.kind === "collection" ? (
+                      <small>
+                        {t("messages.collectionVerses", {
+                          count: String(item.count),
+                        })}
+                      </small>
+                    ) : (
+                      item.label && <small>{item.label}</small>
+                    )}
                   </span>
                   <span className="menu-tile-arrow">↑</span>
                 </button>
