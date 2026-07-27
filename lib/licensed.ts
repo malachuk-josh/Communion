@@ -70,6 +70,45 @@ const clean = (s: string): string =>
     .trim();
 
 /**
+ * The letter names printed above an acrostic stanza, in the spellings seen.
+ * Longest first: the alternation is leftmost-wins, and "He" is the start of
+ * "Heth" as "Tau" is the start of nothing but itself.
+ */
+const LETTER_NAME =
+  "Samekh|Samech|Gimmel|Daleth|Tsadde|Aleph|Cheth|Sadhe|Samek|Gimel|Zayin|" +
+  "Dalet|Tsade|Lamed|Qoph|Yodh|Kaph|Caph|Koph|Resh|Shin|Beth|Heth|Teth|Alef|" +
+  "Ayin|Zade|Waw|Vav|Yod|Mem|Nun|Pe|Sin|Tau|Taw|Tav|Bet|Tet|He";
+
+/**
+ * Hebrew script, including the presentation forms. Written as escapes so the
+ * range reads the same in every editor, whichever way it wants to lay it out.
+ */
+const HEBREW = "\\u0590-\\u05FF\\uFB1D-\\uFB4F";
+
+/**
+ * Take the acrostic heading off the end of a verse.
+ *
+ * Psalm 119 is printed with the Hebrew letter standing over each stanza, and
+ * in USFM that is a \qa heading — which API.Bible's include-titles switch does
+ * not cover, so it arrives in the text with no marker of its own. Falling
+ * between two verses, it lands on the end of the one before: verse 8 comes
+ * back ending "do not forsake me utterly! ב Beth".
+ *
+ * This app draws those letters itself, from lib/acrostic.ts, so the heading is
+ * both wrong where it is and already shown where it belongs. Hebrew script
+ * never appears in the body of an English translation, which is what makes it
+ * safe to cut on sight; the transliteration after it is only taken when it is
+ * one of the twenty-two names.
+ */
+const stripAcrosticHeading = (s: string): string =>
+  s
+    // the letter with its name after it, which is how the NKJV prints it
+    .replace(new RegExp(`\\s*[${HEBREW}]+\\s*(?:${LETTER_NAME})\\s*$`), "")
+    // and the bare letter, should a publisher ever send one unnamed
+    .replace(new RegExp(`\\s*[${HEBREW}]+\\s*$`), "")
+    .trim();
+
+/**
  * Crossway's own API. Free for non-commercial use, 5,000 queries a day, and
  * everything that would make the response prettier is turned off — headings,
  * footnotes, the reference line and the short copyright are all things this
@@ -141,7 +180,10 @@ async function fetchApiBible(
   };
   const body = (data.data?.content ?? "").trim();
   if (!body) throw new Error("api.bible empty");
-  return { verses: parseBracketed(body), fumsId: data.meta?.fumsId };
+  const verses = parseBracketed(body)
+    .map((v) => ({ ...v, text: stripAcrosticHeading(v.text) }))
+    .filter((v) => v.text);
+  return { verses, fumsId: data.meta?.fumsId };
 }
 
 /** One chapter of a licensed translation, or a throw. */
