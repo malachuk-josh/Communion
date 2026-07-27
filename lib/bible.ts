@@ -95,6 +95,21 @@ const LICENSED: Translation[] = [
       "Scripture quotations taken from The Holy Bible, New International Version® NIV®. Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.™ Used by permission. All rights reserved worldwide.",
     noticeHref: "https://www.biblica.com",
   },
+  {
+    id: "nirv",
+    name: "New International Reader's Version",
+    abbrev: "NIrV",
+    lang: "en",
+    licensed: true,
+    // Biblica's simplified-English edition, and a different translation from
+    // the NIV with a copyright line of its own. They are easy to confuse in a
+    // catalogue listing and impossible to confuse on the page — the NIV has
+    // "I lack nothing" where this has "He gives me everything I need" — so
+    // they are kept apart here, each under the name of what it actually is.
+    notice:
+      "Scripture quotations taken from the Holy Bible, New International Reader's Version®, NIrV®. Copyright © 1995, 1996, 1998, 2014 by Biblica, Inc.™ Used by permission. All rights reserved worldwide.",
+    noticeHref: "https://www.biblica.com",
+  },
 ];
 
 /**
@@ -123,7 +138,8 @@ const enabled = (id: string): boolean =>
   (id === "esv" && on(process.env.NEXT_PUBLIC_ESV)) ||
   (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV)) ||
   (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB)) ||
-  (id === "niv" && on(process.env.NEXT_PUBLIC_NIV));
+  (id === "niv" && on(process.env.NEXT_PUBLIC_NIV)) ||
+  (id === "nirv" && on(process.env.NEXT_PUBLIC_NIRV));
 
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,

@@ -32,7 +32,7 @@ export interface LicensedChapter {
  * Crossway serves itself. They share one key and one adapter and differ only
  * in which catalogue id they are asked for by.
  */
-const API_BIBLE = ["nkjv", "nasb", "niv"];
+const API_BIBLE = ["nkjv", "nasb", "niv", "nirv"];
 
 /** The catalogue id a translation is addressed by, if one is configured. */
 function apiBibleId(id: string): string | undefined {
@@ -41,6 +41,7 @@ function apiBibleId(id: string): string | undefined {
   if (id === "nkjv") return process.env.API_BIBLE_NKJV_ID || undefined;
   if (id === "nasb") return process.env.API_BIBLE_NASB_ID || undefined;
   if (id === "niv") return process.env.API_BIBLE_NIV_ID || undefined;
+  if (id === "nirv") return process.env.API_BIBLE_NIRV_ID || undefined;
   return undefined;
 }
 
@@ -59,13 +60,21 @@ export function licensedKey(id: string): string | undefined {
  * chapter that arrives with no markers at all comes back as a single verse 1
  * rather than as nothing — the reader can show that, and a blank page tells
  * nobody anything.
+ *
+ * A marker may name a range. Where a translation renders two verses as one
+ * sentence it marks them together — "[20-21]" — and the text that follows
+ * belongs to both. It is filed under the first, which is where a reader looking
+ * for either will start. Matching only a bare number instead left the range
+ * unrecognised and silently glued a whole verse onto the end of the one before
+ * it: Matthew 17:19 ran on into the mustard seed, and verse 20 simply was not
+ * there. Nothing on the page said so.
  */
 export function parseBracketed(body: string, firstVerse = 1): {
   verse: number;
   text: string;
 }[] {
   const out: { verse: number; text: string }[] = [];
-  const marker = /\[(\d{1,3})\]/g;
+  const marker = /\[(\d{1,3})(?:\s*[-–—]\s*\d{1,3})?\]/g;
   let match = marker.exec(body);
   if (!match) {
     const whole = clean(body);
