@@ -83,6 +83,18 @@ const LICENSED: Translation[] = [
     notice: `Scripture quotations taken from the New American Standard Bible® (NASB), Copyright © ${nasbYears()} by The Lockman Foundation. Used by permission. All rights reserved.`,
     noticeHref: "https://www.lockman.org",
   },
+  {
+    id: "niv",
+    name: "New International Version",
+    abbrev: "NIV",
+    lang: "en",
+    licensed: true,
+    // Biblica's wording, which ends "worldwide" where the others end
+    // "reserved" — the difference is theirs and is kept.
+    notice:
+      "Scripture quotations taken from The Holy Bible, New International Version® NIV®. Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.™ Used by permission. All rights reserved worldwide.",
+    noticeHref: "https://www.biblica.com",
+  },
 ];
 
 /**
@@ -110,7 +122,8 @@ const on = (value?: string): boolean => {
 const enabled = (id: string): boolean =>
   (id === "esv" && on(process.env.NEXT_PUBLIC_ESV)) ||
   (id === "nkjv" && on(process.env.NEXT_PUBLIC_NKJV)) ||
-  (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB));
+  (id === "nasb" && on(process.env.NEXT_PUBLIC_NASB)) ||
+  (id === "niv" && on(process.env.NEXT_PUBLIC_NIV));
 
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,
