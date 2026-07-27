@@ -165,15 +165,23 @@ function stripAcrosticHeading(
   verse: number
 ): string {
   let out = text;
-  // The name first, then the letter, because the NKJV prints both and in that
-  // order — take the letter off first and "utterly! [bet] Beth" becomes
-  // "utterly! [bet]", the name gone and the letter stranded.
   const next = acrosticAt(bookNr, chapter, verse + 1);
   const names = next?.letters.flatMap((l) => TRANSLITERATIONS[l] ?? []) ?? [];
   if (names.length) {
-    // capitalised, because a heading is: this must not match a sentence that
-    // happens to end in the word "he"
-    out = out.replace(new RegExp(`\\s*(?:${names.join("|")})\\.?\\s*$`), "");
+    // A heading is a run, not a word. The publishers write the same one
+    // several ways: "Beth" alone, "[bet] Beth" letter-then-name, and — where a
+    // letter answers to two names — "[shin] Sin and Shin". Matching a single
+    // token took the last word off that third form and left the rest of the
+    // heading sitting in the psalm.
+    //
+    // Still capitalised, and still only the letter that is due, so a sentence
+    // ending in the word "he" is a sentence and not a heading.
+    const token = `(?:[${HEBREW}]+|(?:${names.join("|")}))`;
+    const joined = `(?:\\s+(?:and|or)\\s+|\\s*[/,&]\\s*|\\s+)`;
+    out = out.replace(
+      new RegExp(`\\s*${token}(?:${joined}${token})*\\.?\\s*$`),
+      ""
+    );
   }
   // Hebrew script is never the body of an English translation, so a stray
   // letter can go on sight wherever it turns up
