@@ -159,6 +159,10 @@ html {
 
 :root[data-theme="grey"] .nav {
   background: rgba(16, 17, 19, 0.97);
+}
+
+/* the blur belongs to the child here too — see .nav::before */
+:root[data-theme="grey"] .nav::before {
   backdrop-filter: blur(22px) saturate(0);
   -webkit-backdrop-filter: blur(22px) saturate(0);
 }
@@ -253,8 +257,11 @@ html.reading body::-webkit-scrollbar {
   top: 0;
   z-index: 20;
   padding-top: env(safe-area-inset-top, 0px);
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  /* The blur is drawn by ::before rather than here, for the reason set out
+     over the bottom bar: a positioned element that carries backdrop-filter is
+     a composited one, and a composited one can be left behind by a scroll.
+     This bar went missing in the same screenshot the bottom bar was stranded
+     in, which is what a sticky header does when it is left behind. */
   /* Opaque, and it has to be. In The Word the scripture is full-bleed and
      runs edge to edge directly beneath this bar; at the old 0.55 the blurred
      lines came through as soft grey smears that sat beside each nav label and
@@ -264,6 +271,16 @@ html.reading body::-webkit-scrollbar {
      stays for the sliver that does get through, and for the edge. */
   background: rgba(12, 14, 28, 0.97);
   border-bottom: 1px solid var(--glass-border);
+}
+
+.nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
 }
 
 .nav-inner {
@@ -562,6 +579,33 @@ html.reading body::-webkit-scrollbar {
 }
 
 /* ---- floating bottom nav (mobile) ---- */
+/*
+ * The bar floats up the page, part two.
+ *
+ * Centring it with a transform did it once, and that transform is long gone —
+ * see the note below. It kept happening, because a transform was never the
+ * whole story: WebKit gives a position:fixed element its own compositing
+ * layer for THREE reasons, and only one had been dealt with. A layer's place
+ * on screen is recomputed at the end of a scroll rather than during it, so a
+ * momentum flick can leave it stranded halfway up.
+ *
+ * The three, and what became of them:
+ *
+ *   the centring transform   removed already; the bar is centred with
+ *                            left/right/margin-inline instead.
+ *
+ *   backdrop-filter          moved to a child. The bar is a plain fixed box
+ *                            now and the blur is drawn behind it by ::before,
+ *                            which is not the positioned element and so
+ *                            cannot take it anywhere. Identical to look at.
+ *
+ *   transition: transform    gone. Declaring it promotes the layer whether or
+ *                            not a transform is ever applied — and one is
+ *                            applied, when the bar hides in The Word. It
+ *                            slides on `bottom` now: one small element for a
+ *                            quarter of a second, which is well within what
+ *                            layout can do, and it composites nothing.
+ */
 .bottom-nav {
   position: fixed;
   /* sit partly into the safe area so the bar hugs the bottom edge,
@@ -580,7 +624,26 @@ html.reading body::-webkit-scrollbar {
   padding: 7px;
   border-radius: 999px;
   max-width: calc(100vw - 16px);
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  transition: bottom 0.28s ease, opacity 0.28s ease;
+}
+
+/* .glass is declared further down this file and would otherwise put the blur
+   straight back on the element it was just taken off. */
+nav.bottom-nav.glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* the blur the bar used to carry itself */
+.bottom-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 
 /* The copyright line a borrowed translation is shown under. Quiet, but never
@@ -600,7 +663,8 @@ html.reading body::-webkit-scrollbar {
 
 /* reading down The Word tucks the bar out of sight (see Nav.tsx) */
 .bottom-nav.nav-hidden {
-  transform: translateY(calc(100% + 16px));
+  /* far enough to clear the bar and its shadow on any inset */
+  bottom: -120px;
   opacity: 0;
   pointer-events: none;
 }
