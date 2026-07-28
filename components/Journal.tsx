@@ -98,6 +98,9 @@ function rowsOfBook(b: number, notes: Record<string, string>): NoteRow[] {
  */
 const NEW_COLL = "__new";
 
+/** where the shut shelves are remembered between visits */
+const CLOSED_KEY = "communion.journalClosed";
+
 export default function Journal() {
   const { lang, t } = useI18n();
   const [tab, setTab] = useState<Tab>("notes");
@@ -127,6 +130,39 @@ export default function Journal() {
   const [newColl, setNewColl] = useState("");
   /** the row under the finger, and the order the collection is now in */
   const [drag, setDrag] = useState<DragState | null>(null);
+  /** shelves the reader has shut, by collection id ("unfiled" for the rest) */
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set());
+
+  /*
+   * Which shelves were left shut.
+   *
+   * Kept on the device rather than in the account: it is a view of the journal
+   * rather than part of it, and somebody who shuts a long collection on their
+   * phone has said nothing about how they want to see it on a laptop. Read
+   * once here, written on every toggle.
+   */
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CLOSED_KEY);
+      if (raw) setClosedGroups(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      // unreadable, or written by an older shape: every shelf starts open
+    }
+  }, []);
+
+  const toggleGroup = (id: string) => {
+    setClosedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        window.localStorage.setItem(CLOSED_KEY, JSON.stringify([...next]));
+      } catch {
+        // private browsing, or a full quota — it stays shut for this visit
+      }
+      return next;
+    });
+  };
 
   // ---- bookmarks, collections and plan progress ---------------------------
   // The same order the reader and Discover use: the device's copy on screen
@@ -959,7 +995,27 @@ export default function Journal() {
             return (
             <section key={group.id || "unfiled"} className="jr-group">
               <h2 className="jr-group-head">
-                <Icon name={group.id ? "collection" : "bookmark"} />
+                {editing === `g-edit-${group.id}` ? (
+                  <Icon name={group.id ? "collection" : "bookmark"} />
+                ) : (
+                  /* The whole name is the handle, not a chevron off to one
+                     side: a shelf of forty verses is a thing you want shut
+                     without aiming, and the count stays visible so a closed
+                     one still says how much is inside it. */
+                  <button
+                    type="button"
+                    className="jr-group-toggle"
+                    aria-expanded={!closedGroups.has(group.id || "unfiled")}
+                    onClick={() => toggleGroup(group.id || "unfiled")}
+                  >
+                    <span className="jr-group-caret" aria-hidden>
+                      {closedGroups.has(group.id || "unfiled") ? "›" : "⌄"}
+                    </span>
+                    <Icon name={group.id ? "collection" : "bookmark"} />
+                    {group.name}
+                    <span className="jr-group-count">{group.rows.length}</span>
+                  </button>
+                )}
                 {editing === `g-edit-${group.id}` ? (
                   <span className="jr-rename">
                     <input
@@ -993,20 +1049,16 @@ export default function Journal() {
                     </button>
                   </span>
                 ) : (
-                  <>
-                    {group.name}
-                    <span className="jr-group-count">{group.rows.length}</span>
-                    {/* only a real collection can be renamed — Unfiled is
-                        where a verse sits when it belongs to none */}
-                    {group.id && (
-                      <EditButton
-                        label={t("journal.rename")}
-                        onClick={() =>
-                          openEdit(`g-edit-${group.id}`, group.name)
-                        }
-                      />
-                    )}
-                  </>
+                  /* only a real collection can be renamed — Unfiled is
+                     where a verse sits when it belongs to none */
+                  group.id && (
+                    <EditButton
+                      label={t("journal.rename")}
+                      onClick={() =>
+                        openEdit(`g-edit-${group.id}`, group.name)
+                      }
+                    />
+                  )
                 )}
                 <ShareButton
                   copied={copied === `g-${group.id}`}
@@ -1046,6 +1098,10 @@ export default function Journal() {
                 ) : (
                   <p className="skeleton">{t("common.loading")}</p>
                 ))}
+              {/* A shut shelf renders nothing rather than hiding it: a hundred
+                  verses off screen still cost a hundred rows of layout, and
+                  the count in the heading already says what is in there. */}
+              {!closedGroups.has(group.id || "unfiled") && (
               <div
                 className="jr-list"
                 ref={(el) => {
@@ -1252,6 +1308,7 @@ export default function Journal() {
                   );
                 })}
               </div>
+              )}
             </section>
             );
           })

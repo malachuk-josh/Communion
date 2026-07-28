@@ -3797,6 +3797,36 @@ button.menu-tile {
   color: var(--ink-dim);
 }
 
+/* the heading is the handle: everything but the tools opens and shuts it */
+.jr-group-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jr-group-toggle:hover,
+.jr-group-toggle:focus-visible {
+  color: var(--gold);
+}
+
+/* fixed width so the name starts in the same place open or shut */
+.jr-group-caret {
+  width: 12px;
+  flex: none;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+}
+
 .jr-group-count {
   font-family: var(--sans);
   font-size: 0.76rem;
