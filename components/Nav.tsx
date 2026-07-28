@@ -478,7 +478,7 @@ export default function Nav() {
           href="/menu/messages"
           className={`bn-messages${isMessages ? " active" : ""}`}
         >
-          <span className="bn-icon"><Icon name="chat" /></span>
+          <span className="bn-icon"><Icon name="table" /></span>
           <span>{t("menu.messages")}</span>
           {pendingMsgs > 0 && (
             <span className="nav-badge bn-badge">{pendingMsgs}</span>

@@ -137,6 +137,20 @@ const PATHS = {
     "M2.5 11.5l4-2.5 5.5 3 5.5-3 4 2.5-4.6 5-4.9-2-4.9 2z",
     "M12 12v5",
   ],
+  /**
+   * The Table: a table seen from above, with three gathered round it.
+   *
+   * The places sit outside the rim rather than on it, so what is drawn is
+   * people at a table rather than plates on one — which is what the tab is
+   * for. It replaced a single speech bubble, which said "messages" and said
+   * nothing about a table at all.
+   */
+  table: [
+    circle(12, 13, 5.4),
+    circle(12, 3.6, 2),
+    circle(4.2, 17.6, 2),
+    circle(19.8, 17.6, 2),
+  ],
   chat: ["M5 4.5h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8l-5 4v-4H5a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"],
   thought: [
     "M8 5.5h9a3 3 0 0 1 0 8H9l-4 3v-3a3 3 0 0 1-1-8z",

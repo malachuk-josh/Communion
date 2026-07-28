@@ -158,7 +158,7 @@ export default function Messages() {
             by the surrounding rule, is one long word that cannot share a line
             with a button: it wrapped, and left the icon stranded above it. */}
         <h1 className="page-title" style={{ margin: 0 }}>
-          <Icon name="chat" /> {t("messages.title")}
+          <Icon name="table" /> {t("messages.title")}
         </h1>
         <span className="head-actions">
           <button
