@@ -161,7 +161,6 @@ const dictionaries = {
     "threads.deleteConfirm": "Delete this discussion and all its messages? This can't be undone.",
     "messages.tapToRead": "Tap to read in The Word",
     "messages.hint": "You can message any believer by name. Enable notifications in Menu → Settings to hear about new messages.",
-    "journal.textIt": "Send as a text message",
     "journal.sendToTable": "Send to someone at the Table",
     "journal.sendGroupToTable": "Send {name} to someone at the Table",
     "journal.sendGroupUnavailable":
@@ -762,7 +761,6 @@ const dictionaries = {
     "threads.deleteConfirm": "¿Eliminar esta conversación y todos sus mensajes? No se puede deshacer.",
     "messages.tapToRead": "Toca para leerlo en La Palabra",
     "messages.hint": "Puedes escribir a cualquier creyente por su nombre. Activa las notificaciones en Menú → Configuración para enterarte de nuevos mensajes.",
-    "journal.textIt": "Enviar como mensaje de texto",
     "journal.sendToTable": "Enviar a alguien en La Mesa",
     "journal.sendGroupToTable": "Enviar {name} a alguien en La Mesa",
     "journal.sendGroupUnavailable":

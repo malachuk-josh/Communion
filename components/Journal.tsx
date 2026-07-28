@@ -15,7 +15,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import { api } from "@/lib/client";
-import { canTextMessage, textMessage } from "@/lib/share";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import {
   bmRefLabel,
@@ -114,9 +113,6 @@ export default function Journal() {
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
   const [copied, setCopied] = useState<string | null>(null);
-  // read once on mount rather than at render: the server has no navigator, and
-  // deciding this during the first paint would hydrate differently than it drew
-  const [canText, setCanText] = useState(false);
   /** which entry is choosing a recipient, by the same id the row uses */
   const [sendFor, setSendFor] = useState<string | null>(null);
   /** why a collection could not be readied for sending, if it could not */
@@ -336,15 +332,16 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, bookmarks, notes]);
 
-  useEffect(() => {
-    setCanText(canTextMessage());
-  }, []);
-
   /**
    * Hand a passage to whatever the device shares with. The native sheet where
-   * there is one, the clipboard where there is not — the same ladder the
-   * reader's word study uses, minus the SMS fallback, because a journal entry
-   * is as often going into a document as into a message.
+   * there is one, the clipboard where there is not.
+   *
+   * This is the only way out of the journal to anywhere outside the app. There
+   * used to be a second button beside it that opened the message composer
+   * directly, on the reasoning that somebody texting a verse to their mother
+   * should not have to find Messages behind a grid of apps — but Messages is
+   * the first thing in that sheet on every phone this runs on, so the two
+   * buttons did the same thing one tap apart.
    */
   const share = async (id: string, text: string) => {
     if (navigator.share) {
@@ -949,16 +946,6 @@ export default function Journal() {
                             share(id, entryText(row, row.text, verseLink(row)))
                           }
                         />
-                        {canText && (
-                          <TextButton
-                            label={t("journal.textIt")}
-                            onClick={() =>
-                              textMessage(
-                                entryText(row, row.text, verseLink(row))
-                              )
-                            }
-                          />
-                        )}
                         <SendButton
                           label={t("journal.sendToTable")}
                           onClick={() =>
@@ -1268,20 +1255,6 @@ export default function Journal() {
                             )
                           }
                         />
-                        {canText && (
-                          <TextButton
-                            label={t("journal.textIt")}
-                            onClick={() =>
-                              textMessage(
-                                entryText(
-                                  row,
-                                  row.entry.l,
-                                  verseLink(row, row.entry.l)
-                                )
-                              )
-                            }
-                          />
-                        )}
                         <SendButton
                           label={t("journal.sendToTable")}
                           onClick={() =>
@@ -1570,20 +1543,6 @@ function SendButton({ label, onClick }: { label: string; onClick: () => void }) 
       title={label}
     >
       <Icon name="envelope" />
-    </button>
-  );
-}
-
-function TextButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className="jr-share jr-share-btn"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-    >
-      <Icon name="chat" />
     </button>
   );
 }
