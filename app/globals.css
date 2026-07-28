@@ -3194,6 +3194,45 @@ button.menu-tile {
   margin-bottom: 6px;
 }
 
+/* the originals behind a verse, for the translations no one has tagged */
+.lex-originals {
+  margin: 8px 0 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.lex-originals .lex-meta {
+  margin-bottom: 6px;
+}
+
+.lex-originals .xref-chips {
+  max-height: calc(var(--vvh, 100dvh) * 0.24);
+  overflow-y: auto;
+}
+
+/* the original above, the King James word under it — the second is how a
+   reader finds the first in whatever translation is on their screen */
+.orig-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.25;
+}
+
+.orig-lemma {
+  font-size: 1rem;
+}
+
+.orig-kjv {
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+}
+
+.orig-note {
+  margin-top: 8px;
+}
+
 .lex-actions {
   display: flex;
   flex-wrap: wrap;

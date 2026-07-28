@@ -835,20 +835,25 @@ export default function Reader({
     };
   }, [bookNr]);
 
-  // study mode + KJV: tokenized text where every word knows its original
-  // Hebrew/Greek word (Strong's numbers), enabling tap-for-translation
+  /*
+   * Study mode: the King James tagged word by word with Strong's numbers.
+   *
+   * Loaded for every translation, not only the King James. It is two things at
+   * once — the King James's own wording, and the list of originals behind each
+   * verse — and only the first of those is translation-bound. Every
+   * translation here counts verses the same way, so the second is true of all
+   * of them, and it is what the sheet offers a reader of the ESV.
+   *
+   * What must never happen is the first being used for the second's sake: the
+   * renderer draws a verse from these tokens when it has them, so leaving them
+   * in place across a change of translation once put King James wording on
+   * screen under another translation's name and licence notice. That is why
+   * the guard against it lives at the point of rendering (see tapWords) rather
+   * than here.
+   */
   useEffect(() => {
-    /*
-     * Cleared before the guard, not after it.
-     *
-     * These tokens are the King James, word by word — the renderer draws the
-     * verse from them rather than from the chapter it was given. Leaving them
-     * behind on a change of translation therefore did not merely leave some
-     * words tappable: it put King James wording on screen under another
-     * translation's name and licence notice.
-     */
     setStrongsTokens(null);
-    if (!study || translation !== "kjv") return;
+    if (!study) return;
     let cancelled = false;
     fetch(`/strongs/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
@@ -863,7 +868,7 @@ export default function Reader({
     return () => {
       cancelled = true;
     };
-  }, [study, translation, bookNr]);
+  }, [study, bookNr]);
 
   // chapter context (practical + spiritual), one static file per book
   useEffect(() => {
@@ -1044,27 +1049,8 @@ export default function Reader({
   const refsAt = (ch: number, verse: number): number[][] =>
     xrefs?.[`${ch}:${verse}`] ?? [];
 
-  /**
-   * The word sheet, opened on a verse rather than a word.
-   *
-   * Only the King James has words to tap, and the sheet is where a verse's
-   * cross-references live. Without this, every other translation has study
-   * mode with no references in it at all — so this is how they reach them,
-   * and it is offered only where there is nothing to tap.
-   */
-  const openVerseRefs = (ch: number, verse: number) => {
-    setPanelOpen(false);
-    setWordSel({ ch, text: "", nums: [], verse });
-    setWordAction("");
-    setSharePickerOpen(false);
-  };
-
-  const openWord = (ch: number, text: string, nums: string[], verse: number) => {
-    setPanelOpen(false);
-    setWordSel({ ch, text, nums, verse });
-    setWordAction("");
-    setSharePickerOpen(false);
-    // load the lexicon for this testament (and counts) on first use
+  /** The lexicon for this testament, and the occurrence counts. Once each. */
+  const loadLexicons = () => {
     if (bookNr <= 39 && !lexHeb) {
       fetch("/lexicon/hebrew.json")
         .then((res) => (res.ok ? res.json() : {}))
@@ -1083,6 +1069,64 @@ export default function Reader({
         .then(setLexCounts)
         .catch(() => setLexCounts({}));
     }
+  };
+
+  /**
+   * The original-language words behind a verse, in the order they stand.
+   *
+   * Only the King James is tagged word by word, and its tags are its own
+   * wording — no publisher tags the ESV or the NIV, and laying the King
+   * James's tags over another translation's text would be inventing a mapping
+   * that does not exist. But the tags are keyed by verse, and every
+   * translation here counts verses the same way, so the ORIGINALS behind a
+   * verse are the same whichever English rendering is on the page.
+   *
+   * That is what this hands back, and it is the whole of study mode: the same
+   * lexicon, the same grammar, the same fuller entries, the same concordance
+   * — reached by the verse rather than by the word under a finger, which is
+   * the one thing that cannot honestly be offered for an untagged text.
+   */
+  const originalsAt = (
+    ch: number,
+    verse: number
+  ): { num: string; word: string }[] => {
+    const tokens = strongsTokens?.[`${ch}:${verse}`];
+    if (!tokens) return [];
+    const seen = new Set<string>();
+    const out: { num: string; word: string }[] = [];
+    for (const [text, nums] of tokens) {
+      if (!nums) continue;
+      const word = text.replace(/^[\s,;:.!?()'"\u2014\u2013-]+/, "").trim();
+      for (const num of nums) {
+        if (seen.has(num)) continue;
+        seen.add(num);
+        out.push({ num, word });
+      }
+    }
+    return out;
+  };
+
+  /**
+   * The sheet, opened on a verse rather than a word.
+   *
+   * This is how every translation but the King James reaches study mode: the
+   * verse's cross-references and the originals behind it, and from any one of
+   * those the same entry a tapped word would have opened.
+   */
+  const openVerseRefs = (ch: number, verse: number) => {
+    setPanelOpen(false);
+    setWordSel({ ch, text: "", nums: [], verse });
+    setWordAction("");
+    setSharePickerOpen(false);
+    loadLexicons();
+  };
+
+  const openWord = (ch: number, text: string, nums: string[], verse: number) => {
+    setPanelOpen(false);
+    setWordSel({ ch, text, nums, verse });
+    setWordAction("");
+    setSharePickerOpen(false);
+    loadLexicons();
   };
 
   const lexFor = (num: string): LexEntry | undefined =>
@@ -2001,21 +2045,24 @@ export default function Reader({
                           </button>
                         )}
                         {/* On the King James there is no chip: tapping a word
-                            opens the sheet that already carries this verse's
-                            references, and a chip would be a second door onto
-                            the same room. Nothing else has words to tap, so
-                            everywhere else the chip IS the door. */}
-                        {!tapWords && refs && refs.length > 0 && (
-                          <button
-                            type="button"
-                            className="xref-chip"
-                            onClick={() => openVerseRefs(ch, v.verse)}
-                            aria-label={t("reader.crossRefs")}
-                            title={t("reader.crossRefs")}
-                          >
-                            <Icon name="link" /> {refs.length}
-                          </button>
-                        )}
+                            opens the sheet, and a chip would be a second door
+                            onto the same room. Nothing else has words to tap,
+                            so everywhere else the chip IS the door — to the
+                            originals behind the verse and its references
+                            both. */}
+                        {!tapWords &&
+                          ((refs && refs.length > 0) ||
+                            originalsAt(ch, v.verse).length > 0) && (
+                            <button
+                              type="button"
+                              className="xref-chip"
+                              onClick={() => openVerseRefs(ch, v.verse)}
+                              aria-label={t("reader.originals")}
+                              title={t("reader.originals")}
+                            >
+                              <Icon name="letters" /> {t("reader.originals")}
+                            </button>
+                          )}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
@@ -2314,7 +2361,42 @@ export default function Reader({
               ✕
             </button>
           </div>
-          {/* the verse's cross-references — the only place they live now */}
+          {/* Verse mode: the originals behind this verse, each opening the
+              same entry a tapped word would. This is study mode for every
+              translation that nobody has tagged. */}
+          {wordSel.nums.length === 0 &&
+            (originalsAt(wordSel.ch, wordSel.verse).length > 0 ? (
+              <div className="lex-originals">
+                <p className="lex-meta">
+                  <Icon name="letters" /> {t("reader.originals")}
+                </p>
+                <div className="xref-chips">
+                  {originalsAt(wordSel.ch, wordSel.verse).map((o) => (
+                    <button
+                      key={o.num}
+                      type="button"
+                      className="xref-chip orig-chip"
+                      onClick={() =>
+                        openWord(wordSel.ch, o.word, [o.num], wordSel.verse)
+                      }
+                    >
+                      <span className="orig-lemma">
+                        {lexFor(o.num)?.lemma ?? o.num}
+                      </span>
+                      {/* some originals are carried by no English word at
+                          all — δέ is "often unexpressed", as its own entry
+                          says — and an empty line under the lemma reads as a
+                          fault rather than as the truth it is */}
+                      {o.word && <span className="orig-kjv">{o.word}</span>}
+                    </button>
+                  ))}
+                </div>
+                <p className="cal-hint orig-note">{t("reader.originalsNote")}</p>
+              </div>
+            ) : strongsTokens === null ? (
+              <p className="skeleton">{t("common.loading")}</p>
+            ) : null)}
+          {/* the verse's cross-references */}
           {refsAt(wordSel.ch, wordSel.verse).length > 0 && (
             <div className="lex-xrefs">
               <p className="lex-meta">
@@ -2828,7 +2910,7 @@ export default function Reader({
 
       {backStack.length > 0 && (
         <button type="button" className="glass back-pill" onClick={goBack}>
-          ↩{" "}
+          <Icon name="back" />{" "}
           {t("reader.backTo", {
             ref: `${bookNameOf(backStack[backStack.length - 1].b)} ${
               backStack[backStack.length - 1].c

@@ -188,6 +188,8 @@ const PATHS = {
   ],
   check: ["M4.5 12.5l5 5 10-11"],
   close: ["M5.5 5.5l13 13M18.5 5.5l-13 13"],
+  // the way back from wherever a reference took you: an arrow that turns round
+  back: ["M9 5.5L3.5 11 9 16.5", "M3.5 11h11a6 6 0 0 1 6 6v1.5"],
 
   // ---- growth and nature ----
   seedling: [
