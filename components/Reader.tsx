@@ -246,7 +246,8 @@ export default function Reader({
   const [deep, setDeep] = useState<
     Record<string, { d: string; extra?: string }>
   >({});
-  const [deepLoading, setDeepLoading] = useState(false);
+  /** how many lexicon files are in flight, so two never cancel each other */
+  const [deepLoading, setDeepLoading] = useState(0);
   const [sharePeers, setSharePeers] = useState<
     { userId: string; displayName: string }[] | null
   >(null);
@@ -1250,42 +1251,93 @@ export default function Reader({
    * Load the fuller lexicon bucket for this number: Abbott-Smith for Greek,
    * and for Hebrew both Brown-Driver-Briggs and the brief entry.
    */
-  const loadDeep = (num: string) => {
-    const bucket = `${num.slice(0, 1)}${Math.floor(Number(num.slice(1)) / 500)}`;
-    if (deep[num] !== undefined || deepLoading) return;
-    setDeepLoading(true);
-    const sources = num.startsWith("H")
-      ? [`/bdb/${bucket}.json`, `/absmith/${bucket}.json`]
-      : [`/absmith/${bucket}.json`];
-    Promise.all(
-      sources.map((url) =>
-        fetch(url)
-          .then((res) => (res.ok ? res.json() : {}))
-          .catch(() => ({}))
+  /**
+   * Fetch the fuller lexicon for these numbers.
+   *
+   * The entries are stored five hundred to a file, so one fetch answers for a
+   * whole neighbourhood of words. Which files have already been asked for is
+   * kept in a ref rather than inferred from what came back: a word genuinely
+   * absent from Abbott-Smith leaves no trace in `deep`, and testing for that
+   * absence would refetch the same two hundred kilobytes every time the sheet
+   * opened on it.
+   *
+   * Loads are counted, not flagged. A single boolean meant that a word whose
+   * numbers fell in two different files loaded the first and silently skipped
+   * the second, and the second would then read as having no entry.
+   */
+  const deepAsked = useRef(new Set<string>());
+
+  const loadDeep = (nums: string[]) => {
+    const buckets = new Set<string>();
+    for (const num of nums) {
+      if (!/^[HG]\d+$/.test(num)) continue;
+      const bucket = `${num.slice(0, 1)}${Math.floor(Number(num.slice(1)) / 500)}`;
+      if (!deepAsked.current.has(bucket)) buckets.add(bucket);
+    }
+    if (buckets.size === 0) return;
+
+    for (const bucket of buckets) deepAsked.current.add(bucket);
+    setDeepLoading((n) => n + buckets.size);
+
+    for (const bucket of buckets) {
+      // Hebrew has two: Brown-Driver-Briggs proper, and a briefer gloss that
+      // is shown under it. Greek has Abbott-Smith alone.
+      const sources = bucket.startsWith("H")
+        ? [`/bdb/${bucket}.json`, `/absmith/${bucket}.json`]
+        : [`/absmith/${bucket}.json`];
+      Promise.all(
+        sources.map((url) =>
+          fetch(url)
+            .then((res) => (res.ok ? res.json() : {}))
+            .catch(() => ({}))
+        )
       )
-    )
-      .then(([primary, secondary]) => {
-        const merged: Record<string, { d: string; extra?: string }> = {};
-        for (const [key, value] of Object.entries(
-          primary as Record<string, { d: string }>
-        )) {
-          merged[key] = { d: value.d };
-        }
-        for (const [key, value] of Object.entries(
-          (secondary ?? {}) as Record<string, { d: string }>
-        )) {
-          if (merged[key]) merged[key].extra = value.d;
-          else merged[key] = { d: value.d };
-        }
-        setDeep((prev) => ({ ...prev, ...merged }));
-      })
-      .finally(() => setDeepLoading(false));
+        .then(([primary, secondary]) => {
+          const merged: Record<string, { d: string; extra?: string }> = {};
+          for (const [key, value] of Object.entries(
+            primary as Record<string, { d: string }>
+          )) {
+            merged[key] = { d: value.d };
+          }
+          for (const [key, value] of Object.entries(
+            (secondary ?? {}) as Record<string, { d: string }>
+          )) {
+            if (merged[key]) merged[key].extra = value.d;
+            else merged[key] = { d: value.d };
+          }
+          setDeep((prev) => ({ ...prev, ...merged }));
+        })
+        .catch(() => {
+          // the file is gone or the connection is: let it be asked for again
+          deepAsked.current.delete(bucket);
+        })
+        .finally(() => setDeepLoading((n) => Math.max(0, n - 1)));
+    }
   };
 
-  const showDeep = (num: string) => {
+  const showDeep = (nums: string[]) => {
     setDeepSource("absmith");
-    loadDeep(num);
+    loadDeep(nums);
   };
+
+  /**
+   * Fetch the fuller entry the moment a word is opened, not when it is asked
+   * for.
+   *
+   * Which tab you were last on is remembered, so opening a second word while
+   * that tab is up used to show the sheet already switched to a lexicon that
+   * had never been fetched — and an unfetched entry renders exactly like a
+   * word the lexicon does not have. It read as "no fuller entry for this
+   * word" for words the lexicon plainly has, and tapping the pill a second
+   * time was the only way to make it appear.
+   *
+   * Loading up front fixes that and makes the tab instant besides.
+   */
+  useEffect(() => {
+    if (!wordSel || wordSel.nums.length === 0) return;
+    loadDeep(wordSel.nums);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wordSel]);
 
   /** The verses of any chapter of the open book. */
   const chDataOf = (ch: number): ChapterData | null => {
@@ -2623,7 +2675,7 @@ export default function Reader({
             <button
               type="button"
               className={`chip${deepSource === "absmith" ? " chip-active" : ""}`}
-              onClick={() => showDeep(wordSel.nums[0])}
+              onClick={() => showDeep(wordSel.nums)}
             >
               {wordSel.nums[0].startsWith("H")
                 ? t("reader.srcBdb")
@@ -2632,7 +2684,7 @@ export default function Reader({
           </div>
           <div className="lex-body">
             {deepSource === "absmith" ? (
-              deepLoading ? (
+              deepLoading > 0 ? (
                 <p className="skeleton">{t("common.loading")}</p>
               ) : (
                 wordSel.nums.map((num) => (
