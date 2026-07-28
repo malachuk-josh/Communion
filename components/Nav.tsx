@@ -157,8 +157,9 @@ export default function Nav() {
   const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
   const isMessages = pathname.startsWith("/menu/messages");
+  const isJournal = pathname.startsWith("/menu/journal");
   const isMenu =
-    (!isMessages && pathname.startsWith("/menu")) ||
+    (!isMessages && !isJournal && pathname.startsWith("/menu")) ||
     pathname.startsWith("/settings") ||
     isCalendar;
 
@@ -185,13 +186,6 @@ export default function Nav() {
               {t("nav.churches")}
             </Link>
             <Link
-              href="/"
-              className={`nav-link${isWord ? " active" : ""}`}
-              onClick={wordClick}
-            >
-              {t("nav.reader")}
-            </Link>
-            <Link
               href="/menu/messages"
               className={`nav-link${isMessages ? " active" : ""}`}
             >
@@ -199,6 +193,19 @@ export default function Nav() {
               {pendingMsgs > 0 && (
                 <span className="nav-badge">{pendingMsgs}</span>
               )}
+            </Link>
+            <Link
+              href="/"
+              className={`nav-link${isWord ? " active" : ""}`}
+              onClick={wordClick}
+            >
+              {t("nav.reader")}
+            </Link>
+            <Link
+              href="/menu/journal"
+              className={`nav-link${isJournal ? " active" : ""}`}
+            >
+              {t("nav.journal")}
             </Link>
           </div>
           {showPassage && (
@@ -224,14 +231,18 @@ export default function Nav() {
             </button>
           )}
           <div className="nav-end">
-          <Link
-            href="/menu"
-            className={`theme-toggle settings-gear${isMenu ? " settings-active" : ""}`}
-            aria-label={t("nav.menu")}
-            title={t("nav.menu")}
-          >
-            <Icon name="menu" />
-          </Link>
+          {/* The Word has no menu button here: its navigator carries one, and
+              the header on that tab is kept for the passage and study mode. */}
+          {!isWord && (
+            <Link
+              href="/menu"
+              className={`theme-toggle settings-gear${isMenu ? " settings-active" : ""}`}
+              aria-label={t("nav.menu")}
+              title={t("nav.menu")}
+            >
+              <Icon name="menu" />
+            </Link>
+          )}
           {/* The Word keeps its header for reading: the passage and study
               mode only. Theme and account live on every other tab. */}
           {!isWord && (
@@ -278,9 +289,9 @@ export default function Nav() {
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
-        {/* The Word sits in the middle of the five, under the thumb rather
-            than out at the corner — it is the tab this app is for, and the
-            one reached most often. Discover leads. */}
+        {/* Five tabs, and Menu is not one of them any more — it moved to the
+            header, which is reachable without taking a place in the bar. The
+            journal took the place it left. */}
         <Link href="/discover" className={isDiscover ? "active" : ""}>
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
@@ -288,10 +299,6 @@ export default function Nav() {
         <Link href="/churches" className={isChurches ? "active" : ""}>
           <span className="bn-icon"><Icon name="church" /></span>
           <span>{t("nav.churches")}</span>
-        </Link>
-        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon"><Icon name="book" /></span>
-          <span>{t("nav.reader")}</span>
         </Link>
         <Link
           href="/menu/messages"
@@ -303,12 +310,16 @@ export default function Nav() {
             <span className="nav-badge bn-badge">{pendingMsgs}</span>
           )}
         </Link>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
+          <span className="bn-icon"><Icon name="book" /></span>
+          <span>{t("nav.reader")}</span>
+        </Link>
         <Link
-          href="/menu"
-          className={`bn-messages${isMenu ? " active" : ""}`}
+          href="/menu/journal"
+          className={`bn-messages${isJournal ? " active" : ""}`}
         >
-          <span className="bn-icon"><Icon name="menu" /></span>
-          <span>{t("nav.menu")}</span>
+          <span className="bn-icon"><Icon name="scroll" /></span>
+          <span>{t("nav.journal")}</span>
         </Link>
       </nav>
     </>

@@ -609,10 +609,6 @@ html.reading body::-webkit-scrollbar {
   .nav-links {
     display: none;
   }
-  /* the bottom nav already has a Settings tab on mobile */
-  .settings-gear {
-    display: none;
-  }
   .page {
     padding-bottom: 130px;
   }

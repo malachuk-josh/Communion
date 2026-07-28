@@ -6,8 +6,12 @@ import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
-// The Menu tab: a hub of tiles for the journal, the calendar, settings, about,
-// and sharing the app itself.
+// The Menu tab: a hub of tiles for the calendar, settings, about, and sharing
+// the app itself.
+//
+// The journal was the first tile here and is now a tab of its own, so it is
+// not repeated: a hub whose first entry is somewhere already one tap away is
+// a hub with a wasted line at the top of it.
 //
 // Downloading for offline used to be a tile of its own. It is a thing you set
 // up once and then forget, which is what the settings screen is for, so it
@@ -15,7 +19,6 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 // settings, where it is the likeliest thing anyone came to this screen to do.
 
 const TILES: { href: string; icon: IconName; key: string }[] = [
-  { href: "/menu/journal", icon: "scroll", key: "journal" },
   { href: "/calendar", icon: "calendar", key: "calendar" },
   { href: "/menu/settings", icon: "gear", key: "settings" },
   { href: "/menu/about", icon: "dove", key: "about" },
