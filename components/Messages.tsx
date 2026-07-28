@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
+import PrayerList from "@/components/PrayerList";
 
 interface ConvSummary {
   peerId: string;
@@ -71,7 +72,22 @@ export default function Messages() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [showNew, setShowNew] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  /**
+   * Which of the Table's three views is up.
+   *
+   * The prayer wall used to be the third segment of Discover's toggle, which
+   * put it behind "find something" — and a request being carried is not
+   * something you go looking for, it is something that has arrived for you.
+   * Everything that arrives arrives here, so it lives here now, in the same
+   * toggle Discover uses.
+   *
+   * Notifications came in as a button beside the title. With a toggle across
+   * the top there is no sense in two ways of changing view within an inch of
+   * each other, so it is a segment as well: all three are things waiting at
+   * the Table, and they now read as peers.
+   */
+  const [tab, setTab] = useState<"convs" | "prayer" | "history">("convs");
+  const showHistory = tab === "history";
   const [history, setHistory] = useState<NotifEntry[] | null>(null);
   /** the directory search: what was typed, who came back, and whether asking */
   const [find, setFind] = useState("");
@@ -130,13 +146,12 @@ export default function Messages() {
     };
   }, [find, showNew, contacts]);
 
-  const toggleHistory = () => {
-    const opening = !showHistory;
-    setShowHistory(opening);
-    if (opening) setShowNew(false);
+  const goTo = (next: "convs" | "prayer" | "history") => {
+    setTab(next);
+    if (next !== "convs") setShowNew(false);
     // fetched once and kept: a day's worth does not change while it is open,
-    // and re-asking on every toggle would be a request for nothing
-    if (opening && history === null) {
+    // and re-asking on every visit would be a request for nothing
+    if (next === "history" && history === null) {
       api<{ notifications: NotifEntry[] }>("/api/notifications")
         .then((res) => {
           const since = Date.now() - NOTIF_TTL_MS;
@@ -153,31 +168,16 @@ export default function Messages() {
     <div>
       <BackToMenu />
       <div className="section-head">
-        {/* The title stays put. Notifications are a view of the Table, not a
-            different screen — and "NOTIFICATIONS" set at this size, uppercased
-            by the surrounding rule, is one long word that cannot share a line
-            with a button: it wrapped, and left the icon stranded above it. */}
+        {/* The title stays put: none of the three is a different screen. */}
         <h1 className="page-title" style={{ margin: 0 }}>
           <Icon name="table" /> {t("messages.title")}
         </h1>
         <span className="head-actions">
-          <button
-            type="button"
-            className={`btn btn-sm${showHistory ? " btn-primary" : ""}`}
-            onClick={toggleHistory}
-            aria-pressed={showHistory}
-          >
-            {/* not "← The Table": that is the heading above it, and a button
-                offering to take you where you already are reads as a mistake */}
-            {showHistory
-              ? `← ${t("messages.conversations")}`
-              : t("messages.history")}
-          </button>
           {/* Always offered. It used to appear only once you shared a
               Gathering with somebody, which was the right gate when that was
               the only way to message anyone — and is exactly the wrong one now
               that the point is reaching believers you share nothing with. */}
-          {!showHistory && (
+          {tab === "convs" && (
             <button
               type="button"
               className="btn btn-sm btn-primary"
@@ -188,9 +188,42 @@ export default function Messages() {
           )}
         </span>
       </div>
+
+      {/* the same toggle Discover uses, and the same classes, so the two
+          screens are read the same way */}
+      <div className="lang-toggle discover-tabs" role="group">
+        <button
+          className={tab === "convs" ? "active" : ""}
+          onClick={() => goTo("convs")}
+          aria-pressed={tab === "convs"}
+        >
+          <Icon name="chat" /> {t("messages.conversations")}
+        </button>
+        <button
+          className={tab === "prayer" ? "active" : ""}
+          onClick={() => goTo("prayer")}
+          aria-pressed={tab === "prayer"}
+        >
+          <Icon name="prayer" /> {t("messages.tabPrayer")}
+        </button>
+        <button
+          className={tab === "history" ? "active" : ""}
+          onClick={() => goTo("history")}
+          aria-pressed={tab === "history"}
+        >
+          <Icon name="bell" /> {t("messages.history")}
+        </button>
+      </div>
+
       <p className="subtitle">
-        {showHistory ? t("messages.historySubtitle") : t("messages.subtitle")}
+        {tab === "history"
+          ? t("messages.historySubtitle")
+          : tab === "prayer"
+            ? t("messages.prayerSubtitle")
+            : t("messages.subtitle")}
       </p>
+
+      {tab === "prayer" && <PrayerList />}
 
       {showHistory && (
         <div className="glass card">
@@ -221,7 +254,7 @@ export default function Messages() {
         </div>
       )}
 
-      {showNew && !showHistory && (
+      {showNew && tab === "convs" && (
         <div className="glass card" style={{ marginBottom: 14 }}>
           <p className="cal-label" style={{ marginBottom: 8 }}>
             {t("messages.pickContact")}
@@ -275,7 +308,7 @@ export default function Messages() {
         </div>
       )}
 
-      {showHistory ? null : convs === null ? (
+      {tab !== "convs" ? null : convs === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : convs.length === 0 && threads.length === 0 ? (
         <div className="glass card empty">
@@ -358,7 +391,7 @@ export default function Messages() {
             )
           )
       )}
-      {!showHistory && <p className="notice">{t("messages.hint")}</p>}
+      {tab === "convs" && <p className="notice">{t("messages.hint")}</p>}
     </div>
   );
 }

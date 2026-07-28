@@ -170,6 +170,9 @@ const dictionaries = {
     "messages.findHint": "Anyone who has not made their profile private can be found here.",
     "messages.findNone": "Nobody by that name.",
     "messages.conversations": "Conversations",
+    "messages.tabPrayer": "Prayer",
+    "messages.prayerSubtitle":
+      "What the believers around you are carrying. Pray with them.",
     "messages.history": "Notifications",
     "messages.historySubtitle": "Session reminders, join requests, and new messages from the last 24 hours.",
     "messages.historyEmpty": "Nothing in the last 24 hours — session reminders, join requests, and new messages appear here.",
@@ -239,9 +242,6 @@ const dictionaries = {
     "discover.title": "Discover",
     "discover.tabScripture": "Scripture",
     "discover.tabGatherings": "Gatherings",
-    "discover.tabPrayer": "Prayer",
-    "discover.subtitlePrayer":
-      "What the believers around you are carrying. Pray with them.",
     "discover.subtitleScripture":
       "A verse for today, passages for whatever you're carrying, and a plan to keep you in the Word.",
     "discover.subtitle":
@@ -782,6 +782,9 @@ const dictionaries = {
     "messages.findHint": "Aquí puedes encontrar a quien no haya hecho privado su perfil.",
     "messages.findNone": "Nadie con ese nombre.",
     "messages.conversations": "Conversaciones",
+    "messages.tabPrayer": "Oración",
+    "messages.prayerSubtitle":
+      "Lo que llevan los creyentes a tu alrededor. Ora con ellos.",
     "messages.history": "Notificaciones",
     "messages.historySubtitle": "Recordatorios de sesiones, solicitudes y mensajes nuevos de las últimas 24 horas.",
     "messages.historyEmpty": "Nada en las últimas 24 horas — los recordatorios, solicitudes y mensajes nuevos aparecen aquí.",
@@ -851,9 +854,6 @@ const dictionaries = {
     "discover.title": "Descubre",
     "discover.tabScripture": "Escritura",
     "discover.tabGatherings": "Comunidades",
-    "discover.tabPrayer": "Oración",
-    "discover.subtitlePrayer":
-      "Lo que llevan los creyentes a tu alrededor. Ora con ellos.",
     "discover.subtitleScripture":
       "Un versículo para hoy, pasajes para lo que llevas dentro y un plan para permanecer en la Palabra.",
     "discover.subtitle":
