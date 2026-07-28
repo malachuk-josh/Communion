@@ -19,6 +19,7 @@ import {
   type Verse,
 } from "@/lib/bible";
 import { acrosticAt } from "@/lib/acrostic";
+import { alignVerse, type AlignedToken } from "@/lib/align";
 import {
   bmIndex,
   bmKeyOf,
@@ -178,6 +179,8 @@ export default function Reader({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  /** aligned tokens per verse, built once and thrown away with their inputs */
+  const alignCache = useRef(new Map<string, AlignedToken[]>());
   /** the verse held up beside every other translation, if any */
   const [compareAt, setCompareAt] = useState<{ ch: number; v: number } | null>(
     null
@@ -201,6 +204,8 @@ export default function Reader({
     text: string;
     nums: string[];
     verse: number;
+    /** true when the word was lined up rather than tagged — see lib/align */
+    approx?: boolean;
   } | null>(null);
   const [wordAction, setWordAction] = useState("");
   const [concFor, setConcFor] = useState<string | null>(null);
@@ -853,6 +858,7 @@ export default function Reader({
    */
   useEffect(() => {
     setStrongsTokens(null);
+    alignCache.current.clear();
     if (!study) return;
     let cancelled = false;
     fetch(`/strongs/${bookNr}.json`)
@@ -1071,59 +1077,15 @@ export default function Reader({
     }
   };
 
-  /**
-   * The original-language words behind a verse, in the order they stand.
-   *
-   * Only the King James is tagged word by word, and its tags are its own
-   * wording — no publisher tags the ESV or the NIV, and laying the King
-   * James's tags over another translation's text would be inventing a mapping
-   * that does not exist. But the tags are keyed by verse, and every
-   * translation here counts verses the same way, so the ORIGINALS behind a
-   * verse are the same whichever English rendering is on the page.
-   *
-   * That is what this hands back, and it is the whole of study mode: the same
-   * lexicon, the same grammar, the same fuller entries, the same concordance
-   * — reached by the verse rather than by the word under a finger, which is
-   * the one thing that cannot honestly be offered for an untagged text.
-   */
-  const originalsAt = (
+  const openWord = (
     ch: number,
-    verse: number
-  ): { num: string; word: string }[] => {
-    const tokens = strongsTokens?.[`${ch}:${verse}`];
-    if (!tokens) return [];
-    const seen = new Set<string>();
-    const out: { num: string; word: string }[] = [];
-    for (const [text, nums] of tokens) {
-      if (!nums) continue;
-      const word = text.replace(/^[\s,;:.!?()'"\u2014\u2013-]+/, "").trim();
-      for (const num of nums) {
-        if (seen.has(num)) continue;
-        seen.add(num);
-        out.push({ num, word });
-      }
-    }
-    return out;
-  };
-
-  /**
-   * The sheet, opened on a verse rather than a word.
-   *
-   * This is how every translation but the King James reaches study mode: the
-   * verse's cross-references and the originals behind it, and from any one of
-   * those the same entry a tapped word would have opened.
-   */
-  const openVerseRefs = (ch: number, verse: number) => {
+    text: string,
+    nums: string[],
+    verse: number,
+    approx = false
+  ) => {
     setPanelOpen(false);
-    setWordSel({ ch, text: "", nums: [], verse });
-    setWordAction("");
-    setSharePickerOpen(false);
-    loadLexicons();
-  };
-
-  const openWord = (ch: number, text: string, nums: string[], verse: number) => {
-    setPanelOpen(false);
-    setWordSel({ ch, text, nums, verse });
+    setWordSel({ ch, text, nums, verse, approx });
     setWordAction("");
     setSharePickerOpen(false);
     loadLexicons();
@@ -1694,6 +1656,11 @@ export default function Reader({
     setWordSel(null);
   }, [bookNr, chapter, study, translation]);
 
+  // the alignment belongs to one translation of one book; both invalidate it
+  useEffect(() => {
+    alignCache.current.clear();
+  }, [translation, bookNr]);
+
   // Leaving study mode, or changing translation, takes the concordance with
   // it. Deliberately not folded into the effect above: a chapter change must
   // NOT close it, or a tap on a result would shut the sidebar it came from.
@@ -1862,14 +1829,33 @@ export default function Reader({
   const bmNoteKey = bmSheet ? `${bmSheet.c}:${bmSheet.v}` : "";
 
   /**
-   * Whether the words on screen can be tapped for their original.
+   * The words of a verse, each knowing what original stands behind it.
    *
-   * Only the King James is tagged word by word, and its tags are its own
-   * wording — they cannot be laid over another translation's text. So this
-   * decides two things together: whether the verse is drawn from the tagged
-   * text, and whether the reader needs the cross-reference chip instead.
+   * The King James is tagged, so its tokens are read straight off the file.
+   * Every other translation is lined up against that tagging (see lib/align),
+   * which costs a pass over one verse and is cached, since a verse is drawn
+   * many times over as the reader scrolls, zooms and marks it.
    */
-  const tapWords = translation === "kjv";
+  const tokensFor = (ch: number, verse: number): AlignedToken[] | null => {
+    const kjv = strongsTokens?.[`${ch}:${verse}`];
+    if (!kjv) return null;
+    // Cached whichever translation is open, not only the aligned ones: this
+    // runs for every verse in the book on every render, and even the King
+    // James's path allocates an array per verse without it.
+    const key = `${translation}|${ch}|${verse}`;
+    const held = alignCache.current.get(key);
+    if (held) return held;
+    let made: AlignedToken[];
+    if (translation === "kjv") {
+      made = kjv.map(([text, nums]) => [text, nums, true] as AlignedToken);
+    } else {
+      const line = chDataOf(ch)?.verses.find((v) => v.verse === verse);
+      if (!line) return null;
+      made = alignVerse(line.text, kjv);
+    }
+    alignCache.current.set(key, made);
+    return made;
+  };
 
   return (
     <div className={panelOpen || concFor ? "reader-open" : undefined}>
@@ -1979,8 +1965,8 @@ export default function Reader({
               <div className="study-verses">
                 {verses.map((v) => {
                   const key = `${ch}:${v.verse}`;
-                  const refs = xrefs?.[key];
                   const note = notes[key];
+                  const tokens = tokensFor(ch, v.verse);
                   const title = headAt(ch, v.verse);
                   return (
                     <div
@@ -1998,8 +1984,8 @@ export default function Reader({
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
                         {lineMark(ch, v.verse)}
-                        {tapWords && strongsTokens?.[key]
-                          ? strongsTokens[key].map((tok, i) => {
+                        {tokens && tokens.length > 0
+                          ? tokens.map((tok, i) => {
                               if (!tok[1]) return <span key={i}>{tok[0]}</span>;
                               // keep leading spaces/punctuation outside the tap target
                               const m = tok[0].match(
@@ -2017,9 +2003,11 @@ export default function Reader({
                                   {m[1]}
                                   <button
                                     type="button"
-                                    className={`w${sel ? " sel" : ""}`}
+                                    className={`w${sel ? " sel" : ""}${
+                                      tok[2] ? "" : " approx"
+                                    }`}
                                     onClick={() =>
-                                      openWord(ch, m[2], tok[1]!, v.verse)
+                                      openWord(ch, m[2], tok[1]!, v.verse, !tok[2])
                                     }
                                   >
                                     {m[2]}
@@ -2044,25 +2032,11 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* On the King James there is no chip: tapping a word
-                            opens the sheet, and a chip would be a second door
-                            onto the same room. Nothing else has words to tap,
-                            so everywhere else the chip IS the door — to the
-                            originals behind the verse and its references
-                            both. */}
-                        {!tapWords &&
-                          ((refs && refs.length > 0) ||
-                            originalsAt(ch, v.verse).length > 0) && (
-                            <button
-                              type="button"
-                              className="xref-chip"
-                              onClick={() => openVerseRefs(ch, v.verse)}
-                              aria-label={t("reader.originals")}
-                              title={t("reader.originals")}
-                            >
-                              <Icon name="letters" /> {t("reader.originals")}
-                            </button>
-                          )}
+                        {/* No chip for the originals on any translation now.
+                            Every word is tappable everywhere, so the chip
+                            would be a second door onto the room the word
+                            already opens — which is the point of the words
+                            being underlined in the first place. */}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
@@ -2361,41 +2335,16 @@ export default function Reader({
               ✕
             </button>
           </div>
-          {/* Verse mode: the originals behind this verse, each opening the
-              same entry a tapped word would. This is study mode for every
-              translation that nobody has tagged. */}
-          {wordSel.nums.length === 0 &&
-            (originalsAt(wordSel.ch, wordSel.verse).length > 0 ? (
-              <div className="lex-originals">
-                <p className="lex-meta">
-                  <Icon name="letters" /> {t("reader.originals")}
-                </p>
-                <div className="xref-chips">
-                  {originalsAt(wordSel.ch, wordSel.verse).map((o) => (
-                    <button
-                      key={o.num}
-                      type="button"
-                      className="xref-chip orig-chip"
-                      onClick={() =>
-                        openWord(wordSel.ch, o.word, [o.num], wordSel.verse)
-                      }
-                    >
-                      <span className="orig-lemma">
-                        {lexFor(o.num)?.lemma ?? o.num}
-                      </span>
-                      {/* some originals are carried by no English word at
-                          all — δέ is "often unexpressed", as its own entry
-                          says — and an empty line under the lemma reads as a
-                          fault rather than as the truth it is */}
-                      {o.word && <span className="orig-kjv">{o.word}</span>}
-                    </button>
-                  ))}
-                </div>
-                <p className="cal-hint orig-note">{t("reader.originalsNote")}</p>
-              </div>
-            ) : strongsTokens === null ? (
-              <p className="skeleton">{t("common.loading")}</p>
-            ) : null)}
+          {/* Said before anything else in the sheet, because everything after
+              it is only as good as the match that got here. */}
+          {wordSel.approx && (
+            <p className="lex-approx cal-hint">
+              <span className="approx-mark" aria-hidden>
+                ∗
+              </span>{" "}
+              {t("reader.approxNote")}
+            </p>
+          )}
           {/* the verse's cross-references */}
           {refsAt(wordSel.ch, wordSel.verse).length > 0 && (
             <div className="lex-xrefs">

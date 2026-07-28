@@ -416,7 +416,9 @@ const dictionaries = {
     "gram.place": "a place name",
     "gram.peopleGroup": "a people group",
     "gram.title": "a title",
-    "reader.strongsKjvOnly": "Only the KJV is tagged word by word. Here the Hebrew and Greek are listed by the verse — open Original text under any verse.",
+    "reader.strongsKjvOnly": "Only the KJV is tagged word by word. Here the words are lined up against it — a dotted underline marks the ones matched by position rather than by name.",
+    "reader.approxNote":
+      "Matched by position. Only the KJV is tagged word by word, so this word was lined up against the KJV rendering of the verse rather than tagged — it may belong to a neighbouring word.",
     "reader.bookmarks": "Bookmarks",
     "reader.bookmark": "Bookmark",
     "reader.clearNote": "Clear",
@@ -1018,7 +1020,9 @@ const dictionaries = {
     "gram.place": "nombre de lugar",
     "gram.peopleGroup": "un pueblo",
     "gram.title": "un título",
-    "reader.strongsKjvOnly": "Solo la KJV está etiquetada palabra por palabra. Aquí el hebreo y el griego se listan por versículo — abre Texto original bajo cualquier versículo.",
+    "reader.strongsKjvOnly": "Solo la KJV está etiquetada palabra por palabra. Aquí las palabras se alinean con ella — el subrayado punteado marca las emparejadas por posición y no por nombre.",
+    "reader.approxNote":
+      "Emparejada por posición. Solo la KJV está etiquetada palabra por palabra, así que esta palabra se alineó con la versión KJV del versículo en lugar de etiquetarse — puede corresponder a una palabra vecina.",
     "reader.bookmarks": "Marcadores",
     "reader.bookmark": "Marcador",
     "reader.clearNote": "Borrar",

@@ -2727,6 +2727,21 @@ button.menu-tile {
   border-bottom-color: var(--gold);
 }
 
+/* A word lined up against the King James rather than tagged: the underline is
+   dotted, which is the same claim a dotted line makes anywhere — this is the
+   shape of the thing, and the detail is not guaranteed. */
+.w.approx {
+  border-bottom-style: dotted;
+}
+
+.approx-mark {
+  color: var(--gold);
+}
+
+.lex-approx {
+  margin: 6px 0 0;
+}
+
 .w.sel {
   background: color-mix(in srgb, var(--gold) 22%, transparent);
   border-bottom-color: var(--gold);
