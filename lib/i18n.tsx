@@ -120,9 +120,9 @@ const dictionaries = {
     "prayers.title": "Prayer list",
     "prayers.wall": "Prayer wall",
     "prayers.wallNote":
-      "Everything being carried in your Gatherings, and in every Gathering open to all. To ask for prayer, open the Gathering you want to ask.",
+      "Everything being carried in your Gatherings, and in every public Gathering. To ask for prayer, open the Gathering you want to ask.",
     "prayers.wallEmpty":
-      "Nothing is being carried right now. Requests asked in your Gatherings, and in any Gathering open to all, arrive here.",
+      "Nothing is being carried right now. Requests asked in your Gatherings, and in any public Gathering, arrive here.",
     "prayers.add": "Ask for prayer",
     "prayers.privacy":
       "Only members of this Gathering can see the prayer list — not visitors, even when the Gathering is public.",
@@ -480,7 +480,7 @@ const dictionaries = {
     "churches.subtitle": "Small groups of believers, gathered in His name.",
     "churches.subtitlePublic": "Gatherings anyone may ask to join.",
     "churches.tabMine": "Yours",
-    "churches.tabPublic": "Open to all",
+    "churches.tabPublic": "Public",
     "churches.empty": "You haven't joined a Gathering yet. Start one and invite someone.",
     "churches.publicEmpty": "No open Gatherings yet. Start one and it will be listed here.",
     "churches.create": "Start a Gathering",
@@ -725,9 +725,9 @@ const dictionaries = {
     "prayers.title": "Lista de oración",
     "prayers.wall": "Muro de oración",
     "prayers.wallNote":
-      "Todo lo que se lleva en tus Comunidades y en cada Comunidad abierta a todos. Para pedir oración, entra en la Comunidad donde quieras pedirla.",
+      "Todo lo que se lleva en tus Comunidades y en cada Comunidad pública. Para pedir oración, entra en la Comunidad donde quieras pedirla.",
     "prayers.wallEmpty":
-      "Ahora mismo no hay nada que llevar. Las peticiones de tus Comunidades, y de cualquier Comunidad abierta a todos, llegan aquí.",
+      "Ahora mismo no hay nada que llevar. Las peticiones de tus Comunidades, y de cualquier Comunidad pública, llegan aquí.",
     "prayers.add": "Pedir oración",
     "prayers.privacy":
       "Solo los miembros de esta Comunidad pueden ver la lista de oración — los visitantes no, aunque la Comunidad sea pública.",
@@ -1084,7 +1084,7 @@ const dictionaries = {
     "churches.subtitle": "Pequeños grupos de creyentes, congregados en Su nombre.",
     "churches.subtitlePublic": "Comunidades a las que cualquiera puede pedir unirse.",
     "churches.tabMine": "Tuyas",
-    "churches.tabPublic": "Abiertas a todos",
+    "churches.tabPublic": "Públicas",
     "churches.empty": "Aún no perteneces a una Comunidad. Inicia una e invita a alguien.",
     "churches.publicEmpty": "Aún no hay Comunidades abiertas. Inicia una y aparecerá aquí.",
     "churches.create": "Inicia una Comunidad",

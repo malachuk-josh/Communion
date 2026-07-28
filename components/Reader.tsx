@@ -157,6 +157,27 @@ export default function Reader({
   const [viewChapter, setViewChapter] = useState(
     initialChapter ?? DEFAULT_CHAPTER
   );
+  /**
+   * Which chapters are dressed for study, and why it is not all of them.
+   *
+   * The whole book is in the page at once — that is what makes scrolling from
+   * Matthew 1 to Matthew 28 a scroll rather than a series of loads. Study mode
+   * rebuilds every verse into a block with a tap target on every word, and
+   * doing that to a whole book is a great deal of work for one tap: measured
+   * on a phone, turning it on inside Psalms took nearly five seconds during
+   * which nothing on screen moved at all.
+   *
+   * The reader can see one chapter. So the star dresses the chapter they are
+   * in and the one either side, and the rest stay as they were until they are
+   * scrolled to. Both layouts carry `data-v`, so everything that finds a verse
+   * — jumps, bookmarks, holding your place — works across the boundary
+   * without knowing it is there.
+   *
+   * The range only ever grows. Undressing a chapter behind the reader would
+   * save nothing they can see and would shift the page under them.
+   */
+  const STUDY_SPAN = 1;
+  const [studyRange, setStudyRange] = useState({ key: "", lo: 1, hi: 0 });
   /** where a chapter heading sat before something grew above it */
   const holdRef = useRef<{ sel: string; top: number } | null>(null);
   /** the chapter on screen, readable from inside a fetch callback */
@@ -500,6 +521,24 @@ export default function Reader({
     return () => window.removeEventListener(STUDY_WILL_CHANGE, onWillChange);
   }, []);
 
+  /**
+   * Widen the dressed range to take in wherever the reader has scrolled to.
+   *
+   * Downwards this adds a chapter below the fold and moves nothing. Upwards it
+   * grows the page above them, so the verse they are on is pinned first and
+   * put back by the layout effect that follows.
+   */
+  useEffect(() => {
+    if (!study) return;
+    setStudyRange((prev) => {
+      const lo = Math.min(prev.lo, viewChapter - STUDY_SPAN);
+      const hi = Math.max(prev.hi, viewChapter + STUDY_SPAN);
+      if (lo === prev.lo && hi === prev.hi) return prev;
+      if (lo < prev.lo) holdVerse(); // the page is about to grow above them
+      return { ...prev, lo, hi };
+    });
+  }, [study, viewChapter]);
+
   /** Put the reader at the top of a chapter, clear of the sticky header. */
   const placeAt = (ch: number, verse?: number) => {
     // a remembered verse if there is one, the chapter's heading otherwise
@@ -622,7 +661,7 @@ export default function Reader({
     // touchend; everything else pins once and is done.
     if (!pinchAnchor.current) holdRef.current = null;
     restore(held);
-  }, [study, pt, heads, xrefs, strongsTokens, notes, context]);
+  }, [study, studyRange, pt, heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -1772,8 +1811,26 @@ export default function Reader({
   /* Study mode keeps a line to a verse whatever the book: its whole point is
      that a verse is a thing you can look at on its own. Everywhere else the
      text is laid out the way it was written — as soon as there is a file
-     saying how that is. */
-  const prose = !study && paras !== null;
+     saying how that is. Asked per chapter, because only the chapters around
+     the reader are dressed for study at any moment. */
+  /*
+   * Reset during render rather than in an effect. An effect would leave one
+   * commit in which study mode is on and no chapter is dressed for it — the
+   * layout effect that puts the reader back where they were would fire on
+   * that commit, find nothing had moved, and let go of its anchor before the
+   * chapters that actually change height arrive.
+   */
+  const rangeKey = `${study}|${bookNr}|${translation}|${chapter}`;
+  if (studyRange.key !== rangeKey) {
+    setStudyRange({
+      key: rangeKey,
+      lo: study ? chapter - STUDY_SPAN : 1,
+      hi: study ? chapter + STUDY_SPAN : 0,
+    });
+  }
+  const studyAt = (ch: number) =>
+    study && ch >= studyRange.lo && ch <= studyRange.hi;
+  const proseAt = (ch: number) => !studyAt(ch) && paras !== null;
   const bookNameOf = (nr: number) => {
     const b = getBook(nr);
     return b ? (lang === "es" ? b.es : b.en) : "";
@@ -2030,7 +2087,10 @@ export default function Reader({
             <p className="error-text">{t("reader.error")}</p>
           </article>
         )}
-        {chapters.map(({ ch, verses }) => (
+        {chapters.map(({ ch, verses }) => {
+          const study = studyAt(ch); // this chapter, not the mode
+          const prose = proseAt(ch);
+          return (
           <article
             key={`${bookNr}-${ch}`}
             className={`scripture${study ? " study" : ""}`}
@@ -2361,7 +2421,8 @@ export default function Reader({
               )
             )}
           </article>
-        ))}
+          );
+        })}
 
         {/* The notice the licence asks for, under the text it covers. Both
             publishers require it wherever their words appear, and Crossway
