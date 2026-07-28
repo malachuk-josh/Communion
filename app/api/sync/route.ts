@@ -20,7 +20,8 @@ type Op =
   | { kind: "collection.set"; id: string; name: string }
   | { kind: "collection.del"; id: string }
   | { kind: "note.set"; book: number; ref: string; text: string }
-  | { kind: "plan.set"; id: string; done: number; on?: string };
+  | { kind: "plan.set"; id: string; done: number; on?: string }
+  | { kind: "plan.del"; id: string };
 
 const NOTE_REF = /^\d{1,3}:\d{1,3}$/;
 const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -261,6 +262,27 @@ export async function POST(req: Request) {
           }
           await kv.hset(keys.userPlans(userId), fields);
           if (clamped > 0) await kv.sadd(keys.planUsers, userId);
+          applied++;
+          break;
+        }
+        case "plan.del": {
+          // Leaving a plan, which is not the same as resetting one: a reset
+          // stays at nought and keeps asking, and this stops asking. The
+          // read-date stamp goes with it, or rejoining later would arrive
+          // already marked as read today.
+          const plan = getPlan(String(op.id));
+          if (!plan) {
+            rejected++;
+            break;
+          }
+          await kv.hdel(keys.userPlans(userId), plan.id);
+          await kv.hdel(keys.userPlans(userId), `${plan.id}:on`);
+          // Nothing left to be nudged about: come out of the set the sweep
+          // reads, so an account that has left every plan is not walked over
+          // every hour for the rest of its life.
+          const left = (await kv.hgetall(keys.userPlans(userId))) ?? {};
+          const anyPlans = Object.keys(left).some((k) => !k.endsWith(":on"));
+          if (!anyPlans) await kv.srem(keys.planUsers, userId);
           applied++;
           break;
         }

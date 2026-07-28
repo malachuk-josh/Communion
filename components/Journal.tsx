@@ -655,6 +655,33 @@ export default function Journal() {
     closeEdit();
   };
 
+  /**
+   * Leave a plan.
+   *
+   * Not a reset. A plan reset to nought is still yours and still asks every
+   * morning — which is right for somebody starting over and exactly wrong for
+   * somebody who does not want it, and since every account is enrolled in one
+   * without being asked, wanting out is a thing the app has to be able to
+   * hear. Local first, like everything else here: gone from the screen at
+   * once, and off the server when the outbox next drains.
+   */
+  const leavePlan = (planId: string, name: string) => {
+    if (!window.confirm(t("journal.leaveConfirm", { name }))) return;
+    const next = { ...plans };
+    delete next[planId];
+    setPlans(next);
+    void writeLocalState({ plans: next });
+    void enqueue({ kind: "plan.del", id: planId, ts: Date.now() });
+  };
+
+  /** Back to day one, still enrolled, still asking. */
+  const restartPlan = (planId: string) => {
+    const next = { ...plans, [planId]: 0 };
+    setPlans(next);
+    void writeLocalState({ plans: next });
+    void enqueue({ kind: "plan.set", id: planId, done: 0, ts: Date.now() });
+  };
+
   const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
   /** With a link of its own in the message, the signature need not repeat one. */
   const SIGNED = "— Communion";
@@ -1317,7 +1344,12 @@ export default function Journal() {
                 </h2>
                 <div className="jr-list">
                   {planRows.going.map((row) => (
-                    <PlanRow key={row.plan.id} {...row} />
+                    <PlanRow
+                      key={row.plan.id}
+                      {...row}
+                      onLeave={leavePlan}
+                      onRestart={restartPlan}
+                    />
                   ))}
                 </div>
               </section>
@@ -1332,7 +1364,12 @@ export default function Journal() {
                 </h2>
                 <div className="jr-list">
                   {planRows.finished.map((row) => (
-                    <PlanRow key={row.plan.id} {...row} />
+                    <PlanRow
+                      key={row.plan.id}
+                      {...row}
+                      onLeave={leavePlan}
+                      onRestart={restartPlan}
+                    />
                   ))}
                 </div>
               </section>
@@ -1350,10 +1387,14 @@ function PlanRow({
   plan,
   done,
   total,
+  onLeave,
+  onRestart,
 }: {
   plan: (typeof PLANS)[number];
   done: number;
   total: number;
+  onLeave: (id: string, name: string) => void;
+  onRestart: (id: string) => void;
 }) {
   const { lang, t } = useI18n();
   const pct = Math.round((done / total) * 100);
@@ -1383,15 +1424,41 @@ function PlanRow({
       </p>
     </>
   );
-  return target ? (
-    <Link
-      href={`/?b=${target.b}&c=${target.c}`}
-      className="glass card jr-row jr-plan"
-    >
-      {body}
-    </Link>
-  ) : (
-    <div className="glass card jr-row jr-plan">{body}</div>
+  const name = t(`plan.${plan.id}` as MessageKey);
+  return (
+    /* the card cannot be the link any more: a button inside an anchor is
+       invalid, and a tap meant for one would follow the other */
+    <div className="glass card jr-row jr-plan">
+      {target ? (
+        <Link href={`/?b=${target.b}&c=${target.c}`} className="jr-go">
+          {body}
+        </Link>
+      ) : (
+        <div className="jr-go">{body}</div>
+      )}
+      <span className="jr-actions">
+        {done > 0 && (
+          <button
+            type="button"
+            className="jr-share"
+            onClick={() => onRestart(plan.id)}
+            aria-label={t("journal.restartPlan", { name })}
+            title={t("journal.restartPlan", { name })}
+          >
+            <Icon name="sunrise" />
+          </button>
+        )}
+        <button
+          type="button"
+          className="jr-share jr-danger"
+          onClick={() => onLeave(plan.id, name)}
+          aria-label={t("journal.leavePlan", { name })}
+          title={t("journal.leavePlan", { name })}
+        >
+          <Icon name="close" />
+        </button>
+      </span>
+    </div>
   );
 }
 

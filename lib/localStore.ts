@@ -184,4 +184,5 @@ export type SyncOp =
   | { kind: "collection.set"; id: string; name: string; ts: number }
   | { kind: "collection.del"; id: string; ts: number }
   | { kind: "note.set"; book: number; ref: string; text: string; ts: number }
-  | { kind: "plan.set"; id: string; done: number; on?: string; ts: number };
+  | { kind: "plan.set"; id: string; done: number; on?: string; ts: number }
+  | { kind: "plan.del"; id: string; ts: number };

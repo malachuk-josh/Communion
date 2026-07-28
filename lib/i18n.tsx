@@ -79,6 +79,9 @@ const dictionaries = {
     "journal.plans": "Plans",
     "journal.unfiled": "Unfiled",
     "journal.underway": "Under way",
+    "journal.leavePlan": "Leave {name}",
+    "journal.leaveConfirm": "Leave {name}?\n\nIt comes off your journal and stops asking each morning. Your progress goes with it. You can start it again from Discover whenever you like.",
+    "journal.restartPlan": "Start {name} again from day one",
     "journal.finished": "Finished",
     "journal.next": "Day {n} next",
     "journal.noNotes":
@@ -692,6 +695,9 @@ const dictionaries = {
     "journal.plans": "Planes",
     "journal.unfiled": "Sin colección",
     "journal.underway": "En curso",
+    "journal.leavePlan": "Dejar {name}",
+    "journal.leaveConfirm": "¿Dejar {name}?\n\nSale de tu diario y deja de recordártelo cada mañana. Tu progreso se va con él. Puedes empezarlo de nuevo desde Descubrir cuando quieras.",
+    "journal.restartPlan": "Empezar {name} otra vez desde el día uno",
     "journal.finished": "Terminados",
     "journal.next": "Sigue el día {n}",
     "journal.noNotes":
