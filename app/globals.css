@@ -2184,22 +2184,111 @@ button.menu-tile {
   }
 }
 
-/* ---- admin dashboard (owner only, desktop-first) ---- */
-.admin-tile {
-  display: none;
-}
-
+/* ---- admin dashboard (owner and trusted admins) ---- */
+/* The tile used to be hidden below 900px, which meant the one screen the app
+   is actually used on was the one screen that could not reach it. The tables
+   are still wide, so they scroll sideways and the note below stays. */
 .admin-mobile-note {
   display: block;
 }
 
 @media (min-width: 900px) {
-  .admin-tile {
-    display: flex;
-  }
-
   .admin-mobile-note {
     display: none;
+  }
+}
+
+/* trusted status: a switch, because it is a state and not an action */
+.trust-toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.trust-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.trust-toggle.on {
+  background: color-mix(in srgb, var(--gold) 45%, transparent);
+  border-color: var(--gold);
+}
+
+.trust-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.trust-toggle.on .trust-knob {
+  transform: translateX(18px);
+  background: var(--gold);
+}
+
+/* ---- standing in someone's account ---- */
+/* Above the nav rather than over the header: the header is different on every
+   screen and the safe-area inset is already spoken for up there, while the
+   space just above the bar is empty everywhere. */
+.acting-as {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  /* a colour nothing else in the app uses, so it cannot be read as ordinary */
+  color: #2a1608;
+  background: linear-gradient(180deg, #f3c168, #dfa23f);
+  border: 1px solid #b9822c;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.acting-as-mark {
+  display: flex;
+  opacity: 0.75;
+}
+
+.acting-as-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acting-as button {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f7e9cf;
+  background: #2a1608;
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .acting-as {
+    bottom: 16px;
   }
 }
 

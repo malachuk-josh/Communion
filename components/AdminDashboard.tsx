@@ -36,9 +36,22 @@ interface AdminUser {
   bookmarks: number;
   pushDevices: number;
   guest: boolean;
+  trusted: boolean;
+}
+
+interface Takeover {
+  as: string;
+  by: string;
+  at: number;
+  asName: string;
+  byName: string;
 }
 
 interface Summary {
+  viewerId: string;
+  viewerIsOwner: boolean;
+  takeoverAvailable: boolean;
+  takeovers: Takeover[];
   totals: Record<string, number>;
   gatherings: Gathering[];
   users: AdminUser[];
@@ -65,6 +78,7 @@ export default function AdminDashboard() {
   const [denied, setDenied] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [busyUser, setBusyUser] = useState<string | null>(null);
 
   useEffect(() => {
     api<Summary>("/api/admin")
@@ -121,6 +135,76 @@ export default function AdminDashboard() {
     }
   };
 
+  /**
+   * Hand someone the dashboard, or take it back.
+   *
+   * Only the owner sees these buttons, and only the owner's request is
+   * honoured — the server checks again, because a button that is merely
+   * hidden is not a permission.
+   */
+  const toggleTrust = async (u: AdminUser) => {
+    const next = !u.trusted;
+    const warning = next
+      ? `Give ${u.displayName} admin access?\n\n` +
+        `They will see every person, every Gathering and every discussion in ` +
+        `Communion, and can delete a Gathering. They cannot grant this to ` +
+        `anyone else, and they cannot stand in an account.`
+      : `Take admin access away from ${u.displayName}?`;
+    if (!window.confirm(warning)) return;
+    setBusyUser(u.userId);
+    try {
+      await api("/api/admin/trust", {
+        method: "POST",
+        body: { userId: u.userId, trusted: next },
+      });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              users: prev.users.map((x) =>
+                x.userId === u.userId ? { ...x, trusted: next } : x
+              ),
+            }
+          : prev
+      );
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setBusyUser(null);
+    }
+  };
+
+  /**
+   * Stand in an account.
+   *
+   * The reload is not a nicety. This device holds a local copy of whoever it
+   * was last signed in as — bookmarks, notes, an outbox of unsent changes —
+   * and the app's identity check only runs on a fresh load. Going through it
+   * is what stops one person's journal being written into another's account.
+   */
+  const takeOver = async (u: AdminUser) => {
+    const warning =
+      `Sign in as ${u.displayName}?\n\n` +
+      `You will see and do everything as them until you stop, and anything ` +
+      `you write will be theirs. Your own bookmarks and notes will be ` +
+      `re-fetched from the server when you come back.`;
+    if (!window.confirm(warning)) return;
+    setBusyUser(u.userId);
+    try {
+      await api("/api/admin/impersonate", {
+        method: "POST",
+        body: { userId: u.userId },
+      });
+      await import("@/lib/offline")
+        .then((m) => m.clearApiCache())
+        .catch(() => {});
+      window.location.href = "/";
+    } catch (e) {
+      window.alert((e as Error).message);
+      setBusyUser(null);
+    }
+  };
+
   if (denied) {
     return <p className="empty glass card">{t("join.invalid")}</p>;
   }
@@ -133,11 +217,11 @@ export default function AdminDashboard() {
       <BackToMenu />
       <h1 className="page-title"><Icon name="tools" /> Admin</h1>
       <p className="subtitle">
-        Everything happening across Communion. Visible only to you.
+        Everything happening across Communion.
       </p>
       <p className="notice admin-mobile-note">
-        The dashboard is built for a wider screen — open it on a desktop for
-        the full tables.
+        The tables are wider than a phone — swipe them sideways, or open this
+        on a desktop to see every column at once.
       </p>
 
       <div className="admin-totals">
@@ -247,29 +331,104 @@ export default function AdminDashboard() {
               <th>Push</th>
               <th>Joined</th>
               <th>Last seen</th>
+              <th>Trusted</th>
+              {data.viewerIsOwner && <th />}
             </tr>
           </thead>
           <tbody>
-            {data.users.map((u) => (
-              <tr key={u.userId}>
-                <td>
-                  {u.displayName}
-                  <div className="admin-sub">{u.userId}</div>
-                </td>
-                <td>{u.email ?? "—"}</td>
-                <td>{u.guest ? "guest" : "account"}</td>
-                <td>{u.phone ?? "—"}</td>
-                <td>{u.smsReminders ? "on" : "—"}</td>
-                <td>{u.gatherings}</td>
-                <td>{u.bookmarks}</td>
-                <td>{u.pushDevices}</td>
-                <td>{date(u.createdAt)}</td>
-                <td>{date(u.lastSignInAt)}</td>
-              </tr>
-            ))}
+            {data.users.map((u) => {
+              const isMe = u.userId === data.viewerId;
+              return (
+                <tr key={u.userId}>
+                  <td>
+                    {u.displayName}
+                    <div className="admin-sub">{u.userId}</div>
+                  </td>
+                  <td>{u.email ?? "—"}</td>
+                  <td>{u.guest ? "guest" : "account"}</td>
+                  <td>{u.phone ?? "—"}</td>
+                  <td>{u.smsReminders ? "on" : "—"}</td>
+                  <td>{u.gatherings}</td>
+                  <td>{u.bookmarks}</td>
+                  <td>{u.pushDevices}</td>
+                  <td>{date(u.createdAt)}</td>
+                  <td>{date(u.lastSignInAt)}</td>
+                  <td>
+                    {/* the owner can switch it; everyone else only reads it,
+                        and nobody switches their own */}
+                    {data.viewerIsOwner && !isMe ? (
+                      <button
+                        type="button"
+                        className={`trust-toggle${u.trusted ? " on" : ""}`}
+                        role="switch"
+                        aria-checked={u.trusted}
+                        aria-label={`Admin access for ${u.displayName}`}
+                        disabled={busyUser === u.userId}
+                        onClick={() => toggleTrust(u)}
+                      >
+                        <span className="trust-knob" />
+                      </button>
+                    ) : (
+                      <span className="admin-sub">
+                        {u.trusted ? (isMe ? "you" : "yes") : "—"}
+                      </span>
+                    )}
+                  </td>
+                  {data.viewerIsOwner && (
+                    <td className="admin-row-actions">
+                      {!isMe && !u.trusted && (
+                        <button
+                          type="button"
+                          className="rsvp-btn"
+                          disabled={
+                            busyUser === u.userId || !data.takeoverAvailable
+                          }
+                          title={
+                            data.takeoverAvailable
+                              ? `Sign in as ${u.displayName}`
+                              : "Set ADMIN_SESSION_SECRET to enable this"
+                          }
+                          onClick={() => takeOver(u)}
+                        >
+                          <Icon name="person" /> Sign in as
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {data.viewerIsOwner && data.takeovers.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>Account take-overs</h2>
+          </div>
+          <div className="glass card admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Stood in by</th>
+                  <th>When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.takeovers.map((row) => (
+                  <tr key={`${row.at}-${row.as}`}>
+                    <td>{row.asName}</td>
+                    <td>{row.byName}</td>
+                    <td>{new Date(row.at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

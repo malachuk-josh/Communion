@@ -7,6 +7,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import ViewportInsets from "@/lib/viewport";
 import PushPrompt from "@/components/PushPrompt";
 import OfflineReady from "@/components/OfflineReady";
+import ActingAs from "@/components/ActingAs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -75,6 +76,7 @@ export default function RootLayout({
             <PullToRefresh />
             <Nav />
             <main className="page">{children}</main>
+            <ActingAs />
             <PushPrompt />
             <OfflineReady />
           </ReadingProvider>

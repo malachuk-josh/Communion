@@ -216,6 +216,18 @@ export const keys = {
   publicPrayers: "prayers:public",
   /** how many a person has posted to it lately, so a wall cannot be flooded */
   prayerRate: (userId: string) => `user:${userId}:prayerRate`,
+  /**
+   * How many Gatherings a person has started lately.
+   *
+   * Same shape and same reason as the line above: a timestamped member per
+   * attempt, so counting the last twelve hours is one read of one key and an
+   * old entry ages out of the answer without anyone sweeping for it.
+   */
+  churchRate: (userId: string) => `user:${userId}:churchRate`,
+  /** Whom the owner has handed the dashboard to, beyond the owner. */
+  trustedAdmins: "admin:trusted",
+  /** Every time one account was stood in by another, and by whom. */
+  adminTakeovers: "admin:takeovers",
   prayer: (prayerId: string) => `prayer:${prayerId}`,
   prayerPrayed: (prayerId: string) => `prayer:${prayerId}:prayed`,
   thread: (threadId: string) => `thread:${threadId}`,

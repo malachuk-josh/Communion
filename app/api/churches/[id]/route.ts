@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isOwner } from "@/lib/admin";
+import { isTrusted } from "@/lib/admin";
 import { getUserId } from "@/lib/auth";
 import {
   deleteChurch,
@@ -69,7 +69,7 @@ export async function DELETE(
   if (!church) {
     return NextResponse.json({ error: "No such Gathering" }, { status: 404 });
   }
-  if (church.founderId !== userId && !isOwner(userId)) {
+  if (church.founderId !== userId && !(await isTrusted(userId))) {
     return NextResponse.json(
       { error: "Only the founder can delete a Gathering" },
       { status: 403 }

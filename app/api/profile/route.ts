@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
-import { isOwner } from "@/lib/admin";
+import { isTrusted } from "@/lib/admin";
 import { pushEnabled } from "@/lib/push";
 import { isValidPhone, smsEnabled } from "@/lib/sms";
 import { syncListing } from "@/lib/directory";
@@ -50,7 +50,8 @@ export async function GET(req: Request) {
     planReminderHour: Number(profile.planReminderHour ?? 7),
     pushAvailable: pushEnabled(),
     smsAvailable: smsEnabled(),
-    isOwner: isOwner(userId),
+    // what the menu uses to decide whether the admin tile exists at all
+    isAdmin: await isTrusted(userId),
   });
 }
 

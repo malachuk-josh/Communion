@@ -27,12 +27,14 @@ const TILES: { href: string; icon: IconName; key: string }[] = [
 export default function MenuHub() {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // the admin tile only appears for the app owner, and only on desktop
+  // The admin tile appears for the owner, and for anyone the owner has
+  // trusted — the server decides which, and says so here in one word. Nobody
+  // else is told the tile could exist.
   useEffect(() => {
-    api<{ isOwner?: boolean }>("/api/profile")
-      .then((res) => setIsOwner(!!res.isOwner))
+    api<{ isAdmin?: boolean }>("/api/profile")
+      .then((res) => setIsAdmin(!!res.isAdmin))
       .catch(() => {});
   }, []);
 
@@ -102,12 +104,12 @@ export default function MenuHub() {
             )}
           </Fragment>
         ))}
-        {isOwner && (
+        {isAdmin && (
           <Link href="/admin" className="glass card menu-tile admin-tile">
             <span className="menu-tile-emoji"><Icon name="tools" /></span>
             <span className="menu-tile-body">
               <strong>Admin</strong>
-              <small>Users, fellowships, and activity — desktop only</small>
+              <small>People, Gatherings, and activity</small>
             </span>
             <span className="menu-tile-arrow">→</span>
           </Link>
