@@ -192,7 +192,11 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
       const plan = getPlan(planId);
       if (!plan) continue;
       const done = Number(value) || 0;
-      if (done === 0 || done >= plan.days.length) continue; // not started, or finished
+      // Finished plans only. Day 0 used to be skipped as "not started", which
+      // was right when the only way to have a plan was to begin one — and is
+      // wrong now that every account is enrolled in one on the day it is
+      // made. Day 1 is the whole point of the first morning's reminder.
+      if (done >= plan.days.length) continue;
       if (progress[`${planId}:on`] === today) continue; // read today already
       const readings = plan.days[done].readings;
       const first = getBook(readings[0].b);

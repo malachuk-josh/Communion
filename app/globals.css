@@ -4048,20 +4048,16 @@ button.menu-tile {
    plan progress, each sorted into its own kind. Rows are cards so they read
    as the same material as the rest of the app, but a good deal quieter —
    there can be hundreds of them, and .card's 22px would make a wall. */
+/* the journal's switch is the Table's switch; only the spacing is its own */
 .jr-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 18px 0 6px;
+  margin: 16px 0 6px;
 }
 
-/* no background here: .chip sets one and .chip-active replaces it, and both
-   are single-class selectors, so anything declared later would quietly win */
-.jr-tab {
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.9rem;
-  padding: 7px 14px;
+/* the word and its count, side by side, under the icon */
+.jr-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .jr-count {
@@ -4074,7 +4070,8 @@ button.menu-tile {
   text-align: center;
 }
 
-.chip-active .jr-count {
+.chip-active .jr-count,
+.discover-tabs .active .jr-count {
   background: var(--gold-soft);
 }
 

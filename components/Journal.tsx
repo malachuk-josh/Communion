@@ -822,11 +822,15 @@ export default function Journal() {
   }, [bookmarks, collections, t]);
 
   const planRows = useMemo(() => {
+    // Having the plan is what makes it yours, not having read a day of it.
+    // Every account is enrolled in one the day it is made, and it sits at
+    // nought until the first morning — a test on the count alone would hide
+    // exactly the plan this screen most needs to show.
     const rows = PLANS.map((plan) => ({
       plan,
       done: plans[plan.id] ?? 0,
       total: plan.days.length,
-    })).filter((row) => row.done > 0);
+    })).filter((row) => row.plan.id in plans);
     return {
       going: rows.filter((row) => row.done < row.total),
       finished: rows.filter((row) => row.done >= row.total),
@@ -851,18 +855,24 @@ export default function Journal() {
       <h1 className="page-title">{t("journal.title")}</h1>
       <p className="subtitle">{t("journal.subtitle")}</p>
 
-      <div className="jr-tabs">
+      {/* The same control the Table uses, and the same classes: three chips
+          that wrapped onto two rows are three segments of one switch now, and
+          the two screens are read the same way. The count rides inside its
+          own segment rather than beside it. */}
+      <div className="lang-toggle discover-tabs jr-tabs" role="group">
         {TABS.map((entry) => (
           <button
             key={entry.id}
             type="button"
-            className={`chip jr-tab${tab === entry.id ? " chip-active" : ""}`}
+            className={tab === entry.id ? "active" : ""}
             aria-pressed={tab === entry.id}
             onClick={() => setTab(entry.id)}
           >
             <Icon name={entry.icon} />
-            {t(entry.key)}
-            <span className="jr-count">{counts[entry.id]}</span>
+            <span className="jr-tab-label">
+              {t(entry.key)}
+              <span className="jr-count">{counts[entry.id]}</span>
+            </span>
           </button>
         ))}
       </div>

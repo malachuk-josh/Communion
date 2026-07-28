@@ -358,8 +358,10 @@ function PlansSection({ open }: { open: string | null }) {
     return () => window.clearTimeout(timer);
   }, [pointed, filter]);
 
+  // enrolled and not yet finished — see the note in the journal about why
+  // this asks whether the plan is there rather than how far into it you are
   const started = PLANS.filter(
-    (p) => (progress[p.id] ?? 0) > 0 && (progress[p.id] ?? 0) < p.days.length
+    (p) => p.id in progress && (progress[p.id] ?? 0) < p.days.length
   );
   const shown =
     filter === "mine"
