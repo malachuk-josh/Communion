@@ -138,6 +138,23 @@ const PATHS = {
     "M12 12v5",
   ],
   /**
+   * A reading plan: days in a list, the first of them done.
+   *
+   * It borrowed the scroll before this, which is the Journal's own icon — so
+   * one segment of the Journal wore the badge of the screen it was sitting
+   * on. Deliberately not the calendar either: that belongs to a different
+   * destination, and a plan is a sequence you work through rather than a
+   * month you look at.
+   */
+  plan: [
+    "M3.2 6.3l1.8 1.8 3.3-3.5",
+    "M11.4 6.4h9.4",
+    "M3.9 12.4h4.4",
+    "M11.4 12.4h9.4",
+    "M3.9 18.4h4.4",
+    "M11.4 18.4h9.4",
+  ],
+  /**
    * The Table: a table seen from above, with three gathered round it.
    *
    * The places sit outside the rim rather than on it, so what is drawn is

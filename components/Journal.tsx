@@ -873,7 +873,7 @@ export default function Journal() {
   const TABS: { id: Tab; icon: IconName; key: MessageKey }[] = [
     { id: "bookmarks", icon: "bookmark", key: "journal.bookmarks" },
     { id: "notes", icon: "note", key: "journal.notes" },
-    { id: "plans", icon: "scroll", key: "journal.plans" },
+    { id: "plans", icon: "plan", key: "journal.plans" },
   ];
 
   return (
