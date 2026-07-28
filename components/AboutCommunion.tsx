@@ -22,6 +22,21 @@ export default function AboutCommunion() {
             <li key={n}>{t(`about.how${n}` as MessageKey)}</li>
           ))}
         </ol>
+
+        {/* What study mode offers, and the honest note about the underlines.
+            That note used to sit above every chapter in the reader, which put
+            a paragraph of small print between the reader and the first verse.
+            It belongs with the rest of what the star turns on, where someone
+            has come to read about the app rather than to read Scripture. */}
+        <h3>{t("about.studyTitle")}</h3>
+        <p>{t("about.studyIntro")}</p>
+        <ul className="about-list">
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <li key={n}>{t(`about.study${n}` as MessageKey)}</li>
+          ))}
+        </ul>
+        <p className="about-fineprint">{t("about.studyUnderlines")}</p>
+
         <p className="notice">{t("about.footer")}</p>
       </div>
     </div>

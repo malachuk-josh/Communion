@@ -924,11 +924,27 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
+  /**
+   * Whether this translation's words can be lined up against the evidence.
+   *
+   * The Berean's tagging is English, and lib/align.ts stems by throwing away
+   * everything that is not a-z — which turns Spanish into a near-miss of
+   * English rather than a language of its own. So: English only, and
+   * everything else falls through to the Original text chip.
+   */
+  const aligned = (getTranslation(translation)?.lang ?? "en") === "en";
+
   /*
    * The evidence for reading an untagged translation word by word: the
    * Berean's tagging of this book, and the vocabulary it uses across the whole
-   * Bible. Only fetched where it is needed — the King James carries its own
-   * tagging, and neither file is touched while reading it.
+   * Bible. Neither is fetched while reading the King James, which carries its
+   * own tagging.
+   *
+   * The book file is fetched for the Spanish too, even though the Spanish is
+   * never aligned: it is also what the Original text chip lists, and that is
+   * the one thing study mode can honestly offer a Reina Valera reader. The
+   * vocabulary below is not — it exists only to match English words, so
+   * downloading half a megabyte of it would buy a Spanish reader nothing.
    */
   useEffect(() => {
     if (!study || translation === "kjv") return;
@@ -952,6 +968,7 @@ export default function Reader({
   // the same vocabulary serves every book, so it is fetched once
   useEffect(() => {
     if (!study || translation === "kjv" || glossVocab) return;
+    if (!aligned) return; // English words only; see the note above
     let cancelled = false;
     fetch("/gloss/vocab.json")
       .then((res) => (res.ok ? res.json() : {}))
@@ -2004,6 +2021,23 @@ export default function Reader({
       if (!tagged) return null;
       made = kjvTokens(tagged);
     } else {
+      /*
+       * English only, and this guard is not a nicety.
+       *
+       * The evidence is the Berean's English wording, reduced to stems by
+       * stripping everything that is not a-z — which quietly turns Spanish
+       * into a near-miss of English. Measured across the whole Reina Valera:
+       * 14,707 words underlined, and the commonest of them were "los" (1,197
+       * times, matched to the stem of "loss"), "les" (from "less"), "son"
+       * and "sin". Solid underlines, in the strongest style the app has, on
+       * the Spanish for "the".
+       *
+       * Worse than wrong: a verse with one spurious match is a verse the
+       * Original text chip no longer offers, because that chip appears only
+       * where nothing at all matched. So 31% of Spanish verses were being
+       * given a false reading INSTEAD of the true one.
+       */
+      if (!aligned) return null;
       if (!gloss || !glossVocab) return null;
       const entries = gloss[ref];
       const line = chDataOf(ch)?.verses.find((v) => v.verse === verse);
@@ -2066,11 +2100,11 @@ export default function Reader({
         </div>
       )}
 
-      {study && translation !== "kjv" && (
-        <p className="notice" style={{ marginBottom: 10 }}>
-          {t("reader.strongsKjvOnly")}
-        </p>
-      )}
+      {/* The note explaining what an underline means used to sit here, above
+          the chapter, every time study mode was on in anything but the King
+          James. It is a paragraph of small print between the reader and the
+          first verse — read once, then in the way forever. It has moved to
+          About, where it sits with the rest of what study mode offers. */}
 
       <div ref={readRef}>
         {loading && (
@@ -2195,9 +2229,16 @@ export default function Reader({
                         {/* Normally the underlined words are the way in, so
                             there is no chip. Where nothing could be matched
                             — the Spanish, or a verse worded far from the
-                            evidence — the chip is what is left. */}
-                        {tokens !== null &&
-                          !tokens.some((tok) => tok[1]) &&
+                            evidence — the chip is what is left.
+
+                            Two ways to have no words to tap, and they must
+                            both count. A translation that is never aligned
+                            has no tokens at all, and asking only whether the
+                            tokens are empty would silently withhold the chip
+                            from the one language that has nothing else. */}
+                        {(!aligned ||
+                          (tokens !== null &&
+                            !tokens.some((tok) => tok[1]))) &&
                           originalsAt(ch, v.verse).length > 0 && (
                             <button
                               type="button"

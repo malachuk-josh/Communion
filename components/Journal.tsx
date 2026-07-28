@@ -1,8 +1,8 @@
 "use client";
 
-// Menu → My Journal. Everything this account has made in Communion, gathered
-// into one place and sorted into its own kind: the verses you have written
-// on, the ones you have kept, and the plans you are walking through.
+// The Journal tab. Everything this account has made in Communion, gathered
+// into one place and sorted into its own kind: the verses you have kept, the
+// ones you have written on, and the plans you are walking through.
 //
 // Nothing here is a new source of truth. Notes, bookmarks, collections and
 // plan progress all already live on the device in IndexedDB and on the server
@@ -40,7 +40,7 @@ import {
   type BmEntry,
 } from "@/lib/sync";
 
-type Tab = "notes" | "bookmarks" | "plans";
+type Tab = "bookmarks" | "notes" | "plans";
 
 interface NoteRow {
   b: number;
@@ -102,7 +102,10 @@ const CLOSED_KEY = "communion.journalClosed";
 
 export default function Journal() {
   const { lang, t } = useI18n();
-  const [tab, setTab] = useState<Tab>("notes");
+  // Bookmarks first, and so the screen opens on them: keeping a verse is
+  // the commonest thing anyone does here, and the tab that leads is also
+  // the one that opens.
+  const [tab, setTab] = useState<Tab>("bookmarks");
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [bookmarks, setBookmarks] = useState<Record<string, BmEntry>>({});
   const [collections, setCollections] = useState<Record<string, BmCollection>>(
@@ -831,14 +834,14 @@ export default function Journal() {
   }, [plans]);
 
   const counts: Record<Tab, number> = {
-    notes: notes.length,
     bookmarks: Object.keys(bookmarks).length,
+    notes: notes.length,
     plans: planRows.going.length + planRows.finished.length,
   };
 
   const TABS: { id: Tab; icon: IconName; key: MessageKey }[] = [
-    { id: "notes", icon: "note", key: "journal.notes" },
     { id: "bookmarks", icon: "bookmark", key: "journal.bookmarks" },
+    { id: "notes", icon: "note", key: "journal.notes" },
     { id: "plans", icon: "scroll", key: "journal.plans" },
   ];
 

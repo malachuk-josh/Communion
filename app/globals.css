@@ -779,6 +779,26 @@ html.reading body::-webkit-scrollbar {
   line-height: 1.55;
 }
 
+.about-list li::marker {
+  color: var(--gold);
+}
+
+/* The note about the underlines is a paragraph of small print, not a one-line
+   aside. .notice centres its text and drops it to the faintest ink there is,
+   which is right for a sentence and unreadable at a hundred and forty words —
+   and it would have set the closing benediction below it in the same voice,
+   turning the last line of the page into a second footnote. So: quieter than
+   body copy, but left-aligned, legible, and marked off as an aside by the
+   rule down its side. */
+.about-fineprint {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  border-left: 2px solid var(--glass-border);
+  padding-left: 12px;
+  margin-top: 16px;
+}
+
 .chip-remove {
   border: 0;
   background: transparent;
@@ -3918,7 +3938,7 @@ button.menu-tile {
   line-height: 0;
 }
 
-/* ---- My Journal ----------------------------------------------------------
+/* ---- Journal ----------------------------------------------------------
    One screen for everything this account has made: notes, kept verses and
    plan progress, each sorted into its own kind. Rows are cards so they read
    as the same material as the rest of the app, but a good deal quieter —
