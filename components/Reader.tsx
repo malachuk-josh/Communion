@@ -838,9 +838,18 @@ export default function Reader({
   // study mode + KJV: tokenized text where every word knows its original
   // Hebrew/Greek word (Strong's numbers), enabling tap-for-translation
   useEffect(() => {
+    /*
+     * Cleared before the guard, not after it.
+     *
+     * These tokens are the King James, word by word — the renderer draws the
+     * verse from them rather than from the chapter it was given. Leaving them
+     * behind on a change of translation therefore did not merely leave some
+     * words tappable: it put King James wording on screen under another
+     * translation's name and licence notice.
+     */
+    setStrongsTokens(null);
     if (!study || translation !== "kjv") return;
     let cancelled = false;
-    setStrongsTokens(null);
     fetch(`/strongs/${bookNr}.json`)
       .then((res) => (res.ok ? res.json() : {}))
       .then((json) => {
@@ -1034,6 +1043,21 @@ export default function Reader({
   /** The cross-references opening from a verse. */
   const refsAt = (ch: number, verse: number): number[][] =>
     xrefs?.[`${ch}:${verse}`] ?? [];
+
+  /**
+   * The word sheet, opened on a verse rather than a word.
+   *
+   * Only the King James has words to tap, and the sheet is where a verse's
+   * cross-references live. Without this, every other translation has study
+   * mode with no references in it at all — so this is how they reach them,
+   * and it is offered only where there is nothing to tap.
+   */
+  const openVerseRefs = (ch: number, verse: number) => {
+    setPanelOpen(false);
+    setWordSel({ ch, text: "", nums: [], verse });
+    setWordAction("");
+    setSharePickerOpen(false);
+  };
 
   const openWord = (ch: number, text: string, nums: string[], verse: number) => {
     setPanelOpen(false);
@@ -1793,6 +1817,16 @@ export default function Reader({
    */
   const bmNoteKey = bmSheet ? `${bmSheet.c}:${bmSheet.v}` : "";
 
+  /**
+   * Whether the words on screen can be tapped for their original.
+   *
+   * Only the King James is tagged word by word, and its tags are its own
+   * wording — they cannot be laid over another translation's text. So this
+   * decides two things together: whether the verse is drawn from the tagged
+   * text, and whether the reader needs the cross-reference chip instead.
+   */
+  const tapWords = translation === "kjv";
+
   return (
     <div className={panelOpen || concFor ? "reader-open" : undefined}>
       {results !== null && searchBar(false)}
@@ -1901,6 +1935,7 @@ export default function Reader({
               <div className="study-verses">
                 {verses.map((v) => {
                   const key = `${ch}:${v.verse}`;
+                  const refs = xrefs?.[key];
                   const note = notes[key];
                   const title = headAt(ch, v.verse);
                   return (
@@ -1919,7 +1954,7 @@ export default function Reader({
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
                         {lineMark(ch, v.verse)}
-                        {strongsTokens?.[key]
+                        {tapWords && strongsTokens?.[key]
                           ? strongsTokens[key].map((tok, i) => {
                               if (!tok[1]) return <span key={i}>{tok[0]}</span>;
                               // keep leading spaces/punctuation outside the tap target
@@ -1965,10 +2000,22 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* No cross-reference chip. Tapping a word opens the
-                            sheet that already carries this verse's references,
-                            so the chip was a second door onto the same room —
-                            and a whole row of them down the chapter. */}
+                        {/* On the King James there is no chip: tapping a word
+                            opens the sheet that already carries this verse's
+                            references, and a chip would be a second door onto
+                            the same room. Nothing else has words to tap, so
+                            everywhere else the chip IS the door. */}
+                        {!tapWords && refs && refs.length > 0 && (
+                          <button
+                            type="button"
+                            className="xref-chip"
+                            onClick={() => openVerseRefs(ch, v.verse)}
+                            aria-label={t("reader.crossRefs")}
+                            title={t("reader.crossRefs")}
+                          >
+                            <Icon name="link" /> {refs.length}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
