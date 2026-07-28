@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isOwner } from "@/lib/admin";
 import { getUserId } from "@/lib/auth";
 import {
   deleteChurch,
@@ -45,8 +46,15 @@ export async function GET(
 }
 
 /**
- * Delete a Gathering. Its founder only — a member leaving is /leave, which is
- * a different thing and already exists.
+ * Delete a Gathering. Its founder, or the app's owner — a member leaving is
+ * /leave, which is a different thing and already exists.
+ *
+ * The owner is not here to overrule founders. It is because founder-only is
+ * not a complete rule: a Gathering whose founder is a guest identity cannot be
+ * deleted by anybody once real accounts are switched on, since a guest can no
+ * longer sign in to be that founder. Without this, such a record is permanent
+ * — visible in the open directory, and unreachable by every route that could
+ * remove it.
  */
 export async function DELETE(
   req: Request,
@@ -61,7 +69,7 @@ export async function DELETE(
   if (!church) {
     return NextResponse.json({ error: "No such Gathering" }, { status: 404 });
   }
-  if (church.founderId !== userId) {
+  if (church.founderId !== userId && !isOwner(userId)) {
     return NextResponse.json(
       { error: "Only the founder can delete a Gathering" },
       { status: 403 }

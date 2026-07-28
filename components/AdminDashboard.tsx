@@ -64,12 +64,62 @@ export default function AdminDashboard() {
   const [data, setData] = useState<Summary | null>(null);
   const [denied, setDenied] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
     api<Summary>("/api/admin")
       .then(setData)
       .catch(() => setDenied(true));
   }, []);
+
+  /**
+   * Delete a Gathering from here, whoever founded it.
+   *
+   * The reason this exists rather than leaving it to founders: a Gathering
+   * started by a guest identity has no founder who can ever sign in again once
+   * accounts are switched on, so nothing else can remove it. The confirmation
+   * spells out what goes, because this takes it away from its members too.
+   */
+  const removeGathering = async (f: Gathering) => {
+    const warning =
+      `Delete "${f.name}"?\n\n` +
+      `${f.memberCount} member(s), ${f.threadCount} discussion(s), ` +
+      `${f.eventCount} session(s) go with it. This cannot be undone.`;
+    if (!window.confirm(warning)) return;
+    setRemoving(f.id);
+    try {
+      await api(`/api/churches/${f.id}`, { method: "DELETE" });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              gatherings: prev.gatherings.filter((g) => g.id !== f.id),
+              totals: {
+                ...prev.totals,
+                gatherings: Math.max(0, (prev.totals.gatherings ?? 1) - 1),
+                [f.visibility === "private"
+                  ? "privateGatherings"
+                  : "publicGatherings"]: Math.max(
+                  0,
+                  (prev.totals[
+                    f.visibility === "private"
+                      ? "privateGatherings"
+                      : "publicGatherings"
+                  ] ?? 1) - 1
+                ),
+                members: Math.max(0, (prev.totals.members ?? 0) - f.memberCount),
+                threads: Math.max(0, (prev.totals.threads ?? 0) - f.threadCount),
+                events: Math.max(0, (prev.totals.events ?? 0) - f.eventCount),
+              },
+            }
+          : prev
+      );
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setRemoving(null);
+    }
+  };
 
   if (denied) {
     return <p className="empty glass card">{t("join.invalid")}</p>;
@@ -136,7 +186,7 @@ export default function AdminDashboard() {
                   <td>{f.threadCount}</td>
                   <td>{f.eventCount}</td>
                   <td>{date(f.createdAt)}</td>
-                  <td>
+                  <td className="admin-row-actions">
                     <button
                       type="button"
                       className="rsvp-btn"
@@ -145,6 +195,16 @@ export default function AdminDashboard() {
                       }
                     >
                       {expanded === f.id ? "▴" : "▾"}
+                    </button>
+                    <button
+                      type="button"
+                      className="rsvp-btn jr-danger"
+                      title={`Delete ${f.name}`}
+                      aria-label={`Delete ${f.name}`}
+                      disabled={removing === f.id}
+                      onClick={() => removeGathering(f)}
+                    >
+                      <Icon name="trash" />
                     </button>
                   </td>
                 </tr>
