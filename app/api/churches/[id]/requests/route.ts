@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
 import { getChurch, joinChurch } from "@/lib/churches";
 import { emailEnabled, requestEmail, sendEmail } from "@/lib/email";
-import { pushEnabled, sendPushToUser } from "@/lib/push";
+import { sendPushToUser } from "@/lib/push";
 
 /**
  * Join a Gathering. An open one admits at once; a private one asks its
@@ -34,7 +34,9 @@ export async function POST(
 
   // best-effort founder notification
   const churchForNotify = await getChurch(id);
-  if (pushEnabled() && churchForNotify) {
+  // not gated on push: the founder's record of who arrived should not depend
+  // on whether this deployment can buzz their phone about it
+  if (churchForNotify) {
     await sendPushToUser(churchForNotify.founderId, {
       title: `🙏 ${displayName}`,
       body: joined

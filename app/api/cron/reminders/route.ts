@@ -105,14 +105,16 @@ export async function GET(req: Request) {
           // deleted user — skip
         }
       }
-      if (pushEnabled()) {
-        pushes += await sendPushToUser(userId, {
-          title: `⛪ ${title}`,
-          body: `${churchName} · ${when}`,
-          url: `/churches/${event.churchId}`,
-          tag: `reminder-${eventId}`,
-        });
-      }
+      // Not gated on push being configured. sendPushToUser writes the
+      // notification to the reader's history before it looks at a VAPID key
+      // at all, and the history is the record of what happened — whether or
+      // not this deployment can also make a phone buzz about it.
+      pushes += await sendPushToUser(userId, {
+        title: `⛪ ${title}`,
+        body: `${churchName} · ${when}`,
+        url: `/churches/${event.churchId}`,
+        tag: `reminder-${eventId}`,
+      });
       if (smsEnabled()) {
         const profile = await kv.hgetall(keys.user(userId));
         if (profile?.phone && profile.smsReminders === "1") {
@@ -168,7 +170,7 @@ function dayIn(timeZone: string | undefined): string {
  * today's reading, skipping plans already read today and finished plans.
  */
 async function sweepPlanReminders(): Promise<{ notified: number }> {
-  if (!pushEnabled()) return { notified: 0 };
+  // no push gate: see the note above the session reminder
   const kv = db();
   const userIds = await kv.smembers(keys.planUsers);
   let notified = 0;
