@@ -90,6 +90,14 @@ function rowsOfBook(b: number, notes: Record<string, string>): NoteRow[] {
   return out;
 }
 
+/**
+ * What the collection picker means by "somewhere new".
+ *
+ * A sentinel rather than an empty value, because empty already means Unsorted
+ * and the two are opposite intentions.
+ */
+const NEW_COLL = "__new";
+
 export default function Journal() {
   const { lang, t } = useI18n();
   const [tab, setTab] = useState<Tab>("notes");
@@ -115,6 +123,8 @@ export default function Journal() {
   const [draft, setDraft] = useState("");
   /** the collection a bookmark is being moved to, while it is being edited */
   const [draftColl, setDraftColl] = useState("");
+  /** and the name of one that has still to be made, if that is what was picked */
+  const [newColl, setNewColl] = useState("");
   /** the row under the finger, and the order the collection is now in */
   const [drag, setDrag] = useState<DragState | null>(null);
 
@@ -327,12 +337,35 @@ export default function Journal() {
     setEditing(id);
     setDraft(text);
     setDraftColl(coll);
+    setNewColl("");
   };
 
   const closeEdit = () => {
     setEditing(null);
     setDraft("");
     setDraftColl("");
+    setNewColl("");
+  };
+
+  /**
+   * Name a collection and hand back its id.
+   *
+   * The id is minted here rather than asked for, the same as in the reader:
+   * everything else on this screen writes to the device first and the server
+   * afterwards, and a shelf you cannot start without a signal would be the
+   * one thing here that needs one.
+   */
+  const createCollectionNamed = (name: string): string | null => {
+    const trimmed = name.trim().slice(0, 80);
+    if (!trimmed) return null;
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const next = { ...collections, [id]: { name: trimmed } };
+    setCollections(next);
+    void writeLocalState({ collections: next });
+    void enqueue({ kind: "collection.set", id, name: trimmed, ts: Date.now() });
+    return id;
   };
 
   /** Rewrite a note, or delete it — an empty one is a deleted one. */
@@ -362,12 +395,16 @@ export default function Journal() {
     closeEdit();
   };
 
-  /** Rename a kept verse, or move it to another collection. */
+  /**
+   * Rename a kept verse, or move it to another collection — including one that
+   * does not exist yet, which is made on the way past.
+   */
   const saveBookmark = (key: string, label: string, coll: string) => {
+    const filed = coll === NEW_COLL ? (createCollectionNamed(newColl) ?? "") : coll;
     const entry: BmEntry = { ...bookmarks[key] };
     if (label.trim()) entry.l = label.trim().slice(0, 80);
     else delete entry.l;
-    if (coll) entry.c = coll;
+    if (filed) entry.c = filed;
     else delete entry.c;
     const next = { ...bookmarks, [key]: entry };
     setBookmarks(next);
@@ -1050,7 +1087,29 @@ export default function Journal() {
                                 {coll.name}
                               </option>
                             ))}
+                            {/* the list could only ever move a verse between
+                                shelves that already existed, which is no help
+                                the first time a verse wants one of its own */}
+                            <option value={NEW_COLL}>
+                              ＋ {t("journal.newCollection")}
+                            </option>
                           </select>
+                          {draftColl === NEW_COLL && (
+                            <input
+                              className="jr-edit-field"
+                              value={newColl}
+                              autoFocus
+                              maxLength={80}
+                              placeholder={t("reader.newCollection")}
+                              aria-label={t("reader.newCollection")}
+                              onChange={(e) => setNewColl(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && newColl.trim()) {
+                                  saveBookmark(row.key, draft, draftColl);
+                                }
+                              }}
+                            />
+                          )}
                           <div className="jr-edit-actions">
                             <button
                               type="button"
@@ -1069,6 +1128,10 @@ export default function Journal() {
                             <button
                               type="button"
                               className="btn btn-sm btn-primary"
+                              // a new shelf with no name is not a shelf yet
+                              disabled={
+                                draftColl === NEW_COLL && !newColl.trim()
+                              }
                               onClick={() =>
                                 saveBookmark(row.key, draft, draftColl)
                               }
