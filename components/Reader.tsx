@@ -15,7 +15,6 @@ import {
   getBook,
   getTranslation,
   isLicensed,
-  lxxPsalm,
   type ChapterData,
   type Verse,
 } from "@/lib/bible";
@@ -204,12 +203,6 @@ export default function Reader({
     verse: number;
   } | null>(null);
   const [wordAction, setWordAction] = useState("");
-  // Septuagint text for the chapter of the open word (Old Testament only)
-  const [lxx, setLxx] = useState<{
-    ch: number;
-    map: Record<number, string>;
-  } | null>(null);
-  const [lxxLoading, setLxxLoading] = useState(false);
   const [concFor, setConcFor] = useState<string | null>(null);
   // Abbott-Smith (Greek) / brief lexicon (Hebrew), loaded per bucket
   const [deepSource, setDeepSource] = useState<"strongs" | "absmith">(
@@ -1047,19 +1040,6 @@ export default function Reader({
     setWordSel({ ch, text, nums, verse });
     setWordAction("");
     setSharePickerOpen(false);
-    // Old Testament: bring in the Septuagint rendering of this chapter
-    if (bookNr <= 39 && lxx?.ch !== ch && !lxxLoading) {
-      setLxxLoading(true);
-      const lxxChapter = bookNr === 19 ? lxxPsalm(ch) : ch;
-      fetchChapter("lxx", bookNr, lxxChapter)
-        .then((json) => {
-          const map: Record<number, string> = {};
-          for (const v of json.verses) map[v.verse] = v.text;
-          setLxx({ ch, map });
-        })
-        .catch(() => setLxx({ ch, map: {} }))
-        .finally(() => setLxxLoading(false));
-    }
     // load the lexicon for this testament (and counts) on first use
     if (bookNr <= 39 && !lexHeb) {
       fetch("/lexicon/hebrew.json")
@@ -1125,26 +1105,12 @@ export default function Reader({
     loadDeep(num);
   };
 
-  /**
-   * The Septuagint line for the open verse. The LXX counts psalm
-   * superscriptions as verses where the KJV doesn't, so when the Greek
-   * chapter is longer we shift by the difference.
-   */
   /** The verses of any chapter of the open book. */
   const chDataOf = (ch: number): ChapterData | null => {
     const found = chapters.find((c) => c.ch === ch);
     return found
       ? { translation, bookNr, chapter: ch, verses: found.verses }
       : null;
-  };
-
-  const lxxLine = (): string | null => {
-    if (!wordSel || !lxx || lxx.ch !== wordSel.ch) return null;
-    const own = chDataOf(wordSel.ch);
-    if (!own) return null;
-    const drift = Object.keys(lxx.map).length - own.verses.length;
-    const offset = bookNr === 19 && drift > 0 ? drift : 0;
-    return lxx.map[wordSel.verse + offset] ?? lxx.map[wordSel.verse] ?? null;
   };
 
   /** Plain-text rendering of the open word study, for copy/share/note. */
@@ -1161,8 +1127,6 @@ export default function Reader({
       );
       if (entry.def) parts.push(entry.def.trim());
     }
-    const greek = lxxLine();
-    if (greek) parts.push(`LXX: ${greek.trim()}`);
     parts.push("— Communion");
     return parts.join("\n");
   };
@@ -1660,7 +1624,6 @@ export default function Reader({
   // a new chapter closes any open word translation
   useEffect(() => {
     setWordSel(null);
-    setLxx(null);
   }, [bookNr, chapter, study, translation]);
 
   // Leaving study mode, or changing translation, takes the concordance with
@@ -2413,21 +2376,6 @@ export default function Reader({
               })
             )}
           </div>
-          {bookNr <= 39 && (lxxLoading || lxxLine()) && (
-            <div className="lxx-block">
-              <p className="lex-meta lxx-head">
-                <Icon name="cross" /> {t("reader.lxx")}{" "}
-                <span className="lxx-note">{t("reader.lxxNote")}</span>
-              </p>
-              {lxxLoading ? (
-                <p className="skeleton">{t("common.loading")}</p>
-              ) : (
-                <p className="lxx-text" lang="el">
-                  {lxxLine()}
-                </p>
-              )}
-            </div>
-          )}
           {/* four to a row: icon over label, so Spanish fits too */}
           <div className="lex-actions word-actions">
             <button type="button" className="btn btn-sm" onClick={copyWord}>
