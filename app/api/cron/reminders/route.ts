@@ -186,8 +186,7 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
     if (profile.planNudgedOn === today) continue; // already nudged today
 
     const progress = (await kv.hgetall(keys.userPlans(userId))) ?? {};
-    const due: { name: string; day: number; label: string }[] =
-      [];
+    const due: { id: string; name: string; day: number; label: string }[] = [];
     for (const [planId, value] of Object.entries(progress)) {
       if (planId.endsWith(":on")) continue;
       const plan = getPlan(planId);
@@ -204,7 +203,7 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
           : `${first?.en} ${readings[0].c} – ${last?.en} ${
               readings[readings.length - 1].c
             }`;
-      due.push({ name: plan.name, day: done + 1, label });
+      due.push({ id: plan.id, name: plan.name, day: done + 1, label });
     }
     if (due.length === 0) continue;
 
@@ -216,7 +215,8 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
     await sendPushToUser(userId, {
       title: lead.name,
       body,
-      url: "/discover",
+      // straight to the plan itself, not to the top of the page it lives on
+      url: `/discover?plan=${lead.id}`,
       tag: `plan-${today}`,
     }).catch(() => {});
     await kv.hset(keys.user(userId), { planNudgedOn: today });

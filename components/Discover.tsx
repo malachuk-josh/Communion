@@ -37,6 +37,19 @@ export default function Discover() {
   const [tab, setTab] = useState<"scripture" | "gatherings">("scripture");
   const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
   const [gatherings, setGatherings] = useState<Gathering[]>([]);
+  /*
+   * The plan a reminder was about, if this page was opened by one.
+   *
+   * Read from window rather than useSearchParams: this page is prerendered,
+   * and that hook would either make it dynamic or need a Suspense boundary
+   * around the whole screen for a query string that is almost never there.
+   * Read once, on mount, because it only ever arrives with the navigation.
+   */
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("plan");
+    if (wanted && PLANS.some((p) => p.id === wanted)) setOpenPlan(wanted);
+  }, []);
 
   useEffect(() => {
     api<{ churches: DiscoverChurch[]; gatherings: Gathering[] }>("/api/discover")
@@ -77,7 +90,7 @@ export default function Discover() {
         <>
           <VerseOfDay />
           <TopicsSection />
-          <PlansSection />
+          <PlansSection open={openPlan} />
         </>
       ) : (
         <>
@@ -223,14 +236,25 @@ function TopicsSection() {
   );
 }
 
-function PlansSection() {
+function PlansSection({ open }: { open: string | null }) {
   const { lang, t } = useI18n();
   const [progress, setProgress] = useState<Record<string, number>>({});
   // the handlers need what progress is *now*, not what it was when they were
   // built: two quick taps on "mark read" should count as two days
   const progressRef = useRef<Record<string, number>>({});
-  // no "everything" chip: the plans open on the first category
-  const [filter, setFilter] = useState<string>(PLAN_CATEGORIES[0]);
+  /*
+   * Which chip is up.
+   *
+   * Normally the first, because the plans have to open on something. When a
+   * reminder has named a plan it is that plan's own category instead — the
+   * chips are a filter, so landing on the wrong one would mean arriving at a
+   * page that does not contain the thing you were sent to see.
+   */
+  const [filter, setFilter] = useState<string>(
+    (open && PLANS.find((p) => p.id === open)?.category) || PLAN_CATEGORIES[0]
+  );
+  /** the card a reminder pointed at, marked until it is looked at */
+  const [pointed, setPointed] = useState<string | null>(open);
 
   const apply = (next: Record<string, number>) => {
     progressRef.current = next;
@@ -303,6 +327,37 @@ function PlansSection() {
 
   const reset = (planId: string) => setDone(planId, 0);
 
+  /*
+   * A reminder named a plan. Show the chip that contains it, then put it in
+   * front of the reader.
+   *
+   * Two steps and not one, because the card cannot be scrolled to until the
+   * filter holding it has been applied — and the filter is applied by a
+   * render. The scroll below runs after that render has committed, which is
+   * the first moment the card exists to be scrolled to.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const plan = PLANS.find((p) => p.id === open);
+    if (!plan) return;
+    setFilter(plan.category);
+    setPointed(open);
+  }, [open]);
+
+  useEffect(() => {
+    if (!pointed) return;
+    const el = document.getElementById(`plan-${pointed}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // The ring is a pointer, not a state: it says "this one", and once the
+    // reader is looking at it it has nothing left to say. Six seconds, and
+    // not three, because the clock starts here — before the smooth scroll
+    // has even arrived — so a short one can be over by the time the card is
+    // under the reader's eyes.
+    const timer = window.setTimeout(() => setPointed(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [pointed, filter]);
+
   const started = PLANS.filter(
     (p) => (progress[p.id] ?? 0) > 0 && (progress[p.id] ?? 0) < p.days.length
   );
@@ -352,7 +407,13 @@ function PlansSection() {
           const finished = done >= total;
           const today = finished ? null : plan.days[done];
           return (
-            <div key={plan.id} className="glass card plan-card">
+            <div
+              key={plan.id}
+              id={`plan-${plan.id}`}
+              className={`glass card plan-card${
+                pointed === plan.id ? " plan-pointed" : ""
+              }`}
+            >
               <div className="plan-head">
                 <h3>
                   <Icon name={plan.icon} /> {t(`plan.${plan.id}` as MessageKey)}

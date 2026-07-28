@@ -953,7 +953,13 @@ nav.bottom-nav.glass {
   gap: 8px;
 }
 
-.plan-card + .plan-card {
+.plan-card + /* the plan a reminder pointed at, for as long as it takes to notice it */
+.plan-pointed {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold-soft);
+}
+
+.plan-card {
   margin-top: 12px;
 }
 
