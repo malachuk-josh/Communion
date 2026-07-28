@@ -42,14 +42,25 @@ interface NotifEntry {
   ts: number;
 }
 
-/**
- * The shelf life, applied here as well as on the server. The server filters
- * what it sends, but this answer is one the service worker is allowed to keep
- * — so with no signal what arrives is whatever was true when it was last
- * asked, and by tomorrow that could be a day and a half old. Re-checking the
- * age of what is about to be drawn keeps the promise on screen true.
+/*
+ * There was a second age check here, on top of the server's.
+ *
+ * It earned its place while the shelf life was a day: this answer is one the
+ * service worker may keep, so with no signal what arrived could be a day and
+ * a half old, and a screen promising the last day would have been lying by
+ * half of it. Against a month, a cached answer a day stale is a cached answer
+ * that is still true, and re-filtering it would only throw away rows the
+ * server meant to send. The server's window is the only one now.
  */
-const NOTIF_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How many notifications are shown before you ask for more.
+ *
+ * Five is what fits above the fold beside everything else on this screen,
+ * and what somebody opening the tab to check what they missed actually
+ * wants. The rest are a tap away rather than a scroll away.
+ */
+const NOTIF_PAGE = 5;
 
 /** "3:40 PM" for today, "Tue 8:15 AM" for yesterday — never a bare date. */
 function whenLabel(ts: number, lang: string): string {
@@ -87,6 +98,8 @@ export default function Messages() {
    * the Table, and they now read as peers.
    */
   const [tab, setTab] = useState<"convs" | "prayer" | "history">("convs");
+  /** how many of them are on screen; grows by NOTIF_PAGE on each request */
+  const [notifShown, setNotifShown] = useState(NOTIF_PAGE);
   const showHistory = tab === "history";
   const [history, setHistory] = useState<NotifEntry[] | null>(null);
   /** the directory search: what was typed, who came back, and whether asking */
@@ -149,13 +162,15 @@ export default function Messages() {
   const goTo = (next: "convs" | "prayer" | "history") => {
     setTab(next);
     if (next !== "convs") setShowNew(false);
+    // coming back to the tab starts at the newest five again, not wherever a
+    // previous visit had unrolled it to
+    if (next === "history") setNotifShown(NOTIF_PAGE);
     // fetched once and kept: a day's worth does not change while it is open,
     // and re-asking on every visit would be a request for nothing
     if (next === "history" && history === null) {
       api<{ notifications: NotifEntry[] }>("/api/notifications")
         .then((res) => {
-          const since = Date.now() - NOTIF_TTL_MS;
-          setHistory(res.notifications.filter((n) => n.ts >= since));
+          setHistory(res.notifications);
         })
         .catch(() => setHistory([]));
     }
@@ -235,21 +250,36 @@ export default function Messages() {
           ) : history.length === 0 ? (
             <p className="cal-hint">{t("messages.historyEmpty")}</p>
           ) : (
-            <div className="notif-list">
-              {history.map((n, i) => (
-                <Link
-                  key={`${n.ts}-${i}`}
-                  href={n.url || "/menu/messages"}
-                  className="notif-row"
-                >
-                  <span className="notif-body">
-                    <strong>{n.title}</strong>
-                    <small>{n.body}</small>
-                  </span>
-                  <span className="conv-time">{whenLabel(n.ts, lang)}</span>
-                </Link>
-              ))}
-            </div>
+            <>
+              <div className="notif-list">
+                {history.slice(0, notifShown).map((n, i) => (
+                  <Link
+                    key={`${n.ts}-${i}`}
+                    href={n.url || "/menu/messages"}
+                    className="notif-row"
+                  >
+                    <span className="notif-body">
+                      <strong>{n.title}</strong>
+                      <small>{n.body}</small>
+                    </span>
+                    <span className="conv-time">{whenLabel(n.ts, lang)}</span>
+                  </Link>
+                ))}
+              </div>
+              {history.length > notifShown && (
+                <div className="notif-more">
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => setNotifShown((n) => n + NOTIF_PAGE)}
+                  >
+                    {t("messages.loadMore", {
+                      count: String(history.length - notifShown),
+                    })}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

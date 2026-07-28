@@ -174,8 +174,9 @@ const dictionaries = {
     "messages.prayerSubtitle":
       "What the believers around you are carrying. Pray with them.",
     "messages.history": "Notifications",
-    "messages.historySubtitle": "Session reminders, join requests, and new messages from the last 24 hours.",
-    "messages.historyEmpty": "Nothing in the last 24 hours — session reminders, join requests, and new messages appear here.",
+    "messages.loadMore": "Load more ({count})",
+    "messages.historySubtitle": "Session reminders, join requests, and new messages from the last month.",
+    "messages.historyEmpty": "Nothing in the last month — session reminders, join requests, and new messages appear here.",
     "menu.share": "Share Communion",
     "menu.shareDesc": "Text a friend an invitation to the app",
     "menu.shareMessage": "Come read the Word and fellowship with me on Communion 🙏 {url} — Tip: open the link, tap Share, then \"Add to Home Screen\" to use it like an app.",
@@ -786,8 +787,9 @@ const dictionaries = {
     "messages.prayerSubtitle":
       "Lo que llevan los creyentes a tu alrededor. Ora con ellos.",
     "messages.history": "Notificaciones",
-    "messages.historySubtitle": "Recordatorios de sesiones, solicitudes y mensajes nuevos de las últimas 24 horas.",
-    "messages.historyEmpty": "Nada en las últimas 24 horas — los recordatorios, solicitudes y mensajes nuevos aparecen aquí.",
+    "messages.loadMore": "Ver más ({count})",
+    "messages.historySubtitle": "Recordatorios de sesiones, solicitudes y mensajes nuevos del último mes.",
+    "messages.historyEmpty": "Nada en el último mes — los recordatorios, solicitudes y mensajes nuevos aparecen aquí.",
     "menu.share": "Comparte Communion",
     "menu.shareDesc": "Envía a un amigo una invitación a la app",
     "menu.shareMessage": "Ven a leer la Palabra y tener comunión conmigo en Communion 🙏 {url} — Consejo: abre el enlace, toca Compartir y luego \"Añadir a pantalla de inicio\" para usarla como una app.",

@@ -2508,6 +2508,13 @@ button.menu-tile {
   margin-bottom: 10px;
 }
 
+/* the way to the rest of them, under the five that are shown */
+.notif-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
 .notif-list {
   display: grid;
   gap: 4px;
