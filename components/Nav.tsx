@@ -19,8 +19,8 @@ const TAB_ORDER = [
   "/discover",
   "/churches",
   "/menu/messages",
-  "/",
   "/menu/journal",
+  "/",
 ] as const;
 
 /** Whether anything from here up scrolls sideways and so owns the gesture. */
@@ -47,6 +47,8 @@ export default function Nav() {
   const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
+  /** which way the last swipe went, read once by the animation after it lands */
+  const swipeDir = useRef<number | null>(null);
 
   /**
    * In The Word, reading down tucks the bottom bar away for an unbroken page;
@@ -89,6 +91,53 @@ export default function Nav() {
   useEffect(() => {
     document.documentElement.classList.toggle("navhide", navHidden);
   }, [navHidden]);
+
+  /**
+   * Warm the tabs either side of this one.
+   *
+   * A swipe asks for a page the moment the finger leaves the glass, and until
+   * this was here that was the moment the browser started fetching the code
+   * for it — which is what the pause between the flick and the new page was.
+   * Both neighbours, because the gesture goes either way, and only the
+   * neighbours, because that is as far as one flick reaches.
+   */
+  useEffect(() => {
+    const at = TAB_ORDER.indexOf(pathname as (typeof TAB_ORDER)[number]);
+    if (at === -1) return;
+    const warm = window.setTimeout(() => {
+      for (const step of [-1, 1]) {
+        const href = TAB_ORDER[at + step];
+        if (href) router.prefetch(href);
+      }
+    }, 300); // after this page has settled; it is the one being read
+    return () => window.clearTimeout(warm);
+  }, [pathname, router]);
+
+  /**
+   * Move the page in from the side it was swiped from.
+   *
+   * Without it a swipe is a flick followed by a still page that changes — the
+   * eye reads the gap as the app hesitating even when it is a tenth of a
+   * second. The animation is restarted by hand rather than left to a class
+   * change, because two swipes the same way in a row set the same class and a
+   * CSS animation will not replay for that.
+   */
+  useEffect(() => {
+    const dir = swipeDir.current;
+    swipeDir.current = null;
+    if (!dir) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const page = document.querySelector<HTMLElement>(".page");
+    if (!page) return;
+    page.classList.remove("page-swipe-next", "page-swipe-prev");
+    void page.offsetWidth; // reflow, so the animation runs again
+    page.classList.add(dir > 0 ? "page-swipe-next" : "page-swipe-prev");
+    const done = () => {
+      page.classList.remove("page-swipe-next", "page-swipe-prev");
+    };
+    page.addEventListener("animationend", done, { once: true });
+    return () => page.removeEventListener("animationend", done);
+  }, [pathname]);
 
   /**
    * Swipe across the bar: a hard flick left or right moves a tab.
@@ -156,17 +205,33 @@ export default function Nav() {
       if (speed < 0.7 && Math.abs(dx) < 160) return; // short must be quick
       const next = at + (dx < 0 ? 1 : -1);
       if (next < 0 || next >= TAB_ORDER.length) return;
+      swipeDir.current = dx < 0 ? 1 : -1;
       router.push(TAB_ORDER[next]);
+    };
+
+    // Halfway through a gesture that is already going one way, ask for the
+    // page it is heading to. By the time the finger lifts it is usually here.
+    const onMove = (e: TouchEvent) => {
+      if (!from) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const dx = touch.clientX - from.x;
+      if (Math.abs(dx) < 60) return;
+      const next = at + (dx < 0 ? 1 : -1);
+      if (next < 0 || next >= TAB_ORDER.length) return;
+      router.prefetch(TAB_ORDER[next]);
     };
 
     const onCancel = () => {
       from = null;
     };
     window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
     window.addEventListener("touchend", onEnd, { passive: true });
     window.addEventListener("touchcancel", onCancel, { passive: true });
     return () => {
       window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend", onEnd);
       window.removeEventListener("touchcancel", onCancel);
     };
@@ -304,17 +369,17 @@ export default function Nav() {
               )}
             </Link>
             <Link
+              href="/menu/journal"
+              className={`nav-link${isJournal ? " active" : ""}`}
+            >
+              {t("nav.journal")}
+            </Link>
+            <Link
               href="/"
               className={`nav-link${isWord ? " active" : ""}`}
               onClick={wordClick}
             >
               {t("nav.reader")}
-            </Link>
-            <Link
-              href="/menu/journal"
-              className={`nav-link${isJournal ? " active" : ""}`}
-            >
-              {t("nav.journal")}
             </Link>
           </div>
           {showPassage && (
@@ -419,16 +484,16 @@ export default function Nav() {
             <span className="nav-badge bn-badge">{pendingMsgs}</span>
           )}
         </Link>
-        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon"><Icon name="book" /></span>
-          <span>{t("nav.reader")}</span>
-        </Link>
         <Link
           href="/menu/journal"
           className={`bn-messages${isJournal ? " active" : ""}`}
         >
           <span className="bn-icon"><Icon name="scroll" /></span>
           <span>{t("nav.journal")}</span>
+        </Link>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
+          <span className="bn-icon"><Icon name="book" /></span>
+          <span>{t("nav.reader")}</span>
         </Link>
       </nav>
     </>

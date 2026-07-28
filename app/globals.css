@@ -195,6 +195,38 @@ a {
   padding: 24px 16px 96px;
 }
 
+/* The page arriving after a swipe, moving in from the side the finger came
+   from. Transform and opacity only, so it is composited and cannot cost a
+   layout; short, because it is covering a gap rather than performing. */
+@keyframes page-swipe-next {
+  from {
+    opacity: 0;
+    transform: translate3d(22px, 0, 0);
+  }
+}
+
+@keyframes page-swipe-prev {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 0, 0);
+  }
+}
+
+.page-swipe-next {
+  animation: page-swipe-next 0.17s ease-out;
+}
+
+.page-swipe-prev {
+  animation: page-swipe-prev 0.17s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-swipe-next,
+  .page-swipe-prev {
+    animation: none;
+  }
+}
+
 /* ---- The Word only ---- */
 /* Reader.tsx marks the document while scripture is open. Nothing here should
    reach any other screen. */
