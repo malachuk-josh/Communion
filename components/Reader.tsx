@@ -1042,18 +1042,6 @@ export default function Reader({
   const refsAt = (ch: number, verse: number): number[][] =>
     xrefs?.[`${ch}:${verse}`] ?? [];
 
-  /**
-   * The same sheet, opened on a verse rather than a word. Every translation
-   * has cross-references; only the KJV has words to tap, so this is how the
-   * others reach them.
-   */
-  const openVerseRefs = (ch: number, verse: number) => {
-    setPanelOpen(false);
-    setWordSel({ ch, text: "", nums: [], verse });
-    setWordAction("");
-    setSharePickerOpen(false);
-  };
-
   const openWord = (ch: number, text: string, nums: string[], verse: number) => {
     setPanelOpen(false);
     setWordSel({ ch, text, nums, verse });
@@ -1950,7 +1938,6 @@ export default function Reader({
               <div className="study-verses">
                 {verses.map((v) => {
                   const key = `${ch}:${v.verse}`;
-                  const refs = xrefs?.[key];
                   const note = notes[key];
                   const title = headAt(ch, v.verse);
                   return (
@@ -2015,21 +2002,10 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* One chip, not seven. The references themselves
-                            live in the word sheet now — a verse averages 7.4
-                            of them, which was three or four wrapped rows
-                            under every single verse. */}
-                        {refs && refs.length > 0 && (
-                          <button
-                            type="button"
-                            className="xref-chip"
-                            onClick={() => openVerseRefs(ch, v.verse)}
-                            aria-label={t("reader.crossRefs")}
-                            title={t("reader.crossRefs")}
-                          >
-                            <Icon name="link" /> {refs.length}
-                          </button>
-                        )}
+                        {/* No cross-reference chip. Tapping a word opens the
+                            sheet that already carries this verse's references,
+                            so the chip was a second door onto the same room —
+                            and a whole row of them down the chapter. */}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
@@ -2328,7 +2304,7 @@ export default function Reader({
               ✕
             </button>
           </div>
-          {/* the verse's cross-references, wherever this sheet was opened from */}
+          {/* the verse's cross-references — the only place they live now */}
           {refsAt(wordSel.ch, wordSel.verse).length > 0 && (
             <div className="lex-xrefs">
               <p className="lex-meta">
