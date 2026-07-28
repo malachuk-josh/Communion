@@ -47,6 +47,8 @@ const translations = {
 const study = merge(
   listDir("bible/lxx"),
   listDir("strongs"),
+  // what lets a translation nobody has tagged be read word by word
+  listDir("gloss"),
   listDir("lexicon"),
   listDir("concordance"),
   listDir("absmith"),

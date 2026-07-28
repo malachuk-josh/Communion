@@ -23,6 +23,7 @@ const DATA_PATHS = [
   "/paragraphs/",
   "/xref/",
   "/strongs/",
+  "/gloss/",
   "/lexicon/",
   "/concordance/",
   "/absmith/",

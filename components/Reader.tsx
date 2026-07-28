@@ -19,7 +19,13 @@ import {
   type Verse,
 } from "@/lib/bible";
 import { acrosticAt } from "@/lib/acrostic";
-import { alignVerse, type AlignedToken } from "@/lib/align";
+import {
+  alignVerse,
+  kjvTokens,
+  type AlignedToken,
+  type GlossEntry,
+  type GlossVocab,
+} from "@/lib/align";
 import {
   bmIndex,
   bmKeyOf,
@@ -181,6 +187,9 @@ export default function Reader({
   const [noteDraft, setNoteDraft] = useState("");
   /** aligned tokens per verse, built once and thrown away with their inputs */
   const alignCache = useRef(new Map<string, AlignedToken[]>());
+  /** the Berean's tagging of this book, and its whole-Bible vocabulary */
+  const [gloss, setGloss] = useState<Record<string, GlossEntry[]> | null>(null);
+  const [glossVocab, setGlossVocab] = useState<GlossVocab | null>(null);
   /** the verse held up beside every other translation, if any */
   const [compareAt, setCompareAt] = useState<{ ch: number; v: number } | null>(
     null
@@ -876,6 +885,48 @@ export default function Reader({
     };
   }, [study, bookNr]);
 
+  /*
+   * The evidence for reading an untagged translation word by word: the
+   * Berean's tagging of this book, and the vocabulary it uses across the whole
+   * Bible. Only fetched where it is needed — the King James carries its own
+   * tagging, and neither file is touched while reading it.
+   */
+  useEffect(() => {
+    if (!study || translation === "kjv") return;
+    let cancelled = false;
+    setGloss(null);
+    fetch(`/gloss/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (cancelled) return;
+        holdVerse();
+        setGloss(json);
+      })
+      .catch(() => {
+        if (!cancelled) setGloss({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, translation, bookNr]);
+
+  // the same vocabulary serves every book, so it is fetched once
+  useEffect(() => {
+    if (!study || translation === "kjv" || glossVocab) return;
+    let cancelled = false;
+    fetch("/gloss/vocab.json")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (!cancelled) setGlossVocab(json);
+      })
+      .catch(() => {
+        if (!cancelled) setGlossVocab({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [study, translation, glossVocab]);
+
   // chapter context (practical + spiritual), one static file per book
   useEffect(() => {
     if (!study) return;
@@ -1075,6 +1126,51 @@ export default function Reader({
         .then(setLexCounts)
         .catch(() => setLexCounts({}));
     }
+  };
+
+  /**
+   * The originals behind a verse, in the order the original stands.
+   *
+   * The way in for a verse whose words could not be matched to anything — a
+   * translation with no evidence behind it at all, like the Spanish, and the
+   * occasional English verse worded far enough from the Berean that nothing
+   * lines up. The list itself is exact: it is what the tagging says stands
+   * behind the verse, with no claim about which English word carries which.
+   */
+  const originalsAt = (
+    ch: number,
+    verse: number
+  ): { num: string; word: string }[] => {
+    const ref = `${ch}:${verse}`;
+    const out: { num: string; word: string }[] = [];
+    const seen = new Set<string>();
+    const add = (num: string | null, word: string) => {
+      if (!num || seen.has(num)) return;
+      seen.add(num);
+      out.push({ num, word: word.trim() });
+    };
+    if (translation === "kjv") {
+      for (const [text, nums] of strongsTokens?.[ref] ?? []) {
+        for (const num of nums ?? []) add(num, text);
+      }
+    } else {
+      for (const [num, phrase] of gloss?.[ref] ?? []) add(num, phrase);
+    }
+    return out;
+  };
+
+  /**
+   * The sheet, opened on a verse rather than a word.
+   *
+   * Offered only where no word of the verse could be underlined, so that a
+   * reader is never left with a verse study mode has nothing to say about.
+   */
+  const openVerseRefs = (ch: number, verse: number) => {
+    setPanelOpen(false);
+    setWordSel({ ch, text: "", nums: [], verse });
+    setWordAction("");
+    setSharePickerOpen(false);
+    loadLexicons();
   };
 
   const openWord = (
@@ -1656,10 +1752,11 @@ export default function Reader({
     setWordSel(null);
   }, [bookNr, chapter, study, translation]);
 
-  // the alignment belongs to one translation of one book; both invalidate it
+  // the alignment belongs to one translation of one book, and is built from
+  // the gloss: any of the three changing makes what is cached wrong
   useEffect(() => {
     alignCache.current.clear();
-  }, [translation, bookNr]);
+  }, [translation, bookNr, gloss, glossVocab]);
 
   // Leaving study mode, or changing translation, takes the concordance with
   // it. Deliberately not folded into the effect above: a chapter change must
@@ -1837,21 +1934,24 @@ export default function Reader({
    * many times over as the reader scrolls, zooms and marks it.
    */
   const tokensFor = (ch: number, verse: number): AlignedToken[] | null => {
-    const kjv = strongsTokens?.[`${ch}:${verse}`];
-    if (!kjv) return null;
+    const ref = `${ch}:${verse}`;
     // Cached whichever translation is open, not only the aligned ones: this
     // runs for every verse in the book on every render, and even the King
     // James's path allocates an array per verse without it.
-    const key = `${translation}|${ch}|${verse}`;
+    const key = `${translation}|${ref}`;
     const held = alignCache.current.get(key);
     if (held) return held;
     let made: AlignedToken[];
     if (translation === "kjv") {
-      made = kjv.map(([text, nums]) => [text, nums, true] as AlignedToken);
+      const tagged = strongsTokens?.[ref];
+      if (!tagged) return null;
+      made = kjvTokens(tagged);
     } else {
+      if (!gloss || !glossVocab) return null;
+      const entries = gloss[ref];
       const line = chDataOf(ch)?.verses.find((v) => v.verse === verse);
-      if (!line) return null;
-      made = alignVerse(line.text, kjv);
+      if (!entries || !line) return null;
+      made = alignVerse(line.text, entries, glossVocab);
     }
     alignCache.current.set(key, made);
     return made;
@@ -2032,11 +2132,23 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* No chip for the originals on any translation now.
-                            Every word is tappable everywhere, so the chip
-                            would be a second door onto the room the word
-                            already opens — which is the point of the words
-                            being underlined in the first place. */}
+                        {/* Normally the underlined words are the way in, so
+                            there is no chip. Where nothing could be matched
+                            — the Spanish, or a verse worded far from the
+                            evidence — the chip is what is left. */}
+                        {tokens !== null &&
+                          !tokens.some((tok) => tok[1]) &&
+                          originalsAt(ch, v.verse).length > 0 && (
+                            <button
+                              type="button"
+                              className="xref-chip"
+                              onClick={() => openVerseRefs(ch, v.verse)}
+                              aria-label={t("reader.originals")}
+                              title={t("reader.originals")}
+                            >
+                              <Icon name="letters" /> {t("reader.originals")}
+                            </button>
+                          )}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
@@ -2335,6 +2447,32 @@ export default function Reader({
               ✕
             </button>
           </div>
+          {wordSel.nums.length === 0 &&
+            originalsAt(wordSel.ch, wordSel.verse).length > 0 && (
+              <div className="lex-originals">
+                <p className="lex-meta">
+                  <Icon name="letters" /> {t("reader.originals")}
+                </p>
+                <div className="xref-chips">
+                  {originalsAt(wordSel.ch, wordSel.verse).map((o) => (
+                    <button
+                      key={o.num}
+                      type="button"
+                      className="xref-chip orig-chip"
+                      onClick={() =>
+                        openWord(wordSel.ch, o.word, [o.num], wordSel.verse)
+                      }
+                    >
+                      <span className="orig-lemma">
+                        {lexFor(o.num)?.lemma ?? o.num}
+                      </span>
+                      {o.word && <span className="orig-kjv">{o.word}</span>}
+                    </button>
+                  ))}
+                </div>
+                <p className="cal-hint orig-note">{t("reader.originalsNote")}</p>
+              </div>
+            )}
           {/* Said before anything else in the sheet, because everything after
               it is only as good as the match that got here. */}
           {wordSel.approx && (

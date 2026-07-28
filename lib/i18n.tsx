@@ -348,7 +348,7 @@ const dictionaries = {
     "reader.notePlaceholder": "Your thoughts on this verse…",
     "reader.originals": "Original text",
     "reader.originalsNote":
-      "The Hebrew and Greek behind this verse. Tapping a word needs a tagged text and only the King James has one, so these are listed by the verse instead.",
+      "The Hebrew and Greek behind this verse, in the order the original stands. None of this verse's words could be matched to one of them, so they are listed by the verse instead.",
     "reader.literalLabel": "Literal (YLT)",
     "reader.context": "Context",
     "reader.foundVerses": "Found in {count} verses",
@@ -416,9 +416,9 @@ const dictionaries = {
     "gram.place": "a place name",
     "gram.peopleGroup": "a people group",
     "gram.title": "a title",
-    "reader.strongsKjvOnly": "Only the KJV is tagged word by word. Here the words are lined up against it — a dotted underline marks the ones matched by position rather than by name.",
+    "reader.strongsKjvOnly": "Only the KJV is tagged word by word. Here a word is underlined when it can be matched to an original — solid where the Berean renders it the same way in this verse, dotted where the match is from elsewhere.",
     "reader.approxNote":
-      "Matched by position. Only the KJV is tagged word by word, so this word was lined up against the KJV rendering of the verse rather than tagged — it may belong to a neighbouring word.",
+      "Matched from elsewhere. The Berean Standard Bible renders this original with this word in other verses, but not in this one — so the match is likely rather than certain.",
     "reader.bookmarks": "Bookmarks",
     "reader.bookmark": "Bookmark",
     "reader.clearNote": "Clear",
@@ -952,7 +952,7 @@ const dictionaries = {
     "reader.notePlaceholder": "Tus reflexiones sobre este versículo…",
     "reader.originals": "Texto original",
     "reader.originalsNote":
-      "El hebreo y el griego detrás de este versículo. Tocar una palabra requiere un texto etiquetado y solo la King James lo tiene, así que aquí se listan por versículo.",
+      "El hebreo y el griego detrás de este versículo, en el orden del original. Ninguna palabra de este versículo pudo emparejarse con uno de ellos, así que aquí se listan por versículo.",
     "reader.literalLabel": "Literal (YLT)",
     "reader.context": "Contexto",
     "reader.foundVerses": "En {count} versículos",
@@ -1020,9 +1020,9 @@ const dictionaries = {
     "gram.place": "nombre de lugar",
     "gram.peopleGroup": "un pueblo",
     "gram.title": "un título",
-    "reader.strongsKjvOnly": "Solo la KJV está etiquetada palabra por palabra. Aquí las palabras se alinean con ella — el subrayado punteado marca las emparejadas por posición y no por nombre.",
+    "reader.strongsKjvOnly": "Solo la KJV está etiquetada palabra por palabra. Aquí una palabra se subraya cuando puede emparejarse con un original — sólido cuando la Berean la traduce igual en este versículo, punteado cuando el emparejamiento viene de otro lugar.",
     "reader.approxNote":
-      "Emparejada por posición. Solo la KJV está etiquetada palabra por palabra, así que esta palabra se alineó con la versión KJV del versículo en lugar de etiquetarse — puede corresponder a una palabra vecina.",
+      "Emparejada desde otro lugar. La Berean Standard Bible traduce este original con esta palabra en otros versículos, pero no en este — así que el emparejamiento es probable, no seguro.",
     "reader.bookmarks": "Marcadores",
     "reader.bookmark": "Marcador",
     "reader.clearNote": "Borrar",
