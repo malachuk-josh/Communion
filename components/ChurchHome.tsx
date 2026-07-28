@@ -76,17 +76,25 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
     }
   };
 
-  const requestToJoin = async () => {
+  /**
+   * Walk in, or knock.
+   *
+   * An open Gathering admits at once, so the answer that comes back is a
+   * membership rather than a promise — reload, and the page is the one members
+   * see. A private one still asks, and says so.
+   */
+  const joinGathering = async () => {
     const displayName =
       getSavedName() || window.prompt(t("churches.yourName")) || "";
     try {
-      await api(`/api/churches/${churchId}/requests`, {
-        method: "POST",
-        body: { displayName },
-      });
-      setRequested(true);
+      const res = await api<{ joined: boolean }>(
+        `/api/churches/${churchId}/requests`,
+        { method: "POST", body: { displayName } }
+      );
+      if (res.joined) load();
+      else setRequested(true);
     } catch {
-      // already requested or transient — reload shows the truth
+      // already a member, already asked, or transient — reload shows the truth
       load();
     }
   };
@@ -189,12 +197,15 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           ) : clerkEnabled && !myUserId ? (
             <SignInButton mode="modal" forceRedirectUrl={`/churches/${churchId}`}>
               <button className="btn btn-primary">
-                {t("churches.signInToRequest")}
+                {t("churches.signInToJoin")}
               </button>
             </SignInButton>
           ) : (
-            <button className="btn btn-primary" onClick={requestToJoin}>
-              <Icon name="prayer" /> {t("churches.requestJoin")}
+            <button className="btn btn-primary" onClick={joinGathering}>
+              <Icon name="handshake" />{" "}
+              {church.visibility === "private"
+                ? t("churches.requestJoin")
+                : t("churches.join")}
             </button>
           )}
         </div>

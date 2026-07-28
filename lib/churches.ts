@@ -284,19 +284,36 @@ export async function listPublicChurches(
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
-/** Ask to join a public church; the founder approves or declines. */
-export async function requestJoin(
+/**
+ * Join a Gathering.
+ *
+ * Open to all means open to all: walk in, and you are in. Asking a founder to
+ * approve somebody who arrived through a directory that exists to invite them
+ * was a door with a lock on a room with no walls — the founder learned nothing
+ * from the request they could not learn from the member list, and the person
+ * waited for it.
+ *
+ * Private is where approval belongs, and it is still here: nothing about a
+ * private Gathering is visible to somebody outside it, so in practice they
+ * arrive by invitation instead — but if one is ever reachable, it asks rather
+ * than admits.
+ */
+export async function joinChurch(
   churchId: string,
   userId: string,
   displayName: string
-): Promise<"ok" | "member" | "not_found"> {
+): Promise<"joined" | "requested" | "member" | "not_found"> {
   const church = await getChurch(churchId);
-  if (!church || church.visibility === "private") return "not_found";
+  if (!church) return "not_found";
   const role = await getRole(churchId, userId);
   if (role) return "member";
   await saveProfile(userId, displayName);
-  await db().hset(keys.churchRequests(churchId), { [userId]: displayName });
-  return "ok";
+  if (church.visibility === "private") {
+    await db().hset(keys.churchRequests(churchId), { [userId]: displayName });
+    return "requested";
+  }
+  await addMember(churchId, userId);
+  return "joined";
 }
 
 export async function resolveRequest(

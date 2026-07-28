@@ -179,6 +179,14 @@ export default function Reader({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  /** the verse held up beside every other translation, if any */
+  const [compareAt, setCompareAt] = useState<{ ch: number; v: number } | null>(
+    null
+  );
+  /** what each translation says there: undefined while it is still being asked */
+  const [compareRows, setCompareRows] = useState<
+    Record<string, string | null>
+  >({});
   // tap-a-word originals: tokenized KJV with Strong's numbers per word
   const [strongsTokens, setStrongsTokens] = useState<Record<
     string,
@@ -1366,6 +1374,33 @@ export default function Reader({
     setEditingNote(key);
   };
 
+  /**
+   * Hold one verse up against every translation the app has.
+   *
+   * Each is asked for separately and lands as it arrives, because they do not
+   * arrive together: the ones shipped as files answer from disk or the service
+   * worker, and the licensed ones are a request to a publisher apiece. Waiting
+   * for the slowest before showing any would make the whole thing feel like the
+   * slowest. A translation that cannot answer says so rather than vanishing —
+   * an absent row reads as "this verse is not in it", which would be a lie.
+   *
+   * Nothing is cached here beyond what fetchChapter already keeps, so the
+   * licensed ceiling on stored verses is the same one it has always been.
+   */
+  const openCompare = (ch: number, verse: number) => {
+    setPanelOpen(false);
+    setCompareAt({ ch, v: verse });
+    setCompareRows({});
+    for (const tr of TRANSLATIONS) {
+      fetchChapter(tr.id, bookNr, ch)
+        .then((json) => {
+          const line = json.verses.find((x) => x.verse === verse);
+          setCompareRows((prev) => ({ ...prev, [tr.id]: line?.text ?? null }));
+        })
+        .catch(() => setCompareRows((prev) => ({ ...prev, [tr.id]: null })));
+    }
+  };
+
   const saveNote = async (key: string) => {
     const text = noteDraft.trim();
     setNotes((prev) => {
@@ -1798,6 +1833,15 @@ export default function Reader({
     </form>
   );
 
+  /**
+   * Which note the bookmark sheet is editing.
+   *
+   * A note belongs to a verse and a bookmark may hold a run, so the note is
+   * the one on the verse the run starts at. Drawing the run longer does not
+   * move what was written; it stays on the verse it was written about.
+   */
+  const bmNoteKey = bmSheet ? `${bmSheet.c}:${bmSheet.v}` : "";
+
   return (
     <div className={panelOpen || concFor ? "reader-open" : undefined}>
       {results !== null && searchBar(false)}
@@ -2004,14 +2048,18 @@ export default function Reader({
                           />{" "}
                           {t("reader.bookmark")}
                         </button>
+                        {/* where the note chip was. Notes are kept from the
+                            bookmark sheet now — a verse worth writing on is a
+                            verse worth keeping, and that was two taps and two
+                            chips for one thought. */}
                         <button
                           type="button"
-                          className={`xref-chip note-chip${note ? " has-note" : ""}`}
-                          onClick={() => startNote(key)}
-                          aria-label={t("reader.addNote")}
-                          title={t("reader.addNote")}
+                          className="xref-chip"
+                          onClick={() => openCompare(ch, v.verse)}
+                          aria-label={t("reader.compare")}
+                          title={t("reader.compare")}
                         >
-                          <Icon name="note" /> {t("reader.note")}
+                          <Icon name="books" /> {t("reader.compare")}
                         </button>
                       </span>
                       {note && editingNote !== key && (
@@ -2570,7 +2618,10 @@ export default function Reader({
             <button
               type="button"
               className="lex-close"
-              onClick={() => setBmSheet(null)}
+              onClick={() => {
+                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                setBmSheet(null);
+              }}
               aria-label={t("search.close")}
             >
               ✕
@@ -2600,6 +2651,30 @@ export default function Reader({
                 ))}
             </select>
           </div>
+          {/* Keeping a verse and writing on it are one act, so they are one
+              sheet. The note is the first thing under the reference because it
+              is the thing you had in mind when you pressed the bookmark; the
+              filing can wait. It saves on its own, so leaving the sheet by any
+              route keeps what was written. */}
+          <p className="cal-label">{t("reader.note")}</p>
+          <textarea
+            className="bm-note"
+            value={
+              editingNote === bmNoteKey
+                ? noteDraft
+                : (notes[bmNoteKey] ?? "")
+            }
+            placeholder={t("reader.notePlaceholder")}
+            maxLength={1000}
+            rows={3}
+            onChange={(e) => {
+              setEditingNote(bmNoteKey);
+              setNoteDraft(e.target.value);
+            }}
+            onBlur={() => {
+              if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+            }}
+          />
           <p className="cal-label">{t("reader.addToCollection")}</p>
           <div className="chips bm-coll-chips">
             {Object.entries(collections).map(([id, coll]) => {
@@ -2666,7 +2741,10 @@ export default function Reader({
             <button
               type="button"
               className="btn btn-sm"
-              onClick={() => shareVerse(bmSheet.c, bmSheet.v, bmSheet.end)}
+              onClick={() => {
+                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                shareVerse(bmSheet.c, bmSheet.v, bmSheet.end);
+              }}
             >
               <Icon name="share" /> {t("discover.share")}
             </button>
@@ -2683,10 +2761,96 @@ export default function Reader({
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              onClick={() => setBmSheet(null)}
+              onClick={() => {
+                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                setBmSheet(null);
+              }}
             >
               {t("common.done")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* One verse, every translation the app has. The one being read comes
+          first and is marked as such — the question is always "against what
+          I am reading", and an alphabetical list would make the reader hunt
+          for their own place in it. */}
+      {compareAt !== null && (
+        <div
+          className="modal-overlay"
+          onClick={() => setCompareAt(null)}
+          role="presentation"
+        >
+          <div
+            className="glass modal compare-modal"
+            role="dialog"
+            aria-label={t("reader.compare")}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="lex-head">
+              <span className="lex-lemma">
+                <Icon name="books" /> {bookName} {compareAt.ch}:{compareAt.v}
+              </span>
+              <button
+                type="button"
+                className="lex-close"
+                onClick={() => setCompareAt(null)}
+                aria-label={t("search.close")}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="compare-list">
+              {[
+                ...TRANSLATIONS.filter((tr) => tr.id === translation),
+                ...TRANSLATIONS.filter((tr) => tr.id !== translation),
+              ].map((tr) => {
+                const said = compareRows[tr.id];
+                return (
+                  <div
+                    key={tr.id}
+                    className={`compare-row${
+                      tr.id === translation ? " reading" : ""
+                    }`}
+                  >
+                    <p className="compare-abbrev">
+                      {tr.abbrev}
+                      {tr.id === translation && (
+                        <span className="compare-here">
+                          {t("reader.compareReading")}
+                        </span>
+                      )}
+                    </p>
+                    {said === undefined ? (
+                      <p className="skeleton">{t("common.loading")}</p>
+                    ) : said === null ? (
+                      <p className="cal-hint">{t("reader.compareMissing")}</p>
+                    ) : (
+                      <p className="compare-text">{said}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* the licence for each borrowed translation follows its text
+                wherever that text goes, and this is one of those places */}
+            {TRANSLATIONS.filter((tr) => tr.notice && compareRows[tr.id]).map(
+              (tr) => (
+                <p key={tr.id} className="scripture-notice">
+                  {tr.notice}
+                </p>
+              )
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={() => setCompareAt(null)}
+              >
+                {t("common.done")}
+              </button>
+            </div>
           </div>
         </div>
       )}

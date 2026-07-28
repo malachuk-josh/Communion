@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
-import { getChurch, requestJoin } from "@/lib/churches";
+import { getChurch, joinChurch } from "@/lib/churches";
 import { emailEnabled, requestEmail, sendEmail } from "@/lib/email";
 import { pushEnabled, sendPushToUser } from "@/lib/push";
 
-/** Ask to join a public church. Notifies the founder by email/push when possible. */
+/**
+ * Join a Gathering. An open one admits at once; a private one asks its
+ * founder. Either way the founder is told, by push and by email where those
+ * are configured — the difference is whether there is anything to decide.
+ */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -19,25 +23,30 @@ export async function POST(
   } | null;
   const displayName = await getDisplayName(req, body?.displayName);
 
-  const result = await requestJoin(id, userId, displayName);
+  const result = await joinChurch(id, userId, displayName);
   if (result === "not_found") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (result === "member") {
     return NextResponse.json({ error: "Already a member" }, { status: 400 });
   }
+  const joined = result === "joined";
 
   // best-effort founder notification
   const churchForNotify = await getChurch(id);
   if (pushEnabled() && churchForNotify) {
     await sendPushToUser(churchForNotify.founderId, {
       title: `🙏 ${displayName}`,
-      body: `asked to join ${churchForNotify.name}`,
+      body: joined
+        ? `joined ${churchForNotify.name}`
+        : `asked to join ${churchForNotify.name}`,
       url: `/churches/${id}`,
       tag: `request-${id}-${userId}`,
     });
   }
-  if (emailEnabled()) {
+  // An open Gathering has nothing for its founder to act on, so it does not
+  // land in their inbox — the member list already says who is there.
+  if (emailEnabled() && !joined) {
     const church = churchForNotify;
     if (church?.founderId.startsWith("user_")) {
       try {
@@ -61,5 +70,5 @@ export async function POST(
     }
   }
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ joined }, { status: 201 });
 }

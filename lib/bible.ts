@@ -23,8 +23,18 @@ export interface Translation {
 /** Ours to ship: shipped whole, as files, and readable with no signal. */
 const PUBLIC_DOMAIN: Translation[] = [
   { id: "kjv", name: "King James Version", abbrev: "KJV", lang: "en" },
-  // the only translation here that is not in English, and the picker is the
-  // one place a reader finds that out before opening it
+];
+
+/**
+ * The Spanish one, and the reason it is kept apart.
+ *
+ * It sits at the foot of the picker rather than second from the top. Every
+ * other entry is a choice between English translations of the same passage,
+ * and this is a change of language — a list that puts it among them invites
+ * the reader to fall into Spanish by reaching one line too far. Its label
+ * says so too, which is the other half of the same answer.
+ */
+const OTHER_TONGUES: Translation[] = [
   { id: "valera", name: "Reina Valera (Spanish)", abbrev: "RV1909", lang: "es" },
 ];
 
@@ -126,6 +136,7 @@ const enabled = (id: string): boolean =>
 export const TRANSLATIONS: Translation[] = [
   ...PUBLIC_DOMAIN,
   ...LICENSED.filter((t) => enabled(t.id)),
+  ...OTHER_TONGUES,
 ];
 
 export const DEFAULT_TRANSLATION = "kjv";

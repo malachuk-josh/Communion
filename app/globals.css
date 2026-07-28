@@ -2941,10 +2941,67 @@ button.menu-tile {
   max-width: 55%;
 }
 
+/* the note, kept from the bookmark sheet */
+.bm-note {
+  width: 100%;
+  margin: 4px 0 10px;
+  resize: vertical;
+}
+
 .bm-coll-chips {
   margin: 6px 0 10px;
   max-height: calc(var(--vvh, 100dvh) * 0.22);
   overflow-y: auto;
+}
+
+/* One verse against every translation. The list scrolls inside the dialog
+   rather than the dialog growing past the screen — with six translations and
+   a verse the length of Esther 8:9, it would. */
+.compare-modal {
+  max-width: 34rem;
+}
+
+.compare-list {
+  margin: 4px 0 8px;
+  max-height: calc(var(--vvh, 100dvh) * 0.55);
+  overflow-y: auto;
+}
+
+.compare-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.compare-row:last-child {
+  border-bottom: 0;
+}
+
+.compare-abbrev {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.compare-row.reading .compare-abbrev {
+  color: var(--gold);
+}
+
+.compare-here {
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+
+.compare-text {
+  margin-top: 4px;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .chip-active {
