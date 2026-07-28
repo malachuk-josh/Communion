@@ -5,10 +5,12 @@
 // prayer is worth as much as the list of open ones.
 //
 // Two of them, from one component. With a churchId it is a Gathering's list,
-// members only. Without one it is the open wall in Discover, which anyone
-// including a guest may read and post to. Only where the records live and who
-// may moderate them differ; a prayer request behaves the same either way.
+// members only, and the place where asking happens. Without one it is the
+// prayer wall in Discover: the same requests, drawn together from every
+// Gathering the reader can see, and read only — nothing is asked there, so
+// there is no compose box and no button to open one.
 
+import Link from "next/link";
 import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
@@ -25,12 +27,16 @@ interface PrayerRequest {
   iPrayed: boolean;
   answeredAt?: number;
   answer?: string;
+  /** on the wall only: the Gathering it was asked in */
+  churchId?: string;
+  churchName?: string;
+  mine?: boolean;
 }
 
 export default function PrayerList({ churchId }: { churchId?: string }) {
   const wall = !churchId;
   const listPath = wall
-    ? "/api/prayers/public"
+    ? "/api/prayers/feed"
     : `/api/churches/${churchId}/prayers`;
   const { lang, t } = useI18n();
   const [prayers, setPrayers] = useState<PrayerRequest[] | null>(null);
@@ -44,21 +50,13 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
   /** the request whose answer is being written */
   const [answering, setAnswering] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
-  /** how many more the wall will take from this person this hour */
-  const [left, setLeft] = useState<number | null>(null);
 
   const load = useCallback(() => {
-    api<{
-      prayers: PrayerRequest[];
-      myUserId: string;
-      myRole: string;
-      left?: number;
-    }>(listPath)
+    api<{ prayers: PrayerRequest[]; myUserId: string; myRole: string }>(listPath)
       .then((res) => {
         setPrayers(res.prayers);
         setMyUserId(res.myUserId);
         setMyRole(res.myRole);
-        setLeft(res.left ?? null);
       })
       .catch(() => setPrayers([]));
   }, [listPath]);
@@ -76,7 +74,6 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
         body: { text: body, anonymous },
       });
       setPrayers((prev) => [res.prayer, ...(prev ?? [])]);
-      setLeft((n) => (n === null ? n : Math.max(0, n - 1)));
       setText("");
       setAnonymous(false);
       setOpen(false);
@@ -170,6 +167,13 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
             <em className="pr-anon">{t("prayers.anonymous")}</em>
           )}
           <span className="pr-when">{when(p.ts)}</span>
+          {/* on the wall a request is not from nowhere — say whose list it is
+              on, and let the reader go and sit with them */}
+          {wall && p.churchName && (
+            <Link href={`/churches/${p.churchId}`} className="pr-from">
+              <Icon name="church" /> {p.churchName}
+            </Link>
+          )}
         </span>
         {canClose(p) && (
           <span className="pr-tools">
@@ -269,17 +273,21 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
           <Icon name="prayer" /> {wall ? t("prayers.wall") : t("prayers.title")}
           {openRequests.length > 0 && ` (${openRequests.length})`}
         </h2>
-        <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
-          ＋ {t("prayers.add")}
-        </button>
+        {/* nothing is asked on the wall — it only shows what was asked
+            elsewhere, and the place to ask is the Gathering it belongs to */}
+        {!wall && (
+          <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
+            ＋ {t("prayers.add")}
+          </button>
+        )}
       </div>
 
       <p className="pr-privacy cal-hint">
-        <Icon name={wall ? "globe" : "lock"} />{" "}
-        {wall ? t("prayers.publicNote") : t("prayers.privacy")}
+        <Icon name={wall ? "people" : "lock"} />{" "}
+        {wall ? t("prayers.wallNote") : t("prayers.privacy")}
       </p>
 
-      {open && (
+      {open && !wall && (
         <div className="glass card pr-compose">
           <textarea
             value={text}
@@ -298,11 +306,6 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
             {t("prayers.anonymously")}
           </label>
           {error && <p className="error-text">{error}</p>}
-          {wall && left !== null && left <= 2 && (
-            <p className="cal-hint">
-              {t("prayers.wallLeft", { n: String(left) })}
-            </p>
-          )}
           <div className="pr-actions">
             <button
               type="button"

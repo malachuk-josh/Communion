@@ -118,11 +118,10 @@ const dictionaries = {
     "messages.tapToOpen": "Tap to read them all, and keep them",
     "prayers.title": "Prayer list",
     "prayers.wall": "Prayer wall",
-    "prayers.publicNote":
-      "Anyone using Communion can read this wall and add to it — believers you have never met will see what you write here.",
+    "prayers.wallNote":
+      "Everything being carried in your Gatherings, and in every Gathering open to all. To ask for prayer, open the Gathering you want to ask.",
     "prayers.wallEmpty":
-      "The wall is open and empty. Ask, and whoever is reading will pray for you.",
-    "prayers.wallLeft": "{n} more requests this hour.",
+      "Nothing is being carried right now. Requests asked in your Gatherings, and in any Gathering open to all, arrive here.",
     "prayers.add": "Ask for prayer",
     "prayers.privacy":
       "Only members of this Gathering can see the prayer list — not visitors, even when the Gathering is public.",
@@ -234,7 +233,7 @@ const dictionaries = {
     "discover.tabGatherings": "Gatherings",
     "discover.tabPrayer": "Prayer",
     "discover.subtitlePrayer":
-      "An open wall. Ask anyone using Communion to pray for you, and pray for them.",
+      "What the believers around you are carrying. Pray with them.",
     "discover.subtitleScripture":
       "A verse for today, passages for whatever you're carrying, and a plan to keep you in the Word.",
     "discover.subtitle":
@@ -716,11 +715,10 @@ const dictionaries = {
     "messages.tapToOpen": "Toca para leerlos todos y guardarlos",
     "prayers.title": "Lista de oración",
     "prayers.wall": "Muro de oración",
-    "prayers.publicNote":
-      "Cualquiera que use Communion puede leer este muro y escribir en él — creyentes que no conoces verán lo que escribas aquí.",
+    "prayers.wallNote":
+      "Todo lo que se lleva en tus Comunidades y en cada Comunidad abierta a todos. Para pedir oración, entra en la Comunidad donde quieras pedirla.",
     "prayers.wallEmpty":
-      "El muro está abierto y vacío. Pide, y quien lo esté leyendo orará por ti.",
-    "prayers.wallLeft": "{n} peticiones más esta hora.",
+      "Ahora mismo no hay nada que llevar. Las peticiones de tus Comunidades, y de cualquier Comunidad abierta a todos, llegan aquí.",
     "prayers.add": "Pedir oración",
     "prayers.privacy":
       "Solo los miembros de esta Comunidad pueden ver la lista de oración — los visitantes no, aunque la Comunidad sea pública.",
@@ -832,7 +830,7 @@ const dictionaries = {
     "discover.tabGatherings": "Comunidades",
     "discover.tabPrayer": "Oración",
     "discover.subtitlePrayer":
-      "Un muro abierto. Pide oración a cualquiera que use Communion, y ora por ellos.",
+      "Lo que llevan los creyentes a tu alrededor. Ora con ellos.",
     "discover.subtitleScripture":
       "Un versículo para hoy, pasajes para lo que llevas dentro y un plan para permanecer en la Palabra.",
     "discover.subtitle":

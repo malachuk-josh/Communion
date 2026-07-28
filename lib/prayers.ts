@@ -29,12 +29,11 @@ export interface PrayerRequest {
 }
 
 const MAX_TEXT = 1000;
-/** Posts one person may add to the open wall in an hour. */
-const WALL_RATE = 5;
-const WALL_WINDOW_S = 3600;
 const MAX_ANSWER = 1000;
 /** Deep enough for a year of a busy Gathering, shallow enough to stay fast. */
 const MAX_LIST = 300;
+/** How much of any one Gathering's list the wall will draw from. */
+const PER_SOURCE = 100;
 
 async function nameOf(userId: string): Promise<string> {
   const profile = await db().hgetall(keys.user(userId));
@@ -53,40 +52,48 @@ export async function listPrayers(
   return listFrom(keys.churchPrayers(churchId), churchId, viewerId);
 }
 
+/** One stored request, read out for a particular viewer. */
+async function hydrate(
+  id: string,
+  churchId: string,
+  viewerId: string
+): Promise<PrayerRequest | null> {
+  const kv = db();
+  const raw = await kv.hgetall(keys.prayer(id));
+  if (!raw?.text) return null;
+  const prayedBy = await kv.smembers(keys.prayerPrayed(id));
+  const answeredAt = Number(raw.answeredAt) || 0;
+  return {
+    id,
+    churchId: raw.churchId ?? churchId,
+    from: raw.from ?? "",
+    fromName: raw.fromName || "Believer",
+    text: raw.text,
+    ts: Number(raw.ts) || 0,
+    prayed: prayedBy.length,
+    iPrayed: prayedBy.includes(viewerId),
+    ...(answeredAt ? { answeredAt } : {}),
+    ...(raw.answer ? { answer: raw.answer } : {}),
+  } satisfies PrayerRequest;
+}
+
+/** Still being carried first, then newest — the order every list here uses. */
+function inOrder<T extends { answeredAt?: number; ts: number }>(rows: T[]): T[] {
+  return rows.sort(
+    (a, b) => Number(!!a.answeredAt) - Number(!!b.answeredAt) || b.ts - a.ts
+  );
+}
+
 async function listFrom(
   indexKey: string,
   churchId: string,
   viewerId: string
 ): Promise<PrayerRequest[]> {
-  const kv = db();
-  const ids = await kv.zrangebyscore(indexKey, 0, Number.MAX_SAFE_INTEGER);
+  const ids = await db().zrangebyscore(indexKey, 0, Number.MAX_SAFE_INTEGER);
   const rows = await Promise.all(
-    ids.slice(-MAX_LIST).map(async (id) => {
-      const raw = await kv.hgetall(keys.prayer(id));
-      if (!raw?.text) return null;
-      const prayedBy = await kv.smembers(keys.prayerPrayed(id));
-      const answeredAt = Number(raw.answeredAt) || 0;
-      return {
-        id,
-        churchId: raw.churchId ?? churchId,
-        from: raw.from ?? "",
-        fromName: raw.fromName || "Believer",
-        text: raw.text,
-        ts: Number(raw.ts) || 0,
-        prayed: prayedBy.length,
-        iPrayed: prayedBy.includes(viewerId),
-        ...(answeredAt ? { answeredAt } : {}),
-        ...(raw.answer ? { answer: raw.answer } : {}),
-      } satisfies PrayerRequest;
-    })
+    ids.slice(-MAX_LIST).map((id) => hydrate(id, churchId, viewerId))
   );
-  return rows
-    .filter((p): p is PrayerRequest => p !== null)
-    .sort(
-      (a, b) =>
-        // still being prayed for comes first, whatever the dates say
-        Number(!!a.answeredAt) - Number(!!b.answeredAt) || b.ts - a.ts
-    );
+  return inOrder(rows.filter((p): p is PrayerRequest => p !== null));
 }
 
 /** Tell the rest of the Gathering, but never who asked when they asked quietly. */
@@ -108,70 +115,63 @@ async function notify(
   }
 }
 
+export interface FeedPrayer extends PrayerRequest {
+  /** the Gathering it was asked in */
+  churchName: string;
+  /** whether the reader is a member there, or only looking in */
+  mine: boolean;
+}
+
 /**
- * The open wall: the same records, indexed under no Gathering.
+ * The prayer wall: everything being carried anywhere this reader can see.
  *
- * It is readable and postable by anyone, guests included, which is the point
- * and also the risk — a members-only list is protected by the membership, and
- * this one has nothing but what is written here. So: a cap on how many one
- * person may add in an hour, a cap on how many the wall carries, and the same
- * length limit as everywhere else. Whoever posted may withdraw it, and so may
- * the app's owner; there is no founder to moderate an open room.
+ * It used to be a room of its own — post here, and strangers pray. That was a
+ * fourth place to write, disconnected from the people you actually pray with,
+ * and it stayed empty. So nothing is written here any more. The wall now draws
+ * from the lists that already exist: every Gathering the reader belongs to,
+ * and every Gathering that is open to all, whether they have joined it or not.
+ * Asking still happens where the asking makes sense — inside a Gathering,
+ * among the people who will carry it.
+ *
+ * A private Gathering appears only to its members, which is what private
+ * means; the reader's own membership is the only thing that can bring one in.
+ *
+ * Bounded twice: at most a hundred from any one Gathering, so a busy list
+ * cannot crowd out the rest, and a few hundred in total.
  */
-export async function listPublicPrayers(
-  viewerId: string
-): Promise<PrayerRequest[]> {
-  return listFrom(keys.publicPrayers, "", viewerId);
-}
-
-/** Whether this person may post to the wall right now, and how many are left. */
-export async function wallAllowance(
-  userId: string
-): Promise<{ ok: boolean; left: number }> {
-  const used = Number((await db().hgetall(keys.prayerRate(userId)))?.n ?? 0);
-  return { ok: used < WALL_RATE, left: Math.max(0, WALL_RATE - used) };
-}
-
-export async function addPublicPrayer(
-  userId: string,
-  text: string,
-  anonymous: boolean
-): Promise<PrayerRequest | null> {
+export async function listPrayerFeed(viewerId: string): Promise<FeedPrayer[]> {
   const kv = db();
-  const { ok } = await wallAllowance(userId);
-  if (!ok) return null;
+  const memberOf = new Set(await kv.smembers(keys.userChurches(viewerId)));
+  const ids = await kv.smembers(keys.allChurches);
 
-  const id = randomUUID().replace(/-/g, "").slice(0, 12);
-  const now = Date.now();
-  const body = text.trim().slice(0, MAX_TEXT);
-  const fromName = anonymous ? "" : await nameOf(userId);
+  const sources: { id: string; name: string; mine: boolean }[] = [];
+  for (const id of ids) {
+    const raw = await kv.hgetall(keys.church(id));
+    if (!raw?.name) continue;
+    const mine = memberOf.has(id);
+    if (!mine && raw.visibility === "private") continue;
+    sources.push({ id, name: raw.name, mine });
+  }
 
-  await kv.hset(keys.prayer(id), {
-    churchId: "",
-    from: anonymous ? "" : userId,
-    fromName,
-    text: body,
-    ts: now,
-  });
-  await kv.zadd(keys.publicPrayers, now, id);
-
-  // the window starts at the first post and runs an hour from there, so the
-  // allowance refills in one step rather than sliding
-  const rateKey = keys.prayerRate(userId);
-  const used = Number((await kv.hgetall(rateKey))?.n ?? 0);
-  await kv.hset(rateKey, { n: used + 1 });
-  if (used === 0) await kv.expire(rateKey, WALL_WINDOW_S);
-
-  return {
-    id,
-    churchId: "",
-    from: anonymous ? "" : userId,
-    fromName: fromName || "Believer",
-    text: body,
-    ts: now,
-    prayed: 0,
-    iPrayed: false,
-  };
+  const rows: FeedPrayer[] = [];
+  for (const source of sources) {
+    const prayerIds = await kv.zrangebyscore(
+      keys.churchPrayers(source.id),
+      0,
+      Number.MAX_SAFE_INTEGER
+    );
+    const hydrated = await Promise.all(
+      prayerIds
+        .slice(-PER_SOURCE)
+        .map((id) => hydrate(id, source.id, viewerId))
+    );
+    for (const prayer of hydrated) {
+      if (prayer) {
+        rows.push({ ...prayer, churchName: source.name, mine: source.mine });
+      }
+    }
+  }
+  return inOrder(rows).slice(0, MAX_LIST);
 }
 
 export async function addPrayer(

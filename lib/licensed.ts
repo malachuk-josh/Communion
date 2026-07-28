@@ -32,7 +32,7 @@ export interface LicensedChapter {
  * Crossway serves itself. They share one key and one adapter and differ only
  * in which catalogue id they are asked for by.
  */
-const API_BIBLE = ["nkjv", "nasb", "niv", "nirv"];
+const API_BIBLE = ["nkjv", "nasb", "niv"];
 
 /** The catalogue id a translation is addressed by, if one is configured. */
 function apiBibleId(id: string): string | undefined {
@@ -41,7 +41,6 @@ function apiBibleId(id: string): string | undefined {
   if (id === "nkjv") return process.env.API_BIBLE_NKJV_ID || undefined;
   if (id === "nasb") return process.env.API_BIBLE_NASB_ID || undefined;
   if (id === "niv") return process.env.API_BIBLE_NIV_ID || undefined;
-  if (id === "nirv") return process.env.API_BIBLE_NIRV_ID || undefined;
   return undefined;
 }
 

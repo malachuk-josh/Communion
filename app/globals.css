@@ -4085,6 +4085,19 @@ button.menu-tile {
   color: var(--ink-faint);
 }
 
+/* which Gathering a request came from, on the wall — its own line, because
+   the name of a Gathering is as long as somebody chose to make it */
+.pr-from {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.pr-from:hover {
+  color: var(--gold);
+}
+
 .pr-tools {
   display: flex;
   align-items: center;
