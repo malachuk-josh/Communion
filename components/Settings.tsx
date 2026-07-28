@@ -348,9 +348,12 @@ export default function Settings() {
                     ? `★ ${t("churches.founder")}`
                     : t("discover.mine")}
                   {" · "}
-                  {t("discover.members", {
-                    count: String(church.memberCount),
-                  })}
+                  {t(
+                    church.memberCount === 1
+                      ? "discover.memberOne"
+                      : "discover.members",
+                    { count: String(church.memberCount) }
+                  )}
                   {" · "}
                   {church.visibility === "private"
                     ? t("churches.privateBadge")

@@ -534,7 +534,7 @@ function ChurchDirectory({ churches }: { churches: DiscoverChurch[] | null }) {
                   <span className="chip mine-chip">✓ {t("discover.mine")}</span>
                 )}
                 <span className="chip">
-                  <Icon name="people" /> {t("discover.members", { count: String(church.memberCount) })}
+                  <Icon name="people" /> {t(church.memberCount === 1 ? "discover.memberOne" : "discover.members", { count: String(church.memberCount) })}
                 </span>
               </span>
             </div>
