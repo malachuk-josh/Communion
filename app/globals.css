@@ -381,8 +381,36 @@ html.reading body::-webkit-scrollbar {
 
 .discover-tabs button {
   flex: 1;
+  /* a segment is a row of two things, not a paragraph that happens to start
+     with an icon — so it is laid out as one, and the label never breaks */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
   font-size: 0.95rem;
   padding: 10px 14px;
+}
+
+/*
+ * Three across a phone will not sit on one line.
+ *
+ * "Conversations" and "Notifications" are thirteen and fourteen characters,
+ * and in Spanish both are fourteen; three of those plus their icons want
+ * about 150px each and a 430px screen has 133 to give. What happened was not
+ * that they overflowed — it was that two of them wrapped their icon onto the
+ * line above and the short one did not, so the same control was set three
+ * different ways.
+ *
+ * So at three, the icon goes over the label rather than beside it, which is
+ * how the bar at the bottom of the screen sets the same pairing, and every
+ * segment is set the same way. Two segments have the room and keep the line.
+ */
+.discover-tabs:has(button:nth-child(3)) button {
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.84rem;
+  padding: 7px 6px;
 }
 
 .discover-start {
