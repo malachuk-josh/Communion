@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
@@ -10,8 +10,35 @@ import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 
+/**
+ * The tabs, in the order the bar shows them. The swipe reads this, and the bar
+ * and the desktop row are written from the same order by hand — if they ever
+ * disagree, a swipe would go somewhere the reader cannot see it went.
+ */
+const TAB_ORDER = [
+  "/discover",
+  "/churches",
+  "/menu/messages",
+  "/",
+  "/menu/journal",
+] as const;
+
+/** Whether anything from here up scrolls sideways and so owns the gesture. */
+function scrollsSideways(from: EventTarget | null): boolean {
+  let el = from instanceof Element ? from : null;
+  while (el && el !== document.body) {
+    if (el.scrollWidth > el.clientWidth + 2) {
+      const overflow = getComputedStyle(el).overflowX;
+      if (overflow === "auto" || overflow === "scroll") return true;
+    }
+    el = el.parentElement;
+  }
+  return false;
+}
+
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang, t } = useI18n();
   const { position, panelOpen, setPanelOpen, study, toggleStudy } =
     useReading();
@@ -62,6 +89,88 @@ export default function Nav() {
   useEffect(() => {
     document.documentElement.classList.toggle("navhide", navHidden);
   }, [navHidden]);
+
+  /**
+   * Swipe across the bar: a hard flick left or right moves a tab.
+   *
+   * Deliberately hard to trigger by accident, because almost every gesture on
+   * these pages is a scroll and a scroll is never perfectly vertical. So it
+   * asks for distance AND for the movement to be mostly sideways AND — for
+   * anything short of a very long drag — for speed as well. A slow sideways
+   * pull does nothing; that is somebody steadying their thumb, not asking to
+   * leave the page.
+   *
+   * Four things are left alone entirely:
+   *  - two fingers, which is the reader's pinch
+   *  - gestures beginning at the screen edges, which iOS owns for back and
+   *    forward, and which would otherwise race the browser's own animation
+   *  - anything begun inside something that scrolls sideways — a table, a row
+   *    of chips — which owns the gesture and says so by being scrollable
+   *  - anything begun while a sheet or a dialog is open, where the swipe
+   *    would move the page out from under whatever is being read on top of it
+   *
+   * Nothing wraps. Swiping past the last tab does nothing rather than landing
+   * on the first: the bar has ends, and a gesture that jumps from one end to
+   * the other reads as a mistake even when it was asked for.
+   */
+  useEffect(() => {
+    const at = TAB_ORDER.indexOf(pathname as (typeof TAB_ORDER)[number]);
+    // a page under no tab — the menu, a Gathering, a conversation — is a place
+    // the reader arrived at deliberately, and not somewhere to be flicked out of
+    if (at === -1) return;
+
+    let from: { x: number; y: number; t: number } | null = null;
+
+    const onStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const edge = 28;
+      if (
+        e.touches.length !== 1 ||
+        touch.clientX < edge ||
+        touch.clientX > window.innerWidth - edge ||
+        scrollsSideways(e.target) ||
+        document.querySelector(
+          ".modal-overlay, .lex-sheet, .side-panel, .conc-panel"
+        )
+      ) {
+        from = null;
+        return;
+      }
+      from = { x: touch.clientX, y: touch.clientY, t: performance.now() };
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      const start = from;
+      from = null;
+      const touch = e.changedTouches[0];
+      if (!start || !touch) return;
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      const speed = Math.abs(dx) / Math.max(1, performance.now() - start.t);
+      if (Math.abs(dx) < 90) return; // a nudge
+      if (Math.abs(dx) < Math.abs(dy) * 1.7) return; // a scroll that wandered
+      // Speed is asked for however far the finger went. A long slow drag is
+      // somebody moving their hand, not somebody leaving the page — the word
+      // for the gesture is a flick, and a flick has a speed.
+      if (speed < 0.35) return;
+      if (speed < 0.7 && Math.abs(dx) < 160) return; // short must be quick
+      const next = at + (dx < 0 ? 1 : -1);
+      if (next < 0 || next >= TAB_ORDER.length) return;
+      router.push(TAB_ORDER[next]);
+    };
+
+    const onCancel = () => {
+      from = null;
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    window.addEventListener("touchcancel", onCancel, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchcancel", onCancel);
+    };
+  }, [pathname, router]);
 
   // pending badge: unread direct messages. Refreshes on navigation, on
   // returning to the app, and every 45s; mirrors to the app icon badge where
