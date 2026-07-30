@@ -25,6 +25,39 @@ const TAB_ORDER = [
   "/",
 ] as const;
 
+/*
+ * What counts as a swipe across the tabs.
+ *
+ * Gathered here rather than left inline because they are one judgement made
+ * in four numbers, and moving any of them without seeing the others is how a
+ * gesture ends up either impossible or firing on every scroll.
+ *
+ * These were once much stricter — 90px, and a short swipe had to move at
+ * 700px/s. That is a hard flick, faster than most people move a thumb, and
+ * the common report was that swiping simply did not work. The guard against
+ * a wandering scroll is SIDEWAYS, not distance or speed: a scroll's vertical
+ * travel dwarfs its horizontal, so requiring the horizontal to lead by a
+ * clear margin rules it out on its own. Distance and speed only have to rule
+ * out a fidget, and a fidget is small AND slow.
+ */
+/** Below this the finger has not gone anywhere. */
+const SWIPE_MIN_DX = 50;
+/** Horizontal must lead vertical by this much — the real scroll guard. */
+const SWIPE_SIDEWAYS = 1.3;
+/** px/ms. Under this it is a hand being moved, not a page being turned. */
+const SWIPE_MIN_SPEED = 0.15;
+/** A swipe shorter than this must also be quicker than SWIPE_QUICK. */
+const SWIPE_LONG_DX = 110;
+const SWIPE_QUICK = 0.3;
+/**
+ * How near the screen edge a gesture may start.
+ *
+ * iOS owns the very edge for its own back and forward, and racing it looks
+ * broken. This stays a little wider than the ~20px the system claims, and no
+ * wider: every pixel here is a pixel where swiping does nothing.
+ */
+const SWIPE_EDGE = 22;
+
 /** Whether anything from here up scrolls sideways and so owns the gesture. */
 function scrollsSideways(from: EventTarget | null): boolean {
   let el = from instanceof Element ? from : null;
@@ -141,14 +174,12 @@ export default function Nav() {
   }, [pathname]);
 
   /**
-   * Swipe across the bar: a hard flick left or right moves a tab.
+   * Swipe across the page: a flick left or right moves a tab.
    *
-   * Deliberately hard to trigger by accident, because almost every gesture on
-   * these pages is a scroll and a scroll is never perfectly vertical. So it
-   * asks for distance AND for the movement to be mostly sideways AND — for
-   * anything short of a very long drag — for speed as well. A slow sideways
-   * pull does nothing; that is somebody steadying their thumb, not asking to
-   * leave the page.
+   * It asks for the movement to be mostly sideways above all — that is what
+   * tells a swipe from a scroll that wandered — and then for enough distance
+   * and, on a short one, enough speed to rule out a fidget. The thresholds
+   * are the SWIPE_ constants at the top of this file.
    *
    * Four things are left alone entirely:
    *  - two fingers, which is the reader's pinch
@@ -173,11 +204,10 @@ export default function Nav() {
 
     const onStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      const edge = 28;
       if (
         e.touches.length !== 1 ||
-        touch.clientX < edge ||
-        touch.clientX > window.innerWidth - edge ||
+        touch.clientX < SWIPE_EDGE ||
+        touch.clientX > window.innerWidth - SWIPE_EDGE ||
         scrollsSideways(e.target) ||
         document.querySelector(
           ".modal-overlay, .lex-sheet, .side-panel, .conc-panel"
@@ -197,13 +227,13 @@ export default function Nav() {
       const dx = touch.clientX - start.x;
       const dy = touch.clientY - start.y;
       const speed = Math.abs(dx) / Math.max(1, performance.now() - start.t);
-      if (Math.abs(dx) < 90) return; // a nudge
-      if (Math.abs(dx) < Math.abs(dy) * 1.7) return; // a scroll that wandered
-      // Speed is asked for however far the finger went. A long slow drag is
-      // somebody moving their hand, not somebody leaving the page — the word
-      // for the gesture is a flick, and a flick has a speed.
-      if (speed < 0.35) return;
-      if (speed < 0.7 && Math.abs(dx) < 160) return; // short must be quick
+      if (Math.abs(dx) < SWIPE_MIN_DX) return; // a nudge
+      // the one that matters: a scroll's vertical travel dwarfs its horizontal
+      if (Math.abs(dx) < Math.abs(dy) * SWIPE_SIDEWAYS) return;
+      if (speed < SWIPE_MIN_SPEED) return;
+      // A long drag may take its time; a short one has to be a flick, or a
+      // thumb resettling sideways would turn the page.
+      if (speed < SWIPE_QUICK && Math.abs(dx) < SWIPE_LONG_DX) return;
       const next = at + (dx < 0 ? 1 : -1);
       if (next < 0 || next >= TAB_ORDER.length) return;
       swipeDir.current = dx < 0 ? 1 : -1;
@@ -217,7 +247,9 @@ export default function Nav() {
       const touch = e.touches[0];
       if (!touch) return;
       const dx = touch.clientX - from.x;
-      if (Math.abs(dx) < 60) return;
+      // below the distance that could still become a swipe, so the page is
+      // usually already here by the time the finger lifts
+      if (Math.abs(dx) < SWIPE_MIN_DX - 16) return;
       const next = at + (dx < 0 ? 1 : -1);
       if (next < 0 || next >= TAB_ORDER.length) return;
       router.prefetch(TAB_ORDER[next]);
