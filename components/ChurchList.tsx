@@ -6,11 +6,12 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import StartGathering from "@/components/StartGathering";
+import UpcomingSessions from "@/components/UpcomingSessions";
 import type { Church, DiscoverChurch } from "@/lib/types";
 
 export default function ChurchList() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"mine" | "public">("mine");
+  const [tab, setTab] = useState<"mine" | "public" | "sessions">("mine");
   const [churches, setChurches] = useState<Church[] | null>(null);
   const [open, setOpen] = useState<DiscoverChurch[] | null>(null);
 
@@ -36,7 +37,13 @@ export default function ChurchList() {
     <div>
       <div className="section-head">
         <h1 className="page-title" style={{ margin: 0 }}>
-          {t(tab === "mine" ? "churches.title" : "churches.titlePublic")}
+          {t(
+            tab === "mine"
+              ? "churches.title"
+              : tab === "public"
+                ? "churches.titlePublic"
+                : "churches.titleSessions"
+          )}
         </h1>
         <StartGathering
           // a new Gathering starts public, so it belongs on both shelves
@@ -50,7 +57,9 @@ export default function ChurchList() {
           }}
         />
       </div>
-      {/* the ones you are in, and the ones anyone may ask to join */}
+      {/* The ones you are in, the ones anyone may ask to join, and when the
+          first of those next meet. Two of the three ask who; the third asks
+          when, which is the question this page could not answer before. */}
       <div className="lang-toggle discover-tabs" role="group">
         <button
           className={tab === "mine" ? "active" : ""}
@@ -66,12 +75,27 @@ export default function ChurchList() {
         >
           <Icon name="globe" /> {t("churches.tabPublic")}
         </button>
+        <button
+          className={tab === "sessions" ? "active" : ""}
+          onClick={() => setTab("sessions")}
+          aria-pressed={tab === "sessions"}
+        >
+          <Icon name="calendar" /> {t("churches.tabSessions")}
+        </button>
       </div>
       <p className="subtitle">
-        {t(tab === "mine" ? "churches.subtitle" : "churches.subtitlePublic")}
+        {t(
+          tab === "mine"
+            ? "churches.subtitle"
+            : tab === "public"
+              ? "churches.subtitlePublic"
+              : "churches.subtitleSessions"
+        )}
       </p>
 
-      {showing === null ? (
+      {tab === "sessions" ? (
+        <UpcomingSessions />
+      ) : showing === null ? (
         <p className="skeleton">{t("common.loading")}</p>
       ) : showing.length === 0 ? (
         <div className="glass card empty">
