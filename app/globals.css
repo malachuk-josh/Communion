@@ -12,6 +12,10 @@
   --gold-soft: rgba(229, 180, 91, 0.16);
   --violet: #8b7ff0;
   --wj: #f0857a;
+  /* What the two fixed bars are painted with. Opaque on purpose — see the
+     note above .bottom-nav — so it has to sit close to the ambient scene
+     behind it rather than borrow from it. */
+  --bar: rgba(19, 22, 45, 0.97);
   --radius: 20px;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -59,6 +63,7 @@ html {
   --gold-soft: rgba(150, 105, 29, 0.14);
   --violet: #5d4fc0;
   --wj: #9c2b1c;
+  --bar: rgba(247, 240, 224, 0.97);
 }
 
 :root[data-theme="light"] {
@@ -72,10 +77,6 @@ html {
     radial-gradient(40rem 34rem at 55% 118%, rgba(158, 120, 60, 0.16), transparent 65%),
     radial-gradient(26rem 20rem at 30% 8%, rgba(255, 250, 238, 0.7), transparent 70%),
     linear-gradient(160deg, var(--bg-1), var(--bg-0) 60%);
-}
-
-:root[data-theme="light"] .nav {
-  background: rgba(247, 240, 224, 0.97);
 }
 
 /* installed app, light theme: the transparent status bar shows white text,
@@ -153,24 +154,21 @@ html {
     linear-gradient(160deg, var(--bg-1), var(--bg-0) 55%);
 }
 
-:root[data-theme="grey"] img,
-:root[data-theme="grey"] .session-icon,
-:root[data-theme="grey"] .bn-icon,
-:root[data-theme="grey"] .menu-tile-emoji,
-:root[data-theme="grey"] .theme-toggle,
-:root[data-theme="grey"] .nav-passage,
-:root[data-theme="grey"] .brand {
+/* Photographs are the only thing left in the app that arrives with a colour
+   of its own. Everything else — every icon, the wordmark, every chip — is
+   drawn in currentColor or in a gradient made of theme variables, and this
+   theme's variables are already grey; see components/Icon.tsx. The five class
+   names that used to be listed here date from when the icons were emoji, and
+   greying an already-grey stroke is not free: `filter` promotes an element to
+   its own compositing layer, and four of them sat inside position:fixed bars,
+   which is precisely what sends a fixed bar floating up the page (see the
+   note above .bottom-nav). */
+:root[data-theme="grey"] img {
   filter: grayscale(1);
 }
 
-:root[data-theme="grey"] .nav {
-  background: rgba(16, 17, 19, 0.97);
-}
-
-/* the blur belongs to the child here too — see .nav::before */
-:root[data-theme="grey"] .nav::before {
-  backdrop-filter: blur(22px) saturate(0);
-  -webkit-backdrop-filter: blur(22px) saturate(0);
+:root[data-theme="grey"] {
+  --bar: rgba(16, 17, 19, 0.97);
 }
 
 body {
@@ -263,30 +261,15 @@ html.reading body::-webkit-scrollbar {
   top: 0;
   z-index: 20;
   padding-top: env(safe-area-inset-top, 0px);
-  /* The blur is drawn by ::before rather than here, for the reason set out
-     over the bottom bar: a positioned element that carries backdrop-filter is
-     a composited one, and a composited one can be left behind by a scroll.
-     This bar went missing in the same screenshot the bottom bar was stranded
-     in, which is what a sticky header does when it is left behind. */
-  /* Opaque, and it has to be. In The Word the scripture is full-bleed and
-     runs edge to edge directly beneath this bar; at the old 0.55 the blurred
-     lines came through as soft grey smears that sat beside each nav label and
-     read as a badly-aligned drop shadow. Alpha alone carries this: a browser
-     that quietly drops backdrop-filter (it needs GPU compositing, and not
-     every machine gives it) must still land on a readable header. The blur
-     stays for the sliver that does get through, and for the edge. */
-  background: rgba(12, 14, 28, 0.97);
+  /* Opaque, and no blur at all — see the note over the bottom bar. It was
+     already opaque: in The Word the scripture is full-bleed and runs edge to
+     edge directly beneath this bar, and at the old 0.55 the blurred lines came
+     through as soft grey smears that sat beside each nav label and read as a
+     badly-aligned drop shadow. So 0.97 was already doing all the work and the
+     blur was only ever visible in the sliver that got past it — which is
+     nothing to weigh against a bar that stays where it was put. */
+  background: var(--bar);
   border-bottom: 1px solid var(--glass-border);
-}
-
-.nav::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
 }
 
 .nav-inner {
@@ -614,31 +597,50 @@ html.reading body::-webkit-scrollbar {
 
 /* ---- floating bottom nav (mobile) ---- */
 /*
- * The bar floats up the page, part two.
+ * The bar floats up the page, part three — and this time nothing is left to
+ * move it.
  *
- * Centring it with a transform did it once, and that transform is long gone —
- * see the note below. It kept happening, because a transform was never the
- * whole story: WebKit gives a position:fixed element its own compositing
- * layer for THREE reasons, and only one had been dealt with. A layer's place
- * on screen is recomputed at the end of a scroll rather than during it, so a
- * momentum flick can leave it stranded halfway up.
+ * A fixed bar being composited is not by itself the problem — every iOS app
+ * with a fixed header is composited and none of them drift. The problem is a
+ * fixed bar whose APPEARANCE depends on what is behind it. iOS runs momentum
+ * scrolling on a separate thread, which can move a finished layer around but
+ * cannot repaint one; a layer that has to be redrawn every frame from a
+ * changing backdrop has to wait for the main thread, and the scroll does not
+ * wait with it. So it is left where the last repaint put it, halfway up the
+ * page, until the flick ends.
  *
- * The three, and what became of them:
+ * backdrop-filter is exactly that dependency, and part two did not remove it:
+ * it moved the blur from the bar onto the bar's own ::before, which is inside
+ * the same subtree and reads the same backdrop. Nothing about the work
+ * changed. That is why the bar came back.
  *
- *   the centring transform   removed already; the bar is centred with
+ * There is no version of this that keeps a live blur, so the blur is gone.
+ *
+ * Everything that has been taken off the bar, and why:
+ *
+ *   the centring transform   gone (part one). The bar is centred with
  *                            left/right/margin-inline instead.
  *
- *   backdrop-filter          moved to a child. The bar is a plain fixed box
- *                            now and the blur is drawn behind it by ::before,
- *                            which is not the positioned element and so
- *                            cannot take it anywhere. Identical to look at.
- *
- *   transition: transform    gone. Declaring it promotes the layer whether or
- *                            not a transform is ever applied — and one is
- *                            applied, when the bar hides in The Word. It
+ *   transition: transform    gone (part two). Declaring it promotes the layer
+ *                            whether or not a transform is ever applied — and
+ *                            one was, when the bar hides in The Word. It
  *                            slides on `bottom` now: one small element for a
- *                            quarter of a second, which is well within what
- *                            layout can do, and it composites nothing.
+ *                            quarter of a second, well within what layout can
+ *                            do, and it composites nothing.
+ *
+ *   backdrop-filter          gone, for the reason above. The bar is painted
+ *                            opaque in --bar instead, exactly as the header
+ *                            has been painted for months — where the same
+ *                            0.97 alpha turned out to be doing all the work
+ *                            and the blur under it was never really seen.
+ *
+ *   filter on the icons      gone. The grey theme greyed .bn-icon: four more
+ *                            layers inside the bar, for nothing. The icons are
+ *                            line drawings stroked in currentColor and that
+ *                            theme's colours are already grey. A static filter
+ *                            is not the drifting bug — it repaints once, not
+ *                            per frame — but there is no reason to keep dead
+ *                            work in the one element that must stay cheap.
  */
 .bottom-nav {
   position: fixed;
@@ -661,23 +663,22 @@ html.reading body::-webkit-scrollbar {
   transition: bottom 0.28s ease, opacity 0.28s ease;
 }
 
-/* .glass is declared further down this file and would otherwise put the blur
-   straight back on the element it was just taken off. */
+/* .glass is declared further down this file, and both of the things it gives
+   the bar have to be taken back: the blur, for the reason above, and the
+   near-transparent background that only made sense while there was a blur
+   behind it. What replaces it is the theme's own bar colour with the same
+   sheen laid over the top, so the bar keeps the lit top edge that told it
+   apart from the page. */
 nav.bottom-nav.glass {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.02)
+    ),
+    var(--bar);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-}
-
-/* the blur the bar used to carry itself */
-.bottom-nav::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 
 /* The copyright line a borrowed translation is shown under. Quiet, but never
