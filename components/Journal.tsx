@@ -956,12 +956,24 @@ export default function Journal() {
    * count in the toggle is drawn before anybody presses it, and gating this
    * on the tab meant a reader with three plans of their own saw "Plans 1"
    * until they went and looked.
+   *
+   * Asked again whenever the Plans tab is opened, and this is the part that
+   * matters offline. Plan progress comes from the device, but the plans
+   * themselves are only on the server — so one failed request used to settle
+   * the question for the life of the screen, and a reader who opened the
+   * Journal with no signal was told they had no plans at all, permanently,
+   * even once the signal came back.
    */
+  const [gotCustom, setGotCustom] = useState(false);
   useEffect(() => {
+    if (gotCustom) return;
     api<{ plans: CustomPlanRow[] }>("/api/plans/custom")
-      .then((res) => setCustom(res.plans))
-      .catch(() => setCustom([]));
-  }, []);
+      .then((res) => {
+        setCustom(res.plans);
+        setGotCustom(true);
+      })
+      .catch(() => setCustom((prev) => prev ?? []));
+  }, [tab, gotCustom]);
 
   /**
    * Move one plan's reminder.

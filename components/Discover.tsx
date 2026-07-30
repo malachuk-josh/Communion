@@ -23,7 +23,11 @@ import { useStickyTab } from "@/lib/stickyTab";
 import StartGathering from "@/components/StartGathering";
 import MyWall from "@/components/MyWall";
 import PlanBuilder from "@/components/PlanBuilder";
-import { isCustomPlanId, type CustomPlanRow } from "@/lib/customPlanTypes";
+import {
+  isCustomPlanId,
+  type CustomPlanRow,
+  type PublicPlanCard,
+} from "@/lib/customPlanTypes";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
 
 
@@ -295,6 +299,15 @@ function PlansSection({ open }: { open: string | null }) {
   const [building, setBuilding] = useState<CustomPlanRow | "new" | null>(null);
   /** which one just went on the clipboard as a link */
   const [copied, setCopied] = useState<string | null>(null);
+  /** the public shelf — null until the reader asks to see it */
+  const [shelf, setShelf] = useState<PublicPlanCard[] | null>(null);
+
+  useEffect(() => {
+    if (filter !== "discover" || shelf !== null) return;
+    api<{ plans: PublicPlanCard[] }>("/api/plans/discover")
+      .then((res) => setShelf(res.plans))
+      .catch(() => setShelf([]));
+  }, [filter, shelf]);
 
   // Fetched once the reader asks to see their own, rather than on arrival.
   // Almost nobody has written a plan, and the catalogue is what this section
@@ -416,7 +429,7 @@ function PlansSection({ open }: { open: string | null }) {
   const shown =
     filter === "mine"
       ? started
-      : filter === "custom"
+      : filter === "custom" || filter === "discover"
         ? []
         : PLANS.filter((p) => p.category === filter);
 
@@ -453,11 +466,20 @@ function PlansSection({ open }: { open: string | null }) {
             ▶ {t("discover.planMine")} ({started.length})
           </button>
         )}
-        {/* Two chips, because they are two different questions. "Mine" shows
-            the plans this reader wrote; "Build custom" is not a filter at all
-            but the way to write one, and putting it in the same row is what
-            makes it findable — a reader who has never built one is looking at
-            this row when the thought occurs. */}
+        {/* Three chips for what people write rather than what the app ships,
+            and the order is the order somebody meets them: what everyone has
+            written, then what I have written, then how to write one. "Build
+            custom" is not a filter at all — it is the way in, and putting it
+            in the same row is what makes it findable, because a reader who
+            has never built one is looking at this row when the thought
+            occurs. */}
+        <button
+          type="button"
+          className={`chip${filter === "discover" ? " chip-active" : ""}`}
+          onClick={() => setFilter("discover")}
+        >
+          <Icon name="globe" /> {t("builder.discover")}
+        </button>
         <button
           type="button"
           className={`chip${filter === "custom" ? " chip-active" : ""}`}
@@ -473,6 +495,17 @@ function PlansSection({ open }: { open: string | null }) {
           + {t("builder.build")}
         </button>
       </div>
+      {filter === "discover" && (
+        <PublicShelf
+          plans={shelf}
+          onTaken={() => {
+            // taken plans belong on the reader's own shelf now
+            setMine(null);
+            setFilter("custom");
+          }}
+        />
+      )}
+
       {filter === "custom" && (
         <CustomPlans
           plans={mine}
@@ -567,6 +600,89 @@ function PlansSection({ open }: { open: string | null }) {
             </div>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Plans other readers have put where anybody can find them.
+ *
+ * Cards rather than the plans themselves: the shelf has to be readable
+ * without opening everything on it, so what a card carries is what somebody
+ * browsing actually decides on — the name, who wrote it, and how long it is.
+ * Tapping through opens the same page a shared link opens, which is where the
+ * whole plan can be read before any of it is taken.
+ */
+function PublicShelf({
+  plans,
+  onTaken,
+}: {
+  plans: PublicPlanCard[] | null;
+  onTaken: () => void;
+}) {
+  const { t } = useI18n();
+  const [taking, setTaking] = useState<string | null>(null);
+  const [taken, setTaken] = useState<Set<string>>(new Set());
+  const [error, setError] = useState("");
+
+  if (plans === null) return <p className="skeleton">{t("common.loading")}</p>;
+  if (plans.length === 0) {
+    return <p className="glass card empty">{t("builder.discoverEmpty")}</p>;
+  }
+
+  const take = async (token: string) => {
+    setTaking(token);
+    setError("");
+    try {
+      await api(`/api/plans/shared/${token}`, { method: "POST" });
+      setTaken((prev) => new Set(prev).add(token));
+      onTaken();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setTaking(null);
+    }
+  };
+
+  return (
+    <>
+      <p className="subtitle plans-lead">{t("builder.discoverLead")}</p>
+      {error && <p className="error-text">{error}</p>}
+      <div className="plan-grid">
+        {plans.map((card) => (
+          <div key={card.token} className="glass card plan-card">
+            <div className="plan-head">
+              <h3>
+                <Icon name="plan" /> {card.name}
+              </h3>
+            </div>
+            <p className="plan-meta">
+              {t("builder.by", { name: card.sharedBy })} ·{" "}
+              {t("discover.planLength", { n: String(card.days) })}
+            </p>
+            <div className="plan-actions">
+              {/* it opens the plan, not a chapter — the whole thing, day by
+                  day, which is what anybody wants before taking one on */}
+              <Link className="cal-link" href={`/plans/${card.token}`}>
+                <Icon name="plan" /> {t("builder.see")}
+              </Link>
+              {taken.has(card.token) ? (
+                <span className="email-sent">
+                  <Icon name="party" /> {t("shared.planTaken")}
+                </span>
+              ) : (
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={() => take(card.token)}
+                  disabled={taking !== null}
+                >
+                  {taking === card.token ? t("common.loading") : t("builder.take")}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );
@@ -671,6 +787,16 @@ function CustomPlans({
             <p className="plan-meta">
               {t("discover.planLength", { n: String(total) })}
               {plan.fromName && <> · {t("builder.by", { name: plan.fromName })}</>}
+              {/* so a reader can see at a glance which of theirs are out
+                  where other people can find them */}
+              {plan.listed && (
+                <>
+                  {" "}
+                  <span className="chip open-chip">
+                    {t("builder.listedBadge")}
+                  </span>
+                </>
+              )}
             </p>
             <div className="progress-track">
               <div

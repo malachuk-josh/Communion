@@ -163,21 +163,30 @@ export default function Messages() {
     };
   }, [find, showNew, contacts]);
 
+  /*
+   * The history, fetched once and kept: a day's worth does not change while
+   * it is open, and re-asking on every visit would be a request for nothing.
+   *
+   * In an effect keyed on the tab rather than in the handler below, and that
+   * is not tidying. The tab is remembered between visits now, so it can be
+   * restored without anybody pressing anything — and while this fetch lived
+   * in the click handler, a reader who left the app on Notifications came
+   * back to a loading spinner that never resolved, because nothing had been
+   * clicked to start it.
+   */
+  useEffect(() => {
+    if (tab !== "history" || history !== null) return;
+    api<{ notifications: NotifEntry[] }>("/api/notifications")
+      .then((res) => setHistory(res.notifications))
+      .catch(() => setHistory([]));
+  }, [tab, history]);
+
   const goTo = (next: "convs" | "prayer" | "history") => {
     setTab(next);
     if (next !== "convs") setShowNew(false);
     // coming back to the tab starts at the newest five again, not wherever a
     // previous visit had unrolled it to
     if (next === "history") setNotifShown(NOTIF_PAGE);
-    // fetched once and kept: a day's worth does not change while it is open,
-    // and re-asking on every visit would be a request for nothing
-    if (next === "history" && history === null) {
-      api<{ notifications: NotifEntry[] }>("/api/notifications")
-        .then((res) => {
-          setHistory(res.notifications);
-        })
-        .catch(() => setHistory([]));
-    }
   };
 
   const openConvPeers = new Set(convs?.map((c) => c.peerId) ?? []);

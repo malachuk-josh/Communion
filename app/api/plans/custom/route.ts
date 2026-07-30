@@ -9,13 +9,17 @@ import {
   cleanName,
   isCustomId,
   newCustomId,
+  listPlan,
+  publicName,
   publishPlan,
   readCustomPlan,
   readCustomPlans,
+  unlistPlan,
   unpublishPlan,
   writeCustomPlan,
   type CustomPlan,
 } from "@/lib/customPlans";
+import type { Ref } from "@/lib/customPlanTypes";
 
 /** The plans this reader has written, newest first. */
 export async function GET(req: Request) {
@@ -46,6 +50,8 @@ export async function POST(req: Request) {
     id?: string;
     name?: string;
     days?: unknown;
+    /** whether to list it where anyone can find it */
+    listed?: boolean;
   } | null;
 
   const name = cleanName(body?.name);
@@ -85,14 +91,43 @@ export async function POST(req: Request) {
     // reader a second copy of a plan they had only renamed.
     ...(editing?.fromToken ? { fromToken: editing.fromToken } : {}),
   };
+
+  /*
+   * Listing is publishing plus a card on the shelf.
+   *
+   * A listed plan needs a token, because taking a copy of one goes through
+   * exactly the same door as taking a copy from a link somebody sent you —
+   * there is no second kind of sharing here, only a second way of finding
+   * the first.
+   */
+  const listed = body?.listed ?? editing?.listed ?? false;
+  if (listed) plan.listed = true;
   await writeCustomPlan(userId, plan);
 
   // A link already sent has to show what the plan now says. The token stays
   // the same, so nobody's copy of the address goes stale — but the snapshot
   // behind it is rewritten, or everyone holding the link would go on reading
   // the version this edit was meant to correct.
-  if (plan.share) {
-    await publishPlan(plan, await getDisplayName(req));
+  const sharedBy = await getDisplayName(req);
+  if (plan.share || listed) {
+    const token = await publishPlan(plan, sharedBy);
+    if (!plan.share) {
+      plan.share = token;
+      await writeCustomPlan(userId, plan);
+    }
+    if (listed) {
+      await listPlan(token, {
+        name: plan.name,
+        sharedBy: publicName(sharedBy),
+        days: plan.days.length,
+        at: plan.createdAt,
+      });
+    } else if (editing?.listed) {
+      // Taken off the shelf, but the link goes on working: listing and
+      // sending somebody an address are two different acts, and undoing one
+      // is not a reason to break the other.
+      await unlistPlan(token);
+    }
   }
 
   // A plan nobody is walking is a plan nobody hears from. Enrolling on save
@@ -102,6 +137,40 @@ export async function POST(req: Request) {
   if (progress?.[plan.id] === undefined) {
     await db().hset(keys.userPlans(userId), { [plan.id]: 0 });
     await db().sadd(keys.planUsers, userId);
+  } else if (editing) {
+    /*
+     * Where the reader now stands, after the plan under them has moved.
+     *
+     * Progress is an index, so an edit that removes days from the front of a
+     * plan silently moves everybody's place. Tidying away the five days you
+     * have already read — the obvious thing to do — left progress at 25 in a
+     * plan that was now 25 days long, so it read as finished: the reader's
+     * five unread days were unreachable, the mark-read button was gone and
+     * the reminder stopped for good.
+     *
+     * What has to survive an edit is not the number but the reading it
+     * pointed at, so the next unread day is looked up by its contents in the
+     * new list. A plan whose next day was itself deleted falls back to
+     * clamping, which is the best that can be said about a day that no
+     * longer exists.
+     */
+    const key = (day: { b: number; c: number }[] | Ref[]) =>
+      (day as Ref[]).map((r) => (Array.isArray(r) ? r.join(":") : r)).join("|");
+    const done = Number(progress[plan.id]) || 0;
+    const wasNext = editing.days[done];
+    let next: number;
+    if (!wasNext) {
+      // They had finished it. Clamped rather than moved to the end, so that
+      // adding a day to a plan you have finished gives you a day to read —
+      // which is the only reason anybody adds one.
+      next = Math.min(done, plan.days.length);
+    } else {
+      const found = plan.days.findIndex((d) => key(d) === key(wasNext));
+      next = found >= 0 ? found : Math.min(done, plan.days.length);
+    }
+    if (next !== done) {
+      await db().hset(keys.userPlans(userId), { [plan.id]: next });
+    }
   }
   return NextResponse.json({ plan }, { status: editing ? 200 : 201 });
 }

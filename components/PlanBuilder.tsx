@@ -38,6 +38,7 @@ export default function PlanBuilder({
   const { lang, t } = useI18n();
   const [name, setName] = useState(editing?.name ?? "");
   const [days, setDays] = useState<Ref[][]>(editing?.days ?? []);
+  const [listed, setListed] = useState(editing?.listed ?? false);
   const [book, setBook] = useState(40);
   const [from, setFrom] = useState(1);
   const [to, setTo] = useState(1);
@@ -85,7 +86,7 @@ export default function PlanBuilder({
     try {
       const res = await api<{ plan: CustomPlanRow }>("/api/plans/custom", {
         method: "POST",
-        body: { id: editing?.id, name: name.trim(), days },
+        body: { id: editing?.id, name: name.trim(), days, listed },
       });
       onSaved(res.plan);
     } catch (e) {
@@ -232,6 +233,19 @@ export default function PlanBuilder({
             </ol>
           )}
         </div>
+
+        {/* Offered at the point of saving, because that is when somebody
+            knows whether what they built is worth anybody else's time. Off
+            unless asked for: a plan is yours until you say otherwise. */}
+        <label className="toggle-row builder-public">
+          <input
+            type="checkbox"
+            checked={listed}
+            onChange={(e) => setListed(e.target.checked)}
+          />
+          <Icon name="globe" /> {t("builder.listed")}
+        </label>
+        <p className="cal-hint">{t("builder.listedHint")}</p>
 
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions">

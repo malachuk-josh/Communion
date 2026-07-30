@@ -20,6 +20,8 @@ export interface CustomPlanRow {
   fromName?: string;
   /** and which link, so following the same one twice is not two copies */
   fromToken?: string;
+  /** listed in the public directory for anyone to find */
+  listed?: boolean;
 }
 
 /**
@@ -28,6 +30,15 @@ export interface CustomPlanRow {
  * copy) because the browser has to recognise one too — a reminder's deep link
  * arrives as a bare id with nothing else to tell them apart.
  */
+/** A plan as it appears in the public directory. */
+export interface PublicPlanCard {
+  token: string;
+  name: string;
+  sharedBy: string;
+  days: number;
+  at: number;
+}
+
 export function isCustomPlanId(id: string): boolean {
   return /^custom-[a-f0-9]{12}$/.test(id);
 }

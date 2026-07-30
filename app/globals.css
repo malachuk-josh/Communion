@@ -4515,6 +4515,14 @@ button.menu-tile {
   margin-top: 14px;
 }
 
+/* The one decision in the builder that reaches past the reader's own account,
+   so it is set apart from the rest of the form rather than sitting in it. */
+.builder-public {
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--glass-border);
+}
+
 /* The day's action, on a line of its own under the plan. */
 .jr-plan-foot {
   flex-basis: 100%;

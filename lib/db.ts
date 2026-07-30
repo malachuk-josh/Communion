@@ -199,6 +199,8 @@ export const keys = {
   userSeeds: (userId: string) => `user:${userId}:seeds`,
   /** reading plans a reader wrote for themselves (lib/customPlans.ts) */
   userCustomPlans: (userId: string) => `user:${userId}:custom`,
+  /** custom plans their authors have listed for anyone to find */
+  publicPlans: "plans:public",
   /** a published copy of one, readable by anyone holding the token */
   sharedPlan: (token: string) => `shared:plan:${token}`,
   sharedCollection: (token: string) => `shared:${token}`,

@@ -17,7 +17,11 @@
 import { randomUUID } from "crypto";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
-import type { CustomPlanRow, Ref } from "@/lib/customPlanTypes";
+import type {
+  CustomPlanRow,
+  PublicPlanCard,
+  Ref,
+} from "@/lib/customPlanTypes";
 import { getPlan, type Plan, type PlanDay } from "@/lib/plans";
 
 // The shapes themselves live in lib/customPlanTypes.ts, which the browser can
@@ -200,10 +204,54 @@ export async function publishPlan(
   return token;
 }
 
+/**
+ * The public shelf.
+ *
+ * One hash, token to card, rather than a sorted set of tokens whose cards
+ * then have to be fetched one by one — the directory is drawn in a single
+ * read that way, and the ordering is a sort over what came back rather than
+ * a round trip per plan.
+ *
+ * A card and not a pointer: the directory has to be readable without opening
+ * every plan in it, and what it shows — the name, who wrote it, how long it
+ * is — is exactly what somebody browsing needs to decide.
+ */
+export const DIRECTORY_MAX = 120;
+
+export async function listPublicPlans(): Promise<PublicPlanCard[]> {
+  const raw = (await db().hgetall(keys.publicPlans)) ?? {};
+  const out: PublicPlanCard[] = [];
+  for (const [token, value] of Object.entries(raw)) {
+    try {
+      const card = JSON.parse(value) as Omit<PublicPlanCard, "token">;
+      if (card?.name) out.push({ token, ...card });
+    } catch {
+      // a row we cannot read is a plan we cannot offer
+    }
+  }
+  // newest first, and capped: a directory nobody scrolls to the end of does
+  // not need to be sent in full
+  return out.sort((a, b) => b.at - a.at).slice(0, DIRECTORY_MAX);
+}
+
+export async function listPlan(
+  token: string,
+  card: Omit<PublicPlanCard, "token">
+): Promise<void> {
+  await db().hset(keys.publicPlans, { [token]: JSON.stringify(card) });
+}
+
+export async function unlistPlan(token: string): Promise<void> {
+  await db().hdel(keys.publicPlans, token);
+}
+
 /** Take a published plan down. The link stops resolving from here on. */
 export async function unpublishPlan(token: string): Promise<void> {
   if (!SHARE_RE.test(token)) return;
   await db().del(keys.sharedPlan(token));
+  // and out of the directory with it, or the shelf keeps a card for a plan
+  // that no longer opens
+  await unlistPlan(token);
 }
 
 /**
