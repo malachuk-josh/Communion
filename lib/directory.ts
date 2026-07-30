@@ -19,6 +19,7 @@
 // discovery by strangers, which is what "private" means to the person choosing
 // it.
 
+import { nameNotAddress } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 
 export interface DirectoryEntry {
@@ -40,7 +41,10 @@ export async function syncListing(
   userId: string,
   profile: Record<string, string> | null
 ): Promise<void> {
-  const name = profile?.displayName?.trim();
+  // The last line before a name becomes searchable by strangers. Everything
+  // upstream already refuses to store an address as a name; this refuses to
+  // list one, so a row written before that was true cannot surface here.
+  const name = nameNotAddress(profile?.displayName ?? "");
   const hidden = profile?.private === "1";
   if (!name || hidden) {
     await db().hdel(keys.directory, userId);

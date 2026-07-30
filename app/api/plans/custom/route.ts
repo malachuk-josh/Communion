@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDisplayName, getUserId } from "@/lib/auth";
+import { getDisplayName, getUserId, nameNotAddress } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 import { isPlanId } from "@/lib/planReminders";
 import {
@@ -10,7 +10,6 @@ import {
   isCustomId,
   newCustomId,
   listPlan,
-  publicName,
   publishPlan,
   readCustomPlan,
   readCustomPlans,
@@ -118,7 +117,7 @@ export async function POST(req: Request) {
     if (listed) {
       await listPlan(token, {
         name: plan.name,
-        sharedBy: publicName(sharedBy),
+        sharedBy: nameNotAddress(sharedBy),
         days: plan.days.length,
         at: plan.createdAt,
       });

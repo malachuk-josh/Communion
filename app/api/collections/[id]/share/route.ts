@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { getDisplayName, getUserId } from "@/lib/auth";
+import { getDisplayName, getUserId, nameNotAddress } from "@/lib/auth";
 import { parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 
@@ -67,7 +67,11 @@ export async function POST(
       a.v - b.v
   );
 
-  const sharedBy = await getDisplayName(req);
+  // Belt and braces at the boundary. getDisplayName no longer hands back a
+  // raw address, but this snapshot is served to anyone holding the token with
+  // no account at all — so the guarantee is restated where it is relied on,
+  // rather than trusted to hold three files away.
+  const sharedBy = nameNotAddress(await getDisplayName(req));
   await kv.hset(keys.sharedCollection(token), {
     data: JSON.stringify({
       name: coll.name,

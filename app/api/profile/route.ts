@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDisplayName, getUserId } from "@/lib/auth";
+import { getDisplayName, getUserId, nameNotAddress } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 import { isTrusted } from "@/lib/admin";
 import { pushEnabled } from "@/lib/push";
@@ -74,7 +74,10 @@ export async function POST(req: Request) {
 
   const updates: Record<string, string> = {};
   if (body.displayName !== undefined) {
-    const name = body.displayName.trim().slice(0, 60);
+    // Whatever is stored here is what the directory is searched by, so the
+    // last way an address could reach a public list is somebody typing one
+    // into this field — most likely not realising where it goes.
+    const name = nameNotAddress(body.displayName).slice(0, 60);
     if (!name) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }

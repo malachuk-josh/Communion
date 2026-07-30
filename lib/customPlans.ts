@@ -15,6 +15,7 @@
 // to the server like a plan that does not exist.
 
 import { randomUUID } from "crypto";
+import { nameNotAddress } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
 import type {
@@ -196,7 +197,7 @@ export async function publishPlan(
   const token = plan.share ?? newShareToken();
   const snapshot: SharedPlanSnapshot = {
     name: plan.name,
-    sharedBy: publicName(sharedBy),
+    sharedBy: nameNotAddress(sharedBy),
     days: plan.days,
     updatedAt: Date.now(),
   };
@@ -252,21 +253,6 @@ export async function unpublishPlan(token: string): Promise<void> {
   // and out of the directory with it, or the shelf keeps a card for a plan
   // that no longer opens
   await unlistPlan(token);
-}
-
-/**
- * A name safe to publish at an address anyone can read.
- *
- * getDisplayName falls back to the account's email when Clerk holds no name,
- * which is the right answer inside the app and the wrong one here: the
- * snapshot is served unauthenticated, so whatever goes in it is public to
- * anyone the link reaches and anyone they forward it to. Somebody sharing a
- * reading plan is not offering their email address.
- */
-export function publicName(name: string): string {
-  const at = name.indexOf("@");
-  if (at <= 0 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(name)) return name;
-  return name.slice(0, at);
 }
 
 export async function readSharedPlan(
