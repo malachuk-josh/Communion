@@ -1038,6 +1038,35 @@ nav.bottom-nav.glass {
   border-color: var(--gold);
 }
 
+/* A session at a room you have not joined. Quieter than .mine-chip, because
+   this one is saying "not yours" and that is not news worth gold. */
+.session-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.open-chip {
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+/* The switch sits above the list rather than beside the tabs: it belongs to
+   what is being shown, not to which of the three is showing. */
+.sessions-open {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: var(--ink-dim);
+}
+
+/* Same card, less of it — the ones you are in should carry the eye first. */
+.session-open {
+  opacity: 0.82;
+}
+
 .private-chip {
   font-size: 0.72rem;
   vertical-align: middle;

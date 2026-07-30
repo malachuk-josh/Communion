@@ -228,6 +228,59 @@ export async function listPublicGatherings(
   return all.sort((a, b) => a.startsAt - b.startsAt).slice(0, limit);
 }
 
+/**
+ * Upcoming sessions at open Gatherings the reader has NOT joined.
+ *
+ * The Gatherings page can show these beside their own, so that a room can be
+ * found by when it meets rather than only by what it is called — "Tuesday
+ * evening" is how most people decide whether they can come.
+ *
+ * What comes back is deliberately less than a member sees. The time, the
+ * title, the passage and the room's name are an invitation, and a public
+ * Gathering is one that wants to be found. The meeting link is not an
+ * invitation, it is a door: handing it to somebody who has not joined lets
+ * them walk into the call. The same goes for the arrangements in `details`
+ * — whose house, what to bring — and for who has said they are coming. Those
+ * are for the room. So the row is built field by field rather than spread
+ * from the event, which means a field added to WorshipEvent later cannot
+ * leak through here by default.
+ */
+export async function listOpenEvents(
+  userId: string | null,
+  limit = 40
+): Promise<(WorshipEvent & { churchName: string })[]> {
+  const kv = db();
+  const mine = userId
+    ? new Set(await kv.smembers(keys.userChurches(userId)))
+    : new Set<string>();
+  const ids = await kv.smembers(keys.allChurches);
+  const all: (WorshipEvent & { churchName: string })[] = [];
+  for (const churchId of ids) {
+    // already answered by listUserEvents, and answered more fully there
+    if (mine.has(churchId)) continue;
+    const church = await getChurch(churchId);
+    if (!church || church.visibility === "private") continue;
+    for (const event of await getUpcomingEvents(churchId)) {
+      all.push({
+        id: event.id,
+        churchId: event.churchId,
+        type: event.type,
+        title: event.title,
+        startsAt: event.startsAt,
+        durationMin: event.durationMin,
+        passageRef: event.passageRef,
+        createdBy: "",
+        createdAt: event.createdAt,
+        rsvps: {},
+        churchName: church.name,
+      });
+    }
+  }
+  // Soonest first, and capped. The cap is why the toggle exists: this list
+  // grows with the whole directory rather than with anything the reader did.
+  return all.sort((a, b) => a.startsAt - b.startsAt).slice(0, limit);
+}
+
 /** Upcoming sessions across every church the user belongs to, soonest first. */
 export async function listUserEvents(
   userId: string
