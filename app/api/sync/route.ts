@@ -4,6 +4,7 @@ import { getBook } from "@/lib/bible";
 import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
+import { isPlanId } from "@/lib/planReminders";
 
 // The outbox drains here. Every operation is a statement of intent — "this
 // bookmark exists with this label", not "toggle this bookmark" — so replaying
@@ -277,11 +278,16 @@ export async function POST(req: Request) {
           }
           await kv.hdel(keys.userPlans(userId), plan.id);
           await kv.hdel(keys.userPlans(userId), `${plan.id}:on`);
+          // The hour it asked at goes too. Somebody who leaves a plan and
+          // later rejoins it is starting again, and inheriting the six in the
+          // morning they set the last time round is not starting again.
+          await kv.hdel(keys.userPlans(userId), `${plan.id}:at`);
+          await kv.hdel(keys.userPlans(userId), `${plan.id}:nudged`);
           // Nothing left to be nudged about: come out of the set the sweep
           // reads, so an account that has left every plan is not walked over
           // every hour for the rest of its life.
           const left = (await kv.hgetall(keys.userPlans(userId))) ?? {};
-          const anyPlans = Object.keys(left).some((k) => !k.endsWith(":on"));
+          const anyPlans = Object.keys(left).some(isPlanId);
           if (!anyPlans) await kv.srem(keys.planUsers, userId);
           applied++;
           break;
@@ -318,7 +324,8 @@ export async function POST(req: Request) {
   }
   const plans: Record<string, number> = {};
   for (const [planId, count] of Object.entries(rawPlans ?? {})) {
-    if (planId.endsWith(":on")) continue; // last-read date, not progress
+    // ":on", ":at" and ":nudged" are facts about a plan, not plans
+    if (!isPlanId(planId)) continue;
     plans[planId] = Number(count) || 0;
   }
 

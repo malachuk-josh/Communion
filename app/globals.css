@@ -4403,6 +4403,25 @@ button.menu-tile {
   margin: 10px 0 2px;
 }
 
+/* When a plan asks for you. A line of its own beneath the plan, because
+   .jr-row wraps — flex-basis 100% is what sends it there rather than letting
+   it squeeze in beside the progress bar. */
+.jr-plan-remind {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.jr-plan-remind select {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  max-width: 150px;
+}
+
 /* the journal's switch is the Table's switch; only the spacing is its own */
 .jr-tabs {
   margin: 16px 0 6px;

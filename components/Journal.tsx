@@ -25,6 +25,7 @@ import {
 } from "@/lib/bookmarkKey";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
+import type { PlanHour } from "@/lib/planReminders";
 import { readOutbox } from "@/lib/localStore";
 import { fetchVerses, verseKey } from "@/lib/scripture";
 import {
@@ -113,6 +114,10 @@ export default function Journal() {
     {}
   );
   const [plans, setPlans] = useState<Record<string, number>>({});
+  /** what hour each plan asks at — null until the server has answered */
+  const [planHours, setPlanHours] = useState<Record<string, PlanHour> | null>(
+    null
+  );
   /** scripture for the verses kept, keyed by verseKey() */
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
@@ -871,6 +876,48 @@ export default function Journal() {
     plans: planRows.going.length + planRows.finished.length,
   };
 
+  // Asked for once the plans tab is first opened. Most visits to the Journal
+  // are for a bookmark, and nobody needs an extra request to find out when a
+  // plan they are not looking at asks for them.
+  useEffect(() => {
+    if (tab !== "plans" || planHours !== null) return;
+    api<{ hours: Record<string, PlanHour> }>("/api/plans/reminders")
+      .then((res) => setPlanHours(res.hours))
+      .catch(() => setPlanHours({}));
+  }, [tab, planHours]);
+
+  /**
+   * Move one plan's reminder.
+   *
+   * Written straight to the server rather than through the outbox: this is
+   * the one thing in the Journal that only means anything to the nightly
+   * sweep, and a reminder queued on a device with no signal would be a
+   * setting that looks changed and does nothing. It shows as changed the
+   * moment it is picked, and puts itself back if the write fails.
+   */
+  const setPlanHour = async (planId: string, hour: PlanHour) => {
+    const before = planHours?.[planId];
+    setPlanHours((prev) => ({ ...(prev ?? {}), [planId]: hour }));
+    try {
+      await api("/api/plans/reminders", {
+        method: "POST",
+        body: {
+          planId,
+          hour,
+          // the sweep runs hourly and matches this against the reader's clock
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+        },
+      });
+    } catch {
+      setPlanHours((prev) => {
+        const next = { ...(prev ?? {}) };
+        if (before === undefined) delete next[planId];
+        else next[planId] = before;
+        return next;
+      });
+    }
+  };
+
   const TABS: { id: Tab; icon: IconName; key: MessageKey }[] = [
     { id: "bookmarks", icon: "bookmark", key: "journal.bookmarks" },
     { id: "notes", icon: "note", key: "journal.notes" },
@@ -1349,6 +1396,8 @@ export default function Journal() {
                     <PlanRow
                       key={row.plan.id}
                       {...row}
+                      hour={planHours?.[row.plan.id]}
+                      onHour={setPlanHour}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
                     />
@@ -1369,6 +1418,8 @@ export default function Journal() {
                     <PlanRow
                       key={row.plan.id}
                       {...row}
+                      hour={planHours?.[row.plan.id]}
+                      onHour={setPlanHour}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
                     />
@@ -1385,16 +1436,24 @@ export default function Journal() {
   );
 }
 
+/** The hours a plan may be set to ask at — morning, midday, evening, night. */
+const PLAN_HOURS = [5, 6, 7, 8, 9, 10, 12, 15, 17, 19, 20, 21, 22];
+
 function PlanRow({
   plan,
   done,
   total,
+  hour,
+  onHour,
   onLeave,
   onRestart,
 }: {
   plan: (typeof PLANS)[number];
   done: number;
   total: number;
+  /** undefined while the hours are still being fetched */
+  hour: PlanHour | undefined;
+  onHour: (id: string, hour: PlanHour) => void;
   onLeave: (id: string, name: string) => void;
   onRestart: (id: string) => void;
 }) {
@@ -1460,6 +1519,47 @@ function PlanRow({
           <Icon name="close" />
         </button>
       </span>
+      {/* A line of its own under the plan, because .jr-row wraps and this is
+          a sentence rather than a button. It cannot go inside the link above
+          it — a select inside an anchor is invalid, and a tap meant for one
+          would follow the other.
+
+          Only for plans still underway: a finished plan has nothing to
+          remind anybody about, and offering an hour for it would be offering
+          a setting that does nothing. */}
+      {done < total && (
+        <label className="jr-plan-remind">
+          <Icon name="bell" />
+          <span>{t("journal.remindAt")}</span>
+          <select
+            value={hour === undefined ? "" : String(hour)}
+            disabled={hour === undefined}
+            aria-label={t("journal.remindAtFor", { name })}
+            onChange={(e) =>
+              onHour(
+                plan.id,
+                e.target.value === "off" ? "off" : Number(e.target.value)
+              )
+            }
+          >
+            {hour === undefined && <option value="">…</option>}
+            <option value="off">{t("journal.remindOff")}</option>
+            {/* whatever they had is offered even if it is not one of ours —
+                an hour set before this list existed must not silently move */}
+            {(typeof hour === "number" && !PLAN_HOURS.includes(hour)
+              ? [...PLAN_HOURS, hour].sort((a, b) => a - b)
+              : PLAN_HOURS
+            ).map((h) => (
+              <option key={h} value={h}>
+                {new Date(2020, 0, 1, h).toLocaleTimeString(
+                  lang === "es" ? "es" : "en",
+                  { hour: "numeric", minute: "2-digit" }
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </div>
   );
 }

@@ -3,6 +3,12 @@ import { getBook } from "@/lib/bible";
 import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
+import {
+  hourOf,
+  isPlanId,
+  markNudged,
+  nudgedOn,
+} from "@/lib/planReminders";
 import { emailEnabled, reminderEmail, sendEmail } from "@/lib/email";
 import { pushEnabled, sendPushToUser } from "@/lib/push";
 import { sendSms, smsEnabled } from "@/lib/sms";
@@ -166,8 +172,16 @@ function dayIn(timeZone: string | undefined): string {
 }
 
 /**
- * Nudge readers at their chosen local hour: one push per person listing
- * today's reading, skipping plans already read today and finished plans.
+ * Nudge readers at the hour each plan asks for.
+ *
+ * One push per plan, not one per person. That is the whole point of the hour
+ * living on the plan: somebody who reads Proverbs at six and the Psalms at
+ * ten wants two nudges at two times, and rolling them into one would mean
+ * choosing whose hour to honour.
+ *
+ * Finished plans and plans already read today are skipped, and each plan
+ * carries its own mark for the day, so one asking at seven does not stop
+ * another asking at nine.
  */
 async function sweepPlanReminders(): Promise<{ notified: number }> {
   // no push gate: see the note above the session reminder
@@ -177,27 +191,29 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
 
   for (const userId of userIds) {
     const profile = (await kv.hgetall(keys.user(userId))) ?? {};
-    if (profile.planReminder === "off") continue;
-    const hour = Number(profile.planReminderHour ?? 7);
+    const fields = (await kv.hgetall(keys.userPlans(userId))) ?? {};
     const tz = profile.planReminderTz;
-    if (hourIn(tz) !== hour) continue;
-
+    const nowHour = hourIn(tz);
     const today = dayIn(tz);
-    if (profile.planNudgedOn === today) continue; // already nudged today
 
-    const progress = (await kv.hgetall(keys.userPlans(userId))) ?? {};
-    const due: { id: string; name: string; day: number; label: string }[] = [];
-    for (const [planId, value] of Object.entries(progress)) {
-      if (planId.endsWith(":on")) continue;
-      const plan = getPlan(planId);
+    for (const field of Object.keys(fields)) {
+      // ":on", ":at" and ":nudged" are facts about a plan, not plans
+      if (!isPlanId(field)) continue;
+      const plan = getPlan(field);
       if (!plan) continue;
-      const done = Number(value) || 0;
+
+      const hour = hourOf(fields, profile, field);
+      if (hour === "off" || hour !== nowHour) continue;
+      if (nudgedOn(fields, field) === today) continue; // asked already today
+
+      const done = Number(fields[field]) || 0;
       // Finished plans only. Day 0 used to be skipped as "not started", which
       // was right when the only way to have a plan was to begin one — and is
       // wrong now that every account is enrolled in one on the day it is
       // made. Day 1 is the whole point of the first morning's reminder.
       if (done >= plan.days.length) continue;
-      if (progress[`${planId}:on`] === today) continue; // read today already
+      if (fields[`${field}:on`] === today) continue; // read today already
+
       const readings = plan.days[done].readings;
       const first = getBook(readings[0].b);
       const last = getBook(readings[readings.length - 1].b);
@@ -207,24 +223,19 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
           : `${first?.en} ${readings[0].c} – ${last?.en} ${
               readings[readings.length - 1].c
             }`;
-      due.push({ id: plan.id, name: plan.name, day: done + 1, label });
-    }
-    if (due.length === 0) continue;
 
-    const lead = due[0];
-    const body =
-      due.length === 1
-        ? `Day ${lead.day} — ${lead.label}`
-        : `Day ${lead.day} — ${lead.label} (+${due.length - 1} more)`;
-    await sendPushToUser(userId, {
-      title: lead.name,
-      body,
-      // straight to the plan itself, not to the top of the page it lives on
-      url: `/discover?plan=${lead.id}`,
-      tag: `plan-${today}`,
-    }).catch(() => {});
-    await kv.hset(keys.user(userId), { planNudgedOn: today });
-    notified++;
+      await sendPushToUser(userId, {
+        title: plan.name,
+        body: `Day ${done + 1} — ${label}`,
+        // straight to the plan itself, not to the top of the page it lives on
+        url: `/discover?plan=${plan.id}`,
+        // per plan and per day: two plans due at the same hour are two
+        // notifications, and neither should replace the other
+        tag: `plan-${plan.id}-${today}`,
+      }).catch(() => {});
+      await markNudged(userId, field, today);
+      notified++;
+    }
   }
   return { notified };
 }

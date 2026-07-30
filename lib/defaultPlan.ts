@@ -44,7 +44,14 @@ export async function seedDefaultPlan(userId: string): Promise<boolean> {
   // on their own before we got here keeps the days they have read.
   const plans = await kv.hgetall(keys.userPlans(userId));
   if (plans?.[DEFAULT_PLAN_ID] === undefined) {
-    await kv.hset(keys.userPlans(userId), { [DEFAULT_PLAN_ID]: 0 });
+    await kv.hset(keys.userPlans(userId), {
+      [DEFAULT_PLAN_ID]: 0,
+      // Written rather than left to the fallback, for the same reason the
+      // profile settings below are: a value that only exists as a default is
+      // one nobody can see they have, and this one now shows on the plan's
+      // own row in the Journal, where it can be moved.
+      [`${DEFAULT_PLAN_ID}:at`]: String(DEFAULT_REMINDER_HOUR),
+    });
   }
   // the sweep reads this set to know whom to ask
   await kv.sadd(keys.planUsers, userId);

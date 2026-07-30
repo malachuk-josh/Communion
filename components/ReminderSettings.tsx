@@ -43,12 +43,11 @@ function toE164(input: string): string {
 }
 
 export default function ReminderSettings() {
-  const { lang, t } = useI18n();
+  const { t } = useI18n();
   const [push, setPush] = useState<PushState>("loading");
   const [phone, setPhone] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [smsAvailable, setSmsAvailable] = useState(false);
-  const [planHour, setPlanHour] = useState<string>("7");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -58,16 +57,11 @@ export default function ReminderSettings() {
       phone: string;
       smsReminders: boolean;
       smsAvailable: boolean;
-      planReminder: string;
-      planReminderHour: number;
     }>("/api/profile")
       .then((res) => {
         setPhone(toDisplay(res.phone));
         setSmsOptIn(res.smsReminders);
         setSmsAvailable(res.smsAvailable);
-        setPlanHour(
-          res.planReminder === "off" ? "off" : String(res.planReminderHour)
-        );
       })
       .catch(() => {});
 
@@ -129,23 +123,6 @@ export default function ReminderSettings() {
     setPush("off");
   };
 
-  const savePlanHour = async (value: string) => {
-    setPlanHour(value);
-    try {
-      await api("/api/profile", {
-        method: "POST",
-        body: {
-          planReminderHour: value === "off" ? "off" : Number(value),
-          // the sweep runs hourly and matches this against the user's clock
-          planReminderTz:
-            Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-        },
-      });
-    } catch {
-      // transient — reopening Settings re-syncs
-    }
-  };
-
   const saveSms = async () => {
     if (saving) return;
     setSaving(true);
@@ -201,28 +178,11 @@ export default function ReminderSettings() {
           )}
         </div>
 
-        <div className="pref-row">
-          <span>
-            <Icon name="book" /> {t("settings.planReminder")}
-            <br />
-            <small className="cal-hint">{t("settings.planReminderHint")}</small>
-          </span>
-          <select
-            value={planHour}
-            onChange={(e) => savePlanHour(e.target.value)}
-            style={{ maxWidth: 150 }}
-          >
-            <option value="off">{t("settings.planOff")}</option>
-            {[5, 6, 7, 8, 9, 10, 12, 17, 19, 20, 21].map((h) => (
-              <option key={h} value={h}>
-                {new Date(2020, 0, 1, h).toLocaleTimeString(
-                  lang === "es" ? "es" : "en",
-                  { hour: "numeric", minute: "2-digit" }
-                )}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* The reading reminder used to be here, as one hour for every plan
+            at once. One hour is wrong the moment somebody walks two plans,
+            which is the ordinary case — so it moved onto each plan, in the
+            Journal, where the plan already lives. */}
+        <p className="cal-hint">{t("settings.planMoved")}</p>
 
         <div className="pref-row" style={{ alignItems: "flex-start" }}>
           <span><Icon name="chat" /> {t("settings.smsTitle")}</span>
