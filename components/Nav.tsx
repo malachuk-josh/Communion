@@ -10,6 +10,7 @@ import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 
 /**
  * The tabs, in the order the bar shows them. The swipe reads this, and the bar
@@ -45,7 +46,6 @@ export default function Nav() {
     useReading();
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
-  const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
   const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
   /** which way the last swipe went, read once by the animation after it lands */
@@ -289,13 +289,6 @@ export default function Nav() {
     wasOpen.current = panelOpen;
   }, [panelOpen]);
 
-  // the inline bootstrap script in the layout applies the saved theme before
-  // paint; here we just sync React state with what it decided
-  useEffect(() => {
-    const current = document.documentElement.dataset.theme;
-    setTheme(current === "light" || current === "grey" ? current : "dark");
-  }, []);
-
   /**
    * Already reading? Opening The Word again opens the navigator.
    *
@@ -308,22 +301,6 @@ export default function Nav() {
     if (pathname !== "/") return;
     e.preventDefault();
     setPanelOpen(true);
-  };
-
-  // cycles dark → grey → light → dark; the icon shows what comes next
-  const toggleTheme = () => {
-    const next =
-      theme === "dark" ? "grey" : theme === "grey" ? "light" : "dark";
-    setTheme(next);
-    if (next === "dark") delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("communion.theme", next);
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute(
-        "content",
-        next === "light" ? "#ede1c8" : next === "grey" ? "#000000" : "#0b0d1a"
-      );
   };
 
   const isWord = pathname === "/";
@@ -414,22 +391,9 @@ export default function Nav() {
             />
           )}
           {/* The Word keeps its header for reading: the passage and study
-              mode only. Theme and account live on every other tab. */}
-          {!isWord && (
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label={
-                theme === "dark"
-                  ? "Switch to grey scale"
-                  : theme === "grey"
-                    ? "Switch to light mode"
-                    : "Switch to dark mode"
-              }
-            >
-              <Icon name={theme === "dark" ? "news" : theme === "grey" ? "sun" : "moon"} />
-            </button>
-          )}
+              mode only. Theme and account live on every other tab — and on
+              that one the theme moved into the navigator, beside the menu. */}
+          {!isWord && <ThemeToggle />}
           {!isWord && <AuthControls />}
           {showPassage && (
             <button

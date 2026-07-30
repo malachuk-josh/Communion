@@ -255,6 +255,48 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Second, under the theme and with it: language and red letters are
+          the same kind of choice — how the app reads — and the three of them
+          being the first thing on the page is why anybody opens it. What
+          follows is account business, which is looked at once. */}
+      <div className="section-head">
+        <h2>{t("settings.preferences")}</h2>
+      </div>
+      <div className="glass card">
+        <div className="pref-row">
+          <span>{t("settings.language")}</span>
+          <div className="lang-toggle" role="group">
+            <button
+              className={lang === "en" ? "active" : ""}
+              onClick={() => setLang("en")}
+            >
+              English
+            </button>
+            <button
+              className={lang === "es" ? "active" : ""}
+              onClick={() => setLang("es")}
+            >
+              Español
+            </button>
+          </div>
+        </div>
+        {/* Kept on the device rather than on the account: it is a preference
+            about how a page looks, like the theme above it, and it should be
+            true of this phone whether or not anyone is signed in. */}
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={redLetter}
+            onChange={(e) => {
+              setRedLetter(e.target.checked);
+              writeRedLetter(e.target.checked);
+            }}
+          />
+          <span className="wj">{t("settings.redLetter")}</span>
+        </label>
+        <p className="cal-hint">{t("settings.redLetterHint")}</p>
+      </div>
+
       <div className="section-head">
         <h2>{t("settings.you")}</h2>
       </div>
@@ -306,44 +348,6 @@ export default function Settings() {
         ) : (
           <p className="cal-hint">{t("profile.guestHint")}</p>
         )}
-      </div>
-
-      <div className="section-head">
-        <h2>{t("settings.preferences")}</h2>
-      </div>
-      <div className="glass card">
-        <div className="pref-row">
-          <span>{t("settings.language")}</span>
-          <div className="lang-toggle" role="group">
-            <button
-              className={lang === "en" ? "active" : ""}
-              onClick={() => setLang("en")}
-            >
-              English
-            </button>
-            <button
-              className={lang === "es" ? "active" : ""}
-              onClick={() => setLang("es")}
-            >
-              Español
-            </button>
-          </div>
-        </div>
-        {/* Kept on the device rather than on the account: it is a preference
-            about how a page looks, like the theme above it, and it should be
-            true of this phone whether or not anyone is signed in. */}
-        <label className="toggle-row">
-          <input
-            type="checkbox"
-            checked={redLetter}
-            onChange={(e) => {
-              setRedLetter(e.target.checked);
-              writeRedLetter(e.target.checked);
-            }}
-          />
-          <span className="wj">{t("settings.redLetter")}</span>
-        </label>
-        <p className="cal-hint">{t("settings.redLetterHint")}</p>
       </div>
 
       <ReminderSettings />

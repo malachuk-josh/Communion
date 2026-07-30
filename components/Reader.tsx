@@ -62,6 +62,7 @@ import {
 import Concordance from "@/components/Concordance";
 import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -3539,6 +3540,12 @@ export default function Reader({
               >
                 <Icon name="search" />
               </button>
+              {/* Dark, grey, light. It is on every other tab's header and was
+                  on none of this one's, because The Word's header is kept for
+                  the passage and study mode — but the reader who wants it is
+                  the one reading in bed, and they should not have to leave the
+                  chapter to reach it. */}
+              <ThemeToggle className="sp-icon-btn" />
               {/* the same menu the header carries, opened from inside the
                   navigator — the one place on this tab a reader looks for it */}
               <MenuMenu
