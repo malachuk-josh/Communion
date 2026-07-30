@@ -19,8 +19,11 @@ import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
 import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
+import { useStickyTab } from "@/lib/stickyTab";
 import StartGathering from "@/components/StartGathering";
 import MyWall from "@/components/MyWall";
+import PlanBuilder from "@/components/PlanBuilder";
+import { isCustomPlanId, type CustomPlanRow } from "@/lib/customPlanTypes";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
 
 
@@ -33,11 +36,12 @@ function refLabel(ref: VerseRef, lang: Lang): string {
   return `${name} ${ref.c}:${ref.v}${ref.ve ? `–${ref.ve}` : ""}`;
 }
 
+/** The toggles, in the order the row shows them. */
+const DISCOVER_TABS = ["scripture", "wall", "gatherings"] as const;
+
 export default function Discover() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"scripture" | "wall" | "gatherings">(
-    "scripture"
-  );
+  const [tab, setTab] = useStickyTab("discover", "scripture", DISCOVER_TABS);
   const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
   const [gatherings, setGatherings] = useState<Gathering[]>([]);
   /*
@@ -51,7 +55,19 @@ export default function Discover() {
   const [openPlan, setOpenPlan] = useState<string | null>(null);
   useEffect(() => {
     const wanted = new URLSearchParams(window.location.search).get("plan");
-    if (wanted && PLANS.some((p) => p.id === wanted)) setOpenPlan(wanted);
+    // A plan the reader wrote is not in the catalogue, and the reminder that
+    // names it is the one thing this link exists to serve — testing only
+    // against PLANS made every custom plan's 7am push land nowhere.
+    if (wanted && (PLANS.some((p) => p.id === wanted) || isCustomPlanId(wanted))) {
+      setOpenPlan(wanted);
+      // A reminder tapped at seven in the morning has to land on the plan,
+      // and the plans live under Scripture. Whichever toggle this reader was
+      // last on, arriving by deep link is arriving somewhere specific — so
+      // the link outranks what the page would otherwise remember.
+      setTab("scripture");
+    }
+    // setTab is stable, and listing it would re-run this on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -267,10 +283,28 @@ function PlansSection({ open }: { open: string | null }) {
    * page that does not contain the thing you were sent to see.
    */
   const [filter, setFilter] = useState<string>(
-    (open && PLANS.find((p) => p.id === open)?.category) || PLAN_CATEGORIES[0]
+    (open && PLANS.find((p) => p.id === open)?.category) ||
+      (open && isCustomPlanId(open) ? "custom" : "") ||
+      PLAN_CATEGORIES[0]
   );
   /** the card a reminder pointed at, marked until it is looked at */
   const [pointed, setPointed] = useState<string | null>(open);
+  /** the plans this reader wrote — null until the server has answered */
+  const [mine, setMine] = useState<CustomPlanRow[] | null>(null);
+  /** the plan being written or corrected, or "new" for a fresh one */
+  const [building, setBuilding] = useState<CustomPlanRow | "new" | null>(null);
+  /** which one just went on the clipboard as a link */
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // Fetched once the reader asks to see their own, rather than on arrival.
+  // Almost nobody has written a plan, and the catalogue is what this section
+  // is for.
+  useEffect(() => {
+    if (filter !== "custom" || mine !== null) return;
+    api<{ plans: CustomPlanRow[] }>("/api/plans/custom")
+      .then((res) => setMine(res.plans))
+      .catch(() => setMine([]));
+  }, [filter, mine]);
 
   const apply = (next: Record<string, number>) => {
     progressRef.current = next;
@@ -355,9 +389,9 @@ function PlansSection({ open }: { open: string | null }) {
   useEffect(() => {
     if (!open) return;
     const plan = PLANS.find((p) => p.id === open);
-    if (!plan) return;
-    setFilter(plan.category);
-    setPointed(open);
+    // A custom plan lives on its own shelf rather than in a category
+    setFilter(plan ? plan.category : isCustomPlanId(open) ? "custom" : "");
+    if (plan || isCustomPlanId(open)) setPointed(open);
   }, [open]);
 
   useEffect(() => {
@@ -382,7 +416,9 @@ function PlansSection({ open }: { open: string | null }) {
   const shown =
     filter === "mine"
       ? started
-      : PLANS.filter((p) => p.category === filter);
+      : filter === "custom"
+        ? []
+        : PLANS.filter((p) => p.category === filter);
 
   const dayLabel = (day: { readings: { b: number; c: number }[] }) => {
     const refs = day.readings.map((r) =>
@@ -417,7 +453,57 @@ function PlansSection({ open }: { open: string | null }) {
             ▶ {t("discover.planMine")} ({started.length})
           </button>
         )}
+        {/* Two chips, because they are two different questions. "Mine" shows
+            the plans this reader wrote; "Build custom" is not a filter at all
+            but the way to write one, and putting it in the same row is what
+            makes it findable — a reader who has never built one is looking at
+            this row when the thought occurs. */}
+        <button
+          type="button"
+          className={`chip${filter === "custom" ? " chip-active" : ""}`}
+          onClick={() => setFilter("custom")}
+        >
+          <Icon name="plan" /> {t("builder.custom")}
+        </button>
+        <button
+          type="button"
+          className="chip chip-build"
+          onClick={() => setBuilding("new")}
+        >
+          + {t("builder.build")}
+        </button>
       </div>
+      {filter === "custom" && (
+        <CustomPlans
+          plans={mine}
+          progress={progress}
+          onEdit={setBuilding}
+          onChanged={setMine}
+          copied={copied}
+          setCopied={setCopied}
+          onMark={complete}
+          pointed={pointed}
+        />
+      )}
+
+      {building && (
+        <PlanBuilder
+          editing={building === "new" ? null : building}
+          onClose={() => setBuilding(null)}
+          onSaved={(plan) => {
+            setBuilding(null);
+            setMine((prev) => {
+              const rest = (prev ?? []).filter((p) => p.id !== plan.id);
+              return [plan, ...rest];
+            });
+            // a plan saved is a plan begun, so show it rather than leaving the
+            // reader on whichever shelf of the catalogue they were looking at
+            setFilter("custom");
+            apply({ ...progressRef.current, [plan.id]: progressRef.current[plan.id] ?? 0 });
+          }}
+        />
+      )}
+
       <div className="plan-grid">
         {shown.map((plan) => {
           const done = progress[plan.id] ?? 0;
@@ -483,6 +569,178 @@ function PlansSection({ open }: { open: string | null }) {
         })}
       </div>
     </>
+  );
+}
+
+/**
+ * The plans this reader wrote.
+ *
+ * Shown as cards beside the catalogue's, because from where the reader stands
+ * they are the same thing — something to read through — and only the buttons
+ * differ: these can be corrected, shared and thrown away, and the catalogue's
+ * cannot.
+ */
+function CustomPlans({
+  plans,
+  progress,
+  onEdit,
+  onChanged,
+  copied,
+  setCopied,
+  onMark,
+  pointed,
+}: {
+  plans: CustomPlanRow[] | null;
+  progress: Record<string, number>;
+  onEdit: (plan: CustomPlanRow) => void;
+  onChanged: (next: CustomPlanRow[]) => void;
+  copied: string | null;
+  setCopied: (id: string | null) => void;
+  onMark: (planId: string, total: number) => void;
+  /** the card a reminder pointed at, so a custom plan can be rung too */
+  pointed: string | null;
+}) {
+  const { lang, t } = useI18n();
+
+  if (plans === null) return <p className="skeleton">{t("common.loading")}</p>;
+  if (plans.length === 0) {
+    return <p className="glass card empty">{t("builder.noneYet")}</p>;
+  }
+
+  /**
+   * Put the link where it can be pasted.
+   *
+   * The share sheet first where there is one, because on a phone that is how
+   * anything is sent to anybody; the clipboard where there is not. Either way
+   * the link is minted first — an address that does not exist yet cannot be
+   * shared, and the round trip is what makes it exist.
+   */
+  const share = async (plan: CustomPlanRow) => {
+    try {
+      const res = await api<{ url: string }>(
+        `/api/plans/custom/${plan.id}/share`,
+        { method: "POST" }
+      );
+      const message = `${plan.name} — ${res.url}`;
+      if (navigator.share) {
+        await navigator.share({ text: message });
+        return;
+      }
+      await navigator.clipboard.writeText(message);
+      setCopied(plan.id);
+      window.setTimeout(() => setCopied(null), 2600);
+    } catch {
+      // sheet dismissed, or no clipboard — nothing to say about either
+    }
+  };
+
+  const remove = async (plan: CustomPlanRow) => {
+    if (!window.confirm(t("builder.deleteConfirm", { name: plan.name }))) return;
+    onChanged(plans.filter((p) => p.id !== plan.id));
+    await api(`/api/plans/custom?id=${encodeURIComponent(plan.id)}`, {
+      method: "DELETE",
+    }).catch(() => {
+      // gone from the screen; the next load is the arbiter
+    });
+  };
+
+  return (
+    <div className="plan-grid">
+      {plans.map((plan) => {
+        const total = plan.days.length;
+        const done = Math.min(progress[plan.id] ?? 0, total);
+        const finished = done >= total;
+        const today = finished ? null : plan.days[done];
+        const first = today?.[0];
+        return (
+          <div
+            key={plan.id}
+            id={`plan-${plan.id}`}
+            className={`glass card plan-card${
+              pointed === plan.id ? " plan-pointed" : ""
+            }`}
+          >
+            <div className="plan-head">
+              <h3>
+                <Icon name="plan" /> {plan.name}
+              </h3>
+              <span className="plan-count">
+                {done}/{total}
+              </span>
+            </div>
+            <p className="plan-meta">
+              {t("discover.planLength", { n: String(total) })}
+              {plan.fromName && <> · {t("builder.by", { name: plan.fromName })}</>}
+            </p>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.round((done / total) * 100)}%` }}
+              />
+            </div>
+            <div className="plan-actions">
+              {first && today ? (
+                <Link className="cal-link" href={`/?b=${first[0]}&c=${first[1]}`}>
+                  <Icon name="book" /> {t("discover.day", { n: String(done + 1) })}:{" "}
+                  {/* the whole day, not just where it starts — a day of three
+                      chapters that announces one is a day that lies about
+                      itself, and the catalogue's cards say all of theirs */}
+                  {today
+                    .map(([b, c]) =>
+                      refLabel({ b, c, v: 1 }, lang).replace(/:1$/, "")
+                    )
+                    .join(" · ")}
+                </Link>
+              ) : (
+                <span className="email-sent">
+                  <Icon name="party" /> {t("discover.planDone")}
+                </span>
+              )}
+              {!finished && (
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={() => onMark(plan.id, total)}
+                >
+                  ✓ {t("discover.markRead")}
+                </button>
+              )}
+            </div>
+            <div className="plan-own-actions">
+              <button
+                type="button"
+                className="jr-share"
+                onClick={() => onEdit(plan)}
+                aria-label={t("builder.edit", { name: plan.name })}
+                title={t("builder.edit", { name: plan.name })}
+              >
+                <Icon name="note" />
+              </button>
+              <button
+                type="button"
+                className="jr-share"
+                onClick={() => share(plan)}
+                aria-label={t("builder.share", { name: plan.name })}
+                title={t("builder.share", { name: plan.name })}
+              >
+                <Icon name="share" />
+              </button>
+              <button
+                type="button"
+                className="jr-share jr-danger"
+                onClick={() => remove(plan)}
+                aria-label={t("builder.delete", { name: plan.name })}
+                title={t("builder.delete", { name: plan.name })}
+              >
+                <Icon name="trash" />
+              </button>
+              {copied === plan.id && (
+                <span className="email-sent">{t("builder.shared")}</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

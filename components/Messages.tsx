@@ -8,6 +8,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
+import { useStickyTab } from "@/lib/stickyTab";
 import BackToMenu from "@/components/BackToMenu";
 import PrayerList from "@/components/PrayerList";
 
@@ -76,6 +77,9 @@ function whenLabel(ts: number, lang: string): string {
 }
 
 
+/** The toggles, in the order the row shows them. */
+const TABLE_TABS = ["convs", "prayer", "history"] as const;
+
 export default function Messages() {
   const { lang, t } = useI18n();
   const [convs, setConvs] = useState<ConvSummary[] | null>(null);
@@ -97,7 +101,7 @@ export default function Messages() {
    * each other, so it is a segment as well: all three are things waiting at
    * the Table, and they now read as peers.
    */
-  const [tab, setTab] = useState<"convs" | "prayer" | "history">("convs");
+  const [tab, setTab] = useStickyTab("table", "convs", TABLE_TABS);
   /** how many of them are on screen; grows by NOTIF_PAGE on each request */
   const [notifShown, setNotifShown] = useState(NOTIF_PAGE);
   const showHistory = tab === "history";

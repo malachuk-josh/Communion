@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { getPlan } from "@/lib/plans";
+import { resolvePlan } from "@/lib/customPlans";
 import { readPlanHours, writePlanHour, type PlanHour } from "@/lib/planReminders";
 
 /** What time of day each of the reader's plans asks for them. */
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const planId = String(body?.planId ?? "");
   // A plan that does not exist cannot be reminded about, and a field name
   // with a colon in it would land on top of another plan's attribute.
-  if (!planId || planId.includes(":") || !getPlan(planId)) {
+  if (!planId || planId.includes(":") || !(await resolvePlan(userId, planId))) {
     return NextResponse.json({ error: "No such plan." }, { status: 400 });
   }
 

@@ -40,6 +40,9 @@ export default function MyWall() {
       empty={t("wall.mineEmpty")}
       onTakeDown={takeDown}
       canTakeDown={() => true}
+      // Open. This is not a glance at somebody else's room — it is the
+      // handful of verses this reader chose to keep in front of themselves.
+      startOpen
     />
   );
 }

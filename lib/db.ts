@@ -197,6 +197,10 @@ export const keys = {
   userBookmarks: (userId: string) => `user:${userId}:bookmarks`,
   userCollections: (userId: string) => `user:${userId}:collections`,
   userSeeds: (userId: string) => `user:${userId}:seeds`,
+  /** reading plans a reader wrote for themselves (lib/customPlans.ts) */
+  userCustomPlans: (userId: string) => `user:${userId}:custom`,
+  /** a published copy of one, readable by anyone holding the token */
+  sharedPlan: (token: string) => `shared:plan:${token}`,
   sharedCollection: (token: string) => `shared:${token}`,
   convMessages: (convId: string) => `conv:${convId}`,
   userConvs: (userId: string) => `user:${userId}:convs`,

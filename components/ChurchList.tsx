@@ -5,13 +5,17 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
+import { useStickyTab } from "@/lib/stickyTab";
 import StartGathering from "@/components/StartGathering";
 import UpcomingSessions from "@/components/UpcomingSessions";
 import type { Church, DiscoverChurch } from "@/lib/types";
 
+/** The toggles, in the order the row shows them. */
+const GATHERING_TABS = ["mine", "public", "sessions"] as const;
+
 export default function ChurchList() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"mine" | "public" | "sessions">("mine");
+  const [tab, setTab] = useStickyTab("gatherings", "mine", GATHERING_TABS);
   const [churches, setChurches] = useState<Church[] | null>(null);
   const [open, setOpen] = useState<DiscoverChurch[] | null>(null);
 

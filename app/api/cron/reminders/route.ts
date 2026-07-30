@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getBook } from "@/lib/bible";
 import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
-import { getPlan } from "@/lib/plans";
+import { resolvePlan } from "@/lib/customPlans";
 import {
   hourOf,
   isPlanId,
@@ -199,7 +199,9 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
     for (const field of Object.keys(fields)) {
       // ":on", ":at" and ":nudged" are facts about a plan, not plans
       if (!isPlanId(field)) continue;
-      const plan = getPlan(field);
+      // a plan this reader wrote for themselves resolves here too, or it
+      // would be the one plan that never says anything
+      const plan = await resolvePlan(userId, field);
       if (!plan) continue;
 
       const hour = hourOf(fields, profile, field);

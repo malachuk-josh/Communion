@@ -4403,6 +4403,128 @@ button.menu-tile {
   margin: 10px 0 2px;
 }
 
+/* ---- plans people write for themselves (components/PlanBuilder) ---- */
+
+/* The way in, rather than another shelf to look at — so it reads as an
+   action while sitting in the row where the thought occurs. */
+.chip-build {
+  border-style: dashed;
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.builder {
+  width: min(640px, 100%);
+  display: grid;
+  gap: 10px;
+}
+
+/* Four controls that belong to one sentence — this book, these chapters, this
+   many a day — so they sit on one line and wrap together rather than each
+   taking a row of its own. */
+.builder-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.builder-field {
+  display: grid;
+  gap: 3px;
+  flex: 1 1 90px;
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+}
+
+.builder-field select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+
+/* the book is the one worth reading at a glance, so it gets the room */
+.builder-book {
+  flex: 2 1 180px;
+}
+
+/* Capped and scrolled: a year-long plan is 365 lines, and a modal that grows
+   to hold them all is a modal with its buttons off the bottom of the screen. */
+.builder-days {
+  max-height: 34vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 6px;
+}
+
+/* .passage-link is written for anchors, so on a button it keeps the browser's
+   own chrome — a grey box in the middle of a sentence. */
+.builder-clear {
+  margin-left: 10px;
+  font-size: 0.76rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.builder-list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  font-size: 0.86rem;
+}
+
+.builder-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.builder-list li > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+/* tabular so the numbers form a column rather than a ragged edge */
+.builder-day-n {
+  flex: none;
+  min-width: 2.2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+}
+
+/* Correcting, sharing and throwing away — the three things you can do to a
+   plan of your own and to none of the catalogue's, so they sit apart from the
+   two anybody can do to any plan. */
+.plan-own-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.shared-plan-list {
+  margin-top: 14px;
+}
+
+/* The day's action, on a line of its own under the plan. */
+.jr-plan-foot {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+.jr-plan-foot .btn {
+  white-space: nowrap;
+}
+
 /* When a plan asks for you. A line of its own beneath the plan, because
    .jr-row wraps — flex-basis 100% is what sends it there rather than letting
    it squeeze in beside the progress bar. */

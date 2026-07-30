@@ -24,8 +24,10 @@ import {
   type BmRef,
 } from "@/lib/bookmarkKey";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
+import { useStickyTab } from "@/lib/stickyTab";
 import { PLANS } from "@/lib/plans";
 import type { PlanHour } from "@/lib/planReminders";
+import type { CustomPlanRow } from "@/lib/customPlanTypes";
 import { readOutbox } from "@/lib/localStore";
 import { fetchVerses, verseKey } from "@/lib/scripture";
 import {
@@ -43,6 +45,8 @@ import {
 } from "@/lib/sync";
 
 type Tab = "bookmarks" | "notes" | "plans";
+/** The toggles, in the order the row shows them. */
+const JOURNAL_TABS: readonly Tab[] = ["bookmarks", "notes", "plans"];
 
 interface NoteRow {
   b: number;
@@ -107,7 +111,7 @@ export default function Journal() {
   // Bookmarks first, and so the screen opens on them: keeping a verse is
   // the commonest thing anyone does here, and the tab that leads is also
   // the one that opens.
-  const [tab, setTab] = useState<Tab>("bookmarks");
+  const [tab, setTab] = useStickyTab<Tab>("journal", "bookmarks", JOURNAL_TABS);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [bookmarks, setBookmarks] = useState<Record<string, BmEntry>>({});
   const [collections, setCollections] = useState<Record<string, BmCollection>>(
@@ -118,6 +122,8 @@ export default function Journal() {
   const [planHours, setPlanHours] = useState<Record<string, PlanHour> | null>(
     null
   );
+  /** the plans this reader wrote for themselves */
+  const [custom, setCustom] = useState<CustomPlanRow[] | null>(null);
   /** scripture for the verses kept, keyed by verseKey() */
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
@@ -688,6 +694,38 @@ export default function Journal() {
     void enqueue({ kind: "plan.set", id: planId, done: 0, ts: Date.now() });
   };
 
+  /** Today where this device is standing — the honest date for an offline read. */
+  const localDate = () => {
+    try {
+      return new Intl.DateTimeFormat("en-CA").format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  };
+
+  /**
+   * Today's reading, done.
+   *
+   * The same act as the button on the home screen, and written the same way:
+   * it states the total rather than asking for one more, so an outbox the
+   * server takes twice cannot advance anybody twice. The date goes with it,
+   * which is what stops this evening's reminder arriving for a chapter read
+   * this morning.
+   */
+  const markToday = (planId: string, total: number) => {
+    const done = Math.min((plans[planId] ?? 0) + 1, total);
+    const next = { ...plans, [planId]: done };
+    setPlans(next);
+    void writeLocalState({ plans: next });
+    void enqueue({
+      kind: "plan.set",
+      id: planId,
+      done,
+      on: localDate(),
+      ts: Date.now(),
+    });
+  };
+
   const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
   /** With a link of its own in the message, the signature need not repeat one. */
   const SIGNED = "— Communion";
@@ -861,14 +899,39 @@ export default function Journal() {
     // exactly the plan this screen most needs to show.
     const rows = PLANS.map((plan) => ({
       plan,
+      // The catalogue's plans are named in both dictionaries; a plan the
+      // reader wrote is named by them, and t() would hand back the key.
+      name: null as string | null,
       done: plans[plan.id] ?? 0,
       total: plan.days.length,
     })).filter((row) => row.plan.id in plans);
+
+    // and the reader's own, in the same shape, so one row draws both
+    for (const own of custom ?? []) {
+      if (!(own.id in plans)) continue;
+      rows.push({
+        plan: {
+          id: own.id,
+          icon: "plan" as IconName,
+          category: "foundations" as const,
+          name: own.name,
+          days: own.days.map((day) => ({
+            readings: day.map(([b, c]) => ({ b, c })),
+          })),
+        },
+        name: own.name,
+        // Clamped, because a plan can be edited shorter than the reader has
+        // already walked: eleven days into a plan cut back to two is "11/2"
+        // and a progress bar drawn at 550% of its track.
+        done: Math.min(plans[own.id] ?? 0, own.days.length),
+        total: own.days.length,
+      });
+    }
     return {
       going: rows.filter((row) => row.done < row.total),
       finished: rows.filter((row) => row.done >= row.total),
     };
-  }, [plans]);
+  }, [plans, custom]);
 
   const counts: Record<Tab, number> = {
     bookmarks: Object.keys(bookmarks).length,
@@ -885,6 +948,20 @@ export default function Journal() {
       .then((res) => setPlanHours(res.hours))
       .catch(() => setPlanHours({}));
   }, [tab, planHours]);
+
+  /*
+   * The reader's own plans.
+   *
+   * On mount rather than when the Plans tab is opened, unlike the hours: the
+   * count in the toggle is drawn before anybody presses it, and gating this
+   * on the tab meant a reader with three plans of their own saw "Plans 1"
+   * until they went and looked.
+   */
+  useEffect(() => {
+    api<{ plans: CustomPlanRow[] }>("/api/plans/custom")
+      .then((res) => setCustom(res.plans))
+      .catch(() => setCustom([]));
+  }, []);
 
   /**
    * Move one plan's reminder.
@@ -1376,7 +1453,15 @@ export default function Journal() {
           })
         ))}
 
+      {/* "You have no plans" is a claim, and it must not be made while the
+          answer is still in the post. A reader walking nothing but plans of
+          their own — or offline, where the request simply fails — would
+          otherwise be told they have none. */}
+      {tab === "plans" && custom === null && counts.plans === 0 ? (
+        <p className="skeleton">{t("common.loading")}</p>
+      ) : null}
       {tab === "plans" &&
+        !(custom === null && counts.plans === 0) &&
         (counts.plans === 0 ? (
           <Empty
             message={t("journal.noPlans")}
@@ -1398,6 +1483,7 @@ export default function Journal() {
                       {...row}
                       hour={planHours?.[row.plan.id]}
                       onHour={setPlanHour}
+                      onMark={markToday}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
                     />
@@ -1420,6 +1506,7 @@ export default function Journal() {
                       {...row}
                       hour={planHours?.[row.plan.id]}
                       onHour={setPlanHour}
+                      onMark={markToday}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
                     />
@@ -1441,19 +1528,24 @@ const PLAN_HOURS = [5, 6, 7, 8, 9, 10, 12, 15, 17, 19, 20, 21, 22];
 
 function PlanRow({
   plan,
+  name: ownName,
   done,
   total,
   hour,
   onHour,
+  onMark,
   onLeave,
   onRestart,
 }: {
   plan: (typeof PLANS)[number];
+  /** set when the reader wrote this plan — there is no dictionary entry */
+  name: string | null;
   done: number;
   total: number;
   /** undefined while the hours are still being fetched */
   hour: PlanHour | undefined;
   onHour: (id: string, hour: PlanHour) => void;
+  onMark: (id: string, total: number) => void;
   onLeave: (id: string, name: string) => void;
   onRestart: (id: string) => void;
 }) {
@@ -1466,7 +1558,7 @@ function PlanRow({
     <>
       <div className="jr-plan-head">
         <span className="jr-ref">
-          <Icon name={plan.icon} /> {t(`plan.${plan.id}` as MessageKey)}
+          <Icon name={plan.icon} /> {ownName ?? t(`plan.${plan.id}` as MessageKey)}
         </span>
         <span className="plan-count">
           {done}/{total}
@@ -1485,7 +1577,7 @@ function PlanRow({
       </p>
     </>
   );
-  const name = t(`plan.${plan.id}` as MessageKey);
+  const name = ownName ?? t(`plan.${plan.id}` as MessageKey);
   return (
     /* the card cannot be the link any more: a button inside an anchor is
        invalid, and a tap meant for one would follow the other */
@@ -1527,6 +1619,22 @@ function PlanRow({
           Only for plans still underway: a finished plan has nothing to
           remind anybody about, and offering an hour for it would be offering
           a setting that does nothing. */}
+      {/* The footer: what to do today, and when to be asked about it. Both
+          full-width under the plan rather than in the row of icon buttons —
+          crowded in beside them, a word-long button squeezed every plan's
+          title onto two lines. */}
+      {done < total && (
+        <div className="jr-plan-foot">
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => onMark(plan.id, total)}
+            title={t("journal.markReadFor", { name })}
+          >
+            ✓ {t("discover.markRead")}
+          </button>
+        </div>
+      )}
       {done < total && (
         <label className="jr-plan-remind">
           <Icon name="bell" />

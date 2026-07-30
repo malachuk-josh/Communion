@@ -3,7 +3,8 @@ import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
-import { getPlan } from "@/lib/plans";
+import { resolvePlan } from "@/lib/customPlans";
+import type { Plan } from "@/lib/plans";
 import { isPlanId } from "@/lib/planReminders";
 
 // The outbox drains here. Every operation is a statement of intent — "this
@@ -111,6 +112,23 @@ export async function POST(req: Request) {
   const latestPlausible = new Date(Date.now() + 86400000)
     .toISOString()
     .slice(0, 10);
+
+  /*
+   * The plan behind an id, read at most once per request.
+   *
+   * resolvePlan reaches for Redis whenever the id looks like a custom one,
+   * and the loop below runs per op — so a batch of five hundred plan.set ops
+   * naming ids that do not exist was five hundred sequential round trips to
+   * produce five hundred rejections. The answer for one id cannot change
+   * inside one request, so it is asked for once.
+   */
+  const planMemo = new Map<string, Plan | undefined>();
+  const planFor = async (id: string): Promise<Plan | undefined> => {
+    if (planMemo.has(id)) return planMemo.get(id);
+    const found = await resolvePlan(userId, id);
+    planMemo.set(id, found);
+    return found;
+  };
 
   for (const op of ordered) {
     try {
@@ -245,7 +263,7 @@ export async function POST(req: Request) {
         case "plan.set": {
           // States where the plan now stands, not "+1 day" — a batch that is
           // sent twice must not advance anyone twice.
-          const plan = getPlan(String(op.id));
+          const plan = await planFor(String(op.id));
           const done = Number(op.done);
           if (!plan || !Number.isFinite(done)) {
             rejected++;
@@ -271,7 +289,7 @@ export async function POST(req: Request) {
           // stays at nought and keeps asking, and this stops asking. The
           // read-date stamp goes with it, or rejoining later would arrive
           // already marked as read today.
-          const plan = getPlan(String(op.id));
+          const plan = await planFor(String(op.id));
           if (!plan) {
             rejected++;
             break;
