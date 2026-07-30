@@ -17,6 +17,9 @@ const dictionaries = {
     "settings.you": "You",
     "settings.preferences": "Preferences",
     "settings.language": "Language",
+    "settings.redLetter": "Christ’s words in red",
+    "settings.redLetterHint":
+      "The way most printed Bibles set them. Available in the King James, which is the only text here marked speech by speech; other translations read in one colour.",
     "settings.theme": "Theme",
     "settings.themeLight": "Light",
     "settings.themeDark": "Dark",
@@ -649,6 +652,9 @@ const dictionaries = {
     "settings.you": "Tú",
     "settings.preferences": "Preferencias",
     "settings.language": "Idioma",
+    "settings.redLetter": "Las palabras de Cristo en rojo",
+    "settings.redLetterHint":
+      "Como las presentan casi todas las Biblias impresas. Disponible en la King James, el único texto aquí marcado discurso por discurso; las demás traducciones se leen en un solo color.",
     "settings.theme": "Tema",
     "settings.themeLight": "Claro",
     "settings.themeDark": "Oscuro",

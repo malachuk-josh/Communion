@@ -37,6 +37,15 @@ import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { STUDY_WILL_CHANGE, useReading } from "@/lib/reading";
+import {
+  RED_LETTER_CHANGED,
+  fetchRedLetter,
+  paintRed,
+  readRedLetter,
+  redWordsOf,
+  type RedCursor,
+  type RedRuns,
+} from "@/lib/redletter";
 import { fetchBook, fetchChapter, searchLocal } from "@/lib/scripture";
 import { pushVisit } from "@/lib/history";
 import { readOutbox } from "@/lib/localStore";
@@ -225,6 +234,9 @@ export default function Reader({
     string,
     [string, string[] | null][]
   > | null>(null);
+  /** whether this reader wants Christ's words in red, and where they are */
+  const [redLetter, setRedLetter] = useState(false);
+  const [redRuns, setRedRuns] = useState<RedRuns | null>(null);
   const [lexHeb, setLexHeb] = useState<Record<string, LexEntry> | null>(null);
   const [lexGrk, setLexGrk] = useState<Record<string, LexEntry> | null>(null);
   const [lexCounts, setLexCounts] = useState<Record<string, number> | null>(
@@ -925,6 +937,44 @@ export default function Reader({
       cancelled = true;
     };
   }, [study, bookNr]);
+
+  // the setting itself, read after mount and again whenever it is changed on
+  // the settings screen — which is a different route, but the reader is often
+  // still mounted behind it
+  useEffect(() => {
+    const read = () => setRedLetter(readRedLetter());
+    read();
+    window.addEventListener(RED_LETTER_CHANGED, read);
+    return () => window.removeEventListener(RED_LETTER_CHANGED, read);
+  }, []);
+
+  /*
+   * Where Christ speaks in this book.
+   *
+   * Only under the King James. The spans are word indices into the King
+   * James's own wording, and every other translation words the verse
+   * differently — the same index would land on a different word, which is a
+   * claim about who said something, made wrongly. The setting says so plainly
+   * where it is switched on.
+   */
+  const redOn = redLetter && translation === "kjv";
+  useEffect(() => {
+    if (!redOn) {
+      setRedRuns(null);
+      return;
+    }
+    let cancelled = false;
+    fetchRedLetter(bookNr).then((runs) => {
+      if (!cancelled) setRedRuns(runs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [redOn, bookNr]);
+
+  /** The words Christ speaks in one verse, or null where he speaks none. */
+  const redAt = (ch: number, verse: number): Set<number> | null =>
+    redRuns ? redWordsOf(redRuns, ch, verse) : null;
 
   /**
    * Whether this translation's words can be lined up against the evidence.
@@ -2215,6 +2265,11 @@ export default function Reader({
                   const note = notes[key];
                   const tokens = tokensFor(ch, v.verse);
                   const title = headAt(ch, v.verse);
+                  // One cursor for the whole verse: study mode hands it over a
+                  // phrase at a time, and the count of words has to carry from
+                  // one phrase to the next.
+                  const red = redAt(ch, v.verse);
+                  const cur: RedCursor = { word: 0 };
                   return (
                     <div
                       key={v.verse}
@@ -2233,12 +2288,24 @@ export default function Reader({
                         {lineMark(ch, v.verse)}
                         {tokens && tokens.length > 0
                           ? tokens.map((tok, i) => {
-                              if (!tok[1]) return <span key={i}>{tok[0]}</span>;
+                              if (!tok[1]) {
+                                return (
+                                  <span key={i}>
+                                    {paintRed(tok[0], red, cur)}
+                                  </span>
+                                );
+                              }
                               // keep leading spaces/punctuation outside the tap target
                               const m = tok[0].match(
                                 /^([\s,;:.!?()'"—–-]*)([\s\S]*)$/
                               )!;
-                              if (!m[2]) return <span key={i}>{tok[0]}</span>;
+                              if (!m[2]) {
+                                return (
+                                  <span key={i}>
+                                    {paintRed(tok[0], red, cur)}
+                                  </span>
+                                );
+                              }
                               const sel =
                                 wordSel &&
                                 wordSel.ch === ch &&
@@ -2247,7 +2314,7 @@ export default function Reader({
                                 wordSel.nums.join() === tok[1].join();
                               return (
                                 <span key={i}>
-                                  {m[1]}
+                                  {paintRed(m[1], red, cur)}
                                   <button
                                     type="button"
                                     className={`w${sel ? " sel" : ""}${
@@ -2257,12 +2324,12 @@ export default function Reader({
                                       openWord(ch, m[2], tok[1]!, v.verse, !tok[2])
                                     }
                                   >
-                                    {m[2]}
+                                    {paintRed(m[2], red, cur)}
                                   </button>
                                 </span>
                               );
                             })
-                          : v.text}
+                          : paintRed(v.text, red, cur)}
                       </p>
                       <span className="xref-chips">
                         {ctxOf(ch) && (
@@ -2431,7 +2498,7 @@ export default function Reader({
                               )}
                               <sup className="verse-num">{v.verse}</sup>
                               {lineMark(ch, v.verse)}
-                              {v.text}
+                              {paintRed(v.text, redAt(ch, v.verse), { word: 0 })}
                               {mark && (
                                 <sup className="verse-mark" title={mark}>
                                   <StudyStar />
@@ -2466,7 +2533,9 @@ export default function Reader({
                                 {numbered && (
                                   <sup className="verse-num">{v.verse}</sup>
                                 )}
-                                {v.text}
+                                {paintRed(v.text, redAt(ch, v.verse), {
+                                  word: 0,
+                                })}
                                 {mark && (
                                   <sup className="verse-mark" title={mark}>
                                     <StudyStar />
@@ -2500,7 +2569,7 @@ export default function Reader({
                       >
                         <sup className="verse-num">{v.verse}</sup>
                         {lineMark(ch, v.verse)}
-                        {v.text}
+                        {paintRed(v.text, redAt(ch, v.verse), { word: 0 })}
                         {mark && (
                           <sup className="verse-mark" title={mark}>
                             <StudyStar />

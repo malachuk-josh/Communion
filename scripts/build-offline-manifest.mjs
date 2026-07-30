@@ -37,7 +37,10 @@ const reading = merge(
   listDir("headings"),
   listDir("paragraphs"),
   listDir("context"),
-  listDir("xref")
+  listDir("xref"),
+  // where Christ speaks — nine books and 33 KB, and it belongs with reading
+  // rather than study: it is a printing convention, not an apparatus
+  listDir("redletter")
 );
 
 const translations = {

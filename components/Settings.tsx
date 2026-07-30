@@ -15,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
 import OfflineSettings from "@/components/OfflineSettings";
 import ReminderSettings from "@/components/ReminderSettings";
+import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import type { Church, Role } from "@/lib/types";
 
 type MyChurch = Church & { myRole: Role; memberCount: number };
@@ -68,10 +69,12 @@ export default function Settings() {
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState("");
   const [offlineOpen, setOfflineOpen] = useState(false);
+  const [redLetter, setRedLetter] = useState(false);
 
   useEffect(() => {
     const current = document.documentElement.dataset.theme;
     setTheme(current === "light" || current === "grey" ? current : "dark");
+    setRedLetter(readRedLetter());
     api<{ churches: MyChurch[] }>("/api/churches")
       .then((res) => setChurches(res.churches))
       .catch(() => setChurches([]));
@@ -326,6 +329,21 @@ export default function Settings() {
             </button>
           </div>
         </div>
+        {/* Kept on the device rather than on the account: it is a preference
+            about how a page looks, like the theme above it, and it should be
+            true of this phone whether or not anyone is signed in. */}
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={redLetter}
+            onChange={(e) => {
+              setRedLetter(e.target.checked);
+              writeRedLetter(e.target.checked);
+            }}
+          />
+          <span className="wj">{t("settings.redLetter")}</span>
+        </label>
+        <p className="cal-hint">{t("settings.redLetterHint")}</p>
       </div>
 
       <ReminderSettings />
