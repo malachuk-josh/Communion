@@ -211,6 +211,16 @@ export const keys = {
    */
   directory: "users:directory",
   churchThreads: (churchId: string) => `church:${churchId}:threads`,
+  /**
+   * The verses hung on a Gathering's wall, and on a reader's own.
+   *
+   * A hash keyed by the bookmark key rather than a list, so a verse hangs
+   * once however many people reach for it — a wall with the same reference
+   * on it three times is a noticeboard, not a wall — and so taking one down
+   * is a single delete by the reference itself.
+   */
+  churchWall: (churchId: string) => `church:${churchId}:wall`,
+  userWall: (userId: string) => `user:${userId}:wall`,
   churchPrayers: (churchId: string) => `church:${churchId}:prayers`,
   /** the open wall, which belongs to no Gathering */
   publicPrayers: "prayers:public",

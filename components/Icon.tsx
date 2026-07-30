@@ -138,6 +138,20 @@ const PATHS = {
     "M12 12v5",
   ],
   /**
+   * A wall, with something hung on it.
+   *
+   * A framed card on its nail, hung by two wires. Bricks were tried and
+   * thrown away: a wall on its own is masonry, and the courses fought the
+   * frame for the same few pixels until neither could be read. What says
+   * wall here is the hanging, not the wall.
+   */
+  wall: [
+    circle(12, 3.2, 0.9),
+    "M11.4 4L6.4 8.2M12.6 4l5 4.2",
+    "M5.6 8.2h12.8v11.6H5.6z",
+    "M8.6 12.4h6.8M8.6 15.6h4.4",
+  ],
+  /**
    * A reading plan: days in a list, the first of them done.
    *
    * It borrowed the scroll before this, which is the Journal's own icon — so

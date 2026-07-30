@@ -15,6 +15,7 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
 import PrayerList from "@/components/PrayerList";
+import ChurchWall from "@/components/ChurchWall";
 import ThreadList from "@/components/ThreadList";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
@@ -291,6 +292,10 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           the Gathering is public and everything around it is on show. The
           discussions are the opposite: being able to read them is most of
           what makes a Gathering public. */}
+      {(isMember || church.visibility === "public") && (
+        <ChurchWall churchId={churchId} />
+      )}
+
       {isMember && <PrayerList churchId={churchId} />}
 
       {(isMember || church.visibility === "public") && (

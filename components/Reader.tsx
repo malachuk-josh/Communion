@@ -51,6 +51,7 @@ import {
   writeLocalState,
 } from "@/lib/sync";
 import Concordance from "@/components/Concordance";
+import HangOnWall from "@/components/HangOnWall";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -2969,6 +2970,16 @@ export default function Reader({
               if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
             }}
           />
+          {/* Filing and hanging are different acts on the same verse, so they
+              sit together: one puts it on a shelf of yours, the other puts it
+              where somebody else will see it. */}
+          <div className="bm-hang">
+            <HangOnWall
+              bmKey={bmKeyOf(bookNr, bmSheet.c, bmSheet.v, bmSheet.end)}
+              className="btn btn-sm"
+              withLabel
+            />
+          </div>
           <p className="cal-label">{t("reader.addToCollection")}</p>
           <div className="chips bm-coll-chips">
             {Object.entries(collections).map(([id, coll]) => {

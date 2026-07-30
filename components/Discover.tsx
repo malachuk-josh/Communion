@@ -20,6 +20,7 @@ import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import StartGathering from "@/components/StartGathering";
+import MyWall from "@/components/MyWall";
 import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
 
 
@@ -34,7 +35,9 @@ function refLabel(ref: VerseRef, lang: Lang): string {
 
 export default function Discover() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"scripture" | "gatherings">("scripture");
+  const [tab, setTab] = useState<"scripture" | "wall" | "gatherings">(
+    "scripture"
+  );
   const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
   const [gatherings, setGatherings] = useState<Gathering[]>([]);
   /*
@@ -72,6 +75,15 @@ export default function Discover() {
         >
           <Icon name="book" /> {t("discover.tabScripture")}
         </button>
+        {/* between the Word and the people, which is where it belongs: the
+            verses on it came from the one and are held with the other */}
+        <button
+          className={tab === "wall" ? "active" : ""}
+          onClick={() => setTab("wall")}
+          aria-pressed={tab === "wall"}
+        >
+          <Icon name="wall" /> {t("wall.mine")}
+        </button>
         <button
           className={tab === "gatherings" ? "active" : ""}
           onClick={() => setTab("gatherings")}
@@ -83,10 +95,14 @@ export default function Discover() {
       <p className="subtitle">
         {tab === "scripture"
           ? t("discover.subtitleScripture")
-          : t("discover.subtitle")}
+          : tab === "wall"
+            ? t("wall.mineLead")
+            : t("discover.subtitle")}
       </p>
 
-      {tab === "scripture" ? (
+      {tab === "wall" ? (
+        <MyWall />
+      ) : tab === "scripture" ? (
         <>
           <VerseOfDay />
           <TopicsSection />

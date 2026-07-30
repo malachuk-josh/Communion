@@ -4048,6 +4048,162 @@ button.menu-tile {
    plan progress, each sorted into its own kind. Rows are cards so they read
    as the same material as the rest of the app, but a good deal quieter —
    there can be hundreds of them, and .card's 22px would make a wall. */
+/* ---- walls ---- */
+/* A wall reads shut: reference, who hung it, and nothing else until it is
+   asked for. The rows are tighter than a journal row for the same reason —
+   six of them should be one glance rather than one scroll. */
+.wall-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.wall-item {
+  padding: 10px 12px;
+}
+
+.wall-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wall-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wall-caret {
+  flex: none;
+  width: 1em;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+
+.wall-ref {
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wall-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wall-by {
+  margin: 2px 0 0 calc(1em + 8px);
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+
+.wall-text {
+  margin: 8px 0 2px calc(1em + 8px);
+  display: grid;
+  gap: 4px;
+  font-family: var(--serif);
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+
+/* ---- hanging one ---- */
+.hang-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 60;
+}
+
+/*
+ * Lift the row an open menu belongs to.
+ *
+ * Every row is .glass, and backdrop-filter makes a stacking context, so the
+ * NEXT row down painted over the menu hanging out of this one — and took its
+ * taps with it: elementFromPoint at the foot of the menu came back holding
+ * the reference of the bookmark underneath. A z-index on the menu alone
+ * cannot win that, because the contest is between the rows, not between the
+ * menu and anything.
+ */
+.jr-row:has(.hang-menu),
+.bm-sheet:has(.hang-menu) {
+  position: relative;
+  z-index: 61;
+}
+
+.hang-done {
+  margin-left: 6px;
+  font-size: 0.76rem;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* Opens upward as often as down, so it is anchored to the button's edge and
+   allowed to scroll: a bookmark row near the bottom of a long journal would
+   otherwise drop its menu off the page. */
+.hang-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  min-width: 208px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 14px;
+  display: grid;
+  gap: 2px;
+  /* Opaque, and it has to be. .glass is translucent by design, which is right
+     for a card sitting on the page and wrong for a menu sitting ON a card:
+     the verse underneath read straight through the options and neither could
+     be made out. A menu is a thing in front, so it is drawn in front. */
+  background: var(--bg-1);
+  border: 1px solid var(--glass-border-bright);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
+}
+
+.hang-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hang-item:hover {
+  background: var(--glass-strong);
+}
+
+.hang-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bm-hang {
+  margin: 10px 0 2px;
+}
+
 /* the journal's switch is the Table's switch; only the spacing is its own */
 .jr-tabs {
   margin: 16px 0 6px;

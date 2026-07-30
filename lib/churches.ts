@@ -587,6 +587,8 @@ export async function deleteChurch(churchId: string): Promise<void> {
     await kv.del(keys.prayer(id));
   }
 
+  // the wall goes with the room it hung in
+  await kv.del(keys.churchWall(churchId));
   await kv.del(keys.churchThreads(churchId));
   await kv.del(keys.churchEvents(churchId));
   await kv.del(keys.churchPrayers(churchId));

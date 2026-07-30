@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
+import HangOnWall from "@/components/HangOnWall";
 import { api } from "@/lib/client";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import {
@@ -1279,6 +1280,7 @@ export default function Journal() {
                             openEdit(row.key, row.entry.l ?? "", row.entry.c ?? "")
                           }
                         />
+                        <HangOnWall bmKey={row.key} />
                         <ShareButton
                           copied={copied === row.key}
                           label={t("discover.share")}
