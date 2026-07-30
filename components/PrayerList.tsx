@@ -13,6 +13,7 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
+import type { Church } from "@/lib/types";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -45,11 +46,35 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [anonymous, setAnonymous] = useState(false);
+  /** on the wall: which Gatherings this request is going to */
+  const [mine, setMine] = useState<Church[] | null>(null);
+  const [targets, setTargets] = useState<Set<string>>(new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   /** the request whose answer is being written */
   const [answering, setAnswering] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
+
+  /*
+   * Which Gatherings this reader could ask in, fetched when they open the
+   * composer rather than when the wall loads: most visits to a prayer wall
+   * are to read it and to pray, and asking who somebody belongs to on the
+   * chance that they might ask is a request nobody needed.
+   */
+  useEffect(() => {
+    if (!wall || !open || mine !== null) return;
+    api<{ churches: Church[] }>("/api/churches")
+      .then((res) => {
+        setMine(res.churches);
+        // One Gathering is not a choice. Ticking the only box you have is a
+        // step that exists only to be completed, so it is completed.
+        if (res.churches.length === 1) {
+          setTargets(new Set([res.churches[0].id]));
+        }
+      })
+      .catch(() => setMine([]));
+  }, [wall, open, mine]);
 
   const load = useCallback(() => {
     api<{ prayers: PrayerRequest[]; myUserId: string; myRole: string }>(listPath)
@@ -69,13 +94,30 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
     setBusy(true);
     setError("");
     try {
-      const res = await api<{ prayer: PrayerRequest }>(listPath, {
-        method: "POST",
-        body: { text: body, anonymous },
-      });
-      setPrayers((prev) => [res.prayer, ...(prev ?? [])]);
+      if (wall) {
+        /*
+         * One request, several rooms. What comes back is a list of what was
+         * asked where rather than a single row, so the wall is re-read
+         * instead of guessed at — the reader has just written into two or
+         * three lists at once, and the whole point of the wall is that it
+         * shows all of them.
+         */
+        await api("/api/prayers", {
+          method: "POST",
+          body: { text: body, anonymous, churchIds: [...targets] },
+        });
+        load();
+        setTargets(new Set());
+      } else {
+        const res = await api<{ prayer: PrayerRequest }>(listPath, {
+          method: "POST",
+          body: { text: body, anonymous },
+        });
+        setPrayers((prev) => [res.prayer, ...(prev ?? [])]);
+      }
       setText("");
       setAnonymous(false);
+      setPickerOpen(false);
       setOpen(false);
     } catch (e) {
       setError((e as Error).message);
@@ -83,6 +125,14 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
       setBusy(false);
     }
   };
+
+  const toggleTarget = (id: string) =>
+    setTargets((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   /**
    * Praying shows at once and asks afterwards. The server owns the count —
@@ -273,13 +323,9 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
           <Icon name="prayer" /> {wall ? t("prayers.wall") : t("prayers.title")}
           {openRequests.length > 0 && ` (${openRequests.length})`}
         </h2>
-        {/* nothing is asked on the wall — it only shows what was asked
-            elsewhere, and the place to ask is the Gathering it belongs to */}
-        {!wall && (
-          <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
-            ＋ {t("prayers.add")}
-          </button>
-        )}
+        <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
+          ＋ {t("prayers.add")}
+        </button>
       </div>
 
       <p className="pr-privacy cal-hint">
@@ -287,16 +333,61 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
         {wall ? t("prayers.wallNote") : t("prayers.privacy")}
       </p>
 
-      {open && !wall && (
+      {open && (
         <div className="glass card pr-compose">
           <textarea
             value={text}
             autoFocus
             rows={3}
             maxLength={1000}
-            placeholder={t("prayers.placeholder")}
+            placeholder={t(wall ? "prayers.placeholderWall" : "prayers.placeholder")}
             onChange={(e) => setText(e.target.value)}
           />
+          {/* Where it is going. Only on the wall: inside a Gathering the
+              answer is already settled by being there. */}
+          {wall && (
+            <div className="pr-where">
+              <button
+                type="button"
+                className="pr-where-btn"
+                aria-expanded={pickerOpen}
+                onClick={() => setPickerOpen((v) => !v)}
+              >
+                <span>
+                  <Icon name="church" />{" "}
+                  {targets.size === 0
+                    ? t("prayers.chooseGatherings")
+                    : t("prayers.chosen", { n: String(targets.size) })}
+                </span>
+                <span className={`bn-caret${pickerOpen ? " open" : ""}`}>⌄</span>
+              </button>
+              {pickerOpen && (
+                <div className="pr-where-list">
+                  {mine === null ? (
+                    <p className="skeleton">{t("common.loading")}</p>
+                  ) : mine.length === 0 ? (
+                    <p className="cal-hint">
+                      {t("prayers.noGatherings")}{" "}
+                      <Link href="/churches" className="passage-link">
+                        {t("nav.churches")} →
+                      </Link>
+                    </p>
+                  ) : (
+                    mine.map((church) => (
+                      <label key={church.id} className="toggle-row">
+                        <input
+                          type="checkbox"
+                          checked={targets.has(church.id)}
+                          onChange={() => toggleTarget(church.id)}
+                        />
+                        {church.name}
+                      </label>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <label className="toggle-row">
             <input
               type="checkbox"
@@ -318,9 +409,11 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
               type="button"
               className="btn btn-sm btn-primary"
               onClick={add}
-              disabled={busy || !text.trim()}
+              disabled={busy || !text.trim() || (wall && targets.size === 0)}
             >
-              {t("prayers.post")}
+              {/* "Add to the list" is one list; from the wall it may be
+                  several, and it is being sent rather than filed */}
+              {t(wall ? "prayers.postWall" : "prayers.post")}
             </button>
           </div>
         </div>
