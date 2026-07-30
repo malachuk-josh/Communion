@@ -205,6 +205,16 @@ export const keys = {
   sharedPlan: (token: string) => `shared:plan:${token}`,
   sharedCollection: (token: string) => `shared:${token}`,
   convMessages: (convId: string) => `conv:${convId}`,
+  /**
+   * Reactions to the messages in one conversation.
+   *
+   * One hash for the whole conversation, field "<messageId>:<userId>", rather
+   * than a key per message: a thread is read whole and re-read every few
+   * seconds, and a key per message would be one round trip per bubble on
+   * every poll. Neither a message id nor a user id contains a colon, so the
+   * field splits on the first one.
+   */
+  convReactions: (convId: string) => `conv:${convId}:reactions`,
   userConvs: (userId: string) => `user:${userId}:convs`,
   userNotifs: (userId: string) => `user:${userId}:notifs`,
   planUsers: "plans:users",

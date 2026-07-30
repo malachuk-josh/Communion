@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getBook } from "@/lib/bible";
 import { api } from "@/lib/client";
 import { parseBmKey } from "@/lib/bookmarkKey";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 
 type Attachment =
   | {
@@ -22,12 +22,38 @@ type Attachment =
     }
   | { kind: "collection"; token: string; name: string; count: number };
 
+/** The five ways to answer without writing. Server-side twin: lib/messages. */
+const REACTIONS = ["like", "heart", "question", "emphasize", "laugh"] as const;
+type ReactionKind = (typeof REACTIONS)[number];
+
+/**
+ * Drawn as emoji, and alone in this app in being so.
+ *
+ * Everything else here is a line icon, because an icon is a label and the app
+ * wants one voice. A reaction is not a label — it IS the thing said, the way a
+ * word in a message is, and rendering "heart" as a monochrome outline would
+ * turn an answer back into a button.
+ */
+const REACTION_GLYPH: Record<ReactionKind, string> = {
+  like: "👍",
+  heart: "❤️",
+  question: "❓",
+  emphasize: "‼️",
+  laugh: "😂",
+};
+
+interface Reactions {
+  counts: Partial<Record<ReactionKind, number>>;
+  mine?: ReactionKind;
+}
+
 interface ChatMessage {
   id: string;
   from: string;
   text: string;
   ts: number;
   attach?: Attachment;
+  reactions?: Reactions;
 }
 
 type VerseShare = {
@@ -62,6 +88,8 @@ export default function MessageThread({ peerId }: { peerId: string }) {
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** the message whose reaction picker is open, if any */
+  const [reactFor, setReactFor] = useState<string | null>(null);
   const [shareItems, setShareItems] = useState<ShareItem[] | null>(null);
   const lastTs = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -131,6 +159,53 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       setError((e as Error).message);
     } finally {
       setSending(false);
+    }
+  };
+
+  /**
+   * Answer a message, or take the answer back.
+   *
+   * Applied on screen before the server is asked. A reaction is a small thing
+   * said quickly, often several in a row, and a round trip between the tap
+   * and the mark is long enough to make somebody tap again. The poll below
+   * is the arbiter: if the write failed, the next read puts it back.
+   */
+  const react = async (messageId: string, kind: ReactionKind) => {
+    setReactFor(null);
+    /*
+     * What it becomes is worked out here and not inside the updater below.
+     *
+     * React runs a functional update during render rather than at the moment
+     * it is called, so a variable assigned inside one still holds its old
+     * value on the next line — which meant taking a reaction back sent the
+     * server the reaction again, and it stayed. The screen was right and the
+     * store was wrong, which is the worst of the two.
+     */
+    const mine = messages.find((m) => m.id === messageId)?.reactions?.mine;
+    // the one you already gave, given again, is taken back
+    const next: ReactionKind | null = mine === kind ? null : kind;
+
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const counts = { ...(m.reactions?.counts ?? {}) };
+        const had = m.reactions?.mine;
+        if (had) {
+          const left = (counts[had] ?? 1) - 1;
+          if (left > 0) counts[had] = left;
+          else delete counts[had];
+        }
+        if (next) counts[next] = (counts[next] ?? 0) + 1;
+        return { ...m, reactions: { counts, ...(next ? { mine: next } : {}) } };
+      })
+    );
+    try {
+      await api(`/api/messages/${peerId}/reactions`, {
+        method: "POST",
+        body: { messageId, kind: next },
+      });
+    } catch {
+      // the next poll is the arbiter
     }
   };
 
@@ -358,6 +433,60 @@ export default function MessageThread({ peerId }: { peerId: string }) {
                     >
                       ✕
                     </button>
+                  )}
+                </div>
+
+                {/* Under the bubble and aligned with it: what has been said
+                    back without words. The picker opens from the same row,
+                    so answering and seeing the answers are one place. */}
+                <div
+                  className={`react-row${m.from === myUserId ? " mine" : ""}`}
+                >
+                  {REACTIONS.filter((k) => (m.reactions?.counts[k] ?? 0) > 0).map(
+                    (k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`react-chip${
+                          m.reactions?.mine === k ? " on" : ""
+                        }`}
+                        onClick={() => react(m.id, k)}
+                        aria-pressed={m.reactions?.mine === k}
+                        aria-label={t(`react.${k}` as MessageKey)}
+                        title={t(`react.${k}` as MessageKey)}
+                      >
+                        {REACTION_GLYPH[k]}
+                        <span>{m.reactions?.counts[k]}</span>
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    className="react-add"
+                    onClick={() =>
+                      setReactFor((cur) => (cur === m.id ? null : m.id))
+                    }
+                    aria-expanded={reactFor === m.id}
+                    aria-label={t("react.add")}
+                    title={t("react.add")}
+                  >
+                    <Icon name="thought" />
+                  </button>
+                  {reactFor === m.id && (
+                    <span className="react-picker">
+                      {REACTIONS.map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          className={m.reactions?.mine === k ? "on" : ""}
+                          onClick={() => react(m.id, k)}
+                          aria-label={t(`react.${k}` as MessageKey)}
+                          title={t(`react.${k}` as MessageKey)}
+                        >
+                          {REACTION_GLYPH[k]}
+                        </button>
+                      ))}
+                    </span>
                   )}
                 </div>
               </div>

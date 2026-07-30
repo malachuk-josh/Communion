@@ -97,8 +97,13 @@ export default function MenuMenu({
         <Icon name="menu" />
       </button>
 
+      {/* Not .glass. That class carries backdrop-filter: blur(24px), and
+          .menu-pop paints an opaque background straight over it — so the blur
+          was computed, composited and then completely hidden. On a phone that
+          is a snapshot-and-blur of the whole backdrop every time the menu
+          opens, which is the hesitation before it appears. */}
       {open && (
-        <div className="menu-pop glass" role="menu">
+        <div className="menu-pop" role="menu">
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.key}

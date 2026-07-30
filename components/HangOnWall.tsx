@@ -138,8 +138,10 @@ export default function HangOnWall({
       {done && <span className="hang-done">{t("wall.hung", { name: done })}</span>}
       {error && <span className="error-text hang-done">{error}</span>}
 
+      {/* .hang-menu paints its own opaque background, so .glass would only add
+          a backdrop blur nobody can see — see components/MenuMenu. */}
       {open && (
-        <div className={inline ? "hang-list" : "hang-menu glass"} role="menu">
+        <div className={inline ? "hang-list" : "hang-menu"} role="menu">
           {items}
         </div>
       )}

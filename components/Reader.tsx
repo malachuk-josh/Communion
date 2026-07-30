@@ -1887,8 +1887,25 @@ export default function Reader({
           rect.top + rect.height / 2 - window.innerHeight / 2
         );
         if (drift > 48) {
+          /*
+           * Smooth only when the verse is nearly here already.
+           *
+           * The reader holds the whole book at once, so arriving from a link
+           * — a verse on a wall, a bookmark, a cross-reference — can mean a
+           * target sixty thousand pixels down the page. Animating that is not
+           * a transition, it is a long shudder down the length of Matthew,
+           * and on a phone it was violent enough to take the app with it.
+           * Worse, this effect re-runs as the chapter's extras arrive, and
+           * each run reset `attempts` and started the animation again, so two
+           * of them fought over the scroll position.
+           *
+           * A jump is a jump: land there. The short corrections that follow,
+           * as headings and study-mode lines push the verse down, are what
+           * smooth was actually good for.
+           */
+          const near = drift < window.innerHeight * 2;
           el.scrollIntoView({
-            behavior: attempts === 0 ? "smooth" : "auto",
+            behavior: attempts === 0 && near ? "smooth" : "auto",
             block: "center",
           });
         }

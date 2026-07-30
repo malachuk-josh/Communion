@@ -26,6 +26,27 @@ export type Attachment =
     }
   | { kind: "collection"; token: string; name: string; count: number };
 
+/**
+ * The five ways to answer a message without writing one.
+ *
+ * One per person per message, and choosing another replaces it — the same
+ * bargain every messaging app makes with these, and the reason they read as
+ * an answer rather than as a tally. Tapping the one you already gave takes
+ * it back.
+ */
+export const REACTIONS = ["like", "heart", "question", "emphasize", "laugh"] as const;
+export type ReactionKind = (typeof REACTIONS)[number];
+
+export function isReaction(kind: unknown): kind is ReactionKind {
+  return REACTIONS.includes(kind as ReactionKind);
+}
+
+/** What a message has collected: how many of each, and which one is mine. */
+export interface Reactions {
+  counts: Partial<Record<ReactionKind, number>>;
+  mine?: ReactionKind;
+}
+
 export interface ChatMessage {
   id: string;
   from: string;
@@ -33,6 +54,8 @@ export interface ChatMessage {
   ts: number;
   /** a shared card: a verse you kept, a note on one, a word, or a collection */
   attach?: Attachment;
+  /** absent when nobody has reacted, which is almost every message */
+  reactions?: Reactions;
 }
 
 export interface ConvSummary {
@@ -138,7 +161,74 @@ export async function getThread(
       // corrupted message — skip
     }
   }
+
+  /*
+   * Reactions, in one read for the whole conversation.
+   *
+   * They cannot live on the message: a message is a JSON string inside a
+   * zset, so changing one means removing the exact old string and adding a
+   * new one — a race with anything else writing to the thread, over a value
+   * that has to match character for character. They are kept beside it
+   * instead, and joined here.
+   */
+  const raw2 = (await kv.hgetall(keys.convReactions(convId))) ?? {};
+  const byMessage = new Map<string, Reactions>();
+  for (const [field, kind] of Object.entries(raw2)) {
+    if (!isReaction(kind)) continue;
+    const at = field.indexOf(":");
+    if (at <= 0) continue;
+    const messageId = field.slice(0, at);
+    const who = field.slice(at + 1);
+    const held = byMessage.get(messageId) ?? { counts: {} };
+    held.counts[kind] = (held.counts[kind] ?? 0) + 1;
+    if (who === userId) held.mine = kind;
+    byMessage.set(messageId, held);
+  }
+  for (const message of messages) {
+    const found = byMessage.get(message.id);
+    if (found) message.reactions = found;
+  }
+
   return messages.sort((a, b) => a.ts - b.ts);
+}
+
+/**
+ * Answer a message, or take the answer back.
+ *
+ * `kind` of null clears whatever this reader left. Anything else replaces it,
+ * so nobody accumulates five reactions on one message — the point of these is
+ * that they are a single gesture.
+ *
+ * The message has to exist in this conversation. Without that check the hash
+ * would take a field for any id at all, which is a way to write into somebody
+ * else's conversation without saying anything they could see.
+ */
+export async function react(
+  userId: string,
+  peerId: string,
+  messageId: string,
+  kind: ReactionKind | null
+): Promise<boolean> {
+  const kv = db();
+  const convId = convIdFor(userId, peerId);
+  const raw = await kv.zrangebyscore(
+    keys.convMessages(convId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  const exists = raw.some((item) => {
+    try {
+      return (JSON.parse(item) as ChatMessage).id === messageId;
+    } catch {
+      return false;
+    }
+  });
+  if (!exists) return false;
+
+  const field = `${messageId}:${userId}`;
+  if (kind === null) await kv.hdel(keys.convReactions(convId), field);
+  else await kv.hset(keys.convReactions(convId), { [field]: kind });
+  return true;
 }
 
 /** Remove one message from the shared thread — its author only. */

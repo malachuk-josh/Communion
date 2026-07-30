@@ -3775,6 +3775,14 @@ button.menu-tile {
 }
 
 /* ---- month grid ---- */
+/* The members and the calendar are two separate things and were touching:
+   the chips row has no margin of its own and the card below starts hard
+   against it, so the two read as one bordered block. Its own class rather
+   than a margin on .chips, which is a dozen other rows across the app. */
+.member-chips {
+  margin-bottom: 14px;
+}
+
 .month-grid {
   margin-bottom: 18px;
 }
@@ -4450,6 +4458,106 @@ button.menu-tile {
 .pr-where-list .toggle-row {
   margin: 0;
   font-size: 0.9rem;
+}
+
+/* ---- answering a message without words (components/MessageThread) ---- */
+
+/* Under the bubble and on the same side of the thread as it, so a reaction
+   reads as belonging to the message rather than floating between two. */
+.react-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: -2px 0 8px;
+}
+
+.react-row.mine {
+  justify-content: flex-end;
+}
+
+.react-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+/* the one you gave, marked — a count you are part of reads differently */
+.react-chip.on {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.react-chip span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quiet, but a control. Shaped like the chips it sits beside so it reads as
+   something to press rather than as a mark left on the page — at half opacity
+   and with no edge it looked like a smudge under the bubble. Every message
+   carries one, so it stays dim until wanted. */
+.react-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.react-add svg {
+  width: 14px;
+  height: 14px;
+}
+
+.react-add:hover,
+.react-row:has(.react-picker) .react-add {
+  color: var(--ink-dim);
+  border-color: var(--glass-border-bright);
+}
+
+/* In the flow rather than over the thread: the thread scrolls, and a menu
+   positioned over a scroller is a menu that parts company with the message
+   it belongs to the moment anybody moves. */
+.react-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 999px;
+  background: var(--bg-1);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+.react-picker button {
+  border: 0;
+  background: none;
+  padding: 3px 5px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.react-picker button:hover,
+.react-picker button.on {
+  background: var(--glass-strong);
 }
 
 /* ---- plans people write for themselves (components/PlanBuilder) ---- */

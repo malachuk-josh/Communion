@@ -149,7 +149,7 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           </button>
         )}
       </div>
-      <div className="chips">
+      <div className="chips member-chips">
         {church.members.map((m) => (
           <span key={m.userId} className="chip">
             {m.displayName}
