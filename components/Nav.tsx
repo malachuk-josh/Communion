@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
+import MenuMenu from "@/components/MenuMenu";
 
 /**
  * The tabs, in the order the bar shows them. The swipe reads this, and the bar
@@ -408,14 +409,9 @@ export default function Nav() {
           {/* The Word has no menu button here: its navigator carries one, and
               the header on that tab is kept for the passage and study mode. */}
           {!isWord && (
-            <Link
-              href="/menu"
+            <MenuMenu
               className={`theme-toggle settings-gear${isMenu ? " settings-active" : ""}`}
-              aria-label={t("nav.menu")}
-              title={t("nav.menu")}
-            >
-              <Icon name="menu" />
-            </Link>
+            />
           )}
           {/* The Word keeps its header for reading: the passage and study
               mode only. Theme and account live on every other tab. */}

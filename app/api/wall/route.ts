@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
+import { seedDefaultWall } from "@/lib/defaultWall";
 import { hangVerse, listWall, unhangVerse } from "@/lib/wall";
 
 // A reader's own wall: the verses on their home screen. No membership to
@@ -11,6 +12,8 @@ export async function GET(req: Request) {
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // first sight of this wall hangs the four it starts with
+  await seedDefaultWall(userId, await getDisplayName(req)).catch(() => {});
   return NextResponse.json({ entries: await listWall({ userId }) });
 }
 

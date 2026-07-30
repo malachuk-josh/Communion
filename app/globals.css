@@ -2161,6 +2161,95 @@ button.menu-tile {
   cursor: pointer;
 }
 
+/* ---- the menu, as a menu (components/MenuMenu) ---- */
+.menu-pop-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+ * Hangs from the button and hard right, because the button is hard right and
+ * a menu that opened leftward from there would run off the screen. z-index
+ * above the header's own, since the header is what it is hanging from.
+ */
+.menu-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 90;
+  width: min(280px, calc(100vw - 24px));
+  max-height: min(70vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  border-radius: 16px;
+  display: grid;
+  gap: 2px;
+  /* opaque, for the same reason the hang menu is: a menu is a thing in front,
+     and the page reading through it makes neither legible */
+  background: var(--bg-1);
+  border: 1px solid var(--glass-border-bright);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.5);
+}
+
+.menu-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-pop-item > span {
+  display: grid;
+  min-width: 0;
+}
+
+.menu-pop-item strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.menu-pop-item small {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--ink-dim);
+}
+
+.menu-pop-item:hover {
+  background: var(--glass-strong);
+}
+
+.menu-pop-item.on {
+  background: var(--gold-soft);
+}
+
+/* In the reader's navigator the ☰ sits near the middle of the screen rather
+   than at its right edge, and a 280px menu hung from either side of it ran
+   off — off the panel one way, off the screen the other. So there it is
+   anchored to the panel instead of to the button: the wrap gives up being the
+   containing block, and the menu spans the panel under the header it came
+   from. */
+.side-panel .menu-pop-wrap {
+  position: static;
+}
+
+.side-panel .menu-pop {
+  top: 58px;
+  left: 12px;
+  right: 12px;
+  width: auto;
+}
+
 /* ---- messages ---- */
 .conv-row {
   display: flex;
@@ -4164,17 +4253,55 @@ button.menu-tile {
  * cannot win that, because the contest is between the rows, not between the
  * menu and anything.
  */
+/*
+ * Rows only. The bookmark sheet used to be in this rule, and `position:
+ * relative` on a sheet that is `position: fixed` is not a lift — it is a drop:
+ * the sheet left the viewport and landed 47,000px down the document, which
+ * from the reader's side looked like the button closing it. The sheet is
+ * z-index 70 already and has no sibling to lose to.
+ */
 .jr-row:has(.hang-menu),
-.bm-sheet:has(.hang-menu) {
+.jr-row:has(.hang-done) {
   position: relative;
   z-index: 61;
 }
 
+/*
+ * "Hung on Set Free" — said without moving anything.
+ *
+ * This used to sit in the flow beside the button. In a row of icon buttons
+ * that is a nowrap phrase appearing from nothing, which widened the row,
+ * wrapped it, and pushed the hang button somewhere else for the two and a half
+ * seconds the message lasted — then snapped it back. It read as the screen
+ * refreshing. A confirmation is not worth a reflow, so it is taken out of the
+ * flow and floated over the row instead.
+ */
 .hang-done {
-  margin-left: 6px;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 62;
+  padding: 4px 9px;
+  border-radius: 9px;
+  background: var(--bg-1);
+  border: 1px solid var(--glass-border-bright);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
   font-size: 0.76rem;
   color: var(--gold);
   white-space: nowrap;
+  pointer-events: none;
+}
+
+/* In the sheet there is a line to itself and room on it, so the message can
+   simply be part of the page the way any other confirmation is. */
+.hang-inline .hang-done {
+  position: static;
+  display: block;
+  margin: 8px 0 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 /* Opens upward as often as down, so it is anchored to the button's edge and
@@ -4199,6 +4326,23 @@ button.menu-tile {
   background: var(--bg-1);
   border: 1px solid var(--glass-border-bright);
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
+}
+
+/* The same list, in the flow. No shadow and no lift: it is not sitting on the
+   sheet, it is part of it, and it pushes what follows down rather than
+   covering it. */
+.hang-list {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 2px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+}
+
+.hang-inline {
+  display: block;
 }
 
 .hang-item {

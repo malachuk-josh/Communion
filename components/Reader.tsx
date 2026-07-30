@@ -61,6 +61,7 @@ import {
 } from "@/lib/sync";
 import Concordance from "@/components/Concordance";
 import HangOnWall from "@/components/HangOnWall";
+import MenuMenu from "@/components/MenuMenu";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -3047,6 +3048,7 @@ export default function Reader({
               bmKey={bmKeyOf(bookNr, bmSheet.c, bmSheet.v, bmSheet.end)}
               className="btn btn-sm"
               withLabel
+              inline
             />
           </div>
           <p className="cal-label">{t("reader.addToCollection")}</p>
@@ -3537,15 +3539,12 @@ export default function Reader({
               >
                 <Icon name="search" />
               </button>
-              <Link
-                href="/menu"
+              {/* the same menu the header carries, opened from inside the
+                  navigator — the one place on this tab a reader looks for it */}
+              <MenuMenu
                 className="sp-icon-btn"
-                onClick={() => setPanelOpen(false)}
-                aria-label={t("nav.menu")}
-                title={t("nav.menu")}
-              >
-                <Icon name="menu" />
-              </Link>
+                onNavigate={() => setPanelOpen(false)}
+              />
               <button
                 type="button"
                 className="lex-close"

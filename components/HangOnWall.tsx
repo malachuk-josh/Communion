@@ -11,6 +11,12 @@
 // The list is fetched when the menu opens rather than when the page loads:
 // most bookmarks are never hung, and asking which Gatherings somebody belongs
 // to on the chance that they might is a request per bookmark row.
+//
+// Two ways of showing that list, because there are two places this appears.
+// In a row of icon buttons it floats over the page, the way a menu does. In
+// the reader's bookmark sheet it opens in the flow instead: the sheet is a
+// scroll container, and anything absolutely positioned inside one is clipped
+// at its edge — the menu was there, drawn, and unreachable below the fold.
 
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
@@ -22,12 +28,15 @@ export default function HangOnWall({
   bmKey,
   className = "jr-share",
   withLabel = false,
+  inline = false,
 }: {
   /** the bookmark key of the verse or run being hung */
   bmKey: string;
   className?: string;
   /** the sheet has room for a word; a row of icons does not */
   withLabel?: boolean;
+  /** open the list in the flow rather than over the page — see above */
+  inline?: boolean;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -44,9 +53,12 @@ export default function HangOnWall({
       .catch(() => setMine([]));
   }, [open, mine]);
 
-  // a tap anywhere else puts the menu away, the way every other menu behaves
+  // A tap anywhere else puts the menu away, the way every other menu behaves.
+  // Not while it is open in the flow: there it is part of the sheet rather
+  // than something over it, and reaching past it to the note or a collection
+  // chip should not have to be done twice.
   useEffect(() => {
-    if (!open) return;
+    if (!open || inline) return;
     const away = (e: MouseEvent | TouchEvent) => {
       if (!box.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -56,7 +68,7 @@ export default function HangOnWall({
       document.removeEventListener("mousedown", away);
       document.removeEventListener("touchstart", away);
     };
-  }, [open]);
+  }, [open, inline]);
 
   const hang = async (churchId: string | null, name: string) => {
     setBusy(churchId ?? "mine");
@@ -76,8 +88,41 @@ export default function HangOnWall({
     }
   };
 
+  const items = (
+    <>
+      <p className="cal-label">{t("wall.where")}</p>
+      <button
+        type="button"
+        role="menuitem"
+        className="hang-item"
+        disabled={busy !== ""}
+        onClick={() => hang(null, t("wall.mine"))}
+      >
+        <Icon name="wall" /> {t("wall.mine")}
+      </button>
+      {mine === null ? (
+        <p className="skeleton">{t("common.loading")}</p>
+      ) : mine.length === 0 ? (
+        <p className="cal-hint">{t("wall.noGatherings")}</p>
+      ) : (
+        mine.map((church) => (
+          <button
+            key={church.id}
+            type="button"
+            role="menuitem"
+            className="hang-item"
+            disabled={busy !== ""}
+            onClick={() => hang(church.id, church.name)}
+          >
+            <Icon name="church" /> {church.name}
+          </button>
+        ))
+      )}
+    </>
+  );
+
   return (
-    <span className="hang-wrap" ref={box}>
+    <span className={`hang-wrap${inline ? " hang-inline" : ""}`} ref={box}>
       <button
         type="button"
         className={className}
@@ -94,35 +139,8 @@ export default function HangOnWall({
       {error && <span className="error-text hang-done">{error}</span>}
 
       {open && (
-        <div className="hang-menu glass" role="menu">
-          <p className="cal-label">{t("wall.where")}</p>
-          <button
-            type="button"
-            role="menuitem"
-            className="hang-item"
-            disabled={busy !== ""}
-            onClick={() => hang(null, t("wall.mine"))}
-          >
-            <Icon name="wall" /> {t("wall.mine")}
-          </button>
-          {mine === null ? (
-            <p className="skeleton">{t("common.loading")}</p>
-          ) : mine.length === 0 ? (
-            <p className="cal-hint">{t("wall.noGatherings")}</p>
-          ) : (
-            mine.map((church) => (
-              <button
-                key={church.id}
-                type="button"
-                role="menuitem"
-                className="hang-item"
-                disabled={busy !== ""}
-                onClick={() => hang(church.id, church.name)}
-              >
-                <Icon name="church" /> {church.name}
-              </button>
-            ))
-          )}
+        <div className={inline ? "hang-list" : "hang-menu glass"} role="menu">
+          {items}
         </div>
       )}
     </span>
