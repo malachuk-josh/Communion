@@ -45,7 +45,6 @@ export default function BookNav({
   const [noCounts, setNoCounts] = useState<Record<number, boolean>>({});
   /** where the reader has been sent, read once when the navigator opens */
   const [history, setHistory] = useState<Visit[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const currentRef = useRef<HTMLDivElement>(null);
   const asked = useRef(new Set<string>());
 
@@ -248,39 +247,38 @@ export default function BookNav({
       )}
 
       {/* Below the two testaments, and sticky like them: where you have been
-          sent, as opposed to where you have scrolled. */}
+          sent, as opposed to where you have scrolled.
+
+          Not collapsible, and it used to be. A testament folds because it is
+          sixty-six books and you want one of them; ten references fold to save
+          nothing anybody wanted saved, and the whole reason to look at a
+          history is to catch sight of the passage you left — which cannot
+          happen behind a caret you have to press first. So it is simply
+          there, the way the list of books is. */}
       {history.length > 0 && (
         <div>
-          <button
-            type="button"
-            className="bn-testament"
-            aria-expanded={historyOpen}
-            onClick={() => setHistoryOpen((v) => !v)}
-          >
+          <h3 className="bn-testament bn-history-head">
             <span>
               {t("reader.history")}
               <span className="bn-history-count">{history.length}</span>
             </span>
-            <span className={`bn-caret${historyOpen ? " open" : ""}`}>⌄</span>
-          </button>
-          {historyOpen && (
-            <div className="bn-history">
-              {history.map((h) => {
-                const book = getBook(h.b);
-                if (!book) return null;
-                return (
-                  <button
-                    key={`${h.b}:${h.c}:${h.v}`}
-                    type="button"
-                    className="bn-history-row"
-                    onClick={() => onVerse(h.b, h.c, h.v)}
-                  >
-                    {lang === "es" ? book.es : book.en} {h.c}:{h.v}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          </h3>
+          <div className="bn-history">
+            {history.map((h) => {
+              const book = getBook(h.b);
+              if (!book) return null;
+              return (
+                <button
+                  key={`${h.b}:${h.c}:${h.v}`}
+                  type="button"
+                  className="bn-history-row"
+                  onClick={() => onVerse(h.b, h.c, h.v)}
+                >
+                  {lang === "es" ? book.es : book.en} {h.c}:{h.v}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </nav>

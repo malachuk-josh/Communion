@@ -4860,6 +4860,12 @@ button.menu-tile {
   font-variant-numeric: tabular-nums;
 }
 
+/* Dressed as a testament heading — sticky, same weight — but it is a heading
+   and not a control, so it does not offer a finger anything to press. */
+.bn-history-head {
+  cursor: default;
+}
+
 .bn-history {
   display: grid;
   padding: 4px 0 10px;
