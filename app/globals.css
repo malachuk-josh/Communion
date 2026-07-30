@@ -4048,6 +4048,17 @@ button.menu-tile {
    plan progress, each sorted into its own kind. Rows are cards so they read
    as the same material as the rest of the app, but a good deal quieter —
    there can be hundreds of them, and .card's 22px would make a wall. */
+/* who the other person is, in the terms the app can answer it in */
+.thread-shared {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0 4px 10px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
 /* ---- walls ---- */
 /* A wall reads shut: reference, who hung it, and nothing else until it is
    asked for. The rows are tighter than a journal row for the same reason —

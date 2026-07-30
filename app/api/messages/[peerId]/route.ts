@@ -12,6 +12,36 @@ import {
   type Attachment,
 } from "@/lib/messages";
 
+/**
+ * The Gatherings these two both belong to.
+ *
+ * Nothing is disclosed by this that the reader could not already see: every
+ * Gathering listed is one they are in themselves, and its member list is
+ * open to them there. What it adds is the recognising — a name in an inbox
+ * with no context is a stranger, and "you are both in Wednesday Night" is
+ * usually the whole answer to who this is.
+ */
+async function sharedGatherings(
+  userId: string,
+  peerId: string
+): Promise<{ id: string; name: string }[]> {
+  const kv = db();
+  const [mine, theirs] = await Promise.all([
+    kv.smembers(keys.userChurches(userId)),
+    kv.smembers(keys.userChurches(peerId)),
+  ]);
+  const both = new Set(theirs);
+  const shared = mine.filter((id) => both.has(id));
+  if (shared.length === 0) return [];
+  const named = await Promise.all(
+    shared.map(async (id) => {
+      const raw = await kv.hgetall(keys.church(id));
+      return raw?.name ? { id, name: raw.name } : null;
+    })
+  );
+  return named.filter((x): x is { id: string; name: string } => x !== null);
+}
+
 /** Thread with one person; ?since=ts returns only newer messages. */
 export async function GET(
   req: Request,
@@ -32,6 +62,7 @@ export async function GET(
     messages,
     myUserId: userId,
     peerName: profile?.displayName || "Believer",
+    shared: await sharedGatherings(userId, peerId),
   });
 }
 

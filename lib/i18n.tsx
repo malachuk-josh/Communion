@@ -188,6 +188,7 @@ const dictionaries = {
     "messages.findHint": "Anyone who has not made their profile private can be found here.",
     "messages.findNone": "Nobody by that name.",
     "messages.conversations": "Conversations",
+    "messages.shared": "You are both in",
     "messages.tabPrayer": "Prayer",
     "messages.prayerSubtitle":
       "What the believers around you are carrying. Pray with them.",
@@ -819,6 +820,7 @@ const dictionaries = {
     "messages.findHint": "Aquí puedes encontrar a quien no haya hecho privado su perfil.",
     "messages.findNone": "Nadie con ese nombre.",
     "messages.conversations": "Conversaciones",
+    "messages.shared": "Los dos están en",
     "messages.tabPrayer": "Oración",
     "messages.prayerSubtitle":
       "Lo que llevan los creyentes a tu alrededor. Ora con ellos.",

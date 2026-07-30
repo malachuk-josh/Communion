@@ -55,6 +55,8 @@ export default function MessageThread({ peerId }: { peerId: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [myUserId, setMyUserId] = useState("");
   const [peerName, setPeerName] = useState("…");
+  /** the Gatherings both of us are in, which is usually who this is */
+  const [shared, setShared] = useState<{ id: string; name: string }[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -84,11 +86,13 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       messages: ChatMessage[];
       myUserId: string;
       peerName: string;
+      shared?: { id: string; name: string }[];
     }>(`/api/messages/${peerId}`)
       .then((res) => {
         if (cancelled) return;
         setMyUserId(res.myUserId);
         setPeerName(res.peerName);
+        setShared(res.shared ?? []);
         merge(res.messages);
         setLoaded(true);
       })
@@ -257,6 +261,27 @@ export default function MessageThread({ peerId }: { peerId: string }) {
           title={t("messages.clearChat")}
         ><Icon name="trash" /></button>
       </div>
+
+      {/* Under the name, above the conversation: who this is, in the only
+          terms the app can answer it in. It is not repeated with every poll —
+          the shared list comes back on the first load and does not change
+          while somebody is typing. */}
+      {shared.length > 0 && (
+        <p className="thread-shared">
+          <Icon name="church" />
+          <span>
+            {t("messages.shared")}{" "}
+            {shared.map((g, i) => (
+              <span key={g.id}>
+                {i > 0 && " · "}
+                <Link href={`/churches/${g.id}`} className="passage-link">
+                  {g.name}
+                </Link>
+              </span>
+            ))}
+          </span>
+        </p>
+      )}
 
       <div className="thread-scroll">
         {!loaded ? (
