@@ -1039,24 +1039,34 @@ html.welcoming {
   margin-top: 2px;
 }
 
-/* The red-letters slide, in the grey theme. That theme greys every image,
-   which suits the other slides — greyed, they look like the grey theme
-   itself — but this one exists to show the single colour the theme keeps,
-   and a filter cannot spare part of a picture. So the slide carries a second
-   rendering, desaturated by hand around its red letters, and the theme picks
-   which of the two is real. The filter must be lifted from the variant too,
-   or the hand-kept red would be greyed right back out. */
-.tour-slide img.tour-img-grey {
+/* Each slide was captured once per theme, and the theme picks which capture
+   is real. The default (no data-theme, or an explicit dark) is the dark set;
+   light and grey swap in their own. Hidden images never download — lazy
+   loading skips a display:none element. */
+.tour-slide img.tour-light,
+.tour-slide img.tour-grey {
   display: none;
 }
 
-:root[data-theme="grey"] .tour-slide img.tour-img-grey {
+:root[data-theme="light"] .tour-slide img.tour-dark,
+:root[data-theme="grey"] .tour-slide img.tour-dark {
+  display: none;
+}
+
+:root[data-theme="light"] .tour-slide img.tour-light {
   display: block;
-  filter: none;
 }
 
-:root[data-theme="grey"] .tour-slide img.tour-img-color {
-  display: none;
+:root[data-theme="grey"] .tour-slide img.tour-grey {
+  display: block;
+}
+
+/* The grey captures already ARE the grey theme — its own greys, its kept-red
+   letters, its gold primary buttons. The photo-greying rule above must not
+   run them through grayscale again, or the one colour the theme keeps would
+   be filtered back out of the very slide that demonstrates it. */
+:root[data-theme="grey"] .tour-slide img {
+  filter: none;
 }
 
 /* The note about the underlines is a paragraph of small print, not a one-line

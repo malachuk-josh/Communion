@@ -6,31 +6,28 @@
 // screen wanted it too. One list, one markup, so the two places that show the
 // tour cannot drift apart — the same reason the menu is written once.
 //
-// The images are plain files under /tour, fetched lazily and left out of the
-// service worker's caches on purpose: someone who meets the tour once should
-// not carry 650KB of pictures around for it. Every image states its aspect
-// ratio inline so the shelf is laid out before a single byte of it arrives,
-// and the strip never reflows as slides load in.
+// Every screen was captured three times, once in each theme, and CSS picks
+// the set that matches the theme the reader is actually in — a tour that
+// shows the app as it looks right now, not as it looked to whoever took the
+// pictures. No filter fakery: the grey captures keep their red letters and
+// their gold buttons because that is genuinely how the grey theme paints
+// them. Only the visible theme's images download — lazy loading skips a
+// display:none image entirely.
+//
+// The files are plain JPEGs under /tour, left out of the service worker's
+// caches on purpose: someone who meets the tour once should not carry the
+// pictures around for it. Every image states its aspect ratio inline so the
+// shelf is laid out before a single byte arrives, and never reflows.
 
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
-/**
- * Every slide: the file under /tour, its pixel size, and its i18n stem.
- *
- * `grey` names a second rendering of the same screen for the grey theme.
- * That theme runs every image through grayscale(1) — right for photographs,
- * and even for these screenshots, which come out looking like the grey theme
- * itself — but the red-letters slide exists to show the one colour the grey
- * theme keeps, and a filter cannot spare part of a picture. So that slide
- * carries a variant desaturated by hand around its red letters, swapped in
- * by CSS when the theme asks (see .tour-img-grey).
- */
-const SLIDES: Array<{ img: string; w: number; h: number; key: string; grey?: string }> = [
+/** Every slide: the file stem under /tour, its pixel size, its i18n stem. */
+const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
   { img: "reader", w: 720, h: 993, key: "tourReader" },
   { img: "study", w: 720, h: 977, key: "tourStudy" },
   { img: "lexicon", w: 720, h: 769, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
-  { img: "redletters", w: 720, h: 1066, key: "tourRed", grey: "redletters-grey" },
+  { img: "redletters", w: 720, h: 1066, key: "tourRed" },
   { img: "gathering", w: 720, h: 869, key: "tourGathering" },
   { img: "sessions", w: 720, h: 929, key: "tourSessions" },
   { img: "prayer", w: 720, h: 720, key: "tourPrayer" },
@@ -38,30 +35,30 @@ const SLIDES: Array<{ img: string; w: number; h: number; key: string; grey?: str
   { img: "journal", w: 720, h: 924, key: "tourJournal" },
 ];
 
+/** dark is the bare name; the other two carry their theme as a suffix */
+const THEMES = [
+  { cls: "tour-dark", suffix: "" },
+  { cls: "tour-light", suffix: "-light" },
+  { cls: "tour-grey", suffix: "-grey" },
+];
+
 export default function TourStrip() {
   const { t } = useI18n();
   return (
     <div className="tour-strip" role="list">
-      {SLIDES.map(({ img, w, h, key, grey }) => (
+      {SLIDES.map(({ img, w, h, key }) => (
         <figure className="tour-slide" role="listitem" key={img}>
-          <img
-            className={grey ? "tour-img-color" : undefined}
-            src={`/tour/${img}.jpg`}
-            alt={t(`about.${key}` as MessageKey)}
-            loading="lazy"
-            decoding="async"
-            style={{ aspectRatio: `${w} / ${h}` }}
-          />
-          {grey && (
+          {THEMES.map(({ cls, suffix }) => (
             <img
-              className="tour-img-grey"
-              src={`/tour/${grey}.jpg`}
+              key={cls}
+              className={cls}
+              src={`/tour/${img}${suffix}.jpg`}
               alt={t(`about.${key}` as MessageKey)}
               loading="lazy"
               decoding="async"
               style={{ aspectRatio: `${w} / ${h}` }}
             />
-          )}
+          ))}
           <figcaption>
             <strong>{t(`about.${key}` as MessageKey)}</strong>
             <span>{t(`about.${key}Desc` as MessageKey)}</span>
