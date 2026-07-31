@@ -22,6 +22,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ShareTour from "@/components/ShareTour";
 import TourStrip from "@/components/TourStrip";
 import { useI18n } from "@/lib/i18n";
 
@@ -74,6 +75,7 @@ export default function Welcome() {
           <button type="button" className="btn btn-primary welcome-begin" onClick={dismiss} autoFocus>
             {t("welcome.begin")}
           </button>
+          <ShareTour />
           <Link href="/menu/about" className="welcome-more" onClick={dismiss}>
             {t("welcome.more")}
           </Link>

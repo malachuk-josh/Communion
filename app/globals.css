@@ -968,6 +968,44 @@ html.welcoming {
   text-underline-offset: 4px;
 }
 
+/* the demo's share button — quiet next to a primary action, and the same
+   whether it sits under the welcome, the About tour, or /tour */
+.tour-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.tour-share:hover {
+  border-color: var(--glass-border-bright);
+  color: var(--ink);
+}
+
+/* on the About page it stands alone under the strip rather than in a
+   centred action stack */
+.about-card .tour-share {
+  margin: 2px 0 14px;
+}
+
+/* ---- /tour: the demo at an address of its own ---- */
+.tour-page {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 14px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ---- the tour: the demo deck folded into the About page ---- */
 /* A shelf of app screens, thumbed sideways. The images vary in height (each
    ends where its content ends, not at a uniform slice), so it is the image
