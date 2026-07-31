@@ -14,13 +14,23 @@
 
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
-/** Every slide: the file under /tour, its pixel size, and its i18n stem. */
-const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
+/**
+ * Every slide: the file under /tour, its pixel size, and its i18n stem.
+ *
+ * `grey` names a second rendering of the same screen for the grey theme.
+ * That theme runs every image through grayscale(1) — right for photographs,
+ * and even for these screenshots, which come out looking like the grey theme
+ * itself — but the red-letters slide exists to show the one colour the grey
+ * theme keeps, and a filter cannot spare part of a picture. So that slide
+ * carries a variant desaturated by hand around its red letters, swapped in
+ * by CSS when the theme asks (see .tour-img-grey).
+ */
+const SLIDES: Array<{ img: string; w: number; h: number; key: string; grey?: string }> = [
   { img: "reader", w: 720, h: 993, key: "tourReader" },
   { img: "study", w: 720, h: 977, key: "tourStudy" },
   { img: "lexicon", w: 720, h: 769, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
-  { img: "redletters", w: 720, h: 1066, key: "tourRed" },
+  { img: "redletters", w: 720, h: 1066, key: "tourRed", grey: "redletters-grey" },
   { img: "gathering", w: 720, h: 869, key: "tourGathering" },
   { img: "sessions", w: 720, h: 929, key: "tourSessions" },
   { img: "prayer", w: 720, h: 720, key: "tourPrayer" },
@@ -32,15 +42,26 @@ export default function TourStrip() {
   const { t } = useI18n();
   return (
     <div className="tour-strip" role="list">
-      {SLIDES.map(({ img, w, h, key }) => (
+      {SLIDES.map(({ img, w, h, key, grey }) => (
         <figure className="tour-slide" role="listitem" key={img}>
           <img
+            className={grey ? "tour-img-color" : undefined}
             src={`/tour/${img}.jpg`}
             alt={t(`about.${key}` as MessageKey)}
             loading="lazy"
             decoding="async"
             style={{ aspectRatio: `${w} / ${h}` }}
           />
+          {grey && (
+            <img
+              className="tour-img-grey"
+              src={`/tour/${grey}.jpg`}
+              alt={t(`about.${key}` as MessageKey)}
+              loading="lazy"
+              decoding="async"
+              style={{ aspectRatio: `${w} / ${h}` }}
+            />
+          )}
           <figcaption>
             <strong>{t(`about.${key}` as MessageKey)}</strong>
             <span>{t(`about.${key}Desc` as MessageKey)}</span>
