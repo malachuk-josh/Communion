@@ -30,9 +30,9 @@ const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
   { img: "redletters", w: 720, h: 1066, key: "tourRed" },
   { img: "gathering", w: 720, h: 869, key: "tourGathering" },
   { img: "sessions", w: 720, h: 929, key: "tourSessions" },
-  { img: "prayer", w: 720, h: 720, key: "tourPrayer" },
+  { img: "prayer", w: 720, h: 891, key: "tourPrayer" },
   { img: "conversations", w: 720, h: 803, key: "tourConversations" },
-  { img: "journal", w: 720, h: 924, key: "tourJournal" },
+  { img: "journal", w: 720, h: 1040, key: "tourJournal" },
 ];
 
 /** dark is the bare name; the other two carry their theme as a suffix */

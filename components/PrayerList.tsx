@@ -34,6 +34,9 @@ interface PrayerRequest {
   mine?: boolean;
 }
 
+/** how many of the newest open requests arrive unfolded */
+const OPEN_BY_DEFAULT = 3;
+
 export default function PrayerList({ churchId }: { churchId?: string }) {
   const wall = !churchId;
   const listPath = wall
@@ -55,6 +58,18 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
   /** the request whose answer is being written */
   const [answering, setAnswering] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
+  /**
+   * The requests folded down to a line. A wall fills up quickly, and a page
+   * of full requests is a page of scrolling before the newest one; so the
+   * newest few arrive open and everything older arrives as a line — who,
+   * when, and the first words — that a tap opens out.
+   *
+   * Null until the first load so the fold can be dealt once from what
+   * actually arrived; after that it belongs to the reader. A reload keeps
+   * their folds, and anything genuinely new (an id the set has never seen)
+   * arrives open, which is what "new" should do.
+   */
+  const [folded, setFolded] = useState<Set<string> | null>(null);
 
   /*
    * Which Gatherings this reader could ask in, fetched when they open the
@@ -82,6 +97,18 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
         setPrayers(res.prayers);
         setMyUserId(res.myUserId);
         setMyRole(res.myRole);
+        // the first deal of the folds — see the note on `folded`
+        setFolded((prev) => {
+          if (prev !== null) return prev;
+          const open = res.prayers.filter((p) => !p.answeredAt);
+          return new Set(
+            res.prayers
+              .filter(
+                (p) => p.answeredAt || open.indexOf(p) >= OPEN_BY_DEFAULT
+              )
+              .map((p) => p.id)
+          );
+        });
       })
       .catch(() => setPrayers([]));
   }, [listPath]);
@@ -207,8 +234,23 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
   const canClose = (p: PrayerRequest) =>
     (!!p.from && p.from === myUserId) || myRole === "founder";
 
-  const card = (p: PrayerRequest) => (
-    <div key={p.id} className={`glass card pr-card${p.answeredAt ? " answered" : ""}`}>
+  const toggleFold = (id: string) =>
+    setFolded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const card = (p: PrayerRequest) => {
+    const isFolded = folded?.has(p.id) ?? false;
+    return (
+    <div
+      key={p.id}
+      className={`glass card pr-card${p.answeredAt ? " answered" : ""}${
+        isFolded ? " pr-folded" : ""
+      }`}
+    >
       <div className="pr-head">
         <span className="pr-who">
           {p.from ? (
@@ -225,7 +267,7 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
             </Link>
           )}
         </span>
-        {canClose(p) && (
+        {canClose(p) && !isFolded && (
           <span className="pr-tools">
             {p.answeredAt ? (
               <button
@@ -258,17 +300,37 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
             </button>
           </span>
         )}
+        <button
+          type="button"
+          className="pr-fold"
+          aria-expanded={!isFolded}
+          onClick={() => toggleFold(p.id)}
+          aria-label={t(isFolded ? "prayers.unfold" : "prayers.fold")}
+          title={t(isFolded ? "prayers.unfold" : "prayers.fold")}
+        >
+          <span className={`bn-caret${!isFolded ? " open" : ""}`}>▾</span>
+        </button>
       </div>
 
-      <p className="pr-text">{p.text}</p>
+      {isFolded ? (
+        <p
+          className="pr-text pr-text-folded"
+          onClick={() => toggleFold(p.id)}
+          title={t("prayers.unfold")}
+        >
+          {p.text}
+        </p>
+      ) : (
+        <p className="pr-text">{p.text}</p>
+      )}
 
-      {p.answeredAt && (
+      {!isFolded && p.answeredAt && (
         <p className="pr-answer">
           <Icon name="check" /> {p.answer || t("prayers.answered")}
         </p>
       )}
 
-      {answering === p.id ? (
+      {isFolded ? null : answering === p.id ? (
         <div className="pr-answer-edit">
           <textarea
             value={answer}
@@ -314,7 +376,8 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -323,9 +386,27 @@ export default function PrayerList({ churchId }: { churchId?: string }) {
           <Icon name="prayer" /> {wall ? t("prayers.wall") : t("prayers.title")}
           {openRequests.length > 0 && ` (${openRequests.length})`}
         </h2>
-        <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
-          ＋ {t("prayers.add")}
-        </button>
+        <span className="pr-head-tools">
+          {prayers !== null && prayers.length > 1 && (
+            <button
+              className="btn btn-sm"
+              onClick={() =>
+                setFolded(
+                  folded !== null && folded.size > 0
+                    ? new Set()
+                    : new Set(prayers.map((p) => p.id))
+                )
+              }
+            >
+              {folded !== null && folded.size > 0
+                ? t("prayers.unfoldAll")
+                : t("prayers.foldAll")}
+            </button>
+          )}
+          <button className="btn btn-sm" onClick={() => setOpen((v) => !v)}>
+            ＋ {t("prayers.add")}
+          </button>
+        </span>
       </div>
 
       <p className="pr-privacy cal-hint">

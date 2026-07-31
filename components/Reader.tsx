@@ -3201,19 +3201,20 @@ export default function Reader({
                 ...TRANSLATIONS.filter((tr) => tr.id !== translation),
               ].map((tr) => {
                 const said = compareRows[tr.id];
-                return (
-                  <div
-                    key={tr.id}
-                    className={`compare-row${
-                      tr.id === translation ? " reading" : ""
-                    }`}
-                  >
+                const inner = (
+                  <>
                     <p className="compare-abbrev">
                       {tr.abbrev}
-                      {tr.id === translation && (
+                      {tr.id === translation ? (
                         <span className="compare-here">
                           {t("reader.compareReading")}
                         </span>
+                      ) : (
+                        typeof said === "string" && (
+                          <span className="compare-go">
+                            {t("reader.compareOpen")}
+                          </span>
+                        )
                       )}
                     </p>
                     {said === undefined ? (
@@ -3223,6 +3224,35 @@ export default function Reader({
                     ) : (
                       <p className="compare-text">{said}</p>
                     )}
+                  </>
+                );
+                /* A verse you can read is a door you can take: any row that
+                   is not the one you are reading closes the window and
+                   carries the reading itself into that translation, still
+                   standing on this verse. Rows with nothing to show stay
+                   plain — an empty room is not a destination. */
+                return tr.id !== translation && typeof said === "string" ? (
+                  <button
+                    key={tr.id}
+                    type="button"
+                    className="compare-row compare-pick"
+                    onClick={() => {
+                      setChapter(compareAt.ch);
+                      setHighlightVerse(compareAt.v);
+                      setCompareAt(null);
+                      setTranslation(tr.id);
+                    }}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <div
+                    key={tr.id}
+                    className={`compare-row${
+                      tr.id === translation ? " reading" : ""
+                    }`}
+                  >
+                    {inner}
                   </div>
                 );
               })}
@@ -3601,20 +3631,22 @@ export default function Reader({
                     </option>
                   ))}
                 </select>
-                {study && (
-                  <button
-                    type="button"
-                    className="btn btn-sm sp-bm"
-                    onClick={() => {
-                      setPanelOpen(false);
-                      setBookmarksOpen(true);
-                    }}
-                  >
-                    <Icon name="bookmark" />
-                    {Object.keys(bookmarks).length > 0 &&
-                      ` ${Object.keys(bookmarks).length}`}
-                  </button>
-                )}
+                {/* In plain mode too, and in the same seat: what you have
+                    kept is worth reaching whether or not the tools are out,
+                    and a button that moves house between modes is a button
+                    that has to be found twice. */}
+                <button
+                  type="button"
+                  className="btn btn-sm sp-bm"
+                  onClick={() => {
+                    setPanelOpen(false);
+                    setBookmarksOpen(true);
+                  }}
+                >
+                  <Icon name="bookmark" />
+                  {Object.keys(bookmarks).length > 0 &&
+                    ` ${Object.keys(bookmarks).length}`}
+                </button>
               </div>
             </div>
 

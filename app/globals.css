@@ -3613,6 +3613,39 @@ button.menu-tile {
   color: var(--ink-faint);
 }
 
+/* A row that is a door: same clothes as its div siblings, plus the signs of
+   being tappable — the hint at the end of its label line, and a border that
+   warms under the finger. */
+button.compare-pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--glass-border);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+button.compare-pick:hover,
+button.compare-pick:focus-visible {
+  border-bottom-color: var(--gold);
+}
+
+button.compare-pick:last-child {
+  border-bottom: 0;
+}
+
+.compare-go {
+  margin-left: auto;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
 .compare-text {
   margin-top: 4px;
   font-family: var(--serif);
@@ -5391,6 +5424,54 @@ button.menu-tile {
   font-size: 0.85rem;
   color: var(--ink-dim);
   font-variant-numeric: tabular-nums;
+}
+
+
+/* ---- folding the wall ---- */
+/* A folded request is a line: who, when, where, and the first words with an
+   ellipsis. The newest few arrive open; everything older arrives folded, and
+   the caret — or the line itself — opens it out. The tools fold away with
+   the body: a card being skimmed past is not the moment for its delete
+   button. */
+.pr-fold {
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  padding: 2px 4px;
+  cursor: pointer;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+.pr-fold .bn-caret {
+  display: inline-block;
+  font-size: 0.9rem;
+  transition: transform 0.18s;
+}
+
+.pr-fold .bn-caret.open {
+  transform: rotate(180deg);
+}
+
+.pr-card.pr-folded {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.pr-text-folded {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-dim);
+  cursor: pointer;
+  margin: 0;
+}
+
+/* the section header carries two small buttons now — fold-all and ask */
+.pr-head-tools {
+  display: inline-flex;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .pr-divider {
