@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
+import { WELCOMED_EVENT, WELCOMED_KEY } from "@/components/Welcome";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -68,9 +69,25 @@ export default function PushPrompt() {
     } catch {
       return;
     }
-    // let the app settle before asking
-    const timer = window.setTimeout(() => setShow(true), 3000);
-    return () => window.clearTimeout(timer);
+    // Let the app settle before asking — and on a first visit, let the
+    // welcome screen finish first. Asking for a permission on top of the
+    // front door is how you teach somebody to say no.
+    let timer = 0;
+    const start = () => {
+      timer = window.setTimeout(() => setShow(true), 3000);
+    };
+    let welcomed = true;
+    try {
+      welcomed = window.localStorage.getItem(WELCOMED_KEY) === "1";
+    } catch {
+      // storage unreadable: the welcome will not show either, so just start
+    }
+    if (welcomed) start();
+    else window.addEventListener(WELCOMED_EVENT, start, { once: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(WELCOMED_EVENT, start);
+    };
   }, []);
 
   const dismiss = () => {

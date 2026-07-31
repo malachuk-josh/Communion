@@ -882,6 +882,92 @@ nav.bottom-nav.glass {
   color: var(--gold);
 }
 
+/* ---- the welcome: the tour as a front door ---- */
+/* Opaque and over everything, including the bars: it is a screen, not a
+   dialog over one. z 95 clears the header (20), both navs (40), every sheet
+   (70-80) and the menu (90) — nothing in the app should be reachable behind
+   a front door. */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: linear-gradient(160deg, var(--bg-1), var(--bg-0) 55%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.welcoming {
+  overflow: hidden;
+}
+
+.welcome-inner {
+  max-width: 620px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding: calc(30px + env(safe-area-inset-top, 0px)) 22px
+    calc(30px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.welcome-brand {
+  font-family: var(--serif);
+  font-size: 2.3rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: linear-gradient(100deg, var(--ink), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-tagline {
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  color: var(--ink);
+  margin-top: -4px;
+}
+
+.welcome-lede {
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  margin-bottom: 8px;
+}
+
+/* the strip is shared with About; only its height is trimmed here so the
+   whole screen — wordmark to button — fits a phone without scrolling */
+.welcome .tour-strip {
+  margin-bottom: 4px;
+}
+
+.welcome .tour-slide img {
+  height: min(46vh, 400px);
+}
+
+.welcome-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin-top: 10px;
+}
+
+.welcome-begin {
+  width: 100%;
+  max-width: 340px;
+  padding: 13px 18px;
+  font-size: 1.02rem;
+}
+
+.welcome-more {
+  font-size: 0.86rem;
+  color: var(--ink-dim);
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+
 /* ---- the tour: the demo deck folded into the About page ---- */
 /* A shelf of app screens, thumbed sideways. The images vary in height (each
    ends where its content ends, not at a uniform slice), so it is the image

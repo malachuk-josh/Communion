@@ -6,6 +6,7 @@ import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
 import ViewportInsets from "@/lib/viewport";
 import PushPrompt from "@/components/PushPrompt";
+import Welcome from "@/components/Welcome";
 import OfflineReady from "@/components/OfflineReady";
 import ActingAs from "@/components/ActingAs";
 import "./globals.css";
@@ -77,6 +78,7 @@ export default function RootLayout({
             <Nav />
             <main className="page">{children}</main>
             <ActingAs />
+            <Welcome />
             <PushPrompt />
             <OfflineReady />
           </ReadingProvider>
