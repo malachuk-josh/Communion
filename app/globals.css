@@ -882,6 +882,77 @@ nav.bottom-nav.glass {
   color: var(--gold);
 }
 
+/* ---- the tour: the demo deck folded into the About page ---- */
+/* A shelf of app screens, thumbed sideways. The images vary in height (each
+   ends where its content ends, not at a uniform slice), so it is the image
+   height that is fixed and the widths that follow — a shelf of photographs,
+   not a contact sheet. Every img carries its aspect-ratio inline, so the
+   shelf takes its final shape before anything has loaded. */
+.tour-hint {
+  font-size: 0.86rem;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin-top: -2px;
+}
+
+.tour-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 2px 12px;
+  margin: 0 -4px 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tour-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.tour-slide {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  margin: 0;
+  /* a caption can only be as wide as its picture */
+  display: flex;
+  flex-direction: column;
+  max-width: 76vw;
+}
+
+.tour-slide img {
+  height: min(54vh, 420px);
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: top;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border-bright);
+  background: #000;
+}
+
+.tour-slide figcaption {
+  padding: 8px 2px 0;
+  width: 0;
+  min-width: 100%;
+}
+
+.tour-slide strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.tour-slide span {
+  display: block;
+  font-size: 0.79rem;
+  line-height: 1.4;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
 /* The note about the underlines is a paragraph of small print, not a one-line
    aside. .notice centres its text and drops it to the faintest ink there is,
    which is right for a sentence and unreadable at a hundred and forty words —

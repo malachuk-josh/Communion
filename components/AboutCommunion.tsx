@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import AboutTour from "@/components/AboutTour";
 import BackToMenu from "@/components/BackToMenu";
 
 export default function AboutCommunion() {
@@ -16,6 +17,9 @@ export default function AboutCommunion() {
         </blockquote>
         <p>{t("about.p1")}</p>
         <p>{t("about.p2")}</p>
+
+        <AboutTour />
+
         <h3>{t("about.howTitle")}</h3>
         <ol className="about-list">
           {[1, 2, 3, 4, 5, 6].map((n) => (
