@@ -90,6 +90,7 @@ export async function getChurch(churchId: string): Promise<Church | null> {
     founderId: raw.founderId ?? "",
     visibility: raw.visibility === "private" ? "private" : "public",
     createdAt: Number(raw.createdAt ?? 0),
+    ...(raw.planId ? { planId: raw.planId } : {}),
   };
 }
 
@@ -495,11 +496,19 @@ export async function getEventForMember(
 export async function updateChurch(
   churchId: string,
   userId: string,
-  patch: { name?: string; description?: string; visibility?: string }
+  patch: {
+    name?: string;
+    description?: string;
+    visibility?: string;
+    planId?: string;
+  }
 ): Promise<boolean> {
   const role = await getRole(churchId, userId);
   if (role !== "founder") return false;
   const updates: Record<string, string> = {};
+  // "" clears it — the Gathering stops reading together, and nobody's own
+  // progress is touched, because it was never stored here in the first place
+  if (patch.planId !== undefined) updates.planId = patch.planId.slice(0, 64);
   const name = patch.name?.trim();
   if (name) updates.name = name.slice(0, 80);
   if (patch.description !== undefined) {

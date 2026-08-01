@@ -19,6 +19,15 @@ export interface Church {
   founderId: string;
   visibility: Visibility;
   createdAt: number;
+  /**
+   * A plan the whole Gathering is walking, if the founder has set one.
+   *
+   * Only the id is kept here. Progress stays where it already lives — each
+   * reader's own plan record — because a Gathering reading together is not a
+   * different kind of reading, it is the same reading with company. Somebody
+   * who was already on day nine of this plan brings day nine with them.
+   */
+  planId?: string;
 }
 
 export interface Member {

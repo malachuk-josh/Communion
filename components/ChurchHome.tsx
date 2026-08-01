@@ -16,6 +16,7 @@ import { parsePassage } from "@/lib/passage";
 import MonthGrid from "@/components/MonthGrid";
 import PrayerList from "@/components/PrayerList";
 import ChurchWall from "@/components/ChurchWall";
+import ChurchPlan from "@/components/ChurchPlan";
 import ThreadList from "@/components/ThreadList";
 import type { ChurchDetail, RsvpStatus, SessionType, WorshipEvent } from "@/lib/types";
 
@@ -294,6 +295,16 @@ export default function ChurchHome({ churchId }: { churchId: string }) {
           what makes a Gathering public. */}
       {(isMember || church.visibility === "public") && (
         <ChurchWall churchId={churchId} />
+      )}
+
+      {/* Members only, like the prayer list. What a room is reading is no
+          secret; how far along each person is belongs to the room. */}
+      {isMember && (
+        <ChurchPlan
+          churchId={churchId}
+          myUserId={myUserId}
+          isFounder={church.myRole === "founder"}
+        />
       )}
 
       {isMember && <PrayerList churchId={churchId} />}

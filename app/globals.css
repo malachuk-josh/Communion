@@ -5560,3 +5560,72 @@ button.compare-pick:last-child {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* What the Gathering is reading — see components/ChurchPlan. The bar is a
+   background gradient rather than a nested element so a row stays one line
+   of markup and the list keeps its rhythm at any width. */
+.cohort-name {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.cohort-me {
+  color: var(--gold);
+  font-size: 0.92rem;
+  margin: 10px 0 4px;
+}
+
+.cohort-list {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.cohort-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.cohort-who {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cohort-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--gold) var(--pct, 0%),
+    var(--glass) var(--pct, 0%)
+  );
+}
+
+.cohort-day {
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* not started: present, but plainly not walking yet */
+.cohort-waiting .cohort-who,
+.cohort-waiting .cohort-day {
+  opacity: 0.55;
+}
+
+.cohort-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
