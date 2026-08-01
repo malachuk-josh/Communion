@@ -82,13 +82,18 @@ export async function hangVerse(opts: {
 
   const kv = db();
   const key = wallKey(opts);
-  const existing = (await kv.hgetall(key)) ?? {};
+
   // Already up. Left as whoever hung it first hung it: a wall records who
   // brought a verse to the room, and the second person to reach for it did
   // not bring it.
-  if (existing[opts.key]) {
+  const alreadyUp = async (): Promise<WallEntry | null> => {
     const held = await listWall(opts);
-    const entry = held.find((e) => e.key === opts.key);
+    return held.find((e) => e.key === opts.key) ?? null;
+  };
+
+  const existing = (await kv.hgetall(key)) ?? {};
+  if (existing[opts.key]) {
+    const entry = await alreadyUp();
     if (entry) return { ok: true, entry };
   }
   /*
@@ -113,6 +118,27 @@ export async function hangVerse(opts: {
     at: Date.now(),
     ...(opts.note?.trim() ? { note: opts.note.trim().slice(0, 200) } : {}),
   };
+  /*
+   * Asked once more, immediately before writing.
+   *
+   * Two people can reach for the same verse in the same second — which is
+   * not a freak event on a wall, it is what a room reading together looks
+   * like — and both would have passed the check above with the field empty.
+   * The second write then replaced the first hanger's name, their note and
+   * their timestamp with its own, so the wall credited the wrong person for
+   * bringing the verse. That is the one thing this hash records that cannot
+   * be worked out again from anywhere else.
+   *
+   * A re-read cannot close the window completely without a transaction the
+   * store does not have, but it shrinks it to the gap between these two
+   * lines, and it only ever declines to overwrite — nothing is lost either
+   * way round.
+   */
+  if (((await kv.hgetall(key)) ?? {})[opts.key]) {
+    const winner = await alreadyUp();
+    if (winner) return { ok: true, entry: winner };
+  }
+
   const { key: _key, b: _b, c: _c, v: _v, end: _end, ...stored } = entry;
   await kv.hset(key, { [opts.key]: JSON.stringify(stored) });
   return { ok: true, entry };

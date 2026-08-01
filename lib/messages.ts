@@ -342,7 +342,6 @@ export async function deleteMessage(
         })
         .filter((m): m is ChatMessage => m !== null)
         .sort((a, b) => a.ts - b.ts);
-      const last = after[after.length - 1];
       for (const side of [userId, peerId]) {
         const summaries = (await kv.hgetall(keys.userConvs(side))) ?? {};
         if (!summaries[convId]) continue;
@@ -351,6 +350,25 @@ export async function deleteMessage(
           // already showing something newer than what was deleted: the
           // summary is right and this delete has nothing to say about it
           if (summary.ts > message.ts) continue;
+          /*
+           * Each side's own floor. Clearing a conversation does not delete
+           * the messages — it records the moment it was cleared, and the
+           * thread hides everything at or before it. Rebuilding the preview
+           * from every message in the zset ignored that, so when the other
+           * person deleted something, a conversation somebody had cleared
+           * came back into their inbox quoting a line from before they
+           * cleared it. What one side hid, the other side's delete undid.
+           */
+          const floor = await clearedAt(side, convId);
+          const visible = floor ? after.filter((m) => m.ts > floor) : after;
+          const last = visible[visible.length - 1];
+          if (!last && floor) {
+            // they cleared this, and the one message that had brought it back
+            // is the message just deleted: hidden again, as it was
+            await kv.hdel(keys.userConvs(side), convId);
+            await kv.hdel(keys.userConvs(side), unreadField(convId));
+            continue;
+          }
           if (last) {
             summary.lastText = last.text;
             summary.lastFrom = last.from;

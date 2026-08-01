@@ -247,6 +247,22 @@ export async function togglePrayed(
   const already = (await kv.smembers(key)).includes(userId);
   if (already) await kv.srem(key, userId);
   else await kv.sadd(key, userId);
+
+  /*
+   * Was the request still there when we wrote?
+   *
+   * Two people can be in this function and deletePrayer at the same moment,
+   * and the check above happened before the write below. When the delete won
+   * the race, this call added a member to a set belonging to a request that
+   * no longer exists — a key nothing reads, nothing lists and nothing ever
+   * cleans, left behind for the life of the store. Rare, and it accumulates,
+   * which is the only reason it is worth a second read.
+   */
+  if (!(await kv.hgetall(keys.prayer(prayerId)))?.text) {
+    await kv.del(key);
+    return null;
+  }
+
   const prayed = (await kv.smembers(key)).length;
   return { prayed, iPrayed: !already };
 }

@@ -209,8 +209,13 @@ export default function Nav() {
         touch.clientX < SWIPE_EDGE ||
         touch.clientX > window.innerWidth - SWIPE_EDGE ||
         scrollsSideways(e.target) ||
+        // `.welcome` belongs on this list and was missing from it. It is the
+        // front door — a full-screen overlay shown before the app — and a
+        // swipe across it changed the tab underneath, so a first-time reader
+        // brushing sideways over the tour dismissed nothing and silently
+        // moved the app to a screen they could not see.
         document.querySelector(
-          ".modal-overlay, .lex-sheet, .side-panel, .conc-panel"
+          ".modal-overlay, .lex-sheet, .side-panel, .conc-panel, .welcome"
         )
       ) {
         from = null;
@@ -314,7 +319,11 @@ export default function Nav() {
   // unless the sheet closed to hand off to another dialog, which owns focus
   useEffect(() => {
     if (wasOpen.current && !panelOpen) {
-      if (!document.querySelector(".modal-overlay, .lex-sheet, .side-panel")) {
+      if (
+        !document.querySelector(
+          ".modal-overlay, .lex-sheet, .side-panel, .welcome"
+        )
+      ) {
         chipRef.current?.focus();
       }
     }
