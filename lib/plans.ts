@@ -178,7 +178,8 @@ const cominghome21: Plan = {
   category: "foundations",
   name: "Coming Home — 21 Days",
   days: across([
-    // where the idea comes from: a son, a far country, a father who runs
+    // where the idea comes from: a son, a far country, and a father who saw
+    // him a great way off — because he had never stopped watching the road
     [42, 15],
     // the far country, told honestly
     [19, 32], [19, 51], [32, 2], [28, 14], [23, 55], [29, 2], [20, 26],
