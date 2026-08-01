@@ -151,6 +151,46 @@ const prayer10: Plan = {
   ]),
 };
 
+/**
+ * For anybody walking back.
+ *
+ * Written for the readers of the "When We Were Young" Gathering — people
+ * raised in church who left it for a while and are living for Christ again —
+ * but it is not theirs alone, and nothing in it assumes a particular story.
+ *
+ * The order is the point, and it is the order of the thing itself rather than
+ * the order of the canon. It opens where the whole idea comes from, sits in
+ * the far country long enough to be honest about it, and only then turns. The
+ * turn is deliberately placed at day 11, Romans 8, so that ten days of weight
+ * are answered by "no condemnation" from the middle of the plan rather than
+ * at the end of it — grace arrives before the reader has finished proving
+ * anything, which is the argument Romans is making.
+ *
+ * Proverbs 26 sits at day 8 on purpose. It is the hardest verse in this
+ * territory and the one a returning reader has usually already heard thrown
+ * at them; putting it inside the plan, before the mercy rather than after,
+ * means the plan has said the severe thing itself and has not left it as
+ * something waiting outside.
+ */
+const cominghome21: Plan = {
+  id: "cominghome21",
+  icon: "sunrise",
+  category: "foundations",
+  name: "Coming Home — 21 Days",
+  days: across([
+    // where the idea comes from: a son, a far country, a father who runs
+    [42, 15],
+    // the far country, told honestly
+    [19, 32], [19, 51], [32, 2], [28, 14], [23, 55], [29, 2], [20, 26],
+    // the war, and the end of it
+    [45, 6], [45, 7], [45, 8],
+    // who you now are
+    [49, 2], [49, 5], [50, 3], [51, 3], [48, 5],
+    // and how to walk it out
+    [62, 1], [58, 12], [47, 5], [19, 40], [66, 3],
+  ]),
+};
+
 const armor7: Plan = {
   id: "armor7",
   icon: "shield",
@@ -244,6 +284,7 @@ export const PLANS: Plan[] = [
   romans16,
   nt30,
   prayer10,
+  cominghome21,
   armor7,
   psalms14,
   proverbs31,
