@@ -12,6 +12,30 @@ import type {
 
 export const INVITE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
+/**
+ * How far ahead a session may be scheduled, and how far back.
+ *
+ * There was a floor and no ceiling, which let a session be dated arbitrarily
+ * far into the future — and nothing ever cleared it. The reminder sweep looks
+ * a day ahead, so it never sees such a row; it just sits in the Gathering's
+ * list and in the global index for good, reading "in 273,000 years", and a
+ * timestamp past what a Date can hold renders as Invalid Date in every place
+ * that shows it.
+ *
+ * Five years is far past any real plan and still a number a calendar can
+ * hold. The hour of slack behind is for a session being created as it starts.
+ */
+const SCHEDULE_AHEAD_MS = 5 * 365 * 24 * 60 * 60 * 1000;
+const SCHEDULE_BEHIND_MS = 60 * 60 * 1000;
+
+export function validStartsAt(ts: number, allowPast = false): boolean {
+  if (!Number.isFinite(ts)) return false;
+  const now = Date.now();
+  if (ts > now + SCHEDULE_AHEAD_MS) return false;
+  // an edit may move a session that has already happened; a new one may not
+  return allowPast || ts >= now - SCHEDULE_BEHIND_MS;
+}
+
 const SESSION_TYPES: SessionType[] = [
   "bible_study",
   "prayer",
@@ -528,7 +552,12 @@ export async function updateEvent(
   if (patch.type && isSessionType(patch.type)) updates.type = patch.type;
   const title = patch.title?.trim();
   if (title) updates.title = title.slice(0, 120);
-  if (Number.isFinite(patch.startsAt)) updates.startsAt = patch.startsAt!;
+  if (patch.startsAt !== undefined) {
+    // an edit may move a session backwards — correcting a time that has
+    // already passed is a real thing to do — but not past the far bound
+    if (!validStartsAt(Number(patch.startsAt), true)) return false;
+    updates.startsAt = patch.startsAt;
+  }
   if (Number.isFinite(patch.durationMin)) {
     updates.durationMin = Math.min(Math.max(patch.durationMin!, 5), 24 * 60);
   }

@@ -81,10 +81,38 @@ function rememberShare(token: string, collectionId: string): void {
   }
 }
 
-const newId = () =>
-  Array.from(crypto.getRandomValues(new Uint8Array(6)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+/**
+ * The collection id a share always lands in, on every device.
+ *
+ * The memory above is a device's, and a person is not a device. Saving the
+ * same link on a phone and then on a laptop minted two random ids, both of
+ * which synced, and the reader ended up with the same collection twice under
+ * the same name — the exact thing that memory exists to prevent, defeated by
+ * changing seats.
+ *
+ * Deriving the id from the token instead means both devices name the same
+ * collection without having to know about each other, and the sync contract
+ * does the rest: an operation states intent rather than a delta, so two
+ * devices filing the same verses into the same id is one collection, however
+ * many times it is replayed.
+ *
+ * FNV-1a, twice, for 64 bits taken down to the 12 hex characters a collection
+ * id has. Not a security boundary — nothing here is secret, and the token is
+ * already held by whoever is saving it. It only has to be stable and to not
+ * collide, and 48 bits of id does not collide across the few dozen shelves
+ * one person keeps.
+ */
+function idForShare(token: string): string {
+  const fnv = (seed: number) => {
+    let h = seed;
+    for (let i = 0; i < token.length; i++) {
+      h ^= token.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, "0");
+  };
+  return (fnv(0x811c9dc5) + fnv(0x9e3779b9)).slice(0, 12);
+}
 
 const verseKeyOf = (x: SharedVerse) =>
   bmKeyOf(x.b, x.c, x.v, x.end ?? x.v);
@@ -187,8 +215,17 @@ export default function SharedCollection({
 
       let collectionId = "";
       if (intoCollection && token) {
+        /*
+         * The derived id, unless this device already put the share somewhere
+         * else. A device that saved before ids were derived still has its own
+         * collection, and quietly starting a second one beside it would be
+         * the very duplicate this is here to stop. Nothing merges the two
+         * that already exist — only the reader knows whether they are the
+         * same shelf — but every save from here on converges.
+         */
         const remembered = readSavedShares()[token];
-        collectionId = remembered && collections[remembered] ? remembered : newId();
+        collectionId =
+          remembered && collections[remembered] ? remembered : idForShare(token);
         const name = snap?.name?.trim().slice(0, 80) || t("shared.savedName");
         collections[collectionId] = { ...collections[collectionId], name };
         rememberShare(token, collectionId);

@@ -164,7 +164,28 @@ export async function POST(req: Request) {
       // which is the only reason anybody adds one.
       next = Math.min(done, plan.days.length);
     } else {
-      const found = plan.days.findIndex((d) => key(d) === key(wasNext));
+      /*
+       * The nearest match, not the first one.
+       *
+       * A reading can appear twice in a plan — a chapter revisited, a psalm
+       * that anchors two weeks, or any plan built by repeating a short cycle.
+       * Taking the first occurrence sent a reader on day 40 of such a plan
+       * back to day 5, because day 5 and day 40 are the same chapter, and it
+       * did so on an edit as small as fixing a typo in the name: months of
+       * reading undone by a rename.
+       *
+       * Distance from where they stood is the best evidence available of
+       * which occurrence they were actually at, and it is exact whenever the
+       * edit did not touch the days around them — which is nearly always.
+       */
+      const wanted = key(wasNext);
+      let found = -1;
+      for (let i = 0; i < plan.days.length; i++) {
+        if (key(plan.days[i]) !== wanted) continue;
+        if (found === -1 || Math.abs(i - done) < Math.abs(found - done)) {
+          found = i;
+        }
+      }
       next = found >= 0 ? found : Math.min(done, plan.days.length);
     }
     if (next !== done) {

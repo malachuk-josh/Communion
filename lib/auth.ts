@@ -1,11 +1,117 @@
 // Auth abstraction: real Clerk sessions when keys are configured, otherwise a
-// guest identity supplied by the client (x-guest-id header, generated once and
-// kept in localStorage). API routes never need to know which mode is active.
+// guest identity the server issues and signs. API routes never need to know
+// which mode is active.
 
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { cookies } from "next/headers";
 import { isOwner } from "@/lib/admin";
 import { actingAs } from "@/lib/impersonate";
 
 const clerkEnabled = () => !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+/*
+ * Guest identity, and why it is no longer whatever the client says it is.
+ *
+ * It used to be read straight off an `x-guest-id` header, checked for shape
+ * and nothing else. Nothing tied that string to a person, so it was not an
+ * identity at all — it was a claim, and the app believed every claim. Anybody
+ * who learned another guest's id (they travel: a shared collection, a listed
+ * plan, an invite the server answered) could send it and *be* them — read
+ * their messages, write as them, delete their Gatherings. It was also why
+ * every per-person limit in the app was decorative, since a new header was a
+ * new person with a fresh allowance.
+ *
+ * So the server issues it now. The header no longer says who you are; it says
+ * only that this client wants a guest session, and a session it has never
+ * seen before gets a brand new random one. What carries the identity is an
+ * HttpOnly cookie the browser cannot read and the holder cannot alter without
+ * the signature failing.
+ *
+ * This costs the guest data held by anyone who was relying on the old header
+ * — their next visit is a new guest. Only deployments without Clerk are
+ * affected, which is previews and local development; the live app has had
+ * Clerk enforced throughout, and a forged header there has always been a 401.
+ */
+const GUEST_COOKIE = "communion_guest";
+const GUEST_TTL_SECONDS = 400 * 24 * 60 * 60;
+
+/**
+ * What the cookie is signed with.
+ *
+ * No dedicated secret is required to run the app, so this takes the first
+ * server-side secret the deployment already has. Any real deployment has one
+ * of these; a bare local checkout has none, which is handled below.
+ */
+const guestSecret = (): string | null =>
+  process.env.GUEST_SECRET ||
+  process.env.CLERK_SECRET_KEY ||
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  null;
+
+const sign = (id: string, secret: string) =>
+  createHmac("sha256", secret).update(id).digest("base64url");
+
+/** The id inside a cookie, or null if the cookie was not made by us. */
+function unsign(value: string, secret: string): string | null {
+  const cut = value.lastIndexOf(".");
+  if (cut <= 0) return null;
+  const id = value.slice(0, cut);
+  const given = Buffer.from(value.slice(cut + 1));
+  const want = Buffer.from(sign(id, secret));
+  // constant time, and only after the lengths match — timingSafeEqual throws
+  // on a length mismatch, which would itself be an oracle
+  if (given.length !== want.length || !timingSafeEqual(given, want)) return null;
+  return /^[\w-]{8,64}$/.test(id) ? id : null;
+}
+
+/** Whether this request reached us over TLS, proxies included. */
+function isHttps(req: Request): boolean {
+  const forwarded = req.headers.get("x-forwarded-proto");
+  if (forwarded) return forwarded.split(",")[0].trim() === "https";
+  try {
+    return new URL(req.url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function guestIdentity(req: Request): Promise<string | null> {
+  // A client that never asks for a guest session does not get given one, or
+  // every crawler and preflight would mint an account.
+  const asking = req.headers.get("x-guest-id");
+  if (!asking || !/^[\w-]{8,64}$/.test(asking)) return null;
+
+  const secret = guestSecret();
+  if (!secret) {
+    /*
+     * A checkout with no Clerk, no Upstash and no secret of its own. There is
+     * no persistent store either — lib/db falls back to an in-memory map — so
+     * there is no second person to impersonate and nothing that outlives the
+     * process. Trusting the header here keeps `npm run dev` working with no
+     * setup, which is the only situation this branch can be reached in.
+     */
+    return `guest_${asking}`;
+  }
+
+  const jar = await cookies();
+  const held = jar.get(GUEST_COOKIE)?.value;
+  const known = held ? unsign(held, secret) : null;
+  if (known) return `guest_${known}`;
+
+  const minted = randomBytes(18).toString("base64url");
+  jar.set(GUEST_COOKIE, `${minted}.${sign(minted, secret)}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    // Secure everywhere it can be, which is everywhere this runs for real.
+    // Set unconditionally it would be dropped over plain http, and Safari
+    // counts http://localhost as plain http — so `npm run dev` there would
+    // mint a new guest on every single request and nothing would ever save.
+    secure: isHttps(req),
+    path: "/",
+    maxAge: GUEST_TTL_SECONDS,
+  });
+  return `guest_${minted}`;
+}
 
 /**
  * Whose session this actually is — before any standing-in is considered.
@@ -20,8 +126,7 @@ export async function getRealUserId(req: Request): Promise<string | null> {
     const { userId } = await auth();
     return userId;
   }
-  const guestId = req.headers.get("x-guest-id");
-  return guestId && /^[\w-]{8,64}$/.test(guestId) ? `guest_${guestId}` : null;
+  return guestIdentity(req);
 }
 
 /**

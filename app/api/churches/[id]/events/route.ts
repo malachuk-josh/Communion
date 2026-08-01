@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { createEvent, getRole, isSessionType } from "@/lib/churches";
+import {
+  createEvent,
+  getRole,
+  isSessionType,
+  validStartsAt,
+} from "@/lib/churches";
 
 export async function POST(
   req: Request,
@@ -32,8 +37,7 @@ export async function POST(
     !body ||
     !isSessionType(body.type ?? "") ||
     !title ||
-    !Number.isFinite(startsAt) ||
-    startsAt < Date.now() - 60 * 60 * 1000
+    !validStartsAt(startsAt)
   ) {
     return NextResponse.json({ error: "Invalid session" }, { status: 400 });
   }

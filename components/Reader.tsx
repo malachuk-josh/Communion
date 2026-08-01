@@ -1715,8 +1715,21 @@ export default function Reader({
   const setBookmarkEnd = (ch: number, verse: number, end: number) => {
     const from = bmKeyOf(bookNr, ch, verse);
     const to = bmKeyOf(bookNr, ch, verse, end);
-    if (from === to && !(to in bookmarks)) return;
-    const held = bmKeyAt(ch, verse) ?? from;
+    /*
+     * Is there anything here to change?
+     *
+     * Asked of the bookmark that actually exists, not of the key this would
+     * write. Those come apart in exactly one case, and it is the useful one:
+     * shrinking a run back to a single verse. "Through: this verse" makes a
+     * key with no range in it, which is character for character the key a
+     * lone verse has — so the old test saw a write that changed nothing and
+     * stopped, while the range it was asked to collapse was stored under a
+     * different key entirely and stayed exactly as it was. Picking "this
+     * verse" simply did nothing, every time.
+     */
+    const existing = bmKeyAt(ch, verse);
+    if (!existing && from === to) return;
+    const held = existing ?? from;
     const entry: BmEntry = { ...(bookmarks[held] ?? { t: Date.now() }) };
     const next = { ...bookmarks };
     delete next[held];
@@ -1874,11 +1887,32 @@ export default function Reader({
     return `${name} ${ref[1]}:${ref[2]}${ref[3] ? `–${ref[3]}` : ""}`;
   };
 
+  /*
+   * Has the reader taken the scroll back?
+   *
+   * A ref rather than state, because it has to survive the correction effect
+   * being torn down and rebuilt — which is the whole problem it solves. That
+   * effect re-runs each time a piece of study data lands, and every run
+   * installed a fresh once-only wheel listener, so a scroll that had already
+   * said "leave me alone" was forgotten the moment the next batch of
+   * cross-references arrived. In study mode those trickle in for several
+   * seconds, and the page kept yanking itself back to a verse the reader had
+   * deliberately scrolled away from.
+   */
+  const tookOverScroll = useRef(false);
+
+  // A new target is a new jump, and nobody has taken over from it yet.
+  // Declared before the correction effect so it runs first on a real jump.
+  useEffect(() => {
+    tookOverScroll.current = false;
+  }, [highlightVerse, chapter, bookNr]);
+
   // After a jump, bring the target verse into view — and keep correcting
   // briefly, because study-mode extras (xref chips, original-language lines,
   // notes) load after the text and push the target further down the page.
   useEffect(() => {
     if (loading || chapters.length === 0 || highlightVerse === null) return;
+    if (tookOverScroll.current) return;
     let attempts = 0;
     const settle = () => {
       const el = document.getElementById(`v-${highlightVerse}`);
@@ -1915,8 +1949,12 @@ export default function Reader({
     };
     const id = window.setInterval(settle, 400);
     settle();
-    // the user taking over scrolling ends the correction loop immediately
-    const stop = () => window.clearInterval(id);
+    // the user taking over scrolling ends the correction loop immediately —
+    // and for good, not just until the next batch of study data arrives
+    const stop = () => {
+      tookOverScroll.current = true;
+      window.clearInterval(id);
+    };
     window.addEventListener("wheel", stop, { passive: true, once: true });
     window.addEventListener("touchmove", stop, { passive: true, once: true });
     return () => {
@@ -1924,7 +1962,18 @@ export default function Reader({
       window.removeEventListener("wheel", stop);
       window.removeEventListener("touchmove", stop);
     };
-  }, [loading, chapters, highlightVerse, study, xrefs, strongsTokens, notes]);
+    // `chapter` matters: jumping to the same verse number in another chapter
+    // leaves highlightVerse untouched, and without it the jump never scrolled
+  }, [
+    loading,
+    chapters,
+    chapter,
+    highlightVerse,
+    study,
+    xrefs,
+    strongsTokens,
+    notes,
+  ]);
 
   // a new chapter closes any open word translation
   useEffect(() => {
