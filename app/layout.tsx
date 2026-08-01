@@ -9,6 +9,7 @@ import PushPrompt from "@/components/PushPrompt";
 import Welcome from "@/components/Welcome";
 import OfflineReady from "@/components/OfflineReady";
 import ActingAs from "@/components/ActingAs";
+import PageBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -79,7 +80,11 @@ export default function RootLayout({
             <div className="bg-scene" aria-hidden />
             <PullToRefresh />
             <Nav />
-            <main className="page">{children}</main>
+            {/* Around the page, not the document: a broken screen must not
+                take the nav bar with it, or there is no way off it. */}
+            <main className="page">
+              <PageBoundary>{children}</PageBoundary>
+            </main>
             <ActingAs />
             <Welcome />
             <PushPrompt />

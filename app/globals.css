@@ -5529,3 +5529,34 @@ button.compare-pick:last-child {
   background: var(--glass);
   color: var(--gold);
 }
+
+/* The apology screen — see components/ErrorBoundary. Deliberately plain:
+   it is the one screen that must not depend on anything that might be
+   what broke. */
+.page-error {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.page-error h1 {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.page-error p {
+  color: var(--ink-dim);
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.page-error-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

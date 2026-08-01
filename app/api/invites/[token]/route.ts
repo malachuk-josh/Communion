@@ -43,6 +43,16 @@ export async function POST(
   if (!invite) {
     return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
   }
+  // The Gathering is confirmed before anybody is added to it. A token outlives
+  // the room it opened — invites are keyed by token, so deleting a Gathering
+  // cannot find them — and redeeming a stale one used to write a membership
+  // into a hash nothing reads and put a dead id in the reader's own list,
+  // leaving a Gathering on their screen that opens onto nothing.
+  const church = await getChurch(invite.churchId);
+  if (!church) {
+    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
+  }
+
   const body = (await req.json().catch(() => null)) as {
     displayName?: string;
   } | null;
@@ -51,22 +61,19 @@ export async function POST(
   await addMember(invite.churchId, userId);
 
   // welcome the newcomer, and tell whoever invited them they arrived
-  const church = await getChurch(invite.churchId);
-  if (church) {
-    await sendPushToUser(userId, {
+  await sendPushToUser(userId, {
+    title: `⛪ ${church.name}`,
+    body: "You've joined the Gathering — welcome!",
+    url: `/churches/${church.id}`,
+    tag: `welcome-${church.id}`,
+  }).catch(() => {});
+  if (invite.invitedBy && invite.invitedBy !== userId) {
+    await sendPushToUser(invite.invitedBy, {
       title: `⛪ ${church.name}`,
-      body: "You've joined the Gathering — welcome!",
+      body: `${displayName} accepted your invitation.`,
       url: `/churches/${church.id}`,
-      tag: `welcome-${church.id}`,
+      tag: `joined-${church.id}-${userId}`,
     }).catch(() => {});
-    if (invite.invitedBy && invite.invitedBy !== userId) {
-      await sendPushToUser(invite.invitedBy, {
-        title: `⛪ ${church.name}`,
-        body: `${displayName} accepted your invitation.`,
-        url: `/churches/${church.id}`,
-        tag: `joined-${church.id}-${userId}`,
-      }).catch(() => {});
-    }
   }
   return NextResponse.json({ churchId: invite.churchId });
 }

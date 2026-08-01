@@ -27,10 +27,32 @@ export default function PullToRefresh() {
       // book by making exactly this gesture, and reloading there is both a
       // surprise and, offline, pointless. Every other screen keeps it.
       if (document.documentElement.classList.contains("reading")) return;
-      // reloading would destroy an open sheet or modal — including one the
-      // finger never touched, since sheets leave the page behind them live
-      if (document.querySelector(".modal-overlay, .lex-sheet, .side-panel"))
+      /*
+       * Reloading would destroy an open sheet, modal or the welcome — including
+       * one the finger never touched, since they leave the page behind them
+       * live.
+       *
+       * The welcome matters most and was missing. It is a fixed overlay with
+       * its own scroller, so the page beneath it never moves and `scrollY` is
+       * always 0 — every downward drag inside the tour read as a pull from the
+       * top of the app. A first-time reader scrolling the tour reloaded the
+       * app out from under themselves, and since the welcome shows once, they
+       * came back to the screen it was introducing and never saw the rest.
+       */
+      if (
+        document.querySelector(
+          ".modal-overlay, .lex-sheet, .side-panel, .welcome"
+        )
+      )
         return;
+      /*
+       * A sideways swipe is not a pull. The tour is a horizontal scroll-snap
+       * strip, and no thumb travels perfectly level: the vertical drift in a
+       * swipe across it was enough to arm the refresh and throw the page away
+       * between one screen of the tour and the next.
+       */
+      const target = e.target;
+      if (target instanceof Element && target.closest(".tour-strip")) return;
       startY.current = e.touches[0].clientY;
     };
 

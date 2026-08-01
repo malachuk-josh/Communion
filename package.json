@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prebuild": "node scripts/build-offline-manifest.mjs",
-    "check:acrostics": "node scripts/check-acrostics.mjs"
+    "prebuild": "node scripts/build-offline-manifest.mjs && node scripts/check-i18n.mjs",
+    "check:acrostics": "node scripts/check-acrostics.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.20.0",

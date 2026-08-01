@@ -1,8 +1,8 @@
-import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
 import { getDisplayName, getUserId } from "@/lib/auth";
 import { createChurch, listUserChurches, saveProfile } from "@/lib/churches";
-import { db, keys } from "@/lib/db";
+import { keys } from "@/lib/db";
+import { takeRateSlot, untilNext } from "@/lib/rateLimit";
 
 export async function GET(req: Request) {
   const userId = await getUserId(req);
@@ -30,14 +30,6 @@ export async function GET(req: Request) {
 const GATHERING_LIMIT = 5;
 const GATHERING_WINDOW_MS = 12 * 60 * 60 * 1000;
 
-/** "3 hours", "40 minutes" — long enough to be a real answer, not a countdown. */
-function untilNext(ms: number): string {
-  const minutes = Math.max(1, Math.ceil(ms / 60000));
-  if (minutes < 90) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
-  const hours = Math.ceil(minutes / 60);
-  return `${hours} hours`;
-}
-
 export async function POST(req: Request) {
   const userId = await getUserId(req);
   if (!userId) {
@@ -54,39 +46,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
-  // Counted after the form is valid, so a mistyped submission never spends
-  // one of the five.
-  const kv = db();
-  const rateKey = keys.churchRate(userId);
-  const now = Date.now();
-  const since = now - GATHERING_WINDOW_MS;
-  // The timestamp is carried in the member, not just the score, because
-  // reading a score back is not part of the store's contract — and the wait
-  // has to be a real number of hours rather than a shrug.
-  const recent = await kv.zrangebyscore(rateKey, since, now);
-  if (recent.length >= GATHERING_LIMIT) {
-    const oldest = Number(recent[0]?.split(".")[0]) || since;
+  /*
+   * Counted after the form is valid, so a mistyped submission never spends one
+   * of the five — and taken BEFORE the Gathering is made, which is the part
+   * that used to be wrong. Recording the slot afterwards left the whole of
+   * createChurch sitting between the count and the mark, so requests fired
+   * together all read the same count, all found room, and all went through.
+   * The window a burst has to squeeze into is now as small as this store can
+   * make it. The cost is that a create which fails still spends a slot, which
+   * for a ceiling of five in twelve hours is the right way round.
+   */
+  const slot = await takeRateSlot(
+    keys.churchRate(userId),
+    GATHERING_LIMIT,
+    GATHERING_WINDOW_MS
+  );
+  if (!slot.ok) {
     return NextResponse.json(
       {
         error:
           `You've started ${GATHERING_LIMIT} Gatherings in the last 12 hours. ` +
-          `You can start another in about ${untilNext(oldest + GATHERING_WINDOW_MS - now)}.`,
+          `You can start another in about ${untilNext(slot.retryInMs)}.`,
       },
       { status: 429 }
     );
-  }
-  // Anything older than the window is answering no question; drop it rather
-  // than let the key grow for the life of the account.
-  for (const stale of await kv.zrangebyscore(rateKey, 0, since - 1)) {
-    await kv.zrem(rateKey, stale);
   }
 
   const displayName = await getDisplayName(req, body?.displayName);
   await saveProfile(userId, displayName);
   const church = await createChurch(userId, name, body?.description?.trim() ?? "");
-
-  await kv.zadd(rateKey, now, `${now}.${nanoid(6)}`);
-  await kv.expire(rateKey, Math.ceil(GATHERING_WINDOW_MS / 1000));
 
   return NextResponse.json({ church }, { status: 201 });
 }

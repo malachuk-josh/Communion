@@ -91,6 +91,16 @@ export async function hangVerse(opts: {
     const entry = held.find((e) => e.key === opts.key);
     if (entry) return { ok: true, entry };
   }
+  /*
+   * Counted, then written, with no transaction between — so two people
+   * hanging a verse at the same instant on a wall with one space left can
+   * both find it. Deliberately left that way: each write is a single field
+   * that clobbers nothing, so the failure is a wall of sixty-one, and it
+   * corrects itself the moment anybody takes one down. Every mechanism that
+   * would close the gap on this store — reserve-then-verify, or a rollback —
+   * risks deleting a verse somebody legitimately hung, which is a worse thing
+   * to be wrong about than a number.
+   */
   if (Object.keys(existing).length >= WALL_MAX) {
     return { ok: false, reason: "full" };
   }

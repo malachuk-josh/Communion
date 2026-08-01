@@ -31,6 +31,31 @@ export async function POST(
     return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
 
+  /*
+   * Who may hand out a way in.
+   *
+   * In an open Gathering, anyone — the link saves a step that the directory
+   * would have given them anyway, so a member passing one on gives away
+   * nothing that was being kept.
+   *
+   * In a private one, the founder alone. Redeeming an invitation adds a member
+   * outright; it does not go through the request queue. So a private Gathering
+   * where every member could mint a link was private only until the first
+   * member decided otherwise, and the founder's approval — the single thing
+   * private visibility is for — could be routed around by anyone already
+   * inside, without the founder ever seeing it happen.
+   */
+  const church = await getChurch(id);
+  if (!church) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (church.visibility === "private" && role !== "founder") {
+    return NextResponse.json(
+      { error: "Only the founder can invite to a private Gathering." },
+      { status: 403 }
+    );
+  }
+
   const body = (await req.json().catch(() => null)) as {
     email?: string;
     lang?: string;
@@ -66,11 +91,10 @@ export async function POST(
 
   let sent = false;
   if (mailing) {
-    const church = await getChurch(id);
     const inviter = await db().hgetall(keys.user(userId));
     const message = inviteEmail(
       body?.lang === "es" ? "es" : "en",
-      church?.name ?? "our Church",
+      church.name,
       inviter?.displayName ?? "A believer",
       url
     );

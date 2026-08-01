@@ -13,33 +13,35 @@ import {
 /**
  * The Gathering a request belongs to, and this user's standing in it.
  *
- * Not being a member is no longer a closed door. A request asked in an open
- * Gathering reaches the prayer wall, where anyone may read it — and a request
- * you can read but cannot pray for would be a strange thing to show somebody.
- * So an outsider is admitted to an open Gathering's requests, with no standing
- * to moderate them: the checks below still turn on being the author or the
- * founder, and this hands out neither.
+ * Members only, whether the Gathering is open or not — the same rule the
+ * wall and the per-Gathering list now keep. This route used to admit an
+ * outsider to an open Gathering's requests on the grounds that they could
+ * read them on the wall anyway; they cannot, and a door left open behind a
+ * closed one is just a door.
  *
- * A private Gathering is unchanged — members only, as it never appears on the
- * wall to anybody else in the first place.
+ * Two ways to be an admin here. The founder of the Gathering, which is what
+ * moderating a room means. And the owner of the app, who was named as an
+ * admin only for the leftover requests that belong to no Gathering at all —
+ * so the wall offered them a delete button on everything, and every use of it
+ * came back 403. Saying yes here is what the wall was already promising.
  */
 async function standing(req: Request, prayerId: string) {
   const userId = await getUserId(req);
   if (!userId) return { error: "Unauthorized" as const, status: 401 };
   const raw = await db().hgetall(keys.prayer(prayerId));
   if (!raw?.text) return { error: "Not found" as const, status: 404 };
+  const owner = isOwner(userId);
   const churchId = raw.churchId ?? "";
   // a leftover from the old open wall, which belonged to no Gathering
-  if (!churchId) return { userId, churchId, isAdmin: isOwner(userId) };
+  if (!churchId) return { userId, churchId, isAdmin: owner };
   const role = await getRole(churchId, userId);
   if (!role) {
+    if (!owner) return { error: "Not a member" as const, status: 403 };
     const church = await getChurch(churchId);
-    if (!church || church.visibility === "private") {
-      return { error: "Not a member" as const, status: 403 };
-    }
-    return { userId, churchId, isAdmin: false };
+    if (!church) return { error: "Not found" as const, status: 404 };
+    return { userId, churchId, isAdmin: true };
   }
-  return { userId, churchId, isAdmin: role === "founder" };
+  return { userId, churchId, isAdmin: role === "founder" || owner };
 }
 
 /** Pray for it, answer it, or reopen it. */

@@ -96,16 +96,24 @@ async function listFrom(
   return inOrder(rows.filter((p): p is PrayerRequest => p !== null));
 }
 
-/** Tell the rest of the Gathering, but never who asked when they asked quietly. */
+/**
+ * Tell the rest of the Gathering, but never who asked when they asked quietly.
+ *
+ * `skipId` is the real author, not the stored one. Those differ for an
+ * anonymous request — nothing is written down about who asked, and the empty
+ * string that stands in for them matched no member, so the one person who
+ * already knew got a push telling them somebody had asked for prayer. The name
+ * in `body` is still the stored one, so anonymity survives the notification.
+ */
 async function notify(
   churchId: string,
-  authorId: string,
+  skipId: string,
   title: string,
   body: string
 ): Promise<void> {
   const members = (await db().hgetall(keys.churchMembers(churchId))) ?? {};
   for (const memberId of Object.keys(members)) {
-    if (memberId === authorId) continue;
+    if (memberId === skipId) continue;
     await sendPushToUser(memberId, {
       title,
       body,
@@ -210,7 +218,7 @@ export async function addPrayer(
   await kv.zadd(keys.churchPrayers(churchId), now, id);
   await notify(
     churchId,
-    anonymous ? "" : userId,
+    userId,
     churchName,
     anonymous ? "A new prayer request" : `${fromName} asked for prayer`
   );

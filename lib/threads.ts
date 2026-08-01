@@ -68,6 +68,26 @@ async function profileOf(userId: string) {
   return { name: profile?.displayName || "Believer" };
 }
 
+/** Every post in a discussion, as stored. */
+async function rawPosts(threadId: string): Promise<string[]> {
+  return db().zrangebyscore(
+    keys.threadPosts(threadId),
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+}
+
+/**
+ * How many replies a discussion has, counted from the posts themselves.
+ *
+ * The opening post is the discussion, not a reply to it, so it does not count.
+ * There is no zcard in this store's contract, so this reads the members — the
+ * same read the delete path already makes.
+ */
+async function replyCount(threadId: string): Promise<number> {
+  return Math.max((await rawPosts(threadId)).length - 1, 0);
+}
+
 export async function listThreads(churchId: string): Promise<ThreadSummary[]> {
   const kv = db();
   const ids = await kv.zrangebyscore(
@@ -124,11 +144,7 @@ export async function deletePost(
   isAdmin: boolean
 ): Promise<boolean> {
   const kv = db();
-  const raw = await kv.zrangebyscore(
-    keys.threadPosts(threadId),
-    0,
-    Number.MAX_SAFE_INTEGER
-  );
+  const raw = await rawPosts(threadId);
   for (const item of raw) {
     try {
       const post = JSON.parse(item) as ThreadPost;
@@ -136,9 +152,14 @@ export async function deletePost(
       if (post.from !== userId && !isAdmin) return false;
       await kv.zrem(keys.threadPosts(threadId), item);
 
-      // keep the thread summary honest about its reply count and preview
-      const remaining = raw
-        .filter((r) => r !== item)
+      /*
+       * Keep the thread summary honest — from a list read after the removal.
+       * The one this loop is walking was fetched before it, so a reply posted
+       * in between is missing from it, and rebuilding the summary from it
+       * would drop the newest answer out of the discussion list and undercount
+       * the replies besides.
+       */
+      const remaining = (await rawPosts(threadId))
         .map((r) => {
           try {
             return JSON.parse(r) as ThreadPost;
@@ -149,10 +170,19 @@ export async function deletePost(
         .filter((p): p is ThreadPost => p !== null)
         .sort((a, b) => a.ts - b.ts);
       const last = remaining[remaining.length - 1];
+
+      const meta = await kv.hgetall(keys.thread(threadId));
+      // A summary already pointing past the deleted post is describing
+      // something newer, and this delete has nothing to say about it.
+      const stillNewer = Number(meta?.lastAt ?? 0) > post.ts;
       await kv.hset(keys.thread(threadId), {
         replies: Math.max(remaining.length - 1, 0),
-        lastText: last?.text?.slice(0, 120) ?? "",
-        ...(last ? { lastAt: last.ts } : {}),
+        ...(stillNewer
+          ? {}
+          : {
+              lastText: last?.text?.slice(0, 120) ?? "",
+              ...(last ? { lastAt: last.ts } : {}),
+            }),
       });
       return true;
     } catch {
@@ -307,7 +337,13 @@ export async function addPost(
   const meta = await kv.hgetall(keys.thread(threadId));
   await kv.hset(keys.thread(threadId), {
     lastAt: now,
-    replies: (Number(meta?.replies) || 0) + 1,
+    // Counted, not incremented. Two people answering at the same moment both
+    // read the same number and both wrote one more than it, so a busy
+    // discussion drifted quietly downwards and never came back — and the
+    // delete path, which counts, disagreed with the add path, which did not.
+    // The store has no atomic increment, but it does have the posts, and the
+    // posts are the answer. The opening post is not a reply.
+    replies: await replyCount(threadId),
     lastText: text.slice(0, 120),
   });
   await kv.zadd(keys.churchThreads(churchId), now, threadId);

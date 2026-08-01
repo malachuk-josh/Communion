@@ -87,7 +87,6 @@ const SHELL_ROUTES = [
   "/menu/messages",
   "/menu/settings",
   "/calendar",
-  "/menu/offline",
 ];
 
 /** Where the shell cache records which build populated it. */
