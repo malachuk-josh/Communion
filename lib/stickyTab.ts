@@ -14,6 +14,7 @@
 // sessions for the same reason. It is where you were, not what you own.
 
 import { useCallback, useLayoutEffect, useState } from "react";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 /**
  * A tab that survives a refresh.
@@ -40,7 +41,7 @@ export function useStickyTab<T extends string>(
 
   useLayoutEffect(() => {
     try {
-      const saved = window.localStorage.getItem(key);
+      const saved = readLocal(key);
       if (saved && (valid as readonly string[]).includes(saved)) {
         setTab(saved as T);
       }
@@ -56,7 +57,7 @@ export function useStickyTab<T extends string>(
     (next: T) => {
       setTab(next);
       try {
-        window.localStorage.setItem(key, next);
+        writeLocal(key, next);
       } catch {
         // the choice just won't outlive this visit
       }

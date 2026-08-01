@@ -34,6 +34,7 @@ import {
   type BmCollection,
   type BmEntry,
 } from "@/lib/sync";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 interface SharedVerse {
   b: number;
@@ -64,7 +65,7 @@ const SAVED_KEY = "communion.saved-shares";
 
 function readSavedShares(): Record<string, string> {
   try {
-    const raw = JSON.parse(window.localStorage.getItem(SAVED_KEY) ?? "{}");
+    const raw = JSON.parse(readLocal(SAVED_KEY) ?? "{}");
     return raw && typeof raw === "object" ? (raw as Record<string, string>) : {};
   } catch {
     return {};
@@ -74,7 +75,7 @@ function readSavedShares(): Record<string, string> {
 function rememberShare(token: string, collectionId: string): void {
   try {
     const all = { ...readSavedShares(), [token]: collectionId };
-    window.localStorage.setItem(SAVED_KEY, JSON.stringify(all));
+    writeLocal(SAVED_KEY, JSON.stringify(all));
   } catch {
     // storage blocked — the worst case is a duplicate collection later
   }

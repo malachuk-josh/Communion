@@ -797,7 +797,8 @@ const toLocalInput = (ts: number) => {
 interface PickMember {
   userId: string;
   displayName: string;
-  email: string | null;
+  /** whether there is an address to invite — the address itself stays server-side */
+  hasEmail: boolean;
 }
 
 function ScheduleModal({
@@ -862,20 +863,18 @@ function ScheduleModal({
         .then((res) => {
           setPickerMembers(res.members);
           setGuests(
-            new Set(
-              res.members.map((m) => m.email).filter((e): e is string => !!e)
-            )
+            new Set(res.members.filter((m) => m.hasEmail).map((m) => m.userId))
           );
         })
         .catch(() => setPickerMembers([]));
     }
   };
 
-  const toggleGuest = (email: string) => {
+  const toggleGuest = (memberId: string) => {
     setGuests((prev) => {
       const next = new Set(prev);
-      if (next.has(email)) next.delete(email);
-      else next.add(email);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
       return next;
     });
   };
@@ -888,7 +887,8 @@ function ScheduleModal({
       details:
         `${churchName} — Communion` +
         (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
-      guests: [...guests],
+      // no guests: addresses never reach this browser any more, and Google
+      // Calendar's own guest field is one field away on the page this opens
     });
 
   const createMeet = async () => {
@@ -907,7 +907,7 @@ function ScheduleModal({
             details:
               `${churchName} — Communion` +
               (passageRef.trim() ? `\nPassage: ${passageRef.trim()}` : ""),
-            guests: [...guests],
+            guestIds: [...guests],
           },
         }
       );
@@ -1100,16 +1100,16 @@ function ScheduleModal({
                     {pickerMembers.map((m) => (
                       <label
                         key={m.userId}
-                        className={`member-pick-row${m.email ? "" : " disabled"}`}
+                        className={`member-pick-row${m.hasEmail ? "" : " disabled"}`}
                       >
                         <input
                           type="checkbox"
-                          disabled={!m.email}
-                          checked={!!m.email && guests.has(m.email)}
-                          onChange={() => m.email && toggleGuest(m.email)}
+                          disabled={!m.hasEmail}
+                          checked={m.hasEmail && guests.has(m.userId)}
+                          onChange={() => m.hasEmail && toggleGuest(m.userId)}
                         />
                         <span>{m.displayName}</span>
-                        {!m.email && <em>({t("session.noEmail")})</em>}
+                        {!m.hasEmail && <em>({t("session.noEmail")})</em>}
                       </label>
                     ))}
                   </div>

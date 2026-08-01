@@ -191,7 +191,16 @@ export function flush(): Promise<LocalState | null> {
           bookmarks: Record<string, BmEntry>;
           collections: Record<string, BmCollection>;
           plans: Record<string, number>;
-        }>("/api/sync", { method: "POST", body: { ops } });
+        }>("/api/sync", {
+          method: "POST",
+          // The clock this reader actually lives in. Sent here because the
+          // outbox drains from every device constantly, so it stays current
+          // when somebody travels — and because reminders are worth nothing
+          // if they announce a Wednesday session at the wrong hour. It was
+          // only ever recorded when a plan reminder was set, which left it
+          // unknown for most people and UTC for everyone else.
+          body: { ops, tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        });
         // only drop this batch — anything queued meanwhile keeps its place
         await dropOutbox(queued.map((o) => o.seq));
         result = {

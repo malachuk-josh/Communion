@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
+import { takeRateSlot, untilNext } from "@/lib/rateLimit";
 import {
   clearConversation,
   deleteMessage,
@@ -11,6 +12,10 @@ import {
   sendMessage,
   type Attachment,
 } from "@/lib/messages";
+
+/** 40 messages a minute is a fast conversation; 41 is a script. */
+const MESSAGE_LIMIT = 40;
+const MESSAGE_WINDOW_MS = 60_000;
 
 /**
  * The Gatherings these two both belong to.
@@ -53,13 +58,20 @@ export async function GET(
   }
   const { peerId } = await params;
   const since = Number(new URL(req.url).searchParams.get("since")) || 0;
-  const messages = await getThread(userId, peerId, since ? since + 1 : 0);
+  const { messages, reactions } = await getThread(
+    userId,
+    peerId,
+    since ? since + 1 : 0
+  );
   // the viewer has the thread in front of them — anything here is read,
   // including messages that arrive while the thread stays open (polls)
   await markRead(userId, peerId);
   const profile = await db().hgetall(keys.user(peerId));
   return NextResponse.json({
     messages,
+    // every reaction in the conversation, not just on the messages above:
+    // a reaction changes an old message, so `since` must not trim these
+    reactions,
     myUserId: userId,
     peerName: profile?.displayName || "Believer",
     shared: await sharedGatherings(userId, peerId),
@@ -176,6 +188,27 @@ export async function POST(
   // here is about discovery, not about refusing to be spoken to.
   if (!(await isReachable(userId, peerId))) {
     return NextResponse.json({ error: "No such believer" }, { status: 404 });
+  }
+  /*
+   * A ceiling on how fast one person can write.
+   *
+   * There was none, and a message is the loudest thing in the app: each one
+   * logs a notification and pushes every device the recipient owns. A loop
+   * was a phone that would not stop buzzing, and a conversation key that grew
+   * for ever behind it. Generous enough that a real conversation never sees
+   * it — nobody types forty messages in a minute — and low enough that
+   * harassment costs something.
+   */
+  const slot = await takeRateSlot(
+    keys.messageRate(userId),
+    MESSAGE_LIMIT,
+    MESSAGE_WINDOW_MS
+  );
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: `You're sending very fast. Try again in ${untilNext(slot.retryInMs)}.` },
+      { status: 429 }
+    );
   }
   const message = await sendMessage(userId, peerId, text, attach);
   return NextResponse.json({ message }, { status: 201 });

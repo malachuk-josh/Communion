@@ -13,6 +13,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 /** Fired the instant before study mode flips, while the old layout still stands. */
 export const STUDY_WILL_CHANGE = "communion:study-will-change";
@@ -48,7 +49,7 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
   // read after mount: the server has no idea which mode this reader left in
   useEffect(() => {
     try {
-      if (window.localStorage.getItem("communion.studyMode") === "1") {
+      if (readLocal("communion.studyMode") === "1") {
         setStudy(true);
       }
     } catch {
@@ -63,7 +64,7 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
     window.dispatchEvent(new Event(STUDY_WILL_CHANGE));
     setStudy((on) => {
       try {
-        window.localStorage.setItem("communion.studyMode", on ? "0" : "1");
+        writeLocal("communion.studyMode", on ? "0" : "1");
       } catch {
         // storage blocked — the choice just won't outlive this visit
       }

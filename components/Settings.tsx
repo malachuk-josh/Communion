@@ -17,6 +17,7 @@ import OfflineSettings from "@/components/OfflineSettings";
 import ReminderSettings from "@/components/ReminderSettings";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import type { Church, Role } from "@/lib/types";
+import { writeLocal } from "@/lib/storage";
 
 type MyChurch = Church & { myRole: Role; memberCount: number };
 
@@ -140,7 +141,7 @@ export default function Settings() {
     setTheme(next);
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("communion.theme", next);
+    writeLocal("communion.theme", next);
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute(

@@ -43,6 +43,20 @@ export async function DELETE(
   if (!(id in existing)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  /*
+   * Take the public copy down with it.
+   *
+   * A shared collection publishes a snapshot at /shared/<token> that needs no
+   * account to read. Deleting the collection used to leave that page standing
+   * for ever — the reader had removed the thing and every link they had ever
+   * sent still worked, which is the opposite of what deleting means.
+   */
+  try {
+    const entry = JSON.parse(existing[id]) as { share?: string };
+    if (entry.share) await kv.del(keys.sharedCollection(entry.share));
+  } catch {
+    // legacy entry without a share token — nothing published
+  }
   await kv.hdel(keys.userCollections(userId), id);
   // detach bookmarks
   const bookmarks = (await kv.hgetall(keys.userBookmarks(userId))) ?? {};

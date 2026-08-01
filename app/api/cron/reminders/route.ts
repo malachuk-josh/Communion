@@ -50,21 +50,6 @@ export async function GET(req: Request) {
     const churchName = church?.name ?? "your Gathering";
     const title = event.title ?? "Worship session";
 
-    const when = new Date(Number(event.startsAt)).toLocaleString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "UTC",
-      timeZoneName: "short",
-    });
-    const message = reminderEmail(
-      churchName,
-      title,
-      when,
-      event.meetingUrl || undefined
-    );
     // attach an .ics so calendar apps recognize the session natively
     const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
     const ics = buildIcs(
@@ -92,11 +77,41 @@ export async function GET(req: Request) {
         ? await (await import("@clerk/nextjs/server")).clerkClient()
         : null;
 
-    const smsText =
-      `Communion: ${title} with ${churchName} — ${when}. ` +
-      (event.meetingUrl || `${origin}/churches/${event.churchId}`);
-
     for (const userId of Object.keys(members)) {
+      /*
+       * The time is written once per member, not once per event.
+       *
+       * It used to be rendered a single time in UTC and mailed to everybody,
+       * which meant a Wednesday 7pm session in Ohio was announced as
+       * "Thursday, 12:00 AM UTC" — the wrong hour, on the wrong day, to every
+       * person it was sent to. A reminder that misstates the time is worse
+       * than no reminder, because people act on it.
+       *
+       * The zone is the one their device reports when it syncs. When we have
+       * never heard from them, it falls back to UTC and says so — the label
+       * is always printed, so a reader can tell an unconverted time from
+       * their own.
+       */
+      const profile = (await kv.hgetall(keys.user(userId))) ?? {};
+      const when = new Date(Number(event.startsAt)).toLocaleString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: profile.planReminderTz || "UTC",
+        timeZoneName: "short",
+      });
+      const message = reminderEmail(
+        churchName,
+        title,
+        when,
+        event.meetingUrl || undefined
+      );
+      const smsText =
+        `Communion: ${title} with ${churchName} — ${when}. ` +
+        (event.meetingUrl || `${origin}/churches/${event.churchId}`);
+
       if (client && userId.startsWith("user_")) {
         try {
           const user = await client.users.getUser(userId);
@@ -121,11 +136,8 @@ export async function GET(req: Request) {
         url: `/churches/${event.churchId}`,
         tag: `reminder-${eventId}`,
       });
-      if (smsEnabled()) {
-        const profile = await kv.hgetall(keys.user(userId));
-        if (profile?.phone && profile.smsReminders === "1") {
-          if (await sendSms(profile.phone, smsText)) sms++;
-        }
+      if (smsEnabled() && profile.phone && profile.smsReminders === "1") {
+        if (await sendSms(profile.phone, smsText)) sms++;
       }
     }
 
@@ -204,8 +216,22 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
       const plan = await resolvePlan(userId, field);
       if (!plan) continue;
 
+      /*
+       * At the hour asked for, or as soon after as we are running.
+       *
+       * This used to demand the hour match exactly, which quietly meant a
+       * reminder set for 2am was never sent on the Sunday the clocks go
+       * forward: 2am does not happen that day, so the sweep never saw it, and
+       * a daily habit lost a day twice a year. The same held for any hour the
+       * cron missed — a single late run and that reminder was simply gone.
+       *
+       * A two-hour grace covers both without turning into "some time today":
+       * the mark below still allows only one nudge a day, and somebody whose
+       * hour passed this morning is not pestered about it at ten at night.
+       */
       const hour = hourOf(fields, profile, field);
-      if (hour === "off" || hour !== nowHour) continue;
+      if (hour === "off") continue;
+      if (nowHour < hour || nowHour - hour > 2) continue;
       if (nudgedOn(fields, field) === today) continue; // asked already today
 
       const done = Number(fields[field]) || 0;

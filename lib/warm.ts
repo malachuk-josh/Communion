@@ -20,6 +20,7 @@
 // it never runs more than once in a quarter of an hour.
 
 import { api } from "@/lib/client";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 /** How often this is worth doing at all. */
 const EVERY = 15 * 60 * 1000;
@@ -58,7 +59,7 @@ async function pool(jobs: (() => Promise<unknown>)[]): Promise<void> {
 
 function due(): boolean {
   try {
-    const last = Number(window.localStorage.getItem(MARK) ?? 0);
+    const last = Number(readLocal(MARK) ?? 0);
     return !Number.isFinite(last) || Date.now() - last > EVERY;
   } catch {
     // private mode with storage denied: warm every time rather than never
@@ -81,7 +82,7 @@ function keepPages(paths: string[]): void {
 
 function mark(): void {
   try {
-    window.localStorage.setItem(MARK, String(Date.now()));
+    writeLocal(MARK, String(Date.now()));
   } catch {
     // nothing to remember it with; the throttle is a courtesy, not a rule
   }

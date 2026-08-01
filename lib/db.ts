@@ -242,6 +242,10 @@ export const keys = {
   publicPrayers: "prayers:public",
   /** how many a person has posted to it lately, so a wall cannot be flooded */
   prayerRate: (userId: string) => `user:${userId}:prayerRate`,
+  /** how many messages a person has sent lately — see lib/rateLimit */
+  messageRate: (userId: string) => `user:${userId}:messageRate`,
+  /** how many invite emails a person has had sent lately */
+  inviteRate: (userId: string) => `user:${userId}:inviteRate`,
   /**
    * How many Gatherings a person has started lately.
    *

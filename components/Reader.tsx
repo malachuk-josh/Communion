@@ -63,6 +63,7 @@ import Concordance from "@/components/Concordance";
 import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -420,7 +421,7 @@ export default function Reader({
     }
     try {
       const saved = JSON.parse(
-        window.localStorage.getItem("communion.reading") ?? "null"
+        readLocal("communion.reading") ?? "null"
       ) as {
         translation: string;
         bookNr: number;
@@ -444,14 +445,14 @@ export default function Reader({
         // first visit: land on the founding verse, gently highlighted
         setHighlightVerse(DEFAULT_VERSE);
       }
-      const savedPt = Number(window.localStorage.getItem("communion.textPt"));
+      const savedPt = Number(readLocal("communion.textPt"));
       if (savedPt >= PT_MIN && savedPt <= PT_MAX) {
         setPt(savedPt);
         ptRef.current = savedPt;
       } else {
         // carried over from when this was a multiplier: 1.0 was the default,
         // so the same reader lands on the same default point size
-        const old = Number(window.localStorage.getItem("communion.textScale"));
+        const old = Number(readLocal("communion.textScale"));
         if (old > 0) {
           const migrated = Math.min(
             PT_MAX,
@@ -459,7 +460,7 @@ export default function Reader({
           );
           setPt(migrated);
           ptRef.current = migrated;
-          window.localStorage.setItem("communion.textPt", String(migrated));
+          writeLocal("communion.textPt", String(migrated));
         }
       }
     } catch {
@@ -603,7 +604,7 @@ export default function Reader({
       if (c === ch) verse = v;
       break;
     }
-    window.localStorage.setItem(
+    writeLocal(
       "communion.reading",
       JSON.stringify({ translation, bookNr, chapter: ch, verse })
     );
@@ -817,7 +818,7 @@ export default function Reader({
             });
           });
         }
-        window.localStorage.setItem("communion.textPt", String(ptRef.current));
+        writeLocal("communion.textPt", String(ptRef.current));
         window.setTimeout(() => setPinchShow(null), 800);
       }
     };
@@ -2020,7 +2021,7 @@ export default function Reader({
     holdVerse();
     setPt(next);
     ptRef.current = next;
-    window.localStorage.setItem("communion.textPt", String(next));
+    writeLocal("communion.textPt", String(next));
   };
 
   const runSearch = async (e: React.FormEvent) => {

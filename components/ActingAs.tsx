@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 const LABEL = "communion.actas.who";
 
@@ -49,9 +50,9 @@ export default function ActingAs() {
   useEffect(() => {
     const now = labelFromCookie();
     setWho(now);
-    const before = window.localStorage.getItem("communion.actingAs") ?? "";
+    const before = readLocal("communion.actingAs") ?? "";
     if (before !== now) {
-      window.localStorage.setItem("communion.actingAs", now);
+      writeLocal("communion.actingAs", now);
       if (before) {
         void import("@/lib/offline")
           .then((m) => m.clearApiCache())

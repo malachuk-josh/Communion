@@ -1,24 +1,25 @@
 "use client";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 // Client-side fetch helper. In guest mode (no Clerk configured) every request
 // carries a stable per-browser guest id; when Clerk is live the server ignores
 // the header and uses the real session instead.
 
 export function guestId(): string {
-  let id = window.localStorage.getItem("communion.guestId");
+  let id = readLocal("communion.guestId");
   if (!id) {
     id = crypto.randomUUID().replace(/-/g, "");
-    window.localStorage.setItem("communion.guestId", id);
+    writeLocal("communion.guestId", id);
   }
   return id;
 }
 
 export function getSavedName(): string {
-  return window.localStorage.getItem("communion.guestName") ?? "";
+  return readLocal("communion.guestName") ?? "";
 }
 
 export function saveName(name: string): void {
-  window.localStorage.setItem("communion.guestName", name.trim());
+  writeLocal("communion.guestName", name.trim());
 }
 
 export async function api<T>(

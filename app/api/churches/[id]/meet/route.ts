@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getRole } from "@/lib/churches";
+import { db, keys } from "@/lib/db";
 
 // One-click Google Meet: creates a real Calendar event (with Meet link) on
 // the organizer's Google account using the OAuth token Clerk holds from
@@ -33,7 +34,8 @@ export async function POST(
     startsAt?: number;
     durationMin?: number;
     details?: string;
-    guests?: string[];
+    /** member ids, not addresses — see the note in ../emails */
+    guestIds?: string[];
   } | null;
   if (!body?.title || !body.startsAt) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -55,9 +57,29 @@ export async function POST(
   const end = new Date(
     body.startsAt + Math.min(Math.max(body.durationMin ?? 60, 5), 1440) * 60000
   );
-  const guests = (body.guests ?? [])
-    .filter((g) => typeof g === "string" && /^[^@\s]+@[^@\s]+$/.test(g))
+  /*
+   * Ids in, addresses out — and only for people who are actually in this
+   * Gathering. The client never sees an address, and cannot invite one it
+   * invented: an id that is not a member of this room resolves to nothing.
+   */
+  const memberIds = new Set(
+    Object.keys((await db().hgetall(keys.churchMembers(id))) ?? {})
+  );
+  const wanted = (body.guestIds ?? [])
+    .filter((g): g is string => typeof g === "string" && memberIds.has(g))
     .slice(0, 50);
+  const guests: string[] = [];
+  for (const memberId of wanted) {
+    if (!memberId.startsWith("user_")) continue;
+    try {
+      const client = await (await import("@clerk/nextjs/server")).clerkClient();
+      const user = await client.users.getUser(memberId);
+      const email = user.primaryEmailAddress?.emailAddress;
+      if (email) guests.push(email);
+    } catch {
+      // deleted user — nothing to invite
+    }
+  }
 
   const res = await fetch(
     `${CALENDAR_API}?conferenceDataVersion=1&sendUpdates=all`,

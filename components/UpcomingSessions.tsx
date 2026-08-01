@@ -26,6 +26,7 @@ import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import type { WorshipEvent } from "@/lib/types";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 type Row = WorshipEvent & { churchName: string; open?: boolean };
 
@@ -73,7 +74,7 @@ export default function UpcomingSessions() {
 
   useEffect(() => {
     try {
-      setShowOpen(window.localStorage.getItem(OPEN_KEY) !== "0");
+      setShowOpen(readLocal(OPEN_KEY) !== "0");
     } catch {
       // storage blocked — the switch simply starts on
     }
@@ -97,7 +98,7 @@ export default function UpcomingSessions() {
   const flip = (next: boolean) => {
     setShowOpen(next);
     try {
-      window.localStorage.setItem(OPEN_KEY, next ? "1" : "0");
+      writeLocal(OPEN_KEY, next ? "1" : "0");
     } catch {
       // the choice just won't outlive this visit
     }

@@ -14,6 +14,7 @@
 
 import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
+import { writeLocal } from "@/lib/storage";
 
 type Theme = "dark" | "light" | "grey";
 
@@ -54,7 +55,7 @@ export default function ThemeToggle({
     setTheme(next);
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("communion.theme", next);
+    writeLocal("communion.theme", next);
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", BAR[next]);

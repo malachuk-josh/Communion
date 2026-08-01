@@ -76,6 +76,40 @@ export function convIdFor(a: string, b: string): string {
   return [a, b].sort().join("~");
 }
 
+/*
+ * Where the unread count lives: beside the summary, not inside it.
+ *
+ * The summary is one JSON string in one hash field, so touching any part of
+ * it means writing all of it — and this store has no transaction to make that
+ * safe. Opening a thread and receiving a message are the two things most
+ * likely to happen at the same instant, and when they did, the reader's
+ * "unread = 0" was written from a copy fetched before the message landed: the
+ * new message's preview and timestamp were overwritten with the old ones, the
+ * conversation sank back down the inbox, and the count it had just been
+ * cleared to zero hid that anything had arrived at all. The message itself was
+ * always safe in the thread — but the inbox is how you learn to go and look.
+ *
+ * Splitting the count out means marking a thread read is a write to a field
+ * nobody else writes for that reason, so it cannot clobber a preview. A send
+ * and a read racing can still cost one tick of the badge, which is the same
+ * imprecision the increment already had, and costs nothing but a number.
+ *
+ * `#` cannot occur in a conversation id — those are two user ids joined by
+ * `~` — so the two namespaces cannot collide.
+ */
+const unreadField = (convId: string) => `${convId}#unread`;
+
+/** Older summaries carried the count inside the blob; read through to it once. */
+function unreadOf(raw: Record<string, string>, convId: string): number {
+  const beside = raw[unreadField(convId)];
+  if (beside !== undefined) return Number(beside) || 0;
+  try {
+    return (JSON.parse(raw[convId] ?? "{}") as ConvSummary).unread || 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function profileOf(userId: string): Promise<{ name: string }> {
   const profile = await db().hgetall(keys.user(userId));
   return { name: profile?.displayName || "Believer" };
@@ -124,9 +158,12 @@ export async function listConversations(
 ): Promise<ConvSummary[]> {
   const raw = (await db().hgetall(keys.userConvs(userId))) ?? {};
   const convs: ConvSummary[] = [];
-  for (const value of Object.values(raw)) {
+  for (const [field, value] of Object.entries(raw)) {
+    if (field.includes("#")) continue; // an unread counter, joined on below
     try {
-      convs.push(JSON.parse(value) as ConvSummary);
+      const summary = JSON.parse(value) as ConvSummary;
+      summary.unread = unreadOf(raw, field);
+      convs.push(summary);
     } catch {
       // corrupted summary — skip
     }
@@ -140,11 +177,29 @@ async function clearedAt(userId: string, convId: string): Promise<number> {
   return Number(profile?.[`cleared:${convId}`]) || 0;
 }
 
+/**
+ * A thread as the client needs it: the messages asked for, and every reaction
+ * in the conversation.
+ *
+ * The two have different spans on purpose. Messages are trimmed by `since`,
+ * because polling a long conversation every four seconds to re-send what the
+ * screen already has is waste. Reactions are not, because a reaction is a
+ * change to a message that is already on screen — usually an old one — and
+ * trimming them by the same clock is precisely why they never arrived: the
+ * poll asked only for what was new, a reaction made a message no newer, and
+ * so the answer somebody left was invisible on the other phone until a reload.
+ * Sending the whole map costs one hash read that this function already makes.
+ */
+export interface Thread {
+  messages: ChatMessage[];
+  reactions: Record<string, Reactions>;
+}
+
 export async function getThread(
   userId: string,
   peerId: string,
   since = 0
-): Promise<ChatMessage[]> {
+): Promise<Thread> {
   const kv = db();
   const convId = convIdFor(userId, peerId);
   const floor = await clearedAt(userId, convId);
@@ -189,7 +244,10 @@ export async function getThread(
     if (found) message.reactions = found;
   }
 
-  return messages.sort((a, b) => a.ts - b.ts);
+  return {
+    messages: messages.sort((a, b) => a.ts - b.ts),
+    reactions: Object.fromEntries(byMessage),
+  };
 }
 
 /**
@@ -250,9 +308,31 @@ export async function deleteMessage(
       if (message.id !== messageId) continue;
       if (message.from !== userId) return false;
       await kv.zrem(keys.convMessages(convId), item);
-      // keep both inboxes honest about what the last message now is
-      const remaining = raw
-        .filter((r) => r !== item)
+
+      // the answers people left on it go with it, or they would sit in the
+      // hash forever counting toward a message nobody can see
+      const reactions = (await kv.hgetall(keys.convReactions(convId))) ?? {};
+      for (const field of Object.keys(reactions)) {
+        if (field.startsWith(`${messageId}:`)) {
+          await kv.hdel(keys.convReactions(convId), field);
+        }
+      }
+
+      /*
+       * Keep both inboxes honest about what the last message now is — but
+       * from a list read after the removal, not the one this loop is walking.
+       * That snapshot was taken before the delete, so anything that arrived
+       * in between is missing from it, and rebuilding the summary from it
+       * would quietly rewind both inboxes past a message that had just come
+       * in. Deleting your own message must not un-deliver somebody else's.
+       */
+      const after = (
+        await kv.zrangebyscore(
+          keys.convMessages(convId),
+          0,
+          Number.MAX_SAFE_INTEGER
+        )
+      )
         .map((r) => {
           try {
             return JSON.parse(r) as ChatMessage;
@@ -262,12 +342,15 @@ export async function deleteMessage(
         })
         .filter((m): m is ChatMessage => m !== null)
         .sort((a, b) => a.ts - b.ts);
-      const last = remaining[remaining.length - 1];
+      const last = after[after.length - 1];
       for (const side of [userId, peerId]) {
         const summaries = (await kv.hgetall(keys.userConvs(side))) ?? {};
         if (!summaries[convId]) continue;
         try {
           const summary = JSON.parse(summaries[convId]) as ConvSummary;
+          // already showing something newer than what was deleted: the
+          // summary is right and this delete has nothing to say about it
+          if (summary.ts > message.ts) continue;
           if (last) {
             summary.lastText = last.text;
             summary.lastFrom = last.from;
@@ -275,6 +358,7 @@ export async function deleteMessage(
           } else {
             summary.lastText = "";
           }
+          summary.unread = unreadOf(summaries, convId);
           await kv.hset(keys.userConvs(side), {
             [convId]: JSON.stringify(summary),
           });
@@ -302,25 +386,22 @@ export async function clearConversation(
   const convId = convIdFor(userId, peerId);
   await kv.hset(keys.user(userId), { [`cleared:${convId}`]: Date.now() });
   await kv.hdel(keys.userConvs(userId), convId);
+  await kv.hdel(keys.userConvs(userId), unreadField(convId));
 }
 
-/** Reset the viewer's unread counter for one conversation. */
+/**
+ * Reset the viewer's unread counter for one conversation.
+ *
+ * One field, written blind. The read that follows is only to avoid leaving a
+ * counter behind for a conversation that does not exist — it is not part of
+ * the write, so there is no window between them to lose anything in.
+ */
 export async function markRead(userId: string, peerId: string): Promise<void> {
   const kv = db();
   const convId = convIdFor(userId, peerId);
   const raw = (await kv.hgetall(keys.userConvs(userId))) ?? {};
   if (!raw[convId]) return;
-  try {
-    const summary = JSON.parse(raw[convId]) as ConvSummary;
-    if (summary.unread) {
-      summary.unread = 0;
-      await kv.hset(keys.userConvs(userId), {
-        [convId]: JSON.stringify(summary),
-      });
-    }
-  } catch {
-    // corrupted summary — leave as is
-  }
+  await kv.hset(keys.userConvs(userId), { [unreadField(convId)]: "0" });
 }
 
 export async function sendMessage(
@@ -348,7 +429,7 @@ export async function sendMessage(
     text
   ).slice(0, 120);
 
-  // sender's summary (unread stays 0)
+  // sender's summary (writing to somebody is reading the thread)
   await kv.hset(keys.userConvs(from), {
     [convId]: JSON.stringify({
       peerId: to,
@@ -358,18 +439,12 @@ export async function sendMessage(
       ts: message.ts,
       unread: 0,
     } satisfies ConvSummary),
+    [unreadField(convId)]: "0",
   });
 
   // recipient's summary (bump unread)
-  let unread = 1;
   const existing = (await kv.hgetall(keys.userConvs(to))) ?? {};
-  if (existing[convId]) {
-    try {
-      unread = ((JSON.parse(existing[convId]) as ConvSummary).unread || 0) + 1;
-    } catch {
-      // corrupted — restart at 1
-    }
-  }
+  const unread = (existing[convId] ? unreadOf(existing, convId) : 0) + 1;
   await kv.hset(keys.userConvs(to), {
     [convId]: JSON.stringify({
       peerId: from,
@@ -379,6 +454,7 @@ export async function sendMessage(
       ts: message.ts,
       unread,
     } satisfies ConvSummary),
+    [unreadField(convId)]: String(unread),
   });
 
   // best-effort push to the recipient

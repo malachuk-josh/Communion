@@ -13,6 +13,7 @@
 // about the odd comma. Counting words is the one thing they cannot differ on.
 
 import { Fragment, type ReactNode } from "react";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 /** Per verse ("ch:v"), the runs of words Christ speaks. */
 export type RedRuns = Record<string, [number, number][]>;
@@ -23,7 +24,7 @@ export const RED_LETTER_CHANGED = "communion:red-letter";
 
 export function readRedLetter(): boolean {
   try {
-    return window.localStorage.getItem(RED_LETTER_KEY) === "1";
+    return readLocal(RED_LETTER_KEY) === "1";
   } catch {
     // storage blocked — the setting simply starts off
     return false;
@@ -32,7 +33,7 @@ export function readRedLetter(): boolean {
 
 export function writeRedLetter(on: boolean): void {
   try {
-    window.localStorage.setItem(RED_LETTER_KEY, on ? "1" : "0");
+    writeLocal(RED_LETTER_KEY, on ? "1" : "0");
   } catch {
     // the choice just won't outlive this visit
   }

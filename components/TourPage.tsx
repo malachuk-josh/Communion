@@ -9,6 +9,7 @@ import ShareTour from "@/components/ShareTour";
 import TourStrip from "@/components/TourStrip";
 import { WELCOMED_EVENT, WELCOMED_KEY } from "@/components/Welcome";
 import { useI18n } from "@/lib/i18n";
+import { writeLocal } from "@/lib/storage";
 
 export default function TourPageBody() {
   const { t } = useI18n();
@@ -20,7 +21,7 @@ export default function TourPageBody() {
   // flag is down before the welcome ever checks it.
   useEffect(() => {
     try {
-      window.localStorage.setItem(WELCOMED_KEY, "1");
+      writeLocal(WELCOMED_KEY, "1");
     } catch {
       // storage blocked: the welcome will not show either
     }

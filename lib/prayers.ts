@@ -149,7 +149,17 @@ export async function listPrayerFeed(viewerId: string): Promise<FeedPrayer[]> {
     const raw = await kv.hgetall(keys.church(id));
     if (!raw?.name) continue;
     const mine = memberOf.has(id);
-    if (!mine && raw.visibility === "private") continue;
+    /*
+     * Members only, public Gathering or not.
+     *
+     * A public Gathering opens its *conversation* to anyone who wanders in.
+     * It does not open the things its members are carrying — that is the
+     * contract the per-Gathering route states and enforces (see the docstring
+     * on app/api/churches/[id]/prayers), and a feed that quietly widened it
+     * was handing a stranger someone's divorce, their relapse, their
+     * estranged sister. Being inside is what earns the reading.
+     */
+    if (!mine) continue;
     sources.push({ id, name: raw.name, mine });
   }
 

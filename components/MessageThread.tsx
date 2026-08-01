@@ -47,6 +47,21 @@ interface Reactions {
   mine?: ReactionKind;
 }
 
+/**
+ * Whether two sets of reactions say the same thing.
+ *
+ * The poll re-applies reactions to every message on screen every four seconds.
+ * Without this, each one would be a new object, every bubble would re-render on
+ * a timer, and any open reaction picker would be torn down under the thumb. So
+ * the comparison is by value, over a fixed list of five — cheap, and not
+ * dependent on two JSON objects happening to serialise in the same order.
+ */
+function sameReactions(a?: Reactions, b?: Reactions): boolean {
+  if (!a || !b) return !a && !b;
+  if (a.mine !== b.mine) return false;
+  return REACTIONS.every((k) => (a.counts[k] ?? 0) === (b.counts[k] ?? 0));
+}
+
 interface ChatMessage {
   id: string;
   from: string;
@@ -94,24 +109,60 @@ export default function MessageThread({ peerId }: { peerId: string }) {
   const lastTs = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const merge = useCallback((incoming: ChatMessage[]) => {
-    if (incoming.length === 0) return;
-    setMessages((prev) => {
-      const known = new Set(prev.map((m) => m.id));
-      const fresh = incoming.filter((m) => !known.has(m.id));
-      if (fresh.length === 0) return prev;
-      const next = [...prev, ...fresh].sort((a, b) => a.ts - b.ts);
-      return next;
-    });
-    const maxTs = Math.max(...incoming.map((m) => m.ts));
-    if (maxTs > lastTs.current) lastTs.current = maxTs;
-  }, []);
+  /** message ids with a reaction write in flight — see merge */
+  const pendingReacts = useRef(new Set<string>());
+
+  const merge = useCallback(
+    (incoming: ChatMessage[], reactions?: Record<string, Reactions>) => {
+      setMessages((prev) => {
+        const known = new Set(prev.map((m) => m.id));
+        const fresh = incoming.filter((m) => !known.has(m.id));
+        let next =
+          fresh.length > 0 ? [...prev, ...fresh].sort((a, b) => a.ts - b.ts) : prev;
+
+        /*
+         * Reactions are re-applied on every poll, not merged in with the new
+         * messages, because they are a change to a message the screen already
+         * has — matching on id alone meant an answer left on your phone was
+         * never seen on mine. They are also removed here when the server no
+         * longer has them, which is how taking one back travels.
+         *
+         * A message with a write of our own still in the air is left alone.
+         * The optimistic mark is already right, and the poll's answer is from
+         * before we spoke — applying it would flash the reaction off and back
+         * on four seconds later.
+         */
+        if (reactions) {
+          let changed = false;
+          const applied = next.map((m) => {
+            if (pendingReacts.current.has(m.id)) return m;
+            const now = reactions[m.id];
+            if (sameReactions(m.reactions, now)) return m;
+            changed = true;
+            if (!now) {
+              const { reactions: _gone, ...rest } = m;
+              return rest as ChatMessage;
+            }
+            return { ...m, reactions: now };
+          });
+          if (changed) next = applied;
+        }
+        return next;
+      });
+      if (incoming.length > 0) {
+        const maxTs = Math.max(...incoming.map((m) => m.ts));
+        if (maxTs > lastTs.current) lastTs.current = maxTs;
+      }
+    },
+    []
+  );
 
   // initial load, then poll for new messages while the thread is open
   useEffect(() => {
     let cancelled = false;
     api<{
       messages: ChatMessage[];
+      reactions?: Record<string, Reactions>;
       myUserId: string;
       peerName: string;
       shared?: { id: string; name: string }[];
@@ -121,16 +172,16 @@ export default function MessageThread({ peerId }: { peerId: string }) {
         setMyUserId(res.myUserId);
         setPeerName(res.peerName);
         setShared(res.shared ?? []);
-        merge(res.messages);
+        merge(res.messages, res.reactions);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
 
     const timer = window.setInterval(() => {
-      api<{ messages: ChatMessage[] }>(
+      api<{ messages: ChatMessage[]; reactions?: Record<string, Reactions> }>(
         `/api/messages/${peerId}?since=${lastTs.current}`
       )
-        .then((res) => merge(res.messages))
+        .then((res) => merge(res.messages, res.reactions))
         .catch(() => {});
     }, 4000);
     return () => {
@@ -199,6 +250,7 @@ export default function MessageThread({ peerId }: { peerId: string }) {
         return { ...m, reactions: { counts, ...(next ? { mine: next } : {}) } };
       })
     );
+    pendingReacts.current.add(messageId);
     try {
       await api(`/api/messages/${peerId}/reactions`, {
         method: "POST",
@@ -206,6 +258,8 @@ export default function MessageThread({ peerId }: { peerId: string }) {
       });
     } catch {
       // the next poll is the arbiter
+    } finally {
+      pendingReacts.current.delete(messageId);
     }
   };
 

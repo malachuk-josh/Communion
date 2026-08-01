@@ -93,3 +93,36 @@ export async function POST(
     count: verses.length,
   });
 }
+
+/**
+ * Unshare: take the public page down and forget the token.
+ *
+ * Sharing was a one-way door — there was no way to withdraw a link once it
+ * was sent. Now there is. The token is dropped along with the snapshot, so a
+ * later re-share mints a fresh one rather than quietly reviving the old
+ * address somebody may still have.
+ */
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  const kv = db();
+  const collections = (await kv.hgetall(keys.userCollections(userId))) ?? {};
+  if (!(id in collections)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const coll = JSON.parse(collections[id]) as { name: string; share?: string };
+  if (coll.share) {
+    await kv.del(keys.sharedCollection(coll.share));
+    delete coll.share;
+    await kv.hset(keys.userCollections(userId), {
+      [id]: JSON.stringify(coll),
+    });
+  }
+  return NextResponse.json({ ok: true });
+}

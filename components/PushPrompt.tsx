@@ -11,6 +11,7 @@ import Icon from "@/components/Icon";
 import { WELCOMED_EVENT, WELCOMED_KEY } from "@/components/Welcome";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const ASKED_KEY = "communion.pushAsked";
@@ -65,7 +66,7 @@ export default function PushPrompt() {
     }
     if (Notification.permission === "denied") return;
     try {
-      if (window.localStorage.getItem(ASKED_KEY) === "1") return;
+      if (readLocal(ASKED_KEY) === "1") return;
     } catch {
       return;
     }
@@ -78,7 +79,7 @@ export default function PushPrompt() {
     };
     let welcomed = true;
     try {
-      welcomed = window.localStorage.getItem(WELCOMED_KEY) === "1";
+      welcomed = readLocal(WELCOMED_KEY) === "1";
     } catch {
       // storage unreadable: the welcome will not show either, so just start
     }
@@ -93,7 +94,7 @@ export default function PushPrompt() {
   const dismiss = () => {
     setShow(false);
     try {
-      window.localStorage.setItem(ASKED_KEY, "1");
+      writeLocal(ASKED_KEY, "1");
     } catch {
       // private mode — it'll ask again next visit
     }

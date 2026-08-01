@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
 import { getChurch, getRole } from "@/lib/churches";
+import { keys } from "@/lib/db";
 import { addPrayer } from "@/lib/prayers";
+import {
+  PRAYER_LIMIT,
+  PRAYER_WINDOW_MS,
+  takeRateSlot,
+  untilNext,
+} from "@/lib/rateLimit";
 
 /**
  * Ask for prayer without first going to find the room to ask it in.
@@ -70,11 +77,53 @@ export async function POST(req: Request) {
     );
   }
 
+  /*
+   * One slot per room, not one per request.
+   *
+   * This is the same allowance the in-Gathering ask spends from, and it has to
+   * be spent the same way or this route would be the cheap door: asking twelve
+   * Gatherings costs what asking one Gathering costs twelve times, because it
+   * writes twelve requests and wakes twelve rooms' worth of devices. Charging
+   * per request instead would have made the fan-out free.
+   *
+   * Running out partway through sends to the rooms already paid for rather
+   * than failing the whole thing — the words are out to somebody, and the
+   * response says exactly which rooms heard it, so nothing is silently lost.
+   */
   const anonymous = body?.anonymous === true;
   const asked: { churchId: string; churchName: string }[] = [];
+  let waitMs = 0;
   for (const church of allowed) {
+    const slot = await takeRateSlot(
+      keys.prayerRate(userId),
+      PRAYER_LIMIT,
+      PRAYER_WINDOW_MS
+    );
+    if (!slot.ok) {
+      waitMs = slot.retryInMs;
+      break;
+    }
     await addPrayer(church.id, church.name, userId, text, anonymous);
     asked.push({ churchId: church.id, churchName: church.name });
   }
-  return NextResponse.json({ asked }, { status: 201 });
+
+  if (asked.length === 0) {
+    return NextResponse.json(
+      {
+        error: `You've asked a lot just now. Try again in ${untilNext(waitMs)}.`,
+      },
+      { status: 429 }
+    );
+  }
+  return NextResponse.json(
+    {
+      asked,
+      ...(waitMs > 0
+        ? {
+            partial: `Sent to ${asked.length} of ${allowed.length}. Try the rest in ${untilNext(waitMs)}.`,
+          }
+        : {}),
+    },
+    { status: 201 }
+  );
 }

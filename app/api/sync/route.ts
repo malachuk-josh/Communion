@@ -56,7 +56,10 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = (await req.json().catch(() => null)) as { ops?: Op[] } | null;
+  const body = (await req.json().catch(() => null)) as {
+    ops?: Op[];
+    tz?: string;
+  } | null;
   if (!body || !Array.isArray(body.ops)) {
     // 200 here would tell the client its queue was accepted, and it would
     // delete every change it had been holding
@@ -94,6 +97,27 @@ export async function POST(req: Request) {
   // own timezone, which is the honest answer days later when it finally
   // syncs. When it doesn't say, fall back to the profile timezone the
   // reminder sweep thinks in — read at most once per batch.
+  /*
+   * Remember where this reader is, if the device said.
+   *
+   * Checked against Intl rather than stored on trust: this is a client-supplied
+   * string that later goes into a formatter, and an unknown zone would throw
+   * inside the reminder sweep — one bad profile taking down everybody's
+   * reminders for that run.
+   */
+  const claimedTz = body.tz?.slice(0, 64);
+  if (claimedTz) {
+    try {
+      new Intl.DateTimeFormat("en-CA", { timeZone: claimedTz });
+      const current = await kv.hgetall(keys.user(userId));
+      if (current?.planReminderTz !== claimedTz) {
+        await kv.hset(keys.user(userId), { planReminderTz: claimedTz });
+      }
+    } catch {
+      // not a zone this runtime knows — keep whatever we had
+    }
+  }
+
   let profileToday: string | null = null;
   const todayForUser = async (): Promise<string> => {
     if (profileToday) return profileToday;

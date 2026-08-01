@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import ShareTour from "@/components/ShareTour";
 import TourStrip from "@/components/TourStrip";
 import { useI18n } from "@/lib/i18n";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 export const WELCOMED_KEY = "communion.welcomed";
 export const WELCOMED_EVENT = "communion:welcomed";
@@ -35,7 +36,7 @@ export default function Welcome() {
 
   useEffect(() => {
     try {
-      if (window.localStorage.getItem(WELCOMED_KEY) === "1") return;
+      if (readLocal(WELCOMED_KEY) === "1") return;
     } catch {
       // private mode with storage blocked: showing a welcome every visit is
       // worse than never showing one
@@ -52,7 +53,7 @@ export default function Welcome() {
 
   const dismiss = () => {
     try {
-      window.localStorage.setItem(WELCOMED_KEY, "1");
+      writeLocal(WELCOMED_KEY, "1");
     } catch {
       // nothing to be done; it will offer itself again next visit
     }

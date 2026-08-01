@@ -43,6 +43,7 @@ import {
   type BmCollection,
   type BmEntry,
 } from "@/lib/sync";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 type Tab = "bookmarks" | "notes" | "plans";
 /** The toggles, in the order the row shows them. */
@@ -154,7 +155,7 @@ export default function Journal() {
    */
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(CLOSED_KEY);
+      const raw = readLocal(CLOSED_KEY);
       if (raw) setClosedGroups(new Set(JSON.parse(raw) as string[]));
     } catch {
       // unreadable, or written by an older shape: every shelf starts open
@@ -167,7 +168,7 @@ export default function Journal() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       try {
-        window.localStorage.setItem(CLOSED_KEY, JSON.stringify([...next]));
+        writeLocal(CLOSED_KEY, JSON.stringify([...next]));
       } catch {
         // private browsing, or a full quota — it stays shut for this visit
       }
@@ -326,7 +327,7 @@ export default function Journal() {
     let translation = DEFAULT_TRANSLATION;
     try {
       const saved = JSON.parse(
-        window.localStorage.getItem("communion.reading") ?? "null"
+        readLocal("communion.reading") ?? "null"
       ) as { translation?: string } | null;
       if (saved?.translation) translation = saved.translation;
     } catch {

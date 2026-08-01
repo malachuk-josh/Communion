@@ -3,6 +3,19 @@ import { getUserId } from "@/lib/auth";
 import { createInvite, getChurch, getRole } from "@/lib/churches";
 import { db, keys } from "@/lib/db";
 import { emailEnabled, inviteEmail, sendEmail } from "@/lib/email";
+import { takeRateSlot, untilNext } from "@/lib/rateLimit";
+
+/**
+ * A ceiling on invitations, because this is the one route in the app that
+ * sends mail to an address the sender chose. Without it, any member of any
+ * Gathering — and a public Gathering admits anyone instantly — could point
+ * the app's own mail reputation at a list of strangers.
+ *
+ * Twenty an hour is more than a real invitation night and useless as a
+ * cannon.
+ */
+const INVITE_LIMIT = 20;
+const INVITE_WINDOW_MS = 60 * 60_000;
 
 export async function POST(
   req: Request,
@@ -23,17 +36,36 @@ export async function POST(
     lang?: string;
   } | null;
 
+  // Optional server-side email delivery (active once Brevo is configured).
+  // Checked before the invite is created: an address we will refuse should
+  // not leave a live token behind it.
+  const email = body?.email?.trim() ?? "";
+  const mailing = email !== "" && emailEnabled();
+  if (mailing) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) {
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    }
+    const slot = await takeRateSlot(
+      keys.inviteRate(userId),
+      INVITE_LIMIT,
+      INVITE_WINDOW_MS
+    );
+    if (!slot.ok) {
+      return NextResponse.json(
+        {
+          error: `That's a lot of invitations. Try again in ${untilNext(slot.retryInMs)}.`,
+        },
+        { status: 429 }
+      );
+    }
+  }
+
   const token = await createInvite(id, userId);
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
   const url = `${origin}/join/${token}`;
 
-  // Optional server-side email delivery (active once Brevo is configured)
-  const email = body?.email?.trim();
   let sent = false;
-  if (email && emailEnabled()) {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-    }
+  if (mailing) {
     const church = await getChurch(id);
     const inviter = await db().hgetall(keys.user(userId));
     const message = inviteEmail(

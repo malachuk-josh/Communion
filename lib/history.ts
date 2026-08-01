@@ -1,4 +1,5 @@
 "use client";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 // Where the reader has been sent, as opposed to where they have scrolled.
 //
@@ -21,7 +22,7 @@ export interface Visit {
 
 export function readHistory(): Visit[] {
   try {
-    const raw = JSON.parse(window.localStorage.getItem(KEY) ?? "[]") as Visit[];
+    const raw = JSON.parse(readLocal(KEY) ?? "[]") as Visit[];
     if (!Array.isArray(raw)) return [];
     return raw
       .filter((x) => x && x.b > 0 && x.c > 0 && x.v > 0)
@@ -44,7 +45,7 @@ export function pushVisit(b: number, c: number, v: number): void {
       { b, c, v, ts: Date.now() },
       ...readHistory().filter((x) => !(x.b === b && x.c === c && x.v === v)),
     ].slice(0, HISTORY_MAX);
-    window.localStorage.setItem(KEY, JSON.stringify(next));
+    writeLocal(KEY, JSON.stringify(next));
   } catch {
     // storage full, or blocked — a lost history is not worth an error
   }

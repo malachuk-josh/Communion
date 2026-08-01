@@ -67,7 +67,10 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var t=localStorage.getItem("communion.theme");if(t!=="dark"&&t!=="light")t="grey";if(t!=="dark")document.documentElement.dataset.theme=t;var m=document.querySelector(\'meta[name="theme-color"]\');if(m)m.setAttribute("content",t==="light"?"#ede1c8":t==="grey"?"#000000":"#0b0d1a")}catch(e){}',
+              // storage access itself can throw where it is blocked by
+              // policy, so the read sits inside its own try and the theme
+              // falls back to the default rather than taking the page down
+              'var t;try{t=localStorage.getItem("communion.theme")}catch(e){t=null}try{if(t!=="dark"&&t!=="light")t="grey";if(t!=="dark")document.documentElement.dataset.theme=t;var m=document.querySelector(\'meta[name="theme-color"]\');if(m)m.setAttribute("content",t==="light"?"#ede1c8":t==="grey"?"#000000":"#0b0d1a")}catch(e){}',
           }}
         />
         <LanguageProvider>

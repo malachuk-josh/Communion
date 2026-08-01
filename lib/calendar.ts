@@ -115,12 +115,61 @@ export function teamsNewMeetingUrl(
   return `https://teams.microsoft.com/l/meeting/new?${params.toString()}`;
 }
 
+/*
+ * Everything a member typed goes through here before it becomes a line of an
+ * ICS file.
+ *
+ * An ICS file is newline-delimited, so a newline inside a value is not a
+ * newline — it is the end of this property and the start of whatever the text
+ * says next. A session titled "Prayer\r\nATTENDEE:mailto:someone@example.com"
+ * would add a guest to a calendar invitation that never invited them, and
+ * "\r\nEND:VEVENT\r\nBEGIN:VEVENT..." would append a whole second event. So
+ * the newline is escaped into the literal two characters ICS uses for one.
+ *
+ * The lone \r is handled separately and deliberately: matching only \r?\n
+ * leaves a bare carriage return intact, and a bare CR still ends the line for
+ * a good many parsers. Both orderings matter too — backslash is escaped first,
+ * or it would go back and double the escapes added after it.
+ */
 const escapeIcsText = (s: string) =>
   s
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
+    .replace(/\r\n|\n|\r/g, "\\n");
+
+/**
+ * RFC 5545 wants no content line longer than 75 octets, continued by CRLF and
+ * a single space. Long-form session details sail past that, and the stricter
+ * parsers — Outlook among them — will reject the file rather than guess.
+ *
+ * Counted in UTF-8 bytes rather than characters, because that is what the
+ * limit is measured in, and split on whole code points so a folded line never
+ * cuts an em dash in half.
+ */
+function foldIcsLine(line: string): string {
+  const enc = new TextEncoder();
+  if (enc.encode(line).length <= 75) return line;
+
+  const out: string[] = [];
+  let chunk = "";
+  let bytes = 0;
+  // 75 for the first line; continuations spend one octet on the leading space
+  let budget = 75;
+  for (const ch of line) {
+    const size = enc.encode(ch).length;
+    if (bytes + size > budget) {
+      out.push(chunk);
+      chunk = "";
+      bytes = 0;
+      budget = 74;
+    }
+    chunk += ch;
+    bytes += size;
+  }
+  if (chunk) out.push(chunk);
+  return out.join("\r\n ");
+}
 
 /** RFC 5545 calendar file — recognized by Apple Calendar, Outlook, Google. */
 export function buildIcs(
@@ -134,7 +183,7 @@ export function buildIcs(
     "PRODID:-//Communion//Worship Sessions//EN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${event.id}@communion`,
+    `UID:${escapeIcsText(event.id)}@communion`,
     `DTSTAMP:${icsDate(Date.now())}`,
     `DTSTART:${icsDate(event.startsAt)}`,
     `DTEND:${icsDate(endTs(event))}`,
@@ -143,8 +192,10 @@ export function buildIcs(
   ];
   if (event.meetingUrl) {
     lines.push(`LOCATION:${escapeIcsText(event.meetingUrl)}`);
-    lines.push(`URL:${event.meetingUrl}`);
+    // URL is a URI property, not text — but it is still one line, and the
+    // member typed it, so it gets the same treatment as everything else here
+    lines.push(`URL:${escapeIcsText(event.meetingUrl)}`);
   }
   lines.push("END:VEVENT", "END:VCALENDAR");
-  return lines.join("\r\n");
+  return lines.map(foldIcsLine).join("\r\n");
 }

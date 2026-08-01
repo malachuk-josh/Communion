@@ -23,6 +23,7 @@ import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
 import { bmRefLabel, bmVerses, parseBmKey, type BmRef } from "@/lib/bookmarkKey";
 import { fetchVerses, verseKey } from "@/lib/scripture";
 import { useI18n, type Lang } from "@/lib/i18n";
+import { readLocal } from "@/lib/storage";
 
 export interface WallEntry {
   key: string;
@@ -101,7 +102,7 @@ export default function VerseWall({
     let translation = DEFAULT_TRANSLATION;
     try {
       const saved = JSON.parse(
-        window.localStorage.getItem("communion.reading") ?? "null"
+        readLocal("communion.reading") ?? "null"
       ) as { translation?: string } | null;
       if (saved?.translation) translation = saved.translation;
     } catch {

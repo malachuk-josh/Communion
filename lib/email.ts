@@ -59,6 +59,48 @@ export async function sendEmail(
   }
 }
 
+/*
+ * Names go into these templates, and names are typed by people.
+ *
+ * A Gathering can be called anything, and its name reaches an inbox that has
+ * never heard of it — the recipient of an invitation is by definition not a
+ * member yet, and has only this email to judge by. So a Gathering named
+ * `</p><a href="https://not-us.example">Verify your account</a><p>` would put
+ * a stranger's link inside a letter that carries our name and our styling,
+ * which is the whole shape of a phishing email with none of the work.
+ *
+ * Mail clients are inconsistent about what markup they strip; several strip
+ * scripts and keep anchors, which is exactly the part that does the damage.
+ * So nothing is trusted to the client: the text is escaped here.
+ */
+const esc = (s: string) =>
+  String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+/**
+ * An href is a second door. Escaping keeps a value inside the attribute, but
+ * inside the attribute `javascript:` and `data:` are still live in some
+ * clients, so the scheme is checked rather than the punctuation. Anything not
+ * plainly a web address becomes a dead link — a broken button is a far better
+ * outcome than a working one that goes somewhere else.
+ */
+const safeUrl = (raw: string): string => {
+  try {
+    const u = new URL(raw);
+    if (u.protocol === "http:" || u.protocol === "https:") return esc(u.href);
+  } catch {
+    // not an absolute URL at all
+  }
+  return "#";
+};
+
+/** Subjects are one line. A name with a newline in it should not look like two. */
+const oneLine = (s: string) => String(s).replace(/\s+/g, " ").trim();
+
 const shell = (body: string) => `
 <div style="background:#f7efdd;padding:32px 16px;font-family:Georgia,serif;color:#33281a">
   <div style="max-width:480px;margin:0 auto;background:#fffcf3;border:1px solid #d8c9a5;border-radius:16px;padding:28px">
@@ -76,25 +118,28 @@ export function inviteEmail(
   inviterName: string,
   url: string
 ): { subject: string; html: string } {
+  const church = esc(churchName);
+  const inviter = esc(inviterName);
+  const href = safeUrl(url);
   if (lang === "es") {
     return {
-      subject: `${inviterName} te invita a ${churchName} en Communion`,
+      subject: oneLine(`${inviterName} te invita a ${churchName} en Communion`),
       html: shell(`
-        <p>¡Gracia y paz! <strong>${inviterName}</strong> te invita a unirte a
-        <strong>${churchName}</strong> en Communion, para leer la Escritura y adorar juntos.</p>
+        <p>¡Gracia y paz! <strong>${inviter}</strong> te invita a unirte a
+        <strong>${church}</strong> en Communion, para leer la Escritura y adorar juntos.</p>
         <p style="text-align:center;margin:24px 0">
-          <a href="${url}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Aceptar invitación</a>
+          <a href="${href}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Aceptar invitación</a>
         </p>
         <p style="font-size:12px;color:#8a7a5c">Este enlace expira en 7 días.</p>`),
     };
   }
   return {
-    subject: `${inviterName} invites you to ${churchName} on Communion`,
+    subject: oneLine(`${inviterName} invites you to ${churchName} on Communion`),
     html: shell(`
-      <p>Grace and peace! <strong>${inviterName}</strong> is inviting you to join
-      <strong>${churchName}</strong> on Communion, to read Scripture and worship together.</p>
+      <p>Grace and peace! <strong>${inviter}</strong> is inviting you to join
+      <strong>${church}</strong> on Communion, to read Scripture and worship together.</p>
       <p style="text-align:center;margin:24px 0">
-        <a href="${url}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Accept your invite</a>
+        <a href="${href}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Accept your invite</a>
       </p>
       <p style="font-size:12px;color:#8a7a5c">This link expires in 7 days.</p>`),
   };
@@ -105,15 +150,17 @@ export function requestEmail(
   requesterName: string,
   url: string
 ): { subject: string; html: string } {
+  const church = esc(churchName);
+  const requester = esc(requesterName);
   return {
-    subject: `${requesterName} asked to join ${churchName}`,
+    subject: oneLine(`${requesterName} asked to join ${churchName}`),
     html: shell(`
-      <p><strong>${requesterName}</strong> has asked to join
-      <strong>${churchName}</strong> on Communion.</p>
+      <p><strong>${requester}</strong> has asked to join
+      <strong>${church}</strong> on Communion.</p>
       <p style="text-align:center;margin:24px 0">
-        <a href="${url}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Review the request</a>
+        <a href="${safeUrl(url)}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Review the request</a>
       </p>
-      <p style="font-size:13px;color:#8a7a5c"><strong>${requesterName}</strong> pidió unirse a ${churchName}.</p>`),
+      <p style="font-size:13px;color:#8a7a5c"><strong>${requester}</strong> pidió unirse a ${church}.</p>`),
   };
 }
 
@@ -123,12 +170,14 @@ export function reminderEmail(
   whenUtc: string,
   meetingUrl?: string
 ): { subject: string; html: string } {
+  const church = esc(churchName);
+  const what = esc(title);
   return {
-    subject: `Reminder: ${title} — ${churchName}`,
+    subject: oneLine(`Reminder: ${title} — ${churchName}`),
     html: shell(`
-      <p><strong>${title}</strong> with <strong>${churchName}</strong> is coming up.</p>
-      <p>${whenUtc}</p>
-      ${meetingUrl ? `<p style="text-align:center;margin:24px 0"><a href="${meetingUrl}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Join the gathering</a></p>` : ""}
-      <p style="font-size:13px;color:#8a7a5c">Recordatorio: <strong>${title}</strong> con ${churchName} se acerca.</p>`),
+      <p><strong>${what}</strong> with <strong>${church}</strong> is coming up.</p>
+      <p>${esc(whenUtc)}</p>
+      ${meetingUrl ? `<p style="text-align:center;margin:24px 0"><a href="${safeUrl(meetingUrl)}" style="background:#c98f2e;color:#221604;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:bold">Join the gathering</a></p>` : ""}
+      <p style="font-size:13px;color:#8a7a5c">Recordatorio: <strong>${what}</strong> con ${church} se acerca.</p>`),
   };
 }

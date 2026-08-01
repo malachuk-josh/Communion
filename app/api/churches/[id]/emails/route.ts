@@ -3,9 +3,20 @@ import { getUserId } from "@/lib/auth";
 import { getRole } from "@/lib/churches";
 import { db, keys } from "@/lib/db";
 
-// Member emails for the meeting-guest picker. Only visible to fellow
-// members of the same Church. Guest-mode members have no email.
-
+/**
+ * Who can be invited to a meeting — by name, never by address.
+ *
+ * This used to hand every member's real email address to any fellow member,
+ * which was a leak rather than a feature: a public Gathering admits anyone
+ * the instant they ask (see joinChurch), so "member" is not a boundary you
+ * can put somebody's inbox behind. One join was a mailing list.
+ *
+ * So the picker works the way the rest of the app does — on ids. The client
+ * learns who *has* an address and can therefore be ticked, and nothing more;
+ * the id it sends back is resolved to an address inside /meet, on the server,
+ * where the address was already known and never has to travel. `hasEmail` is
+ * the whole of what leaves here about anybody's inbox.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -30,19 +41,19 @@ export async function GET(
   const members = await Promise.all(
     Object.keys(raw).map(async (memberId) => {
       const profile = await kv.hgetall(keys.user(memberId));
-      let email: string | null = null;
+      let hasEmail = false;
       if (client && memberId.startsWith("user_")) {
         try {
           const user = await client.users.getUser(memberId);
-          email = user.primaryEmailAddress?.emailAddress ?? null;
+          hasEmail = !!user.primaryEmailAddress?.emailAddress;
         } catch {
-          // deleted user — no email
+          // deleted user — nothing to invite
         }
       }
       return {
         userId: memberId,
         displayName: profile?.displayName ?? "Believer",
-        email,
+        hasEmail,
       };
     })
   );

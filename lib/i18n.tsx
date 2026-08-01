@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 export type Lang = "en" | "es";
 
@@ -190,9 +191,9 @@ const dictionaries = {
     "prayers.title": "Prayer list",
     "prayers.wall": "Prayer wall",
     "prayers.wallNote":
-      "Everything being carried in your Gatherings, and in every public Gathering. Ask above, and choose who carries it with you.",
+      "Everything being carried in the Gatherings you belong to. Ask above, and choose who carries it with you.",
     "prayers.wallEmpty":
-      "Nothing is being carried right now. Requests asked in your Gatherings, and in any public Gathering, arrive here.",
+      "Nothing is being carried right now. Requests asked in your Gatherings arrive here.",
     "prayers.fold": "Collapse",
     "prayers.unfold": "Expand",
     "prayers.foldAll": "Collapse all",
@@ -920,9 +921,9 @@ const dictionaries = {
     "prayers.title": "Lista de oración",
     "prayers.wall": "Muro de oración",
     "prayers.wallNote":
-      "Todo lo que se lleva en tus Comunidades y en cada Comunidad pública. Pide arriba y elige quién lo lleva contigo.",
+      "Todo lo que se lleva en las Comunidades a las que perteneces. Pide arriba y elige quién lo lleva contigo.",
     "prayers.wallEmpty":
-      "Ahora mismo no hay nada que llevar. Las peticiones de tus Comunidades, y de cualquier Comunidad pública, llegan aquí.",
+      "Ahora mismo no hay nada que llevar. Las peticiones de tus Comunidades llegan aquí.",
     "prayers.fold": "Plegar",
     "prayers.unfold": "Expandir",
     "prayers.foldAll": "Plegar todo",
@@ -1484,13 +1485,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("communion.lang");
+    const saved = readLocal("communion.lang");
     if (saved === "en" || saved === "es") setLangState(saved);
   }, []);
 
   const setLang = (next: Lang) => {
     setLangState(next);
-    window.localStorage.setItem("communion.lang", next);
+    writeLocal("communion.lang", next);
     document.documentElement.lang = next;
   };
 
