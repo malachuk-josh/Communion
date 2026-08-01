@@ -76,6 +76,26 @@ for (const m of strip.matchAll(/key:\s*"(\w+)"/g)) {
   }
 }
 
+/*
+ * The same trap, one file over, and it caught a real one.
+ *
+ * A plan card is drawn with t(`plan.${plan.id}`) — another computed key behind
+ * another cast — so a plan added to the catalogue without its two strings
+ * renders its own id at the reader: a card titled "plan.cominghome21" above a
+ * line reading "plan.cominghome21.desc". That shipped, because this file knew
+ * about the tour's composed keys and not the catalogue's.
+ *
+ * Read from the id declarations in lib/plans.ts, so a plan cannot be added
+ * anywhere but the PLANS list and slip past.
+ */
+const catalogue = readFileSync(join(ROOT, "lib/plans.ts"), "utf8");
+for (const m of catalogue.matchAll(/^\s*id:\s*"([\w-]+)",/gm)) {
+  for (const suffix of ["", ".desc"]) {
+    const key = `plan.${m[1]}${suffix}`;
+    if (!en.has(key)) problems.push(`plan has no string: ${key}`);
+  }
+}
+
 // Plain literal keys everywhere else. These are type-checked already, but the
 // check costs nothing and catches a key deleted from the dictionary while a
 // call site still asks for it through a cast.
