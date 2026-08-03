@@ -1107,6 +1107,59 @@ html.welcoming {
   filter: none;
 }
 
+/*
+ * On a wide screen the shelf stops being a shelf.
+ *
+ * Thumbed sideways is right for a phone and was quietly broken everywhere
+ * else. The strip lays ten screens out in about 3,400px inside a 620px
+ * column, hides its scrollbar, and a mouse wheel does not scroll a horizontal
+ * container — so a desktop reader got two slides, no way to reach the other
+ * eight, and eight blank frames where the pictures should be. Blank, because
+ * the images are lazy and lazy images that are never scrolled into view are
+ * never fetched. The tour is almost entirely pictures; a tour of blank
+ * rectangles is worse than no tour.
+ *
+ * A grid fixes both halves at once. The slides go into the page's own
+ * vertical flow, so the page scrollbar reaches all of them, and lazy loading
+ * starts working the way it is meant to — downward, against a viewport that
+ * actually moves. The three-theme trick is untouched: the other two captures
+ * are still display:none and still never downloaded.
+ */
+/* Width is the obvious test and not quite the right one. What decides whether
+   a sideways shelf works is whether the reader can push it sideways: a thumb
+   can, a mouse cannot — a vertical wheel does nothing to a horizontal
+   container. So a mouse gets the grid at any width, and a wide screen gets it
+   however it is driven. A phone keeps its shelf. */
+@media (min-width: 900px), (hover: hover) and (pointer: fine) {
+  .tour-page,
+  .welcome-inner {
+    max-width: 1040px;
+  }
+
+  .tour-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 26px 20px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .tour-slide {
+    max-width: none;
+    scroll-snap-align: none;
+  }
+
+  /* height led the layout when widths had to vary along a shelf; in a grid
+     the column decides the width and the inline aspect-ratio decides the rest */
+  .tour-slide img,
+  .welcome .tour-slide img {
+    width: 100%;
+    height: auto;
+  }
+}
+
 /* The note about the underlines is a paragraph of small print, not a one-line
    aside. .notice centres its text and drops it to the faintest ink there is,
    which is right for a sentence and unreadable at a hundred and forty words —
