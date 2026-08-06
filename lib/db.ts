@@ -258,6 +258,10 @@ export const keys = {
   trustedAdmins: "admin:trusted",
   /** Every time one account was stood in by another, and by whom. */
   adminTakeovers: "admin:takeovers",
+  /** Accounts the owner has switched off. Nothing of theirs is deleted. */
+  deactivatedUsers: "admin:deactivated",
+  /** Every switching off and back on again, with who did it. */
+  adminDeactivations: "admin:deactivations",
   prayer: (prayerId: string) => `prayer:${prayerId}`,
   prayerPrayed: (prayerId: string) => `prayer:${prayerId}:prayed`,
   thread: (threadId: string) => `thread:${threadId}`,

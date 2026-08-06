@@ -37,6 +37,7 @@ interface AdminUser {
   pushDevices: number;
   guest: boolean;
   trusted: boolean;
+  deactivated: boolean;
 }
 
 interface Takeover {
@@ -47,11 +48,21 @@ interface Takeover {
   byName: string;
 }
 
+interface Deactivation {
+  user: string;
+  by: string;
+  off: boolean;
+  at: number;
+  userName: string;
+  byName: string;
+}
+
 interface Summary {
   viewerId: string;
   viewerIsOwner: boolean;
   takeoverAvailable: boolean;
   takeovers: Takeover[];
+  deactivations: Deactivation[];
   totals: Record<string, number>;
   gatherings: Gathering[];
   users: AdminUser[];
@@ -163,6 +174,47 @@ export default function AdminDashboard() {
               ...prev,
               users: prev.users.map((x) =>
                 x.userId === u.userId ? { ...x, trusted: next } : x
+              ),
+            }
+          : prev
+      );
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setBusyUser(null);
+    }
+  };
+
+  /**
+   * Switch an account off, or back on.
+   *
+   * Nothing of theirs is deleted, and the warning says so, because the two
+   * are easy to confuse at the moment of pressing and only one of them can be
+   * undone. What it does is take away their ability to act: from their next
+   * request, every route in the app stops answering to them.
+   */
+  const toggleActive = async (u: AdminUser) => {
+    const next = !u.deactivated;
+    const warning = next
+      ? `Switch off ${u.displayName}?\n\n` +
+        `They will not be able to read, write, message anyone or sign in ` +
+        `here until you switch them back on. Nothing of theirs is deleted — ` +
+        `their Gatherings, verses and prayers all stay exactly where they ` +
+        `are, and switching them back on restores them whole.`
+      : `Switch ${u.displayName} back on?\n\nThey get their account back as it was.`;
+    if (!window.confirm(warning)) return;
+    setBusyUser(u.userId);
+    try {
+      await api("/api/admin/deactivate", {
+        method: "POST",
+        body: { userId: u.userId, deactivated: next },
+      });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              users: prev.users.map((x) =>
+                x.userId === u.userId ? { ...x, deactivated: next } : x
               ),
             }
           : prev
@@ -339,9 +391,12 @@ export default function AdminDashboard() {
             {data.users.map((u) => {
               const isMe = u.userId === data.viewerId;
               return (
-                <tr key={u.userId}>
+                <tr key={u.userId} className={u.deactivated ? "admin-off" : ""}>
                   <td>
                     {u.displayName}
+                    {u.deactivated && (
+                      <span className="admin-off-tag">switched off</span>
+                    )}
                     <div className="admin-sub">{u.userId}</div>
                   </td>
                   <td>{u.email ?? "—"}</td>
@@ -376,7 +431,10 @@ export default function AdminDashboard() {
                   </td>
                   {data.viewerIsOwner && (
                     <td className="admin-row-actions">
-                      {!isMe && !u.trusted && (
+                      {/* Standing in a switched-off account would be standing
+                          in an account that cannot do anything — the ticket
+                          resolves to an identity lib/auth refuses. */}
+                      {!isMe && !u.trusted && !u.deactivated && (
                         <button
                           type="button"
                           className="rsvp-btn"
@@ -391,6 +449,25 @@ export default function AdminDashboard() {
                           onClick={() => takeOver(u)}
                         >
                           <Icon name="person" /> Sign in as
+                        </button>
+                      )}
+                      {/* Never your own row, and never another owner's: the
+                          server refuses both, and a button that always fails
+                          is worse than no button. */}
+                      {!isMe && (
+                        <button
+                          type="button"
+                          className={`rsvp-btn${u.deactivated ? "" : " danger"}`}
+                          disabled={busyUser === u.userId}
+                          title={
+                            u.deactivated
+                              ? `Switch ${u.displayName} back on`
+                              : `Switch ${u.displayName} off`
+                          }
+                          onClick={() => toggleActive(u)}
+                        >
+                          <Icon name={u.deactivated ? "check" : "lock"} />{" "}
+                          {u.deactivated ? "Switch on" : "Switch off"}
                         </button>
                       )}
                     </td>
@@ -420,6 +497,41 @@ export default function AdminDashboard() {
                 {data.takeovers.map((row) => (
                   <tr key={`${row.at}-${row.as}`}>
                     <td>{row.asName}</td>
+                    <td>{row.byName}</td>
+                    <td>{new Date(row.at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Switching an account off is the largest thing anyone can do to a
+          person here, so it is written down for the same reason standing in
+          one is: a power with no record of its use is one nobody can be held
+          to. Switching back on is logged too — the record is of decisions,
+          not only of punishments. */}
+      {data.viewerIsOwner && data.deactivations.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>Accounts switched off</h2>
+          </div>
+          <div className="glass card admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>What</th>
+                  <th>By</th>
+                  <th>When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.deactivations.map((row) => (
+                  <tr key={`${row.at}-${row.user}`}>
+                    <td>{row.userName}</td>
+                    <td>{row.off ? "switched off" : "switched back on"}</td>
                     <td>{row.byName}</td>
                     <td>{new Date(row.at).toLocaleString()}</td>
                   </tr>

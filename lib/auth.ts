@@ -4,7 +4,7 @@
 
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
-import { isOwner } from "@/lib/admin";
+import { isDeactivated, isOwner } from "@/lib/admin";
 import { actingAs } from "@/lib/impersonate";
 
 const clerkEnabled = () => !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -121,6 +121,23 @@ async function guestIdentity(req: Request): Promise<string | null> {
  * stop standing in the moment they started.
  */
 export async function getRealUserId(req: Request): Promise<string | null> {
+  const who = await sessionUserId(req);
+  /*
+   * A switched-off account has no identity here, and that is the whole
+   * mechanism. Every route in the app authorises through this function, so
+   * answering null once refuses all of them at the same instant — there is no
+   * list of endpoints to remember to guard, and no route added later that
+   * forgets. They are still signed in with Clerk; they simply are not anybody
+   * as far as Communion is concerned, until the owner switches them back on.
+   *
+   * Nothing of theirs is touched. See lib/admin.
+   */
+  if (await isDeactivated(who)) return null;
+  return who;
+}
+
+/** Who the session says they are, before deactivation is considered. */
+async function sessionUserId(req: Request): Promise<string | null> {
   if (clerkEnabled()) {
     const { auth } = await import("@clerk/nextjs/server");
     const { userId } = await auth();
@@ -142,7 +159,12 @@ export async function getRealUserId(req: Request): Promise<string | null> {
 export async function getUserId(req: Request): Promise<string | null> {
   const real = await getRealUserId(req);
   if (!real || !isOwner(real)) return real;
-  return (await actingAs(req, real)) ?? real;
+  const standingIn = await actingAs(req, real);
+  if (!standingIn) return real;
+  // Standing in a switched-off account would be the one way round the switch:
+  // the owner would be able to act as somebody the app has stopped answering
+  // to. Whatever needs doing in that account, switch it back on first.
+  return (await isDeactivated(standingIn)) ? real : standingIn;
 }
 
 /**

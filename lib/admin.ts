@@ -60,6 +60,80 @@ export async function setTrusted(
   else await kv.srem(keys.trustedAdmins, userId);
 }
 
+/*
+ * Switching an account off.
+ *
+ * Deactivating is not deleting and is not meant to be. Everything the person
+ * wrote stays exactly where it is — their Gatherings, the verses they hung,
+ * the prayers the room is still carrying — because moderating somebody is not
+ * a reason to tear pages out of other people's rooms. What changes is that
+ * they can no longer act: lib/auth stops answering to their identity, so every
+ * route in the app refuses them from the next request onward. Switching it
+ * back on restores them whole, which is the point of doing it this way.
+ *
+ * Owners cannot be switched off, here and again at the route. A power that can
+ * turn off the person holding it is a power that can take the app away.
+ */
+
+/** Read at most this often. See activeDeactivated(). */
+const DEACTIVATED_TTL_MS = 15_000;
+let deactivatedCache: { at: number; ids: Set<string> } | null = null;
+
+/**
+ * The switched-off accounts, cached for a few seconds.
+ *
+ * This is asked on every authenticated request in the app — it is the check
+ * that makes deactivation mean anything — so an uncached read would put a
+ * round trip in front of every single call. The cost of the cache is that
+ * switching an account off takes up to fifteen seconds to bite, which for a
+ * moderation decision is nothing, and the benefit is that the feature is free
+ * for the other 99.99% of requests, which belong to people who are fine.
+ */
+export async function deactivatedIds(): Promise<Set<string>> {
+  const now = Date.now();
+  if (deactivatedCache && now - deactivatedCache.at < DEACTIVATED_TTL_MS) {
+    return deactivatedCache.ids;
+  }
+  const ids = new Set(await db().smembers(keys.deactivatedUsers));
+  deactivatedCache = { at: now, ids };
+  return ids;
+}
+
+export async function isDeactivated(userId: string | null): Promise<boolean> {
+  if (!userId) return false;
+  if (isOwner(userId)) return false; // never, however the set got written
+  return (await deactivatedIds()).has(userId);
+}
+
+/** Switch an account off, or back on. Records who did it, and when. */
+export async function setDeactivated(
+  userId: string,
+  off: boolean,
+  by: string
+): Promise<void> {
+  if (isOwner(userId)) return;
+  const kv = db();
+  if (off) await kv.sadd(keys.deactivatedUsers, userId);
+  else await kv.srem(keys.deactivatedUsers, userId);
+  // the reader of this cache may be this very process, and the admin who just
+  // pressed the button should see the result rather than the last fifteen
+  // seconds' answer
+  deactivatedCache = null;
+  const at = Date.now();
+  await kv.zadd(
+    keys.adminDeactivations,
+    at,
+    JSON.stringify({ user: userId, by, off, at, n: nanoid(6) })
+  );
+}
+
+export interface Deactivation {
+  user: string;
+  by: string;
+  off: boolean;
+  at: number;
+}
+
 export interface Takeover {
   as: string;
   by: string;
@@ -112,6 +186,24 @@ export function sameOrigin(req: Request): boolean {
   return allowed.has(origin);
 }
 
+async function recentDeactivations(limit: number): Promise<Deactivation[]> {
+  const raw = await db().zrangebyscore(
+    keys.adminDeactivations,
+    0,
+    Number.MAX_SAFE_INTEGER
+  );
+  const out: Deactivation[] = [];
+  for (const row of raw) {
+    try {
+      const entry = JSON.parse(row) as Deactivation;
+      if (entry?.user && entry?.by) out.push(entry);
+    } catch {
+      // a row we can't read is a row we don't show
+    }
+  }
+  return out.sort((a, b) => b.at - a.at).slice(0, limit);
+}
+
 async function recentTakeovers(limit: number): Promise<Takeover[]> {
   const raw = await db().zrangebyscore(
     keys.adminTakeovers,
@@ -157,6 +249,8 @@ export interface AdminUser {
   guest: boolean;
   /** switched on by the owner; the owner's own row reads true and is fixed */
   trusted: boolean;
+  /** switched off by the owner — signed in or not, they can do nothing */
+  deactivated: boolean;
 }
 
 export interface AdminSummary {
@@ -167,6 +261,8 @@ export interface AdminSummary {
   takeoverAvailable: boolean;
   /** owners only: the record of who stood in whom */
   takeovers: (Takeover & { asName: string; byName: string })[];
+  /** owners only: the record of who was switched off, and by whom */
+  deactivations: (Deactivation & { userName: string; byName: string })[];
   totals: {
     users: number;
     clerkUsers: number;
@@ -201,6 +297,9 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
   const kv = db();
   const viewerIsOwner = isOwner(viewerId);
   const trusted = new Set(await trustedIds());
+  // read straight through: the dashboard is the one screen that must never
+  // show a stale answer about who is switched off
+  const deactivated = new Set(await kv.smembers(keys.deactivatedUsers));
   const churchIds = await kv.smembers(keys.allChurches);
 
   const gatherings: AdminGathering[] = [];
@@ -297,6 +396,7 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
         smsReminders: profile.smsReminders === "1",
         guest: !userId.startsWith("user_"),
         trusted: isOwner(userId) || trusted.has(userId),
+        deactivated: !isOwner(userId) && deactivated.has(userId),
         ...counts,
       };
     })
@@ -313,11 +413,20 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
       }))
     : [];
 
+  const deactivations = viewerIsOwner
+    ? (await recentDeactivations(20)).map((entry) => ({
+        ...entry,
+        userName: nameOf.get(entry.user) ?? entry.user,
+        byName: nameOf.get(entry.by) ?? entry.by,
+      }))
+    : [];
+
   return {
     viewerId,
     viewerIsOwner,
     takeoverAvailable: impersonationEnabled(),
     takeovers,
+    deactivations,
     totals: {
       users: users.length,
       clerkUsers: clerkCount || users.filter((u) => !u.guest).length,
