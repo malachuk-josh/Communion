@@ -5719,3 +5719,50 @@ button.compare-pick:last-child {
   background: rgba(180, 60, 60, 0.18);
   color: #f3c9c9;
 }
+
+/* Deleting an account — see components/DeleteAccount. Red only once it is
+   open: the closed state is a door, not a warning. */
+.account-goes {
+  color: var(--ink);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.account-confirm {
+  display: block;
+  margin: 16px 0 4px;
+  font-size: 0.88rem;
+  color: var(--ink-dim);
+}
+
+.account-confirm input {
+  display: block;
+  margin-top: 6px;
+  width: 100%;
+  max-width: 16rem;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border-bright);
+  background: var(--glass);
+  color: var(--ink);
+  font-family: inherit;
+  letter-spacing: 0.12em;
+}
+
+.account-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.btn.danger {
+  color: #f0b4b4;
+  border-color: rgba(200, 90, 90, 0.45);
+  background: rgba(180, 60, 60, 0.14);
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: rgba(180, 60, 60, 0.26);
+  color: #f8d6d6;
+}

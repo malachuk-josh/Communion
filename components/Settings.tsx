@@ -15,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 import BackToMenu from "@/components/BackToMenu";
 import OfflineSettings from "@/components/OfflineSettings";
 import ReminderSettings from "@/components/ReminderSettings";
+import DeleteAccount from "@/components/DeleteAccount";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import type { Church, Role } from "@/lib/types";
 import { writeLocal } from "@/lib/storage";
@@ -417,6 +418,10 @@ export default function Settings() {
         ))
       )}
       <p className="notice">{t("settings.membersHint")}</p>
+
+      {/* Last on the page. Leaving is the end of a screen, not the middle of
+          one — nobody should meet it on the way to changing their reminder. */}
+      <DeleteAccount />
     </div>
   );
 }
