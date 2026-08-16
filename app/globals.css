@@ -15,7 +15,7 @@
   /* What the two fixed bars are painted with. Opaque on purpose — see the
      note above .bottom-nav — so it has to sit close to the ambient scene
      behind it rather than borrow from it. */
-  --bar: rgba(19, 22, 45, 0.97);
+  --bar: rgb(19, 22, 45);
   --radius: 20px;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -63,7 +63,7 @@ html {
   --gold-soft: rgba(150, 105, 29, 0.14);
   --violet: #5d4fc0;
   --wj: #9c2b1c;
-  --bar: rgba(247, 240, 224, 0.97);
+  --bar: rgb(247, 240, 224);
 }
 
 :root[data-theme="light"] {
@@ -168,7 +168,7 @@ html {
 }
 
 :root[data-theme="grey"] {
-  --bar: rgba(16, 17, 19, 0.97);
+  --bar: rgb(16, 17, 19);
 }
 
 body {
@@ -261,13 +261,17 @@ html.reading body::-webkit-scrollbar {
   top: 0;
   z-index: 20;
   padding-top: env(safe-area-inset-top, 0px);
-  /* Opaque, and no blur at all — see the note over the bottom bar. It was
-     already opaque: in The Word the scripture is full-bleed and runs edge to
-     edge directly beneath this bar, and at the old 0.55 the blurred lines came
-     through as soft grey smears that sat beside each nav label and read as a
-     badly-aligned drop shadow. So 0.97 was already doing all the work and the
-     blur was only ever visible in the sliver that got past it — which is
-     nothing to weigh against a bar that stays where it was put. */
+  /* Opaque, and no blur at all — see the note over the bottom bar. In The Word
+     the scripture is full-bleed and runs edge to edge directly beneath this
+     bar, and at the old 0.55 the blurred lines came through as soft grey
+     smears beside each nav label, reading as a badly-aligned drop shadow.
+
+     0.97 was the first cure and not quite the whole one. Three percent sounds
+     like nothing, and is nothing for most pairs of colours — but this is
+     near-white type on near-black ground, which is the worst case there is:
+     the leak was faint and the letterforms were still perfectly legible
+     through the bar, and a header you can read a genealogy through is not a
+     header. Opaque means opaque. */
   background: var(--bar);
   border-bottom: 1px solid var(--glass-border);
 }
@@ -324,6 +328,12 @@ html.reading body::-webkit-scrollbar {
   font-weight: 500;
   color: var(--ink-dim);
   transition: background 0.2s, color 0.2s;
+  /* A tab is one word or two, and both halves belong on the same line. Left
+     to wrap, "The Table" and "The Word" broke across two lines at every width
+     including a 1920px desktop, which pushed the whole bar to twice its
+     height and left the two of them sitting a line lower than their
+     neighbours. A tab is a label, not a paragraph. */
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -733,6 +743,58 @@ nav.bottom-nav.glass {
 @media (min-width: 640px) {
   .bottom-nav {
     display: none;
+  }
+}
+
+/*
+ * The header takes the width it is given.
+ *
+ * It was pinned to 880px to line its wordmark up with the column of the page
+ * below it, which is the right instinct and the wrong trade once the tabs
+ * stop fitting: on an iPad, and on any desktop at all, seven controls were
+ * being folded into a column two thirds the width of the screen while the
+ * rest of the bar sat empty on both sides. So above the phone the bar spreads
+ * into the room it actually has, and the tabs spread with it.
+ *
+ * Still bounded. A row of five tabs flung to the far corners of a 27-inch
+ * monitor is not "spread out", it is a scavenger hunt — 1280px is wide enough
+ * that nothing is crowded and near enough that the eye takes the row in at
+ * once.
+ */
+@media (min-width: 640px) {
+  .nav-inner {
+    max-width: 1280px;
+    gap: 18px;
+  }
+
+  /* space-evenly rather than a fixed gap: the tabs then divide whatever is
+     left between the wordmark and the controls, so the row breathes on a
+     wide screen and closes up on a narrow one without a breakpoint for each */
+  .nav-links {
+    justify-content: space-evenly;
+    gap: 4px;
+  }
+}
+
+/*
+ * The tight band — iPad portrait up to a small laptop.
+ *
+ * There is enough room here for one line and not enough for a generous one,
+ * so the padding and the wordmark give way before the layout does. Measured
+ * rather than guessed: at 768px the bar was 148px tall, folded into four
+ * rows.
+ */
+@media (min-width: 640px) and (max-width: 1100px) {
+  .nav-inner {
+    gap: 10px;
+    padding-inline: 12px;
+  }
+  .nav-link {
+    padding: 9px 9px;
+    font-size: 0.96rem;
+  }
+  .brand {
+    font-size: 1.28rem;
   }
 }
 
