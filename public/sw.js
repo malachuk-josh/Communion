@@ -28,6 +28,16 @@ const DATA_PATHS = [
   "/concordance/",
   "/absmith/",
   "/bdb/",
+  // where Christ speaks, and the three sets of prose about the text: Henry,
+  // Spurgeon's Treasury, and his Morning and Evening. All four ship in an
+  // offline tier and none of them were named here, so the offline screen
+  // reported those tiers downloaded and the service worker had quietly
+  // dropped every file — this list is the allowlist that message is filtered
+  // through, not a hint.
+  "/redletter/",
+  "/commentary/",
+  "/treasury/",
+  "/devotional/",
   "/icons/",
 ];
 

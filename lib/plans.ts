@@ -1,7 +1,9 @@
-import type { IconName } from "@/components/Icon";
 // Reading plans: fixed sequences of daily readings. Names/descriptions live
 // in the i18n dictionaries under plan.<id> / plan.<id>.desc. Per-user
 // progress (count of completed days) is stored server-side.
+
+import type { IconName } from "@/components/Icon";
+import { MORNING_EVENING } from "@/lib/morningEvening";
 
 export interface PlanDay {
   /** Chapters to read today — usually one, sometimes a short run */
@@ -256,6 +258,36 @@ const nt90: Plan = {
   })(),
 };
 
+/**
+ * Spurgeon's Morning and Evening, as a year.
+ *
+ * A devotional rather than a course of reading, and it earns its place among
+ * the plans anyway: it is a year long, it is walked a day at a time, and
+ * everything the app already does for a plan — enrolling, the day count, the
+ * hour it asks at, a Gathering walking it together — is exactly what somebody
+ * reading a daily devotional wants.
+ *
+ * Each day points at the two chapters his two meditations are drawn from, so
+ * the reading is there to open in context. The meditations themselves are
+ * fetched when they are opened; see components/Devotional.
+ *
+ * Day one is the first of January. Somebody starting in August starts at the
+ * beginning, as with any other plan — Spurgeon numbered by the calendar, but
+ * the book has never needed to be read on his dates to be read.
+ */
+const morneve: Plan = {
+  id: "morneve",
+  icon: "sun",
+  category: "journeys",
+  name: "Morning and Evening",
+  days: MORNING_EVENING.map(([mb, mc, eb, ec]) => ({
+    readings: [
+      { b: mb, c: mc },
+      { b: eb, c: ec },
+    ],
+  })),
+};
+
 /** The whole Bible, Genesis → Revelation, in a year. */
 const bible365: Plan = {
   id: "bible365",
@@ -295,6 +327,7 @@ export const PLANS: Plan[] = [
   acts28,
   nt90,
   bible365,
+  morneve,
 ];
 
 export function getPlan(id: string): Plan | undefined {

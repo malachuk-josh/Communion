@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
+import Devotional from "@/components/Devotional";
 import HangOnWall from "@/components/HangOnWall";
 import { api } from "@/lib/client";
 import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
@@ -1563,6 +1564,7 @@ function PlanRow({
   onRestart: (id: string) => void;
 }) {
   const { lang, t } = useI18n();
+  const [devotional, setDevotional] = useState(false);
   const pct = Math.round((done / total) * 100);
   const next = done < total ? plan.days[done] : null;
   // where the plan puts you next — its first reading is where the link lands
@@ -1646,7 +1648,22 @@ function PlanRow({
           >
             ✓ {t("discover.markRead")}
           </button>
+          {/* Morning and Evening is a devotional as much as a plan: the two
+              chapters are where Spurgeon drew from, and the meditations
+              themselves are the thing somebody enrolled in it came for. */}
+          {plan.id === "morneve" && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setDevotional(true)}
+            >
+              <Icon name="sun" /> {t("devotional.open")}
+            </button>
+          )}
         </div>
+      )}
+      {devotional && (
+        <Devotional day={done + 1} onClose={() => setDevotional(false)} />
       )}
       {done < total && (
         <label className="jr-plan-remind">

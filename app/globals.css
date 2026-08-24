@@ -5919,3 +5919,43 @@ button.compare-pick:last-child {
 .mh-hints p + p {
   margin-top: 0.5em;
 }
+
+/* ---- the devotional panel ---- */
+
+/* Spurgeon opened each meditation with the verse it hangs on, set apart from
+   the prose the way he set it apart on the page. Not a quotation of the whole
+   verse — often a clause of it — so it is styled as a line of scripture
+   rather than as a reference. */
+.mh-by + .dv-verse {
+  margin-top: 0;
+}
+
+.dv-verse {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gold);
+  padding-left: 12px;
+  border-left: 2px solid var(--glass-border);
+  margin-bottom: 8px;
+}
+
+/* the way back to the chapter it came from, small enough not to interrupt */
+.dv-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+
+.dv-ref:hover {
+  color: var(--gold);
+}
+
+.dv-ref svg {
+  width: 13px;
+  height: 13px;
+}

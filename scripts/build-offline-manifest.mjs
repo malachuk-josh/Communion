@@ -72,7 +72,11 @@ const commentary = merge(
   // Spurgeon rides with Henry rather than in a tier of his own: the panel
   // shows the two of them together, and half a panel is a worse thing to
   // download than a slightly larger one.
-  listDir("treasury")
+  listDir("treasury"),
+  // and Morning and Evening with them, for the same reason: it is one more
+  // year of Spurgeon's prose, and the plan that uses it is walked a day at a
+  // time in exactly the places a reader has no signal.
+  listDir("devotional")
 );
 
 const tiers = {
