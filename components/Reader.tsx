@@ -3689,10 +3689,24 @@ export default function Reader({
                     : `${henryOn[0]}:${sec.from}-${sec.to}`;
               return (
                 <>
-                  <h2>
-                    <Icon name="quote" />{" "}
-                    {t("reader.commentaryOn", { ref: `${bookName} ${span}` })}
-                  </h2>
+                  {/* The close sits in the heading, not under the text.
+                      This panel is a long read that scrolls inside itself, so
+                      a button at the foot is a button you have to reach the
+                      end of Henry to find. */}
+                  <div className="mh-head">
+                    <h2>
+                      <Icon name="quote" />{" "}
+                      {t("reader.commentaryOn", { ref: `${bookName} ${span}` })}
+                    </h2>
+                    <button
+                      type="button"
+                      className="lex-close"
+                      onClick={() => setHenryOn(null)}
+                      aria-label={t("search.close")}
+                    >
+                      ✕
+                    </button>
+                  </div>
                   {sec.title && <p className="mh-title">{sec.title}</p>}
                   <div className="mh-body">
                     {sec.text.split(/(?<=\.)\s+(?=[A-Z"'])/).reduce<string[]>(
@@ -3714,11 +3728,6 @@ export default function Reader({
                     ))}
                   </div>
                   <p className="mh-who">{t("reader.commentaryWho")}</p>
-                  <div className="modal-actions">
-                    <button className="btn" onClick={() => setHenryOn(null)}>
-                      {t("common.close")}
-                    </button>
-                  </div>
                 </>
               );
             })()}

@@ -5836,6 +5836,24 @@ button.compare-pick:last-child {
   color: var(--gold);
 }
 
+/* the heading row: title on the left, the way out hard right */
+.mh-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.mh-head h2 {
+  flex: 1;
+  min-width: 0;
+}
+
+/* the round button does not squash when the reference is long */
+.mh-head .lex-close {
+  flex: 0 0 auto;
+}
+
 .mh-title {
   font-family: var(--serif);
   font-size: 1.02rem;
