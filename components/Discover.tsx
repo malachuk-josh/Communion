@@ -363,15 +363,6 @@ function PlansSection({ open }: { open: string | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Today where this device is standing — the honest date for an offline read. */
-  const localDate = () => {
-    try {
-      return new Intl.DateTimeFormat("en-CA").format(new Date());
-    } catch {
-      return new Date().toISOString().slice(0, 10);
-    }
-  };
-
   /** Record where a plan now stands. States the total, never "+1", so a
    *  batch the server takes twice can't advance anyone twice. */
   const setDone = (planId: string, done: number, on?: string) => {
@@ -381,14 +372,21 @@ function PlansSection({ open }: { open: string | null }) {
     void enqueue({ kind: "plan.set", id: planId, done, on, ts: Date.now() });
   };
 
-  const complete = (planId: string, total: number) =>
-    setDone(
-      planId,
-      Math.min((progressRef.current[planId] ?? 0) + 1, total),
-      localDate()
-    );
-
-  const reset = (planId: string) => setDone(planId, 0);
+  /*
+   * Put a plan on the reader's shelf, at day nought.
+   *
+   * This screen is the catalogue and the Journal is where a plan is walked,
+   * so the only thing a card here does is hand the plan over. Marking a day
+   * read, setting the hour it asks at, restarting it and leaving it all live
+   * on the one screen that shows what you are actually reading — a plan
+   * managed in two places is a plan you have to remember the state of in two
+   * places.
+   *
+   * Nought and not one: adding a plan is not reading a day of it. Having the
+   * plan is what puts it in the Journal, which is why the key is written even
+   * though the value is zero.
+   */
+  const addToJournal = (planId: string) => setDone(planId, 0);
 
   /*
    * A reminder named a plan. Show the chip that contains it, then put it in
@@ -514,7 +512,7 @@ function PlansSection({ open }: { open: string | null }) {
           onChanged={setMine}
           copied={copied}
           setCopied={setCopied}
-          onMark={complete}
+          onAdd={addToJournal}
           pointed={pointed}
         />
       )}
@@ -543,6 +541,9 @@ function PlansSection({ open }: { open: string | null }) {
           const total = plan.days.length;
           const finished = done >= total;
           const today = finished ? null : plan.days[done];
+          // On the shelf, not read from: the key is what enrols, and it is
+          // written at zero. A count of nought is a plan added this minute.
+          const taken = plan.id in progress;
           return (
             <div
               key={plan.id}
@@ -574,9 +575,9 @@ function PlansSection({ open }: { open: string | null }) {
               {finished ? (
                 <div className="plan-actions">
                   <span className="email-sent"><Icon name="party" /> {t("discover.planDone")}</span>
-                  <button className="rsvp-btn" onClick={() => reset(plan.id)}>
-                    {t("discover.restart")}
-                  </button>
+                  <Link className="btn btn-sm" href="/menu/journal">
+                    <Icon name="plan" /> {t("discover.addedToJournal")}
+                  </Link>
                 </div>
               ) : (
                 today && (
@@ -588,12 +589,18 @@ function PlansSection({ open }: { open: string | null }) {
                       <Icon name="book" /> {t("discover.day", { n: String(done + 1) })}:{" "}
                       {dayLabel(today)}
                     </Link>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => complete(plan.id, total)}
-                    >
-                      ✓ {t("discover.markRead")}
-                    </button>
+                    {taken ? (
+                      <Link className="btn btn-sm" href="/menu/journal">
+                        <Icon name="plan" /> {t("discover.addedToJournal")}
+                      </Link>
+                    ) : (
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => addToJournal(plan.id)}
+                      >
+                        + {t("discover.addToJournal")}
+                      </button>
+                    )}
                   </div>
                 )
               )}
@@ -703,7 +710,7 @@ function CustomPlans({
   onChanged,
   copied,
   setCopied,
-  onMark,
+  onAdd,
   pointed,
 }: {
   plans: CustomPlanRow[] | null;
@@ -712,7 +719,7 @@ function CustomPlans({
   onChanged: (next: CustomPlanRow[]) => void;
   copied: string | null;
   setCopied: (id: string | null) => void;
-  onMark: (planId: string, total: number) => void;
+  onAdd: (planId: string) => void;
   /** the card a reminder pointed at, so a custom plan can be rung too */
   pointed: string | null;
 }) {
@@ -822,12 +829,16 @@ function CustomPlans({
                   <Icon name="party" /> {t("discover.planDone")}
                 </span>
               )}
-              {!finished && (
+              {plan.id in progress ? (
+                <Link className="btn btn-sm" href="/menu/journal">
+                  <Icon name="plan" /> {t("discover.addedToJournal")}
+                </Link>
+              ) : (
                 <button
                   className="btn btn-sm btn-primary"
-                  onClick={() => onMark(plan.id, total)}
+                  onClick={() => onAdd(plan.id)}
                 >
-                  ✓ {t("discover.markRead")}
+                  + {t("discover.addToJournal")}
                 </button>
               )}
             </div>
