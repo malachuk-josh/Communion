@@ -146,6 +146,29 @@ function StudyStar() {
   );
 }
 
+/**
+ * Long prose into paragraphs a person can find their place in again.
+ *
+ * Henry and Spurgeon both write in unbroken blocks — Spurgeon especially, who
+ * was setting type for a Victorian weekly and had no reason to break for a
+ * phone. Split on sentence ends and regrouped to a few hundred characters,
+ * which is close enough to a paragraph to read like one.
+ */
+function intoParagraphs(text: string): string[] {
+  return text
+    .split(/\n{2,}/)
+    .flatMap((block) =>
+      block.split(/(?<=\.)\s+(?=[A-Z"'])/).reduce<string[]>((paras, sentence) => {
+        const last = paras[paras.length - 1];
+        if (last && last.length < 420) paras[paras.length - 1] = `${last} ${sentence}`;
+        else paras.push(sentence);
+        return paras;
+      }, [])
+    )
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
 export default function Reader({
   initialBook,
   initialChapter,
@@ -1102,6 +1125,62 @@ export default function Reader({
     // omits it for the same reason.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [study, bookNr]);
+
+  /**
+   * Spurgeon's Treasury of David, which is the Psalms and nothing else.
+   *
+   * Shaped differently from Henry because the book is: each psalm carries an
+   * overview of the whole, verse-by-verse exposition, and sermon outlines.
+   */
+  const [treasury, setTreasury] = useState<Record<
+    string,
+    {
+      overview?: string;
+      verses: { from: number; to?: number; text: string }[];
+      hints?: { from: number; to?: number; text: string }[];
+    }
+  > | null>(null);
+
+  // Only ever fetched in the Psalms — there is no Treasury of anything else.
+  useEffect(() => {
+    if (!study || bookNr !== 19) {
+      setTreasury(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("/treasury/19.json")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (cancelled) return;
+        holdVerse();
+        setTreasury(json);
+      })
+      .catch(() => {
+        if (!cancelled) setTreasury({});
+      });
+    return () => {
+      cancelled = true;
+    };
+    // holdVerse is redeclared every render; see the note on the effect above
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [study, bookNr]);
+
+  /** What Spurgeon has on this verse: his exposition, and any outlines. */
+  const spurgeonFor = useCallback(
+    (ch: number, verse: number) => {
+      const psalm = treasury?.[String(ch)];
+      if (!psalm) return null;
+      const covers = (x: { from: number; to?: number }) =>
+        verse >= x.from && (x.to === undefined || verse <= x.to);
+      const exposition = psalm.verses.find(covers) ?? null;
+      const hints = (psalm.hints ?? []).filter(
+        (h) => h.from === 0 || covers(h)
+      );
+      if (!exposition && hints.length === 0) return null;
+      return { exposition, hints, overview: psalm.overview };
+    },
+    [treasury]
+  );
 
   /** Which of a chapter's sections covers this verse, if any. */
   const henryFor = useCallback(
@@ -2471,7 +2550,8 @@ export default function Reader({
                             sit next to each other because that is the order a
                             reader wants them in — what is going on here, then
                             what somebody made of it. */}
-                        {henryFor(ch, v.verse) && (
+                        {(henryFor(ch, v.verse) ||
+                          spurgeonFor(ch, v.verse)) && (
                           <button
                             type="button"
                             className="xref-chip mh-chip"
@@ -3676,17 +3756,21 @@ export default function Reader({
       )}
 
       {/* Matthew Henry on the passage this verse sits in. */}
-      {henryOn !== null && henryFor(henryOn[0], henryOn[1]) && (
+      {henryOn !== null &&
+        (henryFor(henryOn[0], henryOn[1]) ||
+          spurgeonFor(henryOn[0], henryOn[1])) && (
         <div className="modal-overlay" onClick={() => setHenryOn(null)}>
           <div className="glass modal" onClick={(e) => e.stopPropagation()}>
             {(() => {
-              const sec = henryFor(henryOn[0], henryOn[1])!;
+              const sec = henryFor(henryOn[0], henryOn[1]);
+              const spur = spurgeonFor(henryOn[0], henryOn[1]);
+              const shown = sec ?? spur?.exposition ?? null;
               const span =
-                sec.to === undefined
-                  ? String(henryOn[0])
-                  : sec.from === sec.to
-                    ? `${henryOn[0]}:${sec.from}`
-                    : `${henryOn[0]}:${sec.from}-${sec.to}`;
+                !shown || shown.to === undefined
+                  ? `${henryOn[0]}:${henryOn[1]}`
+                  : shown.from === shown.to
+                    ? `${henryOn[0]}:${shown.from}`
+                    : `${henryOn[0]}:${shown.from}-${shown.to}`;
               return (
                 <>
                   {/* The close sits in the heading, not under the text.
@@ -3707,27 +3791,52 @@ export default function Reader({
                       ✕
                     </button>
                   </div>
-                  {sec.title && <p className="mh-title">{sec.title}</p>}
                   <div className="mh-body">
-                    {sec.text.split(/(?<=\.)\s+(?=[A-Z"'])/).reduce<string[]>(
-                      (paras, sentence) => {
-                        // Henry wrote in long unbroken blocks. Grouped into
-                        // paragraphs of a few sentences so a panel of prose is
-                        // something a person can find their place in again.
-                        const last = paras[paras.length - 1];
-                        if (last && last.length < 420) {
-                          paras[paras.length - 1] = `${last} ${sentence}`;
-                        } else {
-                          paras.push(sentence);
-                        }
-                        return paras;
-                      },
-                      []
-                    ).map((para, n) => (
-                      <p key={n}>{para}</p>
-                    ))}
+                    {/* Henry first, then Spurgeon. One panel rather than two
+                        chips: in the Psalms both have something to say about
+                        the same verse, and which of them you want is not a
+                        decision worth making before you have read either. */}
+                    {sec && (
+                      <section className="mh-voice">
+                        <p className="mh-by">{t("reader.byHenry")}</p>
+                        {sec.title && <p className="mh-title">{sec.title}</p>}
+                        {intoParagraphs(sec.text).map((para, n) => (
+                          <p key={`h${n}`}>{para}</p>
+                        ))}
+                      </section>
+                    )}
+                    {spur && (
+                      <section className="mh-voice">
+                        <p className="mh-by">{t("reader.bySpurgeon")}</p>
+                        {/* The overview introduces the whole psalm, so it
+                            belongs at its opening and nowhere else — repeated
+                            under every verse it would be something to scroll
+                            past a hundred and seventy-six times. */}
+                        {spur.overview && shown?.from === 1 && (
+                          <div className="mh-overview">
+                            {intoParagraphs(spur.overview).map((para, n) => (
+                              <p key={`o${n}`}>{para}</p>
+                            ))}
+                          </div>
+                        )}
+                        {spur.exposition &&
+                          intoParagraphs(spur.exposition.text).map((para, n) => (
+                            <p key={`s${n}`}>{para}</p>
+                          ))}
+                        {spur.hints.length > 0 && (
+                          <div className="mh-hints">
+                            <p className="mh-by">{t("reader.spurgeonHints")}</p>
+                            {spur.hints.map((h, n) => (
+                              <p key={`t${n}`}>{h.text}</p>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                    )}
                   </div>
-                  <p className="mh-who">{t("reader.commentaryWho")}</p>
+                  {/* Name only whoever is actually on the screen. */}
+                  {sec && <p className="mh-who">{t("reader.commentaryWho")}</p>}
+                  {spur && <p className="mh-who">{t("reader.spurgeonWho")}</p>}
                 </>
               );
             })()}

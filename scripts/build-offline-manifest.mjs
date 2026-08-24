@@ -67,7 +67,13 @@ const study = merge(
  * the commentary, or the commentary and none of the Greek. Five megabytes is
  * also enough to be worth its own yes.
  */
-const commentary = listDir("commentary");
+const commentary = merge(
+  listDir("commentary"),
+  // Spurgeon rides with Henry rather than in a tier of his own: the panel
+  // shows the two of them together, and half a panel is a worse thing to
+  // download than a slightly larger one.
+  listDir("treasury")
+);
 
 const tiers = {
   reading,

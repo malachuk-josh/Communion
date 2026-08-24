@@ -5880,3 +5880,42 @@ button.compare-pick:last-child {
   font-style: italic;
   color: var(--ink-faint);
 }
+
+/* Two commentators in one panel — see components/Reader. Each gets a named
+   band so it is never in doubt who is speaking; the rule between them does
+   the work a heading would, without shouting. */
+.mh-voice + .mh-voice {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.mh-by {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+/* the psalm's own introduction, set apart from the verse note under it */
+.mh-overview {
+  padding-left: 12px;
+  border-left: 2px solid var(--glass-border);
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+
+.mh-hints {
+  margin-top: 14px;
+}
+
+.mh-hints .mh-by {
+  color: var(--ink-faint);
+}
+
+.mh-hints p + p {
+  margin-top: 0.5em;
+}
