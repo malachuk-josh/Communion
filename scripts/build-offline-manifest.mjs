@@ -58,9 +58,21 @@ const study = merge(
   listDir("bdb")
 );
 
+/*
+ * Matthew Henry, on his own.
+ *
+ * Not folded into the study tier, because it is not the same kind of thing:
+ * everything in there tells you what a word is, and this tells you what a
+ * man thought a passage meant. Somebody may well want the lexicon and not
+ * the commentary, or the commentary and none of the Greek. Five megabytes is
+ * also enough to be worth its own yes.
+ */
+const commentary = listDir("commentary");
+
 const tiers = {
   reading,
   study,
+  commentary,
   ...Object.fromEntries(
     Object.entries(translations).map(([id, t]) => [`translation:${id}`, t])
   ),

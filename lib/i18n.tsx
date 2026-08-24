@@ -760,6 +760,12 @@ const dictionaries = {
     "account.deleteType": "Type DELETE to confirm",
     "account.deleteConfirm": "Delete everything",
     "account.deleting": "Deleting…",
+    "offline.commentary": "Matthew Henry's commentary",
+    "offline.commentaryDesc": "Verse-by-verse notes on the whole Bible, from 1708. Public domain.",
+    "reader.commentary": "Commentary",
+    "reader.commentaryOn": "Matthew Henry on {ref}",
+    "reader.commentaryNone": "Matthew Henry does not comment on this passage.",
+    "reader.commentaryWho": "Matthew Henry (1662–1714), Concise Commentary. Public domain.",
   },
   es: {
     "app.tagline": "Lee la Palabra. Congrégate en Su nombre.",
@@ -1514,6 +1520,12 @@ const dictionaries = {
     "account.deleteType": "Escribe DELETE para confirmar",
     "account.deleteConfirm": "Eliminar todo",
     "account.deleting": "Eliminando…",
+    "offline.commentary": "Comentario de Matthew Henry",
+    "offline.commentaryDesc": "Notas versículo por versículo de toda la Biblia, de 1708. Dominio público.",
+    "reader.commentary": "Comentario",
+    "reader.commentaryOn": "Matthew Henry sobre {ref}",
+    "reader.commentaryNone": "Matthew Henry no comenta este pasaje.",
+    "reader.commentaryWho": "Matthew Henry (1662–1714), Comentario Conciso. Dominio público.",
   },
 } as const;
 

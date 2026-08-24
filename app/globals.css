@@ -5828,3 +5828,37 @@ button.compare-pick:last-child {
   background: rgba(180, 60, 60, 0.26);
   color: #f8d6d6;
 }
+
+/* Matthew Henry's commentary — see components/Reader. The panel is prose and
+   nothing else, so it is set like prose: measure held down, paragraphs given
+   room, and the attribution quiet at the foot where a footnote belongs. */
+.mh-chip {
+  color: var(--gold);
+}
+
+.mh-title {
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  color: var(--ink);
+  margin: 2px 0 12px;
+}
+
+.mh-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.62;
+  color: var(--ink-dim);
+}
+
+.mh-body p + p {
+  margin-top: 0.85em;
+}
+
+.mh-who {
+  margin-top: 14px;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--ink-faint);
+}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Fragment,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -283,6 +284,19 @@ export default function Reader({
   > | null>(null);
   // which chapter's context modal is open (null: closed)
   const [contextOpen, setContextOpen] = useState<number | null>(null);
+  /**
+   * Matthew Henry, one file per book: chapter -> the sections of that chapter.
+   *
+   * A section is a run of verses rather than a single one — Henry wrote about
+   * passages, not lines — so a verse is looked up by which run contains it.
+   * A missing `to` means the section runs to the end of the chapter.
+   */
+  const [commentary, setCommentary] = useState<Record<
+    string,
+    { from: number; to?: number; title?: string; text: string }[]
+  > | null>(null);
+  /** the verse whose commentary is open, as [chapter, verse] */
+  const [henryOn, setHenryOn] = useState<[number, number] | null>(null);
   // section headings per chapter: [{ v: first verse, en, es? }, …]. Spanish is
   // optional: the hand-written books have it, the Berean ones do not.
   const [heads, setHeads] = useState<Record<
@@ -1059,6 +1073,44 @@ export default function Reader({
       cancelled = true;
     };
   }, [study, bookNr]);
+
+  // Matthew Henry's commentary, one static file per book — same shape and the
+  // same reason as the context above it, and only fetched in study mode
+  useEffect(() => {
+    if (!study) return;
+    let cancelled = false;
+    setCommentary(null);
+    fetch(`/commentary/${bookNr}.json`)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((json) => {
+        if (cancelled) return;
+        // as with the context: this adds a chip to every verse on screen,
+        // including the ones above the fold, so hold the reader's place
+        holdVerse();
+        setCommentary(json);
+      })
+      .catch(() => {
+        if (!cancelled) setCommentary({});
+      });
+    return () => {
+      cancelled = true;
+    };
+    // holdVerse is deliberately not a dependency: it is redeclared on every
+    // render, so listing it makes this effect re-run for ever — which it did,
+    // fetching the book a hundred times and blanking the state each time, so
+    // no chip ever survived long enough to appear. The context effect above
+    // omits it for the same reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [study, bookNr]);
+
+  /** Which of a chapter's sections covers this verse, if any. */
+  const henryFor = useCallback(
+    (ch: number, verse: number) =>
+      (commentary?.[String(ch)] ?? []).find(
+        (sec) => verse >= sec.from && (sec.to === undefined || verse <= sec.to)
+      ) ?? null,
+    [commentary]
+  );
 
   // section headings, one static file per book — the same shape as the
   // chapter context, keyed by chapter then by the verse a section opens on.
@@ -2415,6 +2467,24 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
+                        {/* Context is the chapter; this is the passage. They
+                            sit next to each other because that is the order a
+                            reader wants them in — what is going on here, then
+                            what somebody made of it. */}
+                        {henryFor(ch, v.verse) && (
+                          <button
+                            type="button"
+                            className="xref-chip mh-chip"
+                            onClick={() => {
+                              setPanelOpen(false);
+                              setHenryOn([ch, v.verse]);
+                            }}
+                            aria-label={t("reader.commentary")}
+                            title={t("reader.commentary")}
+                          >
+                            <Icon name="quote" /> {t("reader.commentary")}
+                          </button>
+                        )}
                         {/* Normally the underlined words are the way in, so
                             there is no chip. Where nothing could be matched
                             — the Spanish, or a verse worded far from the
@@ -3601,6 +3671,57 @@ export default function Reader({
                 {t("session.cancel")}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Matthew Henry on the passage this verse sits in. */}
+      {henryOn !== null && henryFor(henryOn[0], henryOn[1]) && (
+        <div className="modal-overlay" onClick={() => setHenryOn(null)}>
+          <div className="glass modal" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const sec = henryFor(henryOn[0], henryOn[1])!;
+              const span =
+                sec.to === undefined
+                  ? String(henryOn[0])
+                  : sec.from === sec.to
+                    ? `${henryOn[0]}:${sec.from}`
+                    : `${henryOn[0]}:${sec.from}-${sec.to}`;
+              return (
+                <>
+                  <h2>
+                    <Icon name="quote" />{" "}
+                    {t("reader.commentaryOn", { ref: `${bookName} ${span}` })}
+                  </h2>
+                  {sec.title && <p className="mh-title">{sec.title}</p>}
+                  <div className="mh-body">
+                    {sec.text.split(/(?<=\.)\s+(?=[A-Z"'])/).reduce<string[]>(
+                      (paras, sentence) => {
+                        // Henry wrote in long unbroken blocks. Grouped into
+                        // paragraphs of a few sentences so a panel of prose is
+                        // something a person can find their place in again.
+                        const last = paras[paras.length - 1];
+                        if (last && last.length < 420) {
+                          paras[paras.length - 1] = `${last} ${sentence}`;
+                        } else {
+                          paras.push(sentence);
+                        }
+                        return paras;
+                      },
+                      []
+                    ).map((para, n) => (
+                      <p key={n}>{para}</p>
+                    ))}
+                  </div>
+                  <p className="mh-who">{t("reader.commentaryWho")}</p>
+                  <div className="modal-actions">
+                    <button className="btn" onClick={() => setHenryOn(null)}>
+                      {t("common.close")}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

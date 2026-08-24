@@ -63,6 +63,12 @@ export default function OfflineSettings({
             detail: t("offline.readingDesc"),
           };
         }
+        if (id === "commentary") {
+          return {
+            title: t("offline.commentary"),
+            detail: t("offline.commentaryDesc"),
+          };
+        }
         if (id === "study") {
           return { title: t("offline.study"), detail: t("offline.studyDesc") };
         }
@@ -75,7 +81,7 @@ export default function OfflineSettings({
       };
       // reading first, then the extra translations, then the study tools
       const order = (id: string) =>
-        id === "reading" ? 0 : id === "study" ? 2 : 1;
+        id === "reading" ? 0 : id === "study" ? 2 : id === "commentary" ? 3 : 1;
       return Promise.all(
         Object.entries(data.tiers)
           .sort((a, b) => order(a[0]) - order(b[0]))
