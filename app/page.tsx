@@ -4,9 +4,9 @@ import { getBook } from "@/lib/bible";
 export default async function ReaderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ b?: string; c?: string; v?: string }>;
+  searchParams: Promise<{ b?: string; c?: string; v?: string; from?: string }>;
 }) {
-  const { b, c, v } = await searchParams;
+  const { b, c, v, from } = await searchParams;
   const book = getBook(Number(b));
   const chapter = Number(c);
   const verse = Number(v);
@@ -19,6 +19,9 @@ export default async function ReaderPage({
       initialVerse={
         valid && Number.isInteger(verse) && verse >= 1 ? verse : undefined
       }
+      // where the reader was sent from, so the way back is offered. An
+      // allowlist and not the raw value: this ends up in an href.
+      initialFrom={from === "journal" ? "journal" : undefined}
     />
   );
 }

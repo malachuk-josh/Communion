@@ -109,7 +109,7 @@ export default function Devotional({
         <p className="dv-verse">{r.verse}</p>
         {/* the reference opens the chapter it came from, so the verse can be
             read where it sits rather than only as Spurgeon quoted it */}
-        <Link className="dv-ref" href={`/?b=${r.b}&c=${r.c}`}>
+        <Link className="dv-ref" href={`/?b=${r.b}&c=${r.c}&from=journal`}>
           <Icon name="book" /> {label(r)}
         </Link>
         {intoParagraphs(r.text).map((para, n) => (

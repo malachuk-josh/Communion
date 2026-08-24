@@ -1597,8 +1597,14 @@ function PlanRow({
     /* the card cannot be the link any more: a button inside an anchor is
        invalid, and a tap meant for one would follow the other */
     <div className="glass card jr-row jr-plan">
+      {/* from=journal so the reader lands with a way back — see the Reader's
+          back pill. The Word is a whole screen with its own bottom bar and no
+          other route home. */}
       {target ? (
-        <Link href={`/?b=${target.b}&c=${target.c}`} className="jr-go">
+        <Link
+          href={`/?b=${target.b}&c=${target.c}&from=journal`}
+          className="jr-go"
+        >
           {body}
         </Link>
       ) : (

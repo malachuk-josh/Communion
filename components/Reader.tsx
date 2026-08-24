@@ -173,13 +173,34 @@ export default function Reader({
   initialBook,
   initialChapter,
   initialVerse,
+  initialFrom,
 }: {
   initialBook?: number;
   initialChapter?: number;
   initialVerse?: number;
+  /** the screen that sent the reader here, if it wants a way back offered */
+  initialFrom?: "journal";
 } = {}) {
   const { lang, t } = useI18n();
   const deepLinked = initialBook !== undefined;
+  /*
+   * The way back to where this reading came from.
+   *
+   * A plan in the Journal sends you into the Word, and the Word is a full
+   * screen with a bottom bar that does not know it was sent for — so the way
+   * back was the browser's own, or four taps through the menu. The same pill
+   * a cross-reference leaves behind, for the same reason.
+   *
+   * Read once, from the props and then from the address bar: the service
+   * worker may answer any URL with its cached copy of "/", whose props were
+   * baked at some other visit, so offline the address is the only source that
+   * knows about this one. Kept in state and never rewritten, because the
+   * reader may read on past the chapter they landed on and the way home does
+   * not stop being the way home.
+   */
+  const [cameFrom, setCameFrom] = useState<"journal" | null>(
+    initialFrom ?? null
+  );
   const [translation, setTranslation] = useState(DEFAULT_TRANSLATION);
   const [bookNr, setBookNr] = useState(initialBook ?? DEFAULT_BOOK);
   const [chapter, setChapter] = useState(initialChapter ?? DEFAULT_CHAPTER);
@@ -1797,6 +1818,15 @@ export default function Reader({
     setHighlightVerse(ref[2]);
     pushVisit(ref[0], ref[1], ref[2]);
   };
+
+  // the address bar, for the visit the cached shell could not know about
+  useEffect(() => {
+    if (cameFrom) return;
+    const from = new URLSearchParams(window.location.search).get("from");
+    if (from === "journal") setCameFrom("journal");
+    // once, on arrival
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const goBack = () => {
     const last = backStack[backStack.length - 1];
@@ -3479,15 +3509,25 @@ export default function Reader({
         </div>
       )}
 
-      {backStack.length > 0 && (
+      {backStack.length > 0 ? (
         <button type="button" className="glass back-pill" onClick={goBack}>
-          <Icon name="back" />{" "}
+          <Icon name="back" />
           {t("reader.backTo", {
             ref: `${bookNameOf(backStack[backStack.length - 1].b)} ${
               backStack[backStack.length - 1].c
             }:${backStack[backStack.length - 1].v}`,
           })}
         </button>
+      ) : (
+        /* Only with the cross-reference stack empty. A reader following a
+           chain of references wants the step back before the way out, and two
+           pills in the same place would be one pill too many. */
+        cameFrom === "journal" && (
+          <Link className="glass back-pill" href="/menu/journal">
+            <Icon name="back" />
+            {t("reader.backToJournal")}
+          </Link>
+        )
       )}
 
       {bookmarksOpen && (

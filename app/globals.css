@@ -3239,6 +3239,12 @@ button.menu-tile {
 
 .back-pill {
   position: fixed;
+  /* flex, so the arrow sits on the text's centre line rather than its
+     baseline — the pill is a <button> coming back from a cross-reference and
+     an <a> going back to the Journal, and the two must look the same */
+  display: flex;
+  align-items: center;
+  gap: 7px;
   left: 0;
   right: 0;
   margin-inline: auto;
