@@ -88,9 +88,29 @@ function refToPlace(ref) {
   return { b: nr, c, ...(m[3] ? { v: Number(m[3]) } : {}) };
 }
 
-const lines = readFileSync(SOURCE, "utf8").split("\n");
+const all = readFileSync(SOURCE, "utf8").split("\n");
+
+/*
+ * Stop at the indexes.
+ *
+ * CCEL closes the book with two reference indexes — every verse it quotes,
+ * against a ccel.org URL, for 2,602 entries. There is no heading after the
+ * last reading to stop at, so the 31st of December swallowed the lot: a
+ * quarter of a megabyte of "file:///ccel/s/spurgeon/..." printed under
+ * Jeremiah 8:20 as though Spurgeon had written it.
+ */
+const indexes = all.findIndex((l) => /^\s*Indexes\s*$/.test(l));
+const lines = indexes === -1 ? all : all.slice(0, indexes);
+
 const HEAD = /^(Morning|Evening),\s+([A-Z][a-z]+)\s+(\d{1,2})\s*$/;
 const LINK = /^\s*\[\d+\][A-Za-z]/;
+/*
+ * The rule between one reading and the next: sixty-six underscores, which is
+ * how CCEL's plain text draws a horizontal line. It is not a word, and it
+ * cannot be wrapped — left in, every one of the 732 meditations ended with a
+ * run wider than a phone, and the panel scrolled sideways.
+ */
+const RULE = /^\s*_{4,}\s*$/;
 
 const days = {};
 let unmatched = [];
@@ -113,7 +133,7 @@ for (let i = 0; i < lines.length; i++) {
   let ref = null;
   for (let j = i + 1; j < end; j++) {
     const line = lines[j];
-    if (!line.trim() || LINK.test(line)) continue;
+    if (!line.trim() || LINK.test(line) || RULE.test(line)) continue;
     // the reference: indented two, where everything else has three
     // A reference, told from a quote by its indent — and by not opening with
     // a quotation mark, which two of the 732 do where the verse itself got

@@ -5864,6 +5864,13 @@ button.compare-pick:last-child {
 .mh-body {
   max-height: 60vh;
   overflow-y: auto;
+  /* Up and down, never side to side.
+     Naming one axis makes the other `auto` on its own, so a single word too
+     wide to fit turned this into a two-axis scroller and the prose slid out
+     from under the panel. Saying `hidden` here keeps the pane vertical, and
+     breaking the word means nothing is hidden by it. */
+  overflow-x: hidden;
+  overflow-wrap: break-word;
   font-family: var(--serif);
   font-size: 1.02rem;
   line-height: 1.62;
