@@ -70,28 +70,43 @@
   .iconbtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
 
   footer{
-    display:flex;flex-direction:column;align-items:center;gap:14px;
-    padding:0 20px calc(22px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;align-items:center;
+    padding:0 20px calc(26px + env(safe-area-inset-bottom));
   }
   #hint{
     font-size:13px;color:var(--bone-dim);text-align:center;max-width:34ch;
     line-height:1.45;min-height:1.4em;
   }
-  #trigger{
-    pointer-events:auto;
-    width:78px;height:78px;border-radius:50%;
-    border:1.5px solid var(--gold);
-    background:radial-gradient(circle at 35% 30%, rgba(242,193,78,.16), rgba(11,25,29,.72));
+  .side{
+    pointer-events:auto;position:fixed;
+    bottom:calc(112px + env(safe-area-inset-bottom));
+    width:70px;height:70px;border-radius:50%;
     color:var(--bone);cursor:pointer;
     display:grid;place-items:center;
     backdrop-filter:blur(6px);
-    transition:transform .08s ease, border-color .2s ease, box-shadow .2s ease;
-    box-shadow:0 0 24px rgba(242,193,78,.12);
+    transition:transform .08s ease, opacity .25s ease, box-shadow .25s ease;
   }
-  #trigger.running{border-color:var(--ember);box-shadow:0 0 26px rgba(255,107,74,.22);}
-  #trigger:active{transform:scale(.93);}
-  #trigger:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-  #trigger svg{display:block;}
+  .side .lbl{
+    position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    margin-top:8px;font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--bone-dim);font-weight:500;
+  }
+  #playBtn{
+    right:16px;
+    border:1.5px solid var(--gold);
+    background:radial-gradient(circle at 35% 30%, rgba(242,193,78,.16), rgba(11,25,29,.72));
+    box-shadow:0 0 24px rgba(242,193,78,.14);
+  }
+  #holdBtn{
+    left:16px;
+    border:1.5px solid var(--ember);
+    background:radial-gradient(circle at 35% 30%, rgba(255,107,74,.14), rgba(11,25,29,.72));
+    box-shadow:0 0 24px rgba(255,107,74,.14);
+  }
+  .side.off{opacity:.32;box-shadow:none;}
+  .side:active{transform:scale(.93);}
+  .side:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+  .side svg{display:block;}
 
   #toast{
     position:fixed;left:50%;bottom:calc(178px + env(safe-area-inset-bottom));
@@ -163,15 +178,19 @@
   </header>
   <footer>
     <div id="hint"></div>
-    <button id="trigger" aria-label="Release or hold the ball">
-      <svg id="icoPlay" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M8 5.5v13l11-6.5z"/>
-      </svg>
-      <svg id="icoPause" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display:none" aria-hidden="true">
-        <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
-      </svg>
-    </button>
   </footer>
+  <button id="holdBtn" class="side" aria-label="Hold the ball">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
+    </svg>
+    <span class="lbl">Hold</span>
+  </button>
+  <button id="playBtn" class="side" aria-label="Release the ball">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.5v13l11-6.5z"/>
+    </svg>
+    <span class="lbl">Release</span>
+  </button>
 </div>
 
 <div id="toast" role="status"></div>
@@ -185,7 +204,8 @@
     <div class="actions">
       <div><b>Orbit</b> — drag sideways</div>
       <div><b>Tilt</b> — drag up &amp; down</div>
-      <div><b>Release / hold</b> — the brass button</div>
+      <div><b>Release</b> — brass button, right</div>
+      <div><b>Hold</b> — ember button, left</div>
     </div>
     <button class="cta" id="begin">Begin</button>
   </div>
@@ -240,7 +260,7 @@ const mix  = (a, b, t) => [0,1,2].map(i => Math.round(a[i] + (b[i]-a[i]) * t));
    Consecutive tiles that aren't flat-adjacent form a GAP whose
    crossing depends on the player's viewpoint.               */
 const LEVELS = [
-  { name:'First Light', hint:'Drag to move your eye around the stones. Press the button to let the ball go.',
+  { name:'First Light', hint:'Drag to move your eye around the stones. Press Release to let the ball go, Hold to stop it.',
     yaw:-0.70, pitch:0.60,
     path:[[0,0,0],[1,0,0],[2,0,0],[3,0,0],[3,0,1],[3,0,2],[4,0,2]] },
 
@@ -729,22 +749,29 @@ cv.addEventListener('touchmove',  e => e.preventDefault(), { passive:false });
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault());
 
-/* ---------- the trigger: release / hold momentum ---------- */
+/* ---------- side controls: release (right) / hold (left) ---------- */
 function syncTrigger(){
-  const moving = !ball.frozen && (ball.mode === 'run' || ball.mode === 'drop' || ball.mode === 'cross');
-  $('icoPlay').style.display  = moving ? 'none'  : 'block';
-  $('icoPause').style.display = moving ? 'block' : 'none';
-  $('trigger').classList.toggle('running', moving);
+  const inMotion = ball.mode === 'run' || ball.mode === 'drop' || ball.mode === 'cross';
+  const canRelease = ball.mode === 'ready' || (inMotion && ball.frozen);
+  const canHold    = inMotion && !ball.frozen;
+  $('playBtn').classList.toggle('off', !canRelease);
+  $('holdBtn').classList.toggle('off', !canHold);
 }
-$('trigger').addEventListener('click', () => {
+$('playBtn').addEventListener('click', () => {
   wakeAudio();
   if (ball.mode === 'ready'){
     ball.mode = 'drop'; ball.vy = 0; ball.frozen = false; sRelease();
-  } else if (ball.mode === 'run' || ball.mode === 'drop' || ball.mode === 'cross'){
-    ball.frozen = !ball.frozen;
-    ball.frozen ? sHold() : sRelease();
+  } else if (ball.frozen && (ball.mode === 'run' || ball.mode === 'drop' || ball.mode === 'cross')){
+    ball.frozen = false; sRelease();
   }
   syncTrigger();
+});
+$('holdBtn').addEventListener('click', () => {
+  wakeAudio();
+  if (!ball.frozen && (ball.mode === 'run' || ball.mode === 'drop' || ball.mode === 'cross')){
+    ball.frozen = true; sHold();
+    syncTrigger();
+  }
 });
 $('reset').addEventListener('click', () => { wakeAudio(); respawn(); });
 
