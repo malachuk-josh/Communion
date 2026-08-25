@@ -711,10 +711,12 @@ cv.addEventListener('pointermove', e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   drag = { x:e.clientX, y:e.clientY };
-  tyaw  -= dx * 0.0075;
-  tpitch = clampPitch(tpitch + dy * 0.0075);
-  spinY = spinY * 0.5 + dx * 0.0075 * 0.5;
-  spinP = spinP * 0.5 + dy * 0.0075 * 0.5;
+  /* Flight-stick mapping: drag steers where you look — right pans the
+     eye right, pull back (down) drops to eye level, push up dives over. */
+  tyaw  += dx * 0.0075;
+  tpitch = clampPitch(tpitch - dy * 0.0075);
+  spinY = spinY * 0.5 - dx * 0.0075 * 0.5;
+  spinP = spinP * 0.5 - dy * 0.0075 * 0.5;
 });
 const endDrag = () => { drag = null; cv.classList.remove('dragging'); };
 cv.addEventListener('pointerup', endDrag);
