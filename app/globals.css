@@ -629,14 +629,10 @@ html.reading body::-webkit-scrollbar {
  * Everything that has been taken off the bar, and why:
  *
  *   the centring transform   gone (part one). The bar is centred with
- *                            left/right/margin-inline instead.
- *
- *   transition: transform    gone (part two). Declaring it promotes the layer
- *                            whether or not a transform is ever applied — and
- *                            one was, when the bar hides in The Word. It
- *                            slides on `bottom` now: one small element for a
- *                            quarter of a second, well within what layout can
- *                            do, and it composites nothing.
+ *                            left/right/margin-inline instead, and that stays
+ *                            — a transform that MOVES the bar is a different
+ *                            thing from the one added in part four, which
+ *                            moves it nowhere.
  *
  *   backdrop-filter          gone, for the reason above. The bar is painted
  *                            opaque in --bar instead, exactly as the header
@@ -651,14 +647,37 @@ html.reading body::-webkit-scrollbar {
  *                            is not the drifting bug — it repaints once, not
  *                            per frame — but there is no reason to keep dead
  *                            work in the one element that must stay cheap.
+ *
+ * Part four, because it came back a third time.
+ *
+ * Three rounds of taking work away, and by the end there was none left to
+ * take: a flat gradient over an opaque colour, one static shadow, a border.
+ * Nothing on the bar or behind it is repainted while the page moves. So the
+ * premise was wrong — it is not that the layer cannot be repainted in time.
+ * It is that the bar never had a layer of its own to begin with, and an
+ * element painted into the scrolling contents is moved by the scroll whether
+ * or not CSS says it is fixed.
+ *
+ * So the bar is promoted, deliberately: translateZ(0) and will-change, which
+ * ask for a layer and move the bar nowhere. That is the opposite instinct
+ * from parts two and three, and it is the same one — the goal was always a
+ * layer the scrolling thread can carry on its own, and taking work away was
+ * only ever half of getting one.
+ *
+ * Hiding it in The Word moves to `transform` with it. Sliding on `bottom` was
+ * right while there was no layer to slide; with one, it is a quarter-second
+ * of relayout on the one screen where somebody is also flicking, and the
+ * translate is free.
  */
 .bottom-nav {
   position: fixed;
   /* sit partly into the safe area so the bar hugs the bottom edge,
      while never dropping below 2px on devices without an inset */
   bottom: max(4px, calc(env(safe-area-inset-bottom, 0px) - 6px));
-  /* center without transform: iOS misplaces transformed fixed elements
-     during momentum scrolling, floating the bar up the page */
+  /* Centred on left/right/margin-inline rather than translateX(-50%). The
+     translateZ below asks for a layer and moves the bar nowhere; a centring
+     transform would move it, and a transform that moves a fixed element is
+     the one iOS was misplacing during momentum scrolling. */
   left: 0;
   right: 0;
   margin-inline: auto;
@@ -670,7 +689,11 @@ html.reading body::-webkit-scrollbar {
   padding: 7px;
   border-radius: 999px;
   max-width: calc(100vw - 16px);
-  transition: bottom 0.28s ease, opacity 0.28s ease;
+  /* a layer of its own, and no movement asked for: see part four above */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
 /* .glass is declared further down this file, and both of the things it gives
@@ -708,8 +731,10 @@ nav.bottom-nav.glass {
 
 /* reading down The Word tucks the bar out of sight (see Nav.tsx) */
 .bottom-nav.nav-hidden {
-  /* far enough to clear the bar and its shadow on any inset */
-  bottom: -120px;
+  /* far enough to clear the bar and its shadow on any inset. A translate and
+     not `bottom`, so the bar keeps the one layer it was given and the slide
+     costs no layout — see part four above. */
+  transform: translate3d(0, 140px, 0);
   opacity: 0;
   pointer-events: none;
 }
