@@ -5456,8 +5456,43 @@ button.compare-pick:last-child {
   overflow: hidden;
 }
 
+/*
+ * A plan card is one column, top to bottom.
+ *
+ * It was not. .jr-go — the title, the progress bar and the "day N next" line
+ * — shared a flex row with the icon buttons, so it stopped short of the card's
+ * edge; the buttons under it and the reminder row are full-width children and
+ * ran past. The bar and the buttons beneath it were 34px out of line with each
+ * other, on the same card.
+ *
+ * Worse, how far short depended on how many icons were showing. A plan not
+ * started yet has only the ✕, a plan under way has restart as well — so the
+ * count sat in a different place on every card in the list, which is the one
+ * thing in a column of cards the eye actually reads down.
+ *
+ * The icons come out of the flow, and a gutter is kept for them at the top
+ * right whether one is showing or two. Everything else runs the full width of
+ * the card and lines up with everything else.
+ */
 .jr-plan {
+  position: relative;
   gap: 8px;
+  /* the same on both sides now: with the buttons out of the flow the right
+     side is a gutter rather than room for a button's own padding */
+  padding-right: 16px;
+}
+
+/* Room for both icons, kept whether or not both are there. */
+.jr-plan .jr-plan-head {
+  padding-right: 58px;
+}
+
+.jr-plan > .jr-actions {
+  position: absolute;
+  /* 10px, not 16: the buttons carry 6px of padding of their own, so this is
+     where the glyphs line up with the card's right gutter */
+  top: 10px;
+  right: 10px;
 }
 
 .jr-plan-head {
