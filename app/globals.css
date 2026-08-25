@@ -171,13 +171,51 @@ html {
   --bar: rgb(16, 17, 19);
 }
 
+/*
+ * The shell does not scroll. One element inside it does — see lib/scroller.
+ *
+ * Four goes at the bottom bar drifting up the page all worked the same way:
+ * find the paint work that was too slow to keep up with the scroll and take
+ * it away. By the fourth there was none left, and the bar still drifted. The
+ * premise was wrong. A fixed bar over a scrolling DOCUMENT on iOS is racing
+ * three separate things — a scroll thread that moves the page without the
+ * main thread, a URL bar that collapses and changes the viewport under it,
+ * and a rubber-band at both ends that carries fixed elements with it. No
+ * amount of making the bar cheap wins that race, because the bar was never
+ * the slow part.
+ *
+ * So the document stops scrolling. The header sits above the scroller and the
+ * bar below it, and neither is inside the thing that moves.
+ */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: var(--sans);
   background: var(--bg-0);
   color: var(--ink);
-  min-height: 100dvh;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  /* header, then the scroller taking the rest */
+  display: flex;
+  flex-direction: column;
+}
+
+.app-scroll {
+  flex: 1 1 auto;
+  /* a flex item will not shrink below its content without this, and the
+     scroller must be exactly the room left over or it scrolls the shell */
+  min-height: 0;
+  overflow-y: auto;
+  /* nothing here scrolls sideways; see the note on .mh-body */
+  overflow-x: hidden;
+  /* the bounce at either end stays inside this element rather than being
+     handed up to the document, which is what used to move the bar */
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ---- ambient scene behind the glass ---- */
@@ -244,12 +282,11 @@ html.reading .page {
 
 /* the scrollbar is not how anyone finds a passage — the chapter headings and
    the navigator are — and on a phone it is a stripe over the text */
-html.reading {
+html.reading .app-scroll {
   scrollbar-width: none;
 }
 
-html.reading::-webkit-scrollbar,
-html.reading body::-webkit-scrollbar {
+html.reading .app-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none;
@@ -257,8 +294,11 @@ html.reading body::-webkit-scrollbar {
 
 /* ---- navigation ---- */
 .nav {
-  position: sticky;
-  top: 0;
+  /* Not sticky any more, and it does not need to be: sticky at top:0 means
+     "never scrolls out of view", and a header outside the scroller never
+     could. Same result, one less thing tied to the document's scroll. */
+  position: relative;
+  flex: 0 0 auto;
   z-index: 20;
   padding-top: env(safe-area-inset-top, 0px);
   /* Opaque, and no blur at all — see the note over the bottom bar. In The Word

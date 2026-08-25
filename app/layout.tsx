@@ -80,11 +80,22 @@ export default function RootLayout({
             <div className="bg-scene" aria-hidden />
             <PullToRefresh />
             <Nav />
-            {/* Around the page, not the document: a broken screen must not
-                take the nav bar with it, or there is no way off it. */}
-            <main className="page">
-              <PageBoundary>{children}</PageBoundary>
-            </main>
+            {/* The page scrolls; the document does not. See lib/scroller.
+                The header is above this and the bottom bar is below it, so
+                neither is part of the scroll — which is the whole point.
+
+                Not position:fixed, deliberately: a positioned overflow
+                ancestor becomes the containing block for fixed descendants
+                and clips them to itself, and every modal in the app is a
+                fixed overlay rendered inside the page. Sized by the flex
+                column on <body> instead, so it clips nothing. */}
+            <div id="app-scroll" className="app-scroll">
+              {/* Around the page, not the document: a broken screen must not
+                  take the nav bar with it, or there is no way off it. */}
+              <main className="page">
+                <PageBoundary>{children}</PageBoundary>
+              </main>
+            </div>
             <ActingAs />
             <Welcome />
             <PushPrompt />

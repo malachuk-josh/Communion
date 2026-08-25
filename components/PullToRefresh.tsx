@@ -6,6 +6,7 @@
 // reloads the app. Purely additive — native scrolling is never blocked.
 
 import { useEffect, useRef, useState } from "react";
+import { scrollY } from "@/lib/scroller";
 
 const ARM_AT = 60; // scaled pull distance (~130px of finger travel)
 
@@ -22,7 +23,7 @@ export default function PullToRefresh() {
     };
 
     const onStart = (e: TouchEvent) => {
-      if (refreshing || window.scrollY > 0) return;
+      if (refreshing || scrollY() > 0) return;
       // In the reader, dragging down IS scrolling up — you reach the top of a
       // book by making exactly this gesture, and reloading there is both a
       // surprise and, offline, pointless. Every other screen keeps it.
@@ -58,7 +59,7 @@ export default function PullToRefresh() {
 
     const onMove = (e: TouchEvent) => {
       if (startY.current === null || refreshing) return;
-      if (window.scrollY > 0) {
+      if (scrollY() > 0) {
         startY.current = null;
         setPullBoth(0);
         return;

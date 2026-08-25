@@ -30,6 +30,7 @@ import { PLANS } from "@/lib/plans";
 import type { PlanHour } from "@/lib/planReminders";
 import type { CustomPlanRow } from "@/lib/customPlanTypes";
 import { readOutbox } from "@/lib/localStore";
+import { scrollByY } from "@/lib/scroller";
 import { fetchVerses, verseKey } from "@/lib/scripture";
 import {
   adoptIdentity,
@@ -600,8 +601,8 @@ export default function Journal() {
       if (!dragRef.current) return;
       const edge = 90;
       const y = pointerY.current;
-      if (y < edge) window.scrollBy(0, -12);
-      else if (y > window.innerHeight - edge) window.scrollBy(0, 12);
+      if (y < edge) scrollByY(-12);
+      else if (y > window.innerHeight - edge) scrollByY(12);
       reorderTo(y);
       autoScroll.current = requestAnimationFrame(step);
     };

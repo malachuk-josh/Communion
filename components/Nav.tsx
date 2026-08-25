@@ -7,6 +7,7 @@ import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
+import { onScroll as onPageScroll, scrollToY, scrollY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
@@ -104,10 +105,10 @@ export default function Nav() {
       setNavHidden(false);
       return;
     }
-    let lastY = window.scrollY;
+    let lastY = scrollY();
     let lastT = performance.now();
     const onScroll = () => {
-      const y = window.scrollY;
+      const y = scrollY();
       const now = performance.now();
       const dy = y - lastY;
       const speed = -dy / Math.max(1, now - lastT); // px/ms, upward
@@ -117,8 +118,22 @@ export default function Nav() {
       lastY = y;
       lastT = now;
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return onPageScroll(onScroll);
+  }, [pathname]);
+
+  /*
+   * A new screen starts at the top of itself.
+   *
+   * The browser did this for nothing while the document was what scrolled.
+   * It is an element now, and an element keeps its scrollTop across a route
+   * change — so without this, opening the Journal from halfway down Discover
+   * landed halfway down the Journal.
+   *
+   * Only between screens. Moving about inside The Word never changes the
+   * path, and the reader places itself.
+   */
+  useEffect(() => {
+    scrollToY(0);
   }, [pathname]);
 
   // the reader's floating chapter arrows drop into the freed space

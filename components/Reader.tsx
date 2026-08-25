@@ -37,6 +37,14 @@ import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
+import {
+  onScroll as onPageScroll,
+  scrollByY,
+  scrollToY,
+  scrollY,
+  scrollerTop,
+  viewportH,
+} from "@/lib/scroller";
 import { STUDY_WILL_CHANGE, useReading } from "@/lib/reading";
 import {
   RED_LETTER_CHANGED,
@@ -585,7 +593,7 @@ export default function Reader({
     const el = document.querySelector<HTMLElement>(held.sel);
     if (!el) return;
     const moved = el.getBoundingClientRect().top - held.top;
-    if (moved !== 0) window.scrollBy(0, moved);
+    if (moved !== 0) scrollByY(moved);
   };
 
   // The star in the header says so a moment before the switch lands, which
@@ -623,13 +631,23 @@ export default function Reader({
         : null) ??
       document.querySelector<HTMLElement>(`.chap-head[data-ch="${ch}"]`);
     if (!target) {
-      window.scrollTo({ top: 0 });
+      scrollToY(0);
       return;
     }
-    const nav = document.querySelector<HTMLElement>(".nav");
-    const clear = (nav?.getBoundingClientRect().height ?? 0) + 10;
-    const top = target.getBoundingClientRect().top + window.scrollY - clear;
-    window.scrollTo({ top: Math.max(0, top) });
+    /*
+     * A rect is measured from the top of the WINDOW and a scroll position
+     * from the top of the SCROLLER, and those are no longer the same place —
+     * the header sits between them. Taking the scroller's own top off first
+     * converts one to the other.
+     *
+     * The header's height used to be subtracted here as well, because a
+     * sticky header overlays whatever scrolls under it and the chapter
+     * heading would have landed beneath it. Outside the scroller it overlays
+     * nothing, so all that is wanted now is a little air above the heading.
+     */
+    const top =
+      target.getBoundingClientRect().top - scrollerTop() + scrollY() - 10;
+    scrollToY(Math.max(0, top));
   };
 
   /**
@@ -751,11 +769,14 @@ export default function Reader({
         // 1366px a chapter counted as "the one being read" while its heading
         // was still 546px down the page — so the reader was marked a chapter
         // ahead of their eyes, and that was the chapter they came back to.
-        const edge = Math.min(window.innerHeight * 0.4, 320);
+        const edge = Math.min(viewportH() * 0.4, 320);
+        // measured down from the top of the scroller, not of the window: the
+        // header is above it and is not part of what is being read
+        const from = scrollerTop();
         for (const head of document.querySelectorAll<HTMLElement>(
           ".chap-head"
         )) {
-          if (head.getBoundingClientRect().top < edge) {
+          if (head.getBoundingClientRect().top - from < edge) {
             current = Number(head.dataset.ch) || current;
           }
         }
@@ -771,12 +792,12 @@ export default function Reader({
       if (document.visibilityState === "hidden") saveReading();
     };
     let saveTimer = 0;
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const offScroll = onPageScroll(onScroll);
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("pagehide", saveReading);
     return () => {
       window.clearTimeout(saveTimer);
-      window.removeEventListener("scroll", onScroll);
+      offScroll();
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", saveReading);
       // navigating away inside the app unmounts the reader without ever
@@ -2080,7 +2101,7 @@ export default function Reader({
       if (el) {
         const rect = el.getBoundingClientRect();
         const drift = Math.abs(
-          rect.top + rect.height / 2 - window.innerHeight / 2
+          rect.top + rect.height / 2 - (scrollerTop() + viewportH() / 2)
         );
         if (drift > 48) {
           /*
@@ -2099,7 +2120,7 @@ export default function Reader({
            * as headings and study-mode lines push the verse down, are what
            * smooth was actually good for.
            */
-          const near = drift < window.innerHeight * 2;
+          const near = drift < viewportH() * 2;
           el.scrollIntoView({
             behavior: attempts === 0 && near ? "smooth" : "auto",
             block: "center",
@@ -2301,7 +2322,7 @@ export default function Reader({
         runSearch(e);
         if (fromSheet) {
           setPanelOpen(false);
-          window.scrollTo({ top: 0 });
+          scrollToY(0);
         }
       }}
     >
