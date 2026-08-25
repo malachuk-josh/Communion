@@ -17,14 +17,16 @@
     --ember:#FF6B4A;
     --gold:#F2C14E;
   }
-  html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);}
+  html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);overscroll-behavior:none;}
   body{
+    position:fixed;inset:0;width:100%;
     font-family:Archivo,system-ui,-apple-system,sans-serif;
     color:var(--bone);
     -webkit-tap-highlight-color:transparent;
-    overscroll-behavior:none;
+    touch-action:none;
     user-select:none;-webkit-user-select:none;
   }
+  button{touch-action:manipulation;}
   #stage{position:fixed;inset:0;touch-action:none;cursor:grab;background:var(--ink);}
   #stage.dragging{cursor:grabbing;}
 
@@ -270,6 +272,7 @@ const PITCH_MIN = 0.10, PITCH_MAX = 1.47;
 
 /* ---------- camera ---------- */
 const cam = { yaw:-0.7, pitch:0.6, S:48, cx:0, cy:0 };
+let tyaw = cam.yaw, tpitch = cam.pitch;   // drag steers these; the camera eases toward them
 let camAnim = null;
 function easeCam(ty, tp){
   const wrap = a => ((a % (Math.PI*2)) + Math.PI*3) % (Math.PI*2) - Math.PI;
@@ -336,7 +339,7 @@ function loadLevel(i, instantCam){
   $('hint').textContent = LEVELS[i].hint;
   updateDots();
   respawn(true);
-  if (instantCam){ cam.yaw = LEVELS[i].yaw; cam.pitch = LEVELS[i].pitch; }
+  if (instantCam){ cam.yaw = tyaw = LEVELS[i].yaw; cam.pitch = tpitch = LEVELS[i].pitch; }
   else easeCam(LEVELS[i].yaw, LEVELS[i].pitch);
 }
 function respawn(silent){
@@ -434,10 +437,16 @@ function update(dt){
     k = k*k*(3-2*k);
     cam.yaw   = camAnim.fy + camAnim.dy * k;
     cam.pitch = camAnim.fp + camAnim.dp * k;
+    tyaw = cam.yaw; tpitch = cam.pitch;
     if (k >= 1) camAnim = null;
-  } else if (!drag && (Math.abs(spinY) > 1e-4 || Math.abs(spinP) > 1e-4)){
-    cam.yaw   -= spinY; spinY *= 0.93;
-    cam.pitch  = clampPitch(cam.pitch + spinP); spinP *= 0.93;
+  } else {
+    if (!drag && (Math.abs(spinY) > 1e-4 || Math.abs(spinP) > 1e-4)){
+      tyaw  -= spinY; spinY *= 0.93;
+      tpitch = clampPitch(tpitch + spinP); spinP *= 0.93;
+    }
+    const k = Math.min(1, dt * 14);      // low-pass filter for buttery articulation
+    cam.yaw   += (tyaw   - cam.yaw)   * k;
+    cam.pitch += (tpitch - cam.pitch) * k;
   }
 
   /* seam lock feedback */
@@ -691,8 +700,10 @@ function render(t){
 let drag = null, spinY = 0, spinP = 0;
 const clampPitch = p => Math.max(PITCH_MIN, Math.min(PITCH_MAX, p));
 cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
   drag = { x:e.clientX, y:e.clientY };
   spinY = spinP = 0; camAnim = null;
+  tyaw = cam.yaw; tpitch = cam.pitch;
   cv.classList.add('dragging');
   try { cv.setPointerCapture(e.pointerId); } catch(err){}
 });
@@ -700,15 +711,21 @@ cv.addEventListener('pointermove', e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   drag = { x:e.clientX, y:e.clientY };
-  cam.yaw  -= dx * 0.0075;
-  cam.pitch = clampPitch(cam.pitch + dy * 0.006);
+  tyaw  -= dx * 0.0075;
+  tpitch = clampPitch(tpitch + dy * 0.0075);
   spinY = spinY * 0.5 + dx * 0.0075 * 0.5;
-  spinP = spinP * 0.5 + dy * 0.006 * 0.5;
+  spinP = spinP * 0.5 + dy * 0.0075 * 0.5;
 });
 const endDrag = () => { drag = null; cv.classList.remove('dragging'); };
 cv.addEventListener('pointerup', endDrag);
 cv.addEventListener('pointercancel', endDrag);
 cv.addEventListener('contextmenu', e => e.preventDefault());
+/* Keep mobile browsers from stealing vertical drags for page scroll,
+   pull-to-refresh, or pinch zoom — touch-action alone isn't enough on iOS. */
+cv.addEventListener('touchstart', e => e.preventDefault(), { passive:false });
+cv.addEventListener('touchmove',  e => e.preventDefault(), { passive:false });
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault());
 
 /* ---------- the trigger: release / hold momentum ---------- */
 function syncTrigger(){
