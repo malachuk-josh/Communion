@@ -288,7 +288,6 @@ const R       = 0.32;   // ball radius, tiles
 const G_ACC   = 16;     // gravity, tiles/s^2
 const CRUISE  = 2.4;    // rolling speed, tiles/s
 const ACCEL   = 6;
-const PITCH_MIN = 0.10, PITCH_MAX = 1.47;
 
 /* ---------- camera ---------- */
 const cam = { yaw:-0.7, pitch:0.6, S:48, cx:0, cy:0 };
@@ -545,6 +544,7 @@ function frameCamera(){
 
 function drawCubeAt(x, y, z, rim){
   const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
   const cor = [[-0.5,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5]];
   const top = cor.map(c => proj(x+c[0], y,   z+c[1]));
   const bot = cor.map(c => proj(x+c[0], y-1, z+c[1]));
@@ -552,7 +552,8 @@ function drawCubeAt(x, y, z, rim){
   ctx.lineJoin = 'round';
   for (let f = 0; f < 4; f++){
     const [nx, nz] = norms[f];
-    if ((-nx*sy + nz*cy) <= 0.001) continue;         // back-facing
+    const nz1 = -nx*sy + nz*cy;                      // toward-camera depth of the normal
+    if (nz1 * cp <= 0.001) continue;                 // back-facing at this pitch
     const shade = 0.5 + 0.5 * (nx*cy + nz*sy);       // screen-space light
     const a = top[f], b = top[(f+1)%4], c2 = bot[(f+1)%4], d = bot[f];
     ctx.beginPath();
@@ -563,12 +564,18 @@ function drawCubeAt(x, y, z, rim){
     ctx.fill();
     ctx.strokeStyle = 'rgba(8,18,21,.5)'; ctx.lineWidth = 1; ctx.stroke();
   }
+  /* whichever horizontal face is toward the camera: top when viewed from
+     above (sp > 0), the underside when the player orbits below */
+  const fromAbove = sp >= 0;
+  const face = fromAbove ? top : bot;
   ctx.beginPath();
-  ctx.moveTo(top[0][0], top[0][1]);
-  for (let i = 1; i < 4; i++) ctx.lineTo(top[i][0], top[i][1]);
+  ctx.moveTo(face[0][0], face[0][1]);
+  for (let i = 1; i < 4; i++) ctx.lineTo(face[i][0], face[i][1]);
   ctx.closePath();
   const parity = ((x + z) % 2 + 2) % 2;
-  ctx.fillStyle = rgba(mix(BONE, SIDE_L, parity ? 0.10 : 0.02), 1);
+  ctx.fillStyle = fromAbove
+    ? rgba(mix(BONE, SIDE_L, parity ? 0.10 : 0.02), 1)
+    : rgba(mix(SIDE_D, SIDE_L, parity ? 0.22 : 0.12), 1);
   ctx.fill();
   ctx.strokeStyle = 'rgba(8,18,21,.45)'; ctx.lineWidth = 1; ctx.stroke();
   if (rim){
@@ -718,7 +725,7 @@ function render(t){
 
 /* ---------- input: the 3-axis articulation ---------- */
 let drag = null, spinY = 0, spinP = 0;
-const clampPitch = p => Math.max(PITCH_MIN, Math.min(PITCH_MAX, p));
+const clampPitch = p => p;   // full articulation: the view orbits without limits
 cv.addEventListener('pointerdown', e => {
   e.preventDefault();
   drag = { x:e.clientX, y:e.clientY };
