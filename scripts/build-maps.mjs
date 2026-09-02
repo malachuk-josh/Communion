@@ -61,20 +61,29 @@ const WINDOWS = [
   {
     id: "levant",
     bounds: [33.6, 29.3, 36.9, 33.9],
-    // how hard to simplify, in degrees — a tight window can afford detail
-    tolerance: 0.004,
+    /*
+     * How hard to simplify, in degrees.
+     *
+     * Set by what the map is asked to survive rather than by what it opens at:
+     * these three can be pinched into in the full-screen viewer, and at three
+     * or four times the opening zoom a coastline thinned to 400m reads as a
+     * row of straight cuts. 0.001° is about a hundred metres, which is finer
+     * than Natural Earth itself resolves — so the limit becomes the source,
+     * which is the right place for it — and it costs a few kilobytes.
+     */
+    tolerance: 0.001,
     rivers: "10m",
   },
   {
     id: "asia-minor",
     bounds: [25.4, 36.2, 31.6, 40.6],
-    tolerance: 0.008,
+    tolerance: 0.002,
     rivers: "10m",
   },
   {
     id: "egypt-sinai",
     bounds: [29.4, 26.8, 36.6, 32.6],
-    tolerance: 0.01,
+    tolerance: 0.003,
     rivers: "10m",
   },
   {

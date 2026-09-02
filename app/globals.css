@@ -2405,25 +2405,40 @@ html.navhide .chap-arrow {
  * land, a cooler wash for the sea, a hairline coast, and names set in the
  * serif the scripture is set in.
  */
-.ctx-map {
-  /* Land and sea have to be told apart at a glance and at thumbnail size,
-     which on a dark ground means the land is the lighter of the two — the
-     opposite of paper, and the only way round that works at night. */
+/*
+ * The palette, declared on both places a map is drawn.
+ *
+ * The full-screen viewer is portalled to <body> — it has to be, or the panel's
+ * own backdrop-filter would make it a small box inside a card — so it is not
+ * inside .ctx-map and inherits nothing from it. Named here together so the two
+ * can never drift, and so neither can be given colours the other lacks.
+ *
+ * Land and sea have to be told apart at a glance and at thumbnail size, which
+ * on a dark ground means the land is the lighter of the two: the opposite of
+ * paper, and the only way round that works at night.
+ */
+.ctx-map,
+.map-full {
   --map-sea: #080e1b;
   --map-land: #343a45;
   --map-coast: rgba(229, 180, 91, 0.55);
   --map-river: rgba(139, 160, 240, 0.7);
+}
+
+.ctx-map {
   margin-bottom: 16px;
 }
 
-:root[data-theme="light"] .ctx-map {
+:root[data-theme="light"] .ctx-map,
+:root[data-theme="light"] .map-full {
   --map-sea: #bed2e4;
   --map-land: #f8f1de;
   --map-coast: rgba(97, 74, 38, 0.5);
   --map-river: rgba(70, 105, 175, 0.75);
 }
 
-:root[data-theme="grey"] .ctx-map {
+:root[data-theme="grey"] .ctx-map,
+:root[data-theme="grey"] .map-full {
   --map-sea: #070707;
   --map-land: #303030;
   --map-coast: rgba(210, 210, 210, 0.5);
@@ -2442,10 +2457,34 @@ html.navhide .chap-arrow {
 }
 
 .mp-frame {
+  position: relative;
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   overflow: hidden;
   background: var(--map-sea);
+  cursor: zoom-in;
+}
+
+/* the quiet promise that there is more of this than the panel is showing */
+.mp-expand {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--ink-dim);
+  pointer-events: none;
+}
+
+.mp-expand svg {
+  width: 15px;
+  height: 15px;
 }
 
 .mp-svg {
@@ -2557,6 +2596,95 @@ html.navhide .chap-arrow {
   font-size: 0.7rem;
   font-style: italic;
   color: var(--ink-faint);
+}
+
+/* ---- the map with the screen to itself ---- */
+/*
+ * Its own fixed layer, from the top of the status bar to the bottom of the
+ * home indicator. The map is the point, so the bar above it and the line
+ * below it take only the room their type needs and the rest is ground.
+ */
+.map-full {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-0);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  /* the keyframe is declared with the sheet's other one, further up */
+  animation: fade-in 0.18s ease-out;
+}
+
+.map-full-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 8px 16px;
+  flex: 0 0 auto;
+}
+
+.map-full-bar .mp-era {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.map-full-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.map-full-tools .lex-close {
+  font-size: 1.05rem;
+}
+
+.map-full-tools svg {
+  width: 16px;
+  height: 16px;
+}
+
+/*
+ * The stage owns the gesture.
+ *
+ * touch-action: none, because <html> says pan-x pan-y and without saying
+ * otherwise here the browser would scroll the page under a drag meant for the
+ * map. And the pinch is answered in JS — see components/ChapterMap — so the
+ * browser must not answer it too.
+ */
+.map-full-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  touch-action: none;
+  overflow: hidden;
+  background: var(--map-sea);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.map-full-stage .mp-svg {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  display: block;
+  /* the drawing fills the stage exactly: the opening view is widened to the
+     stage's own proportions, so there is nothing to letterbox */
+  cursor: grab;
+}
+
+.map-full-stage .mp-svg:active {
+  cursor: grabbing;
+}
+
+.map-full-note {
+  flex: 0 0 auto;
+  padding: 8px 16px 0;
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  text-align: center;
 }
 
 .verse-note {

@@ -42,7 +42,7 @@ export default function PullToRefresh() {
        */
       if (
         document.querySelector(
-          ".modal-overlay, .lex-sheet, .side-panel, .welcome"
+          ".modal-overlay, .lex-sheet, .side-panel, .welcome, .map-full"
         )
       )
         return;
