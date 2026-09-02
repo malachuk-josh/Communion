@@ -36,6 +36,7 @@ import {
 import { api } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
+import ChapterMap from "@/components/ChapterMap";
 import { useI18n } from "@/lib/i18n";
 import {
   onScroll as onPageScroll,
@@ -3799,6 +3800,19 @@ export default function Reader({
             <h2>
               <Icon name="scroll" /> {bookName} {contextOpen} — {t("reader.context")}
             </h2>
+            {/* Where before what, because a reader who does not know the land
+                reads the setting as a list of names. The map draws itself only
+                for the chapters that name somewhere — a little over two in
+                three — and is simply absent from the rest. */}
+            <ChapterMap
+              bookNr={bookNr}
+              chapter={contextOpen}
+              onGoToVerse={(verse) => {
+                setContextOpen(null);
+                setChapter(contextOpen);
+                setHighlightVerse(verse);
+              }}
+            />
             <div className="ctx-section">
               <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>
               <p>{ctxOf(contextOpen)!.practical}</p>

@@ -40,7 +40,12 @@ const reading = merge(
   listDir("xref"),
   // where Christ speaks — nine books and 33 KB, and it belongs with reading
   // rather than study: it is a printing convention, not an apparatus
-  listDir("redletter")
+  listDir("redletter"),
+  // the chapter maps, base windows and all: a third of a megabyte for the
+  // whole Bible, which is small enough that carving it into a tier of its own
+  // would cost the reader more thought than the download costs bytes
+  listDir("maps"),
+  listDir("maps/base")
 );
 
 const translations = {

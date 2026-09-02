@@ -38,6 +38,7 @@ const DATA_PATHS = [
   "/commentary/",
   "/treasury/",
   "/devotional/",
+  "/maps/",
   "/icons/",
 ];
 

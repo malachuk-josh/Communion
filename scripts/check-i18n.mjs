@@ -96,6 +96,23 @@ for (const m of catalogue.matchAll(/^\s*id:\s*"([\w-]+)",/gm)) {
   }
 }
 
+/*
+ * And the maps, for the third time in the same shape.
+ *
+ * A chapter's map is titled with t(`map.era.${era}`) — computed, cast, and so
+ * invisible to the type checker — and the eras themselves are declared in the
+ * build script, because that is what writes them into the data. An era added
+ * there without its two strings would title the map "map.era.conquest".
+ */
+const maps = readFileSync(join(ROOT, "scripts/build-maps.mjs"), "utf8");
+const erasBlock = maps.slice(maps.indexOf("\nconst ERAS = {"));
+const erasEnd = erasBlock.indexOf("\n};");
+if (erasEnd === -1) problems.push("scripts/build-maps.mjs: ERAS is not closed");
+for (const m of erasBlock.slice(0, erasEnd).matchAll(/^ {2}(\w+): \{$/gm)) {
+  const key = `map.era.${m[1]}`;
+  if (!en.has(key)) problems.push(`map era has no string: ${key}`);
+}
+
 // Plain literal keys everywhere else. These are type-checked already, but the
 // check costs nothing and catches a key deleted from the dictionary while a
 // call site still asks for it through a cast.

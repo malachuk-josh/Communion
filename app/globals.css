@@ -2395,6 +2395,170 @@ html.navhide .chap-arrow {
   font-size: 0.95rem;
 }
 
+/* ---- the chapter's map ----------------------------------------------------
+ *
+ * Drawn, not scanned, so it can be coloured from the theme's own tokens —
+ * which is the difference between a map that belongs in this app at night and
+ * a lithograph with a white sky in the middle of a dark page.
+ *
+ * The palette is a period atlas read through the theme: warm ground for the
+ * land, a cooler wash for the sea, a hairline coast, and names set in the
+ * serif the scripture is set in.
+ */
+.ctx-map {
+  /* Land and sea have to be told apart at a glance and at thumbnail size,
+     which on a dark ground means the land is the lighter of the two — the
+     opposite of paper, and the only way round that works at night. */
+  --map-sea: #080e1b;
+  --map-land: #343a45;
+  --map-coast: rgba(229, 180, 91, 0.55);
+  --map-river: rgba(139, 160, 240, 0.7);
+  margin-bottom: 16px;
+}
+
+:root[data-theme="light"] .ctx-map {
+  --map-sea: #bed2e4;
+  --map-land: #f8f1de;
+  --map-coast: rgba(97, 74, 38, 0.5);
+  --map-river: rgba(70, 105, 175, 0.75);
+}
+
+:root[data-theme="grey"] .ctx-map {
+  --map-sea: #070707;
+  --map-land: #303030;
+  --map-coast: rgba(210, 210, 210, 0.5);
+  --map-river: rgba(170, 180, 200, 0.7);
+}
+
+/* the era, over the map, the way a plate is captioned */
+.mp-era {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.mp-frame {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--map-sea);
+}
+
+.mp-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 46vh;
+}
+
+.mp-sea {
+  fill: var(--map-sea);
+}
+
+.mp-land {
+  fill: var(--map-land);
+  stroke: var(--map-coast);
+  stroke-width: calc(var(--mp-u, 1) * 1.6px);
+  stroke-linejoin: round;
+}
+
+.mp-lake {
+  fill: var(--map-sea);
+  stroke: var(--map-coast);
+  stroke-width: calc(var(--mp-u, 1) * 1.2px);
+}
+
+.mp-river {
+  fill: none;
+  stroke: var(--map-river);
+  stroke-width: calc(var(--mp-u, 1) * 2px);
+  stroke-linecap: round;
+}
+
+/* A country's name is written across it, not pinned to a dot on it — the
+   convention every atlas uses, and the thing that tells a region from a town
+   at a glance. */
+.mp-region {
+  fill: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: calc(var(--mp-u, 1) * 17px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.mp-region.mp-water {
+  fill: var(--map-river);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: calc(var(--mp-u, 1) * 18px);
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.mp-pin {
+  cursor: pointer;
+}
+
+/* the thumb's target, several times the mark it aims at */
+.mp-hit {
+  fill: transparent;
+}
+
+.mp-dot {
+  fill: var(--gold);
+  stroke: var(--map-land);
+  stroke-width: calc(var(--mp-u, 1) * 1.6px);
+}
+
+.mp-name {
+  fill: var(--ink);
+  font-family: var(--serif);
+  font-size: calc(var(--mp-u, 1) * 20px);
+  /* the halo that lets a name cross a coastline and still be read — the
+     printer's trick, and the reason a crowded chapter is still legible */
+  paint-order: stroke fill;
+  stroke: var(--map-land);
+  stroke-width: calc(var(--mp-u, 1) * 4px);
+  stroke-linejoin: round;
+}
+
+/* the thread from a moved name back to the place it names */
+.mp-leader {
+  stroke: var(--ink-faint);
+  stroke-width: calc(var(--mp-u, 1) * 1px);
+}
+
+.mp-pin:hover .mp-dot {
+  fill: var(--ink);
+}
+
+.mp-pin:hover .mp-name {
+  fill: var(--gold);
+}
+
+.mp-area .mp-name {
+  font-style: italic;
+  fill: var(--ink-dim);
+}
+
+.mp-note {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+.mp-credit {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
 .verse-note {
   font-family: var(--sans);
   font-size: 0.82rem;
