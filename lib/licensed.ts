@@ -200,15 +200,32 @@ const stripPilcrow = (s: string): string => s.replace(/¶\s*/g, "").trim();
  * footnotes, the reference line and the short copyright are all things this
  * app draws itself, and every one of them would otherwise land inside verse 1.
  */
+/**
+ * The reference to ask Crossway for.
+ *
+ * "Jude 1" does not mean what it looks like it means. Jude has one chapter, so
+ * nobody writing about it ever says the chapter out loud — they write "Jude 3"
+ * for the third VERSE, and every reference parser worth the name reads it that
+ * way. Crossway's does. So asking for "Jude 1" returned Jude verse 1, and the
+ * app printed one twenty-fifth of the letter with nothing on the page to say
+ * the rest existed.
+ *
+ * The five one-chapter books are asked for by name alone, which is
+ * unambiguous: Obadiah, Philemon, 2 John, 3 John, Jude.
+ */
+export function esvReference(bookNr: number, chapter: number): string {
+  const book = getBook(bookNr);
+  if (!book) throw new Error("no such book");
+  return book.chapters === 1 ? book.en : `${book.en} ${chapter}`;
+}
+
 async function fetchEsv(
   key: string,
   bookNr: number,
   chapter: number
 ): Promise<LicensedChapter> {
-  const book = getBook(bookNr);
-  if (!book) throw new Error("no such book");
   const query = new URLSearchParams({
-    q: `${book.en} ${chapter}`,
+    q: esvReference(bookNr, chapter),
     "include-passage-references": "false",
     "include-verse-numbers": "true",
     "include-first-verse-numbers": "true",
@@ -275,6 +292,27 @@ async function fetchApiBible(
   return { verses, fumsId: data.meta?.fumsId };
 }
 
+/**
+ * A one-chapter book that came back as one verse was misread, not short.
+ *
+ * The five of them run from thirteen verses to twenty-five, so a single verse
+ * is never the whole of one — it is a reference parser having taken the "1" in
+ * "Jude 1" for a verse. Better to tell the reader the source is unavailable
+ * than to hand them a fifth of Jude with nothing to say so: a Bible that
+ * quietly leaves things out is worse than one that admits it cannot reach the
+ * text.
+ *
+ * Checked for every licensed source rather than only the one that had the
+ * bug, because the mistake is in the notation and not in anybody's server.
+ */
+function assertWhole(bookNr: number, passage: LicensedChapter) {
+  const book = getBook(bookNr);
+  if (book && book.chapters === 1 && passage.verses.length < 2) {
+    throw new Error(`${book.en}: one verse for a whole book`);
+  }
+  return passage;
+}
+
 /** One chapter of a licensed translation, or a throw. */
 export function fetchLicensed(
   id: string,
@@ -282,13 +320,14 @@ export function fetchLicensed(
   bookNr: number,
   chapter: number
 ): Promise<LicensedChapter> {
-  if (id === "esv") return fetchEsv(key, bookNr, chapter);
+  const whole = (p: LicensedChapter) => assertWhole(bookNr, p);
+  if (id === "esv") return fetchEsv(key, bookNr, chapter).then(whole);
   if (!API_BIBLE.includes(id)) {
     return Promise.reject(new Error("not a licensed translation"));
   }
   const bibleId = apiBibleId(id);
   if (!bibleId) return Promise.reject(new Error(`no ${id} bible id`));
-  return fetchApiBible(key, bibleId, bookNr, chapter);
+  return fetchApiBible(key, bibleId, bookNr, chapter).then(whole);
 }
 
 /**
