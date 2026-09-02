@@ -96,6 +96,20 @@ function project(bounds: [number, number, number, number], width: number) {
   ];
 }
 
+/**
+ * The crop a chapter opens at, or the whole window if the file predates it.
+ *
+ * Four numbers or nothing: everything downstream destructures this, and a
+ * missing one would land as NaN in a viewBox, which draws a blank rather than
+ * throwing — the worst of both.
+ */
+function viewOf(data: ChapterMapData, base: Base): View {
+  const f = data.focus;
+  return Array.isArray(f) && f.length === 4 && f.every(Number.isFinite)
+    ? (f as View)
+    : [0, 0, base.width, base.height];
+}
+
 /** A place with a dot, or a name written across country. */
 const isSite = (type: string) =>
   !["region", "natural area", "body of water", "river", "valley", "special"].includes(
@@ -367,12 +381,15 @@ const mid = (t: TouchList) => ({
 function MapViewer({
   base,
   data,
+  focus,
   regions,
   onPlace,
   onClose,
 }: {
   base: Base;
   data: ChapterMapData;
+  /** already checked for four numbers — see viewOf */
+  focus: View;
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
   onPlace: (verse: number) => void;
   onClose: () => void;
@@ -406,7 +423,7 @@ function MapViewer({
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const aspect = rect.width / Math.max(1, rect.height);
-    const [fx, fy, fw, fh] = data.focus;
+    const [fx, fy, fw, fh] = focus;
     let w = fw;
     let h = fh;
     if (w / h > aspect) h = w / aspect;
@@ -420,7 +437,7 @@ function MapViewer({
     );
     // opening measurement only — the view is the reader's from here on
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, data]);
+  }, [base, focus]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -565,7 +582,7 @@ function MapViewer({
   }, [base, view !== null]);
 
   /** the live view, readable from inside a handler that was built earlier */
-  const viewRef = useRef<View>(data.focus);
+  const viewRef = useRef<View>(focus);
   if (view) viewRef.current = view;
 
   /** A step of zoom about the middle, for a mouse and for a keyboard. */
@@ -584,7 +601,7 @@ function MapViewer({
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const aspect = rect.width / Math.max(1, rect.height);
-    const [fx, fy, fw, fh] = data.focus;
+    const [fx, fy, fw, fh] = focus;
     let w = fw;
     let h = fh;
     if (w / h > aspect) h = w / aspect;
@@ -697,12 +714,30 @@ export default function ChapterMap({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  /*
+   * What comes back over the wire is checked, not trusted.
+   *
+   * This app's service worker serves its datasets cache-first and on purpose,
+   * so new code meeting an older copy of a file is a normal state here rather
+   * than an exotic one: a reader who had opened a map before the gazetteer
+   * shipped had base maps in that cache with no `sites` in them, and the loop
+   * over it threw and took the whole reader down with it — Acts crashed while
+   * Genesis was fine, because only some of the six windows had been cached.
+   *
+   * So anything missing degrades to nothing rather than to an exception. A map
+   * without its gazetteer is a map with fewer names on it, which is what the
+   * reader had yesterday, and the next time the worker turns the cache over it
+   * fills in silently.
+   */
   useEffect(() => {
     let cancelled = false;
     load<Record<string, ChapterMapData>>(`/maps/${bookNr}.json`, {}).then(
       (book) => {
         if (cancelled) return;
-        setData(book[String(chapter)] ?? null);
+        const row = book?.[String(chapter)];
+        setData(
+          row && Array.isArray(row.places) && row.places.length > 0 ? row : null
+        );
       }
     );
     return () => {
@@ -718,8 +753,18 @@ export default function ChapterMap({
       load<Eras>("/maps/eras.json", {}),
     ]).then(([b, e]) => {
       if (cancelled) return;
-      setBase(b);
-      setEras(e);
+      // the coastline is the one part a map cannot do without
+      setBase(
+        b && Array.isArray(b.land) && b.width > 0 && b.height > 0
+          ? {
+              ...b,
+              lakes: Array.isArray(b.lakes) ? b.lakes : [],
+              rivers: Array.isArray(b.rivers) ? b.rivers : [],
+              sites: Array.isArray(b.sites) ? b.sites : [],
+            }
+          : null
+      );
+      setEras(e && typeof e === "object" ? e : {});
     });
     return () => {
       cancelled = true;
@@ -730,7 +775,7 @@ export default function ChapterMap({
     if (!base || !data) return [];
     const to = project(base.bounds, base.width);
     const [w, s, e, n] = base.bounds;
-    const [fx, fy, fw, fh] = data.focus;
+    const [fx, fy, fw, fh] = viewOf(data, base);
     const kept: { en: string; es: string; water?: boolean; x: number; y: number }[] =
       [];
     for (const r of eras[data.era]?.regions ?? []) {
@@ -791,6 +836,8 @@ export default function ChapterMap({
    */
   if (data === undefined || data === null || !base) return null;
 
+  const focus = viewOf(data, base);
+
   return (
     <div className="ctx-section ctx-map">
       <h3>
@@ -815,7 +862,7 @@ export default function ChapterMap({
           base={base}
           data={data}
           regions={regions}
-          view={data.focus}
+          view={focus}
           label={t("reader.ctxWhere")}
           /* Far wider apart in the panel than in the viewer, and far fewer.
              The same map is a third of the width in a card, and a countryside
@@ -846,6 +893,7 @@ export default function ChapterMap({
           <MapViewer
             base={base}
             data={data}
+            focus={focus}
             regions={regions}
             onClose={() => setFull(false)}
             onPlace={(verse) => {
