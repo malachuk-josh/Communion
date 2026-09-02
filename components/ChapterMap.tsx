@@ -14,7 +14,13 @@
 // without ever going soft, because there is nothing to go soft — every line
 // is redrawn at whatever size it is asked for.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/Icon";
 import { useI18n, type MessageKey } from "@/lib/i18n";
@@ -145,13 +151,42 @@ function MapArt({
   view: View;
   onPlace: (verse: number) => void;
   label: string;
-  /** how far apart names must stand, as a fraction of the view's width */
+  /** how far apart names must stand on the glass, in pixels */
   spacing: number;
   /** and how many of them there may be at once */
   crowd: number;
 }) {
   const { lang } = useI18n();
   const [vx, vy, vw, vh] = view;
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  /*
+   * How many of the map's own units go into one pixel on the glass.
+   *
+   * Everything drawn here — type, dots, the thread from a moved name, the
+   * space names must keep from each other — wants to be a size a thumb and an
+   * eye understand, and those are measured in pixels. But an SVG can only be
+   * told sizes in the units of its viewBox, and this viewBox changes with
+   * every pinch.
+   *
+   * This was a fraction of the view width before, which held type still during
+   * a zoom but tied it to how wide the map was drawn: the same label came out
+   * at six pixels in a card on a phone and at twenty-six across a desktop.
+   * Measuring the element instead makes fourteen pixels fourteen pixels
+   * everywhere, which is the only definition of the right size there is.
+   */
+  const [wide, setWide] = useState(0);
+  useLayoutEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const measure = () => setWide(el.getBoundingClientRect().width);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  /** one CSS pixel, in map units */
+  const px = vw / (wide || 1000);
 
   /*
    * Where each name is written.
@@ -168,8 +203,8 @@ function MapArt({
    * because the crowding it answers is gone.
    */
   const laid = useMemo(() => {
-    const lineH = vw * 0.03;
-    const drop = vw * 0.0042;
+    const lineH = px * 15;
+    const drop = px * 4.5;
     const placed: { x: number; y: number; right: boolean }[] = [];
     return [...data.places]
       .sort((a, b) => a.y - b.y || a.x - b.x)
@@ -181,7 +216,7 @@ function MapArt({
             (q) =>
               q.right === right &&
               Math.abs(q.y - ly) < lineH &&
-              Math.abs(q.x - p.x) < vw * 0.3
+              Math.abs(q.x - p.x) < px * 110
           );
           if (!clash) break;
           ly += lineH;
@@ -189,7 +224,7 @@ function MapArt({
         placed.push({ x: p.x, y: ly, right });
         return { ...p, ly, right, moved: ly - (p.y + drop) > 1 };
       });
-  }, [data.places, vx, vw]);
+  }, [data.places, vx, vw, px]);
 
   /*
    * The country between the pins.
@@ -215,9 +250,32 @@ function MapArt({
     // squared, and compared squared: this runs the length of the gazetteer
     // against everything kept so far, on every frame of a pinch, and
     // Math.hypot is careful about overflow in a way nothing here needs
-    const gap = (vw * spacing) ** 2;
-    const margin = vw * 0.06;
-    const taken = data.places.map((p) => ({ x: p.x, y: p.y }));
+    const gap = (px * spacing) ** 2;
+    /*
+     * Inside the frame, not merely near it.
+     *
+     * A name is written beside its dot, so a dot admitted from just outside
+     * the edge takes its name off the edge with it, and the frame clips it —
+     * "Joppa" arriving as "oppa". A little pop-in while panning is the better
+     * of the two.
+     */
+    const margin = 0;
+    /*
+     * Seeded with where the chapter's names were actually WRITTEN, not only
+     * where their dots are.
+     *
+     * Four of them get pushed down a line to be read at all, and a name pushed
+     * down lands somewhere its dot is not — so seeding with dots alone let a
+     * background name settle on top of a moved one. Both go in: the dot is a
+     * mark on the map, and the label is a claim on the space beside it.
+     */
+    const taken = laid.flatMap((p) => [
+      { x: p.x, y: p.y },
+      { x: p.x, y: p.ly },
+    ]);
+    // and the era's own names, which are written across the map before any of
+    // these and must not be written over
+    for (const r of regions) taken.push({ x: r.x, y: r.y });
     const out: { n: string; x: number; y: number; site: boolean }[] = [];
     /*
      * Nothing that is already written on this map.
@@ -241,7 +299,21 @@ function MapArt({
       for (const q of taken) {
         const dx = q.x - x;
         const dy = q.y - y;
+        /*
+         * Two tests, because a name is not a dot.
+         *
+         * The round one keeps the map from filling up — it is what `spacing`
+         * sets, and what makes the density answer the zoom. But a name is
+         * eighty pixels wide and twelve tall, so two dots comfortably apart on
+         * that test can still have their names meet in the middle: Magdal and
+         * Senna, a screen apart on the ground, printed as "Magdalsenna".
+         * The second test is the shape of the writing itself.
+         */
         if (dx * dx + dy * dy < gap) {
+          clear = false;
+          break;
+        }
+        if (Math.abs(dx) < px * 84 && Math.abs(dy) < px * 13) {
           clear = false;
           break;
         }
@@ -251,19 +323,18 @@ function MapArt({
       out.push({ n, x, y, site: site === 1 });
     }
     return out;
-  }, [base.sites, data.places, regions, lang, vx, vy, vw, vh, spacing, crowd]);
+  }, [base.sites, laid, data.places, regions, lang, vx, vy, vw, vh, px, spacing, crowd]);
 
   return (
     <svg
+      ref={svgRef}
       viewBox={view.join(" ")}
       className="mp-svg"
       role="img"
       aria-label={label}
-      /* Every view is at its own zoom, so a size fixed in the map's own units
-         would be a hairline at one and a slab at the next. Type, strokes and
-         tap targets are scaled by this instead, which keeps them the same on
-         the glass wherever the view lands. */
-      style={{ "--mp-u": vw / 1000 } as React.CSSProperties}
+      /* one pixel, published to the stylesheet: sizes in there are written as
+         calc(var(--mp-u) * 14px) and come out fourteen pixels tall */
+      style={{ "--mp-u": px } as React.CSSProperties}
     >
       {/* the sea is the ground; the land is drawn on top of it */}
       <rect x={vx} y={vy} width={vw} height={vh} className="mp-sea" />
@@ -279,26 +350,51 @@ function MapArt({
 
       {/* under everything the chapter itself names, and under the era's
           regions: this is the ground, not the subject */}
-      {near.map((p) => (
-        <g key={`n${p.n}`} className="mp-site" aria-hidden>
-          {p.site && <circle cx={p.x} cy={p.y} r={vw * 0.0026} />}
-          <text x={p.x + vw * 0.006} y={p.y + vw * 0.0032}>
-            {p.n}
-          </text>
-        </g>
-      ))}
+      {near.map((p) => {
+        // written back towards the middle near the right edge, or the frame
+        // clips it: the same turn the chapter's own names take
+        const right = p.x < vx + vw * 0.72;
+        return (
+          <g key={`n${p.n}`} className="mp-site" aria-hidden>
+            {p.site && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
+            <text
+              x={p.x + px * (right ? 4.5 : -4.5)}
+              y={p.y + px * 3.6}
+              textAnchor={right ? "start" : "end"}
+            >
+              {p.n}
+            </text>
+          </g>
+        );
+      })}
 
-      {regions.map((r) => (
-        <text
-          key={r.en}
-          x={r.x}
-          y={r.y}
-          className={`mp-region${r.water ? " mp-water" : ""}`}
-          textAnchor="middle"
-        >
-          {lang === "es" ? r.es : r.en}
-        </text>
-      ))}
+      {/* A country's name is centred on the middle of the country, so unlike
+          everything else here it needs room on BOTH sides of its anchor — and
+          "The Great Sea" is anchored near the left edge of the Holy Land's
+          window, where half of it fell off the frame. Measured against the
+          live view rather than the chapter's opening crop, so zooming in also
+          stops drawing the ones that have gone off the screen. */}
+      {regions
+        .filter((r) => {
+          const half = (lang === "es" ? r.es : r.en).length * 4.2 * px;
+          return (
+            r.x - half > vx &&
+            r.x + half < vx + vw &&
+            r.y > vy + px * 10 &&
+            r.y < vy + vh - px * 6
+          );
+        })
+        .map((r) => (
+          <text
+            key={r.en}
+            x={r.x}
+            y={r.y}
+            className={`mp-region${r.water ? " mp-water" : ""}`}
+            textAnchor="middle"
+          >
+            {lang === "es" ? r.es : r.en}
+          </text>
+        ))}
 
       {laid.map((p) => {
         const { right } = p;
@@ -319,24 +415,24 @@ function MapArt({
             }}
           >
             {/* a fat invisible target: these are small marks and this is a
-                phone. The dot is 4 units across and the thumb is not. */}
-            <circle cx={p.x} cy={p.y} r={vw * 0.028} className="mp-hit" />
+                phone. The dot is five pixels across and the thumb is not. */}
+            <circle cx={p.x} cy={p.y} r={px * 15} className="mp-hit" />
             {/* the hairline back to the dot, for a name that had to be moved
                 off it to be read at all */}
             {p.moved && (
               <line
                 x1={p.x}
                 y1={p.y}
-                x2={p.x + vw * (right ? 0.008 : -0.008)}
-                y2={p.ly - vw * 0.003}
+                x2={p.x + px * (right ? 4 : -4)}
+                y2={p.ly - px * 3.5}
                 className="mp-leader"
               />
             )}
             {site && (
-              <circle cx={p.x} cy={p.y} r={vw * 0.0048} className="mp-dot" />
+              <circle cx={p.x} cy={p.y} r={px * 2.7} className="mp-dot" />
             )}
             <text
-              x={p.x + vw * (right ? 0.009 : -0.009)}
+              x={p.x + px * (right ? 5 : -5)}
               y={p.ly}
               textAnchor={right ? "start" : "end"}
               className="mp-name"
@@ -658,7 +754,8 @@ function MapViewer({
             regions={regions}
             view={view}
             label={t("reader.ctxWhere")}
-            spacing={0.05}
+            /* the gap names keep from each other on the glass, in pixels */
+            spacing={42}
             crowd={90}
             onPlace={(verse) => {
               // a finger that panned is not a finger that tapped
@@ -868,8 +965,8 @@ export default function ChapterMap({
              The same map is a third of the width in a card, and a countryside
              that reads full screen reads there as a crowd the chapter's own
              places are lost in — which is the one thing the panel is for. */
-          spacing={0.14}
-          crowd={22}
+          spacing={66}
+          crowd={16}
           onPlace={onGoToVerse}
         />
         <span className="mp-expand" aria-hidden>

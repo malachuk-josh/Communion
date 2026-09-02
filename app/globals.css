@@ -2501,30 +2501,34 @@ html.navhide .chap-arrow {
 .mp-land {
   fill: var(--map-land);
   stroke: var(--map-coast);
-  stroke-width: calc(var(--mp-u, 1) * 1.6px);
+  stroke-width: calc(var(--mp-u, 1) * 1.1px);
   stroke-linejoin: round;
 }
 
 .mp-lake {
   fill: var(--map-sea);
   stroke: var(--map-coast);
-  stroke-width: calc(var(--mp-u, 1) * 1.2px);
+  stroke-width: calc(var(--mp-u, 1) * 0.9px);
 }
 
 .mp-river {
   fill: none;
   stroke: var(--map-river);
-  stroke-width: calc(var(--mp-u, 1) * 2px);
+  stroke-width: calc(var(--mp-u, 1) * 1.4px);
   stroke-linecap: round;
 }
 
 /* A country's name is written across it, not pinned to a dot on it — the
    convention every atlas uses, and the thing that tells a region from a town
    at a glance. */
+/* --mp-u is one CSS pixel in the map's own units, published by the component
+   from a live measurement of the element — so every size below is written in
+   the pixels it will actually come out at, on a phone and on a desktop, at
+   any zoom. */
 .mp-region {
   fill: var(--ink-faint);
   font-family: var(--sans);
-  font-size: calc(var(--mp-u, 1) * 17px);
+  font-size: calc(var(--mp-u, 1) * 12px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   pointer-events: none;
@@ -2534,7 +2538,7 @@ html.navhide .chap-arrow {
   fill: var(--map-river);
   font-family: var(--serif);
   font-style: italic;
-  font-size: calc(var(--mp-u, 1) * 18px);
+  font-size: calc(var(--mp-u, 1) * 13px);
   letter-spacing: 0.06em;
   text-transform: none;
 }
@@ -2551,18 +2555,18 @@ html.navhide .chap-arrow {
 .mp-dot {
   fill: var(--gold);
   stroke: var(--map-land);
-  stroke-width: calc(var(--mp-u, 1) * 1.6px);
+  stroke-width: calc(var(--mp-u, 1) * 1.2px);
 }
 
 .mp-name {
   fill: var(--ink);
   font-family: var(--serif);
-  font-size: calc(var(--mp-u, 1) * 20px);
+  font-size: calc(var(--mp-u, 1) * 15px);
   /* the halo that lets a name cross a coastline and still be read — the
      printer's trick, and the reason a crowded chapter is still legible */
   paint-order: stroke fill;
   stroke: var(--map-land);
-  stroke-width: calc(var(--mp-u, 1) * 4px);
+  stroke-width: calc(var(--mp-u, 1) * 3px);
   stroke-linejoin: round;
 }
 
@@ -2585,7 +2589,7 @@ html.navhide .chap-arrow {
 .mp-site text {
   fill: var(--ink-faint);
   font-family: var(--serif);
-  font-size: calc(var(--mp-u, 1) * 13.5px);
+  font-size: calc(var(--mp-u, 1) * 11.5px);
   paint-order: stroke fill;
   stroke: var(--map-land);
   stroke-width: calc(var(--mp-u, 1) * 2.5px);
@@ -2595,7 +2599,7 @@ html.navhide .chap-arrow {
 /* the thread from a moved name back to the place it names */
 .mp-leader {
   stroke: var(--ink-faint);
-  stroke-width: calc(var(--mp-u, 1) * 1px);
+  stroke-width: calc(var(--mp-u, 1) * 0.8px);
 }
 
 .mp-pin:hover .mp-dot {
