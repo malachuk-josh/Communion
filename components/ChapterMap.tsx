@@ -48,6 +48,8 @@ interface Base {
   land: string[];
   lakes: string[];
   rivers: string[];
+  /** every named place in the window: [name, x, y, weight, takes a dot] */
+  sites: [string, number, number, number, number][];
 }
 
 interface Region {
@@ -120,6 +122,8 @@ function MapArt({
   view,
   onPlace,
   label,
+  spacing,
+  crowd,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -127,6 +131,10 @@ function MapArt({
   view: View;
   onPlace: (verse: number) => void;
   label: string;
+  /** how far apart names must stand, as a fraction of the view's width */
+  spacing: number;
+  /** and how many of them there may be at once */
+  crowd: number;
 }) {
   const { lang } = useI18n();
   const [vx, vy, vw, vh] = view;
@@ -169,6 +177,68 @@ function MapArt({
       });
   }, [data.places, vx, vw]);
 
+  /*
+   * The country between the pins.
+   *
+   * A chapter names four places on average, and four dots on an empty coast is
+   * what you get when you zoom into them — the ground in between is where the
+   * map runs out of things to say. But those four are four of 1,333, and the
+   * rest were there the whole time: Shiloh and Gibeon and Michmash do not stop
+   * existing because this chapter is about Bethel.
+   *
+   * So the window's whole gazetteer is offered, most-named first, and as many
+   * are taken as will stand apart at the size the map is currently drawn. The
+   * spacing is a fraction of the view, so this manages itself: at a glance a
+   * few of the great cities, and once a reader has pinched in, the whole
+   * countryside arriving as the room for it appears.
+   *
+   * The chapter's own places are seeded into the reckoning first and never
+   * dropped. Nothing here is tappable — these are not what the chapter is
+   * about, and a name that answers a touch by doing nothing is worse than one
+   * that plainly does not.
+   */
+  const near = useMemo(() => {
+    // squared, and compared squared: this runs the length of the gazetteer
+    // against everything kept so far, on every frame of a pinch, and
+    // Math.hypot is careful about overflow in a way nothing here needs
+    const gap = (vw * spacing) ** 2;
+    const margin = vw * 0.06;
+    const taken = data.places.map((p) => ({ x: p.x, y: p.y }));
+    const out: { n: string; x: number; y: number; site: boolean }[] = [];
+    /*
+     * Nothing that is already written on this map.
+     *
+     * The chapter's own places, obviously — but the era's regions too, which
+     * are drawn from the same world: the gazetteer has "the Great Sea" and
+     * "the Sea of Galilee" as places, and the era writes both across the water
+     * they name, so without this they print twice, a few pixels apart, in two
+     * different styles.
+     */
+    const named = new Set([
+      ...data.places.map((p) => p.n.toLowerCase()),
+      ...regions.map((r) => (lang === "es" ? r.es : r.en).toLowerCase()),
+    ]);
+    for (const [n, x, y, , site] of base.sites) {
+      if (out.length >= crowd) break;
+      if (x < vx - margin || x > vx + vw + margin) continue;
+      if (y < vy - margin || y > vy + vh + margin) continue;
+      if (named.has(n.toLowerCase())) continue;
+      let clear = true;
+      for (const q of taken) {
+        const dx = q.x - x;
+        const dy = q.y - y;
+        if (dx * dx + dy * dy < gap) {
+          clear = false;
+          break;
+        }
+      }
+      if (!clear) continue;
+      taken.push({ x, y });
+      out.push({ n, x, y, site: site === 1 });
+    }
+    return out;
+  }, [base.sites, data.places, regions, lang, vx, vy, vw, vh, spacing, crowd]);
+
   return (
     <svg
       viewBox={view.join(" ")}
@@ -191,6 +261,17 @@ function MapArt({
       ))}
       {base.lakes.map((d, i) => (
         <path key={`w${i}`} d={d} className="mp-lake" />
+      ))}
+
+      {/* under everything the chapter itself names, and under the era's
+          regions: this is the ground, not the subject */}
+      {near.map((p) => (
+        <g key={`n${p.n}`} className="mp-site" aria-hidden>
+          {p.site && <circle cx={p.x} cy={p.y} r={vw * 0.0026} />}
+          <text x={p.x + vw * 0.006} y={p.y + vw * 0.0032}>
+            {p.n}
+          </text>
+        </g>
       ))}
 
       {regions.map((r) => (
@@ -560,6 +641,8 @@ function MapViewer({
             regions={regions}
             view={view}
             label={t("reader.ctxWhere")}
+            spacing={0.05}
+            crowd={90}
             onPlace={(verse) => {
               // a finger that panned is not a finger that tapped
               if (travelled.current > 10) return;
@@ -734,6 +817,12 @@ export default function ChapterMap({
           regions={regions}
           view={data.focus}
           label={t("reader.ctxWhere")}
+          /* Far wider apart in the panel than in the viewer, and far fewer.
+             The same map is a third of the width in a card, and a countryside
+             that reads full screen reads there as a crowd the chapter's own
+             places are lost in — which is the one thing the panel is for. */
+          spacing={0.14}
+          crowd={22}
           onPlace={onGoToVerse}
         />
         <span className="mp-expand" aria-hidden>

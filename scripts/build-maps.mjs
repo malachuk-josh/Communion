@@ -486,6 +486,8 @@ function buildWindow(win) {
       win.rivers === "10m" ? rivers10 : rivers50,
       win.tolerance * 1.5
     ),
+    // filled in below, once the places have been read
+    sites: [],
   };
 }
 
@@ -521,6 +523,8 @@ const label = (place) => {
 };
 
 const chapters = new Map(); // "40:2" → [place, …]
+/** every located place, by name, for the windows' gazetteers */
+const allPlaces = new Map();
 let resolved = 0;
 let unplaced = 0;
 
@@ -550,6 +554,11 @@ for (const a of lines("ancient.jsonl")) {
     // Ranking by this keeps Hebron and Beersheba and drops the hamlets.
     weight: (a.verses ?? []).length,
   };
+  // A place is a place whether or not the chapter in front of the reader
+  // happens to name it — this is what fills the country between the pins.
+  if (!allPlaces.has(place.name) || allPlaces.get(place.name).weight < place.weight) {
+    allPlaces.set(place.name, place);
+  }
   for (const v of a.verses ?? []) {
     const [book, chapter, verse] = String(v.osis ?? "").split(".");
     const nr = BOOK_NR.get(book);
@@ -565,8 +574,54 @@ for (const a of lines("ancient.jsonl")) {
   }
 }
 
+/*
+ * Every named place in the Bible, whether or not this chapter names it.
+ *
+ * A chapter names four places on average, and a map of four dots on an empty
+ * coast is what you get when you zoom into it — the land between them is where
+ * the map stops having anything to say. But those four are four of 1,333, and
+ * the other 1,329 were there the whole time: Shiloh and Gibeon and Michmash do
+ * not stop existing because this chapter is about Bethel.
+ *
+ * So each window carries the lot, quietly, and the reader is shown as many as
+ * the space can hold — a handful at a glance, the whole countryside once they
+ * have pinched into it. Kept as arrays rather than objects because there are
+ * five thousand of them across the six windows and the key names would cost
+ * more than the values.
+ *
+ * [name, x, y, how often the Bible names it, 1 if it takes a dot]
+ */
+function gazetteer(win) {
+  const project = projector(win.bounds, 1000);
+  const [w, s, e, n] = win.bounds;
+  const out = [];
+  for (const [name, place] of allPlaces) {
+    const [lon, lat] = place.ll;
+    if (lon < w || lon > e || lat < s || lat > n) continue;
+    const [x, y] = project.to(lon, lat);
+    out.push([
+      name,
+      Math.round(x),
+      Math.round(y),
+      place.weight,
+      isSite(place.type) ? 1 : 0,
+    ]);
+  }
+  // most-named first, so the drawing can stop wherever it runs out of room
+  return out.sort((a, b) => b[3] - a[3]);
+}
+
+/** A place with a dot, or a name written across country — matches the client. */
+const isSite = (type) =>
+  !["region", "natural area", "body of water", "river", "valley", "special"].includes(
+    type
+  );
+
 /** The tightest window that holds enough of a chapter to be worth drawing. */
 const built = WINDOWS.map(buildWindow);
+for (const win of built) {
+  win.sites = gazetteer(WINDOWS.find((w) => w.id === win.id));
+}
 const holds = (win, [lon, lat]) => {
   const [w, s, e, n] = win.bounds;
   return lon >= w && lon <= e && lat >= s && lat <= n;

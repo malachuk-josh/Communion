@@ -2566,6 +2566,32 @@ html.navhide .chap-arrow {
   stroke-linejoin: round;
 }
 
+/*
+ * The places the chapter does not name.
+ *
+ * Quieter in every way than the ones it does — smaller dot, smaller and
+ * dimmer type, no halo heavy enough to shout — because they are the ground
+ * this chapter stands on rather than the chapter. And inert: a name that
+ * answers a touch by doing nothing is worse than one that plainly will not.
+ */
+.mp-site {
+  pointer-events: none;
+}
+
+.mp-site circle {
+  fill: var(--ink-faint);
+}
+
+.mp-site text {
+  fill: var(--ink-faint);
+  font-family: var(--serif);
+  font-size: calc(var(--mp-u, 1) * 13.5px);
+  paint-order: stroke fill;
+  stroke: var(--map-land);
+  stroke-width: calc(var(--mp-u, 1) * 2.5px);
+  stroke-linejoin: round;
+}
+
 /* the thread from a moved name back to the place it names */
 .mp-leader {
   stroke: var(--ink-faint);
