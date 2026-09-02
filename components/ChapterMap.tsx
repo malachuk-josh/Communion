@@ -54,8 +54,17 @@ interface Base {
   land: string[];
   lakes: string[];
   rivers: string[];
-  /** every named place in the window: [name, x, y, weight, takes a dot] */
+  /** every named place: [name, x, y, weight, 0 area / 1 town / 2 peak] */
   sites: [string, number, number, number, number][];
+  /** the kinds of ground: deserts, ranges, deltas, plains */
+  terrain: {
+    n: string;
+    es: string;
+    k: "desert" | "range" | "ground";
+    d: string[];
+    x: number;
+    y: number;
+  }[];
 }
 
 interface Region {
@@ -116,11 +125,31 @@ function viewOf(data: ChapterMapData, base: Base): View {
     : [0, 0, base.width, base.height];
 }
 
-/** A place with a dot, or a name written across country. */
-const isSite = (type: string) =>
-  !["region", "natural area", "body of water", "river", "valley", "special"].includes(
-    type
-  );
+/*
+ * What mark a place takes: nothing, a town's dot, or a peak.
+ *
+ * Carmel and Tabor and Gilboa and Sinai are the shape of the ground the story
+ * happens on, and a dot says a town stood there — which is not what any of
+ * them were. scripts/build-maps decides the same thing for the gazetteer, and
+ * ships the answer rather than the type.
+ */
+const PEAKS = ["mountain", "mountain range", "hill", "promontory", "cliff"];
+const AREAS = [
+  "region",
+  "natural area",
+  "body of water",
+  "river",
+  "valley",
+  "special",
+];
+const markFor = (type: string): 0 | 1 | 2 =>
+  PEAKS.includes(type) ? 2 : AREAS.includes(type) ? 0 : 1;
+
+/** The peak glyph, sitting on the ground with its summit on the point. */
+const peakPath = (x: number, y: number, px: number) =>
+  `M${(x - px * 4.4).toFixed(1)} ${(y + px * 2.6).toFixed(1)}L${x.toFixed(1)} ${(
+    y - px * 3.2
+  ).toFixed(1)}L${(x + px * 4.4).toFixed(1)} ${(y + px * 2.6).toFixed(1)}Z`;
 
 // ---------------------------------------------------------------------------
 // The drawing
@@ -246,6 +275,34 @@ function MapArt({
    * about, and a name that answers a touch by doing nothing is worse than one
    * that plainly does not.
    */
+  /*
+   * Which stretches of ground get named.
+   *
+   * Their anchors are the middle of whatever part of them is in the window, so
+   * a name can land anywhere — including across a town's. These give way to
+   * everything: they are the paper the chapter is printed on, and a reader who
+   * cannot read "Negev Desert" has lost less than one who cannot read
+   * "Beersheba".
+   */
+  const grounds = useMemo(() => {
+    const kept: Base["terrain"] = [];
+    for (const t of base.terrain) {
+      const half = (lang === "es" ? t.es : t.n).length * 4 * px;
+      if (t.x - half < vx || t.x + half > vx + vw) continue;
+      if (t.y < vy + px * 16 || t.y > vy + vh - px * 10) continue;
+      if (kept.some((k) => Math.hypot(k.x - t.x, k.y - t.y) < px * 100)) continue;
+      if (
+        data.places.some(
+          (q) => Math.abs(q.x - t.x) < px * 80 && Math.abs(q.y - t.y) < px * 18
+        )
+      ) {
+        continue;
+      }
+      kept.push(t);
+    }
+    return kept;
+  }, [base.terrain, data.places, lang, vx, vy, vw, vh, px]);
+
   const near = useMemo(() => {
     // squared, and compared squared: this runs the length of the gazetteer
     // against everything kept so far, on every frame of a pinch, and
@@ -276,7 +333,8 @@ function MapArt({
     // and the era's own names, which are written across the map before any of
     // these and must not be written over
     for (const r of regions) taken.push({ x: r.x, y: r.y });
-    const out: { n: string; x: number; y: number; site: boolean }[] = [];
+    for (const t of grounds) taken.push({ x: t.x, y: t.y });
+    const out: { n: string; x: number; y: number; mark: number }[] = [];
     /*
      * Nothing that is already written on this map.
      *
@@ -313,17 +371,17 @@ function MapArt({
           clear = false;
           break;
         }
-        if (Math.abs(dx) < px * 84 && Math.abs(dy) < px * 13) {
+        if (Math.abs(dx) < px * 66 && Math.abs(dy) < px * 12) {
           clear = false;
           break;
         }
       }
       if (!clear) continue;
       taken.push({ x, y });
-      out.push({ n, x, y, site: site === 1 });
+      out.push({ n, x, y, mark: site });
     }
     return out;
-  }, [base.sites, laid, data.places, regions, lang, vx, vy, vw, vh, px, spacing, crowd]);
+  }, [base.sites, laid, data.places, regions, grounds, lang, vx, vy, vw, vh, px, spacing, crowd]);
 
   return (
     <svg
@@ -341,11 +399,32 @@ function MapArt({
       {base.land.map((d, i) => (
         <path key={`l${i}`} d={d} className="mp-land" />
       ))}
+      {/* what KIND of land: the Negev, the mountains of Lebanon, the delta.
+          Over the coast and under everything written on it, faint enough to be
+          the paper rather than the subject. */}
+      {base.terrain.map((t) =>
+        t.d.map((d, i) => (
+          <path key={`t${t.n}${i}`} d={d} className={`mp-ground mp-${t.k}`} />
+        ))
+      )}
       {base.rivers.map((d, i) => (
         <path key={`r${i}`} d={d} className="mp-river" />
       ))}
       {base.lakes.map((d, i) => (
         <path key={`w${i}`} d={d} className="mp-lake" />
+      ))}
+
+      {/* the kinds of ground, named faintest of all and only where they fit */}
+      {grounds.map((t) => (
+        <text
+          key={`g${t.n}`}
+          x={t.x}
+          y={t.y}
+          className={`mp-ground-name${t.k === "range" ? " mp-range-name" : ""}`}
+          textAnchor="middle"
+        >
+          {lang === "es" ? t.es : t.n}
+        </text>
       ))}
 
       {/* under everything the chapter itself names, and under the era's
@@ -356,7 +435,10 @@ function MapArt({
         const right = p.x < vx + vw * 0.72;
         return (
           <g key={`n${p.n}`} className="mp-site" aria-hidden>
-            {p.site && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
+            {p.mark === 1 && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
+            {p.mark === 2 && (
+              <path d={peakPath(p.x, p.y, px * 0.82)} className="mp-peak" />
+            )}
             <text
               x={p.x + px * (right ? 4.5 : -4.5)}
               y={p.y + px * 3.6}
@@ -398,11 +480,11 @@ function MapArt({
 
       {laid.map((p) => {
         const { right } = p;
-        const site = isSite(p.t);
+        const mark = markFor(p.t);
         return (
           <g
             key={p.n}
-            className={`mp-pin${site ? "" : " mp-area"}`}
+            className={`mp-pin${mark === 0 ? " mp-area" : ""}`}
             onClick={(e) => {
               // the map behind opens full screen; a place goes to its verse
               e.stopPropagation();
@@ -428,8 +510,11 @@ function MapArt({
                 className="mp-leader"
               />
             )}
-            {site && (
+            {mark === 1 && (
               <circle cx={p.x} cy={p.y} r={px * 2.7} className="mp-dot" />
+            )}
+            {mark === 2 && (
+              <path d={peakPath(p.x, p.y, px)} className="mp-dot" />
             )}
             <text
               x={p.x + px * (right ? 5 : -5)}
@@ -755,8 +840,8 @@ function MapViewer({
             view={view}
             label={t("reader.ctxWhere")}
             /* the gap names keep from each other on the glass, in pixels */
-            spacing={42}
-            crowd={90}
+            spacing={22}
+            crowd={150}
             onPlace={(verse) => {
               // a finger that panned is not a finger that tapped
               if (travelled.current > 10) return;
@@ -858,6 +943,7 @@ export default function ChapterMap({
               lakes: Array.isArray(b.lakes) ? b.lakes : [],
               rivers: Array.isArray(b.rivers) ? b.rivers : [],
               sites: Array.isArray(b.sites) ? b.sites : [],
+              terrain: Array.isArray(b.terrain) ? b.terrain : [],
             }
           : null
       );
@@ -965,8 +1051,8 @@ export default function ChapterMap({
              The same map is a third of the width in a card, and a countryside
              that reads full screen reads there as a crowd the chapter's own
              places are lost in — which is the one thing the panel is for. */
-          spacing={66}
-          crowd={16}
+          spacing={36}
+          crowd={34}
           onPlace={onGoToVerse}
         />
         <span className="mp-expand" aria-hidden>

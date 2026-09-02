@@ -22,7 +22,8 @@
 //
 //   github.com/nvkelso/natural-earth-vector  →  geojson/
 //     ne_50m_land, ne_50m_lakes, ne_50m_rivers_lake_centerlines,
-//     ne_10m_lakes, ne_10m_rivers_lake_centerlines
+//     ne_10m_lakes, ne_10m_rivers_lake_centerlines,
+//     ne_10m_geography_regions_polys
 //   github.com/openbibleinfo/Bible-Geocoding-Data  →  data/
 //     ancient.jsonl, modern.jsonl
 //
@@ -440,6 +441,38 @@ const lakes10 = readGeo("ne_10m_lakes.geojson");
 const rivers50 = readGeo("ne_50m_rivers_lake_centerlines.geojson");
 const rivers10 = readGeo("ne_10m_rivers_lake_centerlines.geojson");
 
+/*
+ * The shape of the ground itself.
+ *
+ * Coastlines and rivers say where the water is; this says what the land is —
+ * the Negev and the Syrian Desert, the mountains of Lebanon, the Nile delta,
+ * Mesopotamia. A reader who has just been told Elijah went up Carmel is owed
+ * some sense that Carmel is a ridge and the Negev is not the same country as
+ * Galilee, and a coastline alone cannot tell them.
+ *
+ * Only the classes that are a KIND of ground. Islands and peninsulas are named
+ * on the coastline already, and a continent's name across a map of Judah is
+ * not scale — it is noise. MIN_LABEL is Natural Earth's own judgement of how
+ * far out a name is worth reading, and 3.5 is about where continents stop.
+ */
+const TERRAIN = new Set([
+  "Desert",
+  "Range/mtn",
+  "Plateau",
+  "Plain",
+  "Delta",
+  "Basin",
+  "Valley",
+  "Lowland",
+  "Foothills",
+  "Geoarea",
+]);
+const terrain = readGeo("ne_10m_geography_regions_polys.geojson").filter(
+  (f) =>
+    TERRAIN.has(f.properties?.FEATURECLA) &&
+    (f.properties?.MIN_LABEL ?? 99) >= 3.5
+);
+
 function buildWindow(win) {
   const project = projector(win.bounds, 1000);
   const [w, s, e, n] = win.bounds;
@@ -475,11 +508,60 @@ function buildWindow(win) {
     return out;
   };
 
+  /*
+   * A stretch of country, with somewhere to write its name.
+   *
+   * The anchor is the middle of the part that is IN the window, not the middle
+   * of the whole thing — the Sahara's centre is two thousand miles from a map
+   * of Egypt, and a label pinned there would never be seen.
+   */
+  const grounds = () => {
+    const out = [];
+    for (const f of terrain) {
+      if (!overlaps(f.bbox)) continue;
+      const paths = [];
+      let sx = 0;
+      let sy = 0;
+      let n = 0;
+      for (const ring of ringsOf(f.geometry)) {
+        const clipped = clipRing(ring, win.bounds);
+        if (clipped.length < 3) continue;
+        const thin = simplify(clipped, win.tolerance * 4);
+        if (thin.length < 3) continue;
+        paths.push(toPath(thin, project) + "Z");
+        for (const [lon, lat] of thin) {
+          const [x, y] = project.to(lon, lat);
+          sx += x;
+          sy += y;
+          n++;
+        }
+      }
+      if (!paths.length || !n) continue;
+      out.push({
+        n: f.properties.NAME,
+        es: f.properties.NAME_ES || f.properties.NAME,
+        // Range/mtn and Desert are drawn differently; the rest are one wash
+        k:
+          f.properties.FEATURECLA === "Range/mtn"
+            ? "range"
+            : f.properties.FEATURECLA === "Desert"
+              ? "desert"
+              : "ground",
+        d: paths,
+        x: Math.round(sx / n),
+        y: Math.round(sy / n),
+      });
+    }
+    // biggest first, so a small district paints over the region holding it
+    return out.sort((a, b) => b.d.join("").length - a.d.join("").length);
+  };
+
   return {
     id: win.id,
     bounds: win.bounds,
     width: project.width,
     height: project.height,
+    terrain: grounds(),
     land: shapes(land, win.tolerance),
     lakes: shapes(win.rivers === "10m" ? lakes10 : lakes50, win.tolerance),
     rivers: strokes(
@@ -589,7 +671,8 @@ for (const a of lines("ancient.jsonl")) {
  * five thousand of them across the six windows and the key names would cost
  * more than the values.
  *
- * [name, x, y, how often the Bible names it, 1 if it takes a dot]
+ * [name, x, y, how often the Bible names it, and what mark it takes:
+ *  0 a name written across country, 1 a town's dot, 2 a peak]
  */
 function gazetteer(win) {
   const project = projector(win.bounds, 1000);
@@ -604,18 +687,32 @@ function gazetteer(win) {
       Math.round(x),
       Math.round(y),
       place.weight,
-      isSite(place.type) ? 1 : 0,
+      markFor(place.type),
     ]);
   }
   // most-named first, so the drawing can stop wherever it runs out of room
   return out.sort((a, b) => b[3] - a[3]);
 }
 
-/** A place with a dot, or a name written across country — matches the client. */
-const isSite = (type) =>
-  !["region", "natural area", "body of water", "river", "valley", "special"].includes(
-    type
-  );
+/*
+ * What mark a place takes — and matches the client, which decides the same
+ * thing for the chapter's own places from their type.
+ *
+ * A peak is drawn as a peak. Carmel and Tabor and Gilboa and Sinai are the
+ * shape of the ground the story happens on, and a dot says a town stood there,
+ * which is not what any of them were.
+ */
+const PEAKS = ["mountain", "mountain range", "hill", "promontory", "cliff"];
+const AREAS = [
+  "region",
+  "natural area",
+  "body of water",
+  "river",
+  "valley",
+  "special",
+];
+const markFor = (type) =>
+  PEAKS.includes(type) ? 2 : AREAS.includes(type) ? 0 : 1;
 
 /** The tightest window that holds enough of a chapter to be worth drawing. */
 const built = WINDOWS.map(buildWindow);

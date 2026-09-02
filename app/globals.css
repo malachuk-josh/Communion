@@ -2423,6 +2423,10 @@ html.navhide .chap-arrow {
   --map-land: #343a45;
   --map-coast: rgba(229, 180, 91, 0.55);
   --map-river: rgba(139, 160, 240, 0.7);
+  /* the ground itself, laid over the land and under everything written */
+  --map-desert: rgba(229, 180, 91, 0.055);
+  --map-range: rgba(255, 255, 255, 0.038);
+  --map-plain: rgba(139, 160, 240, 0.03);
 }
 
 .ctx-map {
@@ -2435,6 +2439,9 @@ html.navhide .chap-arrow {
   --map-land: #f8f1de;
   --map-coast: rgba(97, 74, 38, 0.5);
   --map-river: rgba(70, 105, 175, 0.75);
+  --map-desert: rgba(190, 145, 60, 0.16);
+  --map-range: rgba(97, 74, 38, 0.13);
+  --map-plain: rgba(70, 105, 175, 0.07);
 }
 
 :root[data-theme="grey"] .ctx-map,
@@ -2443,6 +2450,9 @@ html.navhide .chap-arrow {
   --map-land: #303030;
   --map-coast: rgba(210, 210, 210, 0.5);
   --map-river: rgba(170, 180, 200, 0.7);
+  --map-desert: rgba(255, 255, 255, 0.05);
+  --map-range: rgba(255, 255, 255, 0.045);
+  --map-plain: rgba(255, 255, 255, 0.028);
 }
 
 /* the era, over the map, the way a plate is captioned */
@@ -2509,6 +2519,65 @@ html.navhide .chap-arrow {
   fill: var(--map-sea);
   stroke: var(--map-coast);
   stroke-width: calc(var(--mp-u, 1) * 0.9px);
+}
+
+/*
+ * The kind of ground, not just its outline.
+ *
+ * A wash over the land: the Negev and the Syrian Desert warm, the mountains of
+ * Lebanon and the Taurus a shade lighter, plains and deltas barely there. Very
+ * faint on purpose — this is the paper the chapter is printed on, and a reader
+ * should feel that Galilee and the Negev are different country without ever
+ * looking at it directly.
+ */
+.mp-ground {
+  stroke: none;
+  pointer-events: none;
+}
+
+.mp-desert {
+  fill: var(--map-desert);
+}
+
+.mp-range {
+  fill: var(--map-range);
+}
+
+.mp-ground.mp-ground {
+  /* the plain case, when it is neither desert nor range */
+  fill: var(--map-plain);
+}
+
+.mp-desert.mp-desert {
+  fill: var(--map-desert);
+}
+
+.mp-range.mp-range {
+  fill: var(--map-range);
+}
+
+.mp-ground-name {
+  fill: var(--ink-faint);
+  opacity: 0.62;
+  font-family: var(--sans);
+  font-size: calc(var(--mp-u, 1) * 10px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* a range gets the serif italic every atlas gives its mountains */
+.mp-range-name {
+  font-family: var(--serif);
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: calc(var(--mp-u, 1) * 12px);
+}
+
+/* the mark for a mountain, in the gazetteer's quiet grey */
+.mp-peak {
+  fill: var(--ink-faint);
 }
 
 .mp-river {
