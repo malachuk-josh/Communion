@@ -215,7 +215,22 @@ body {
   /* the bounce at either end stays inside this element rather than being
      handed up to the document, which is what used to move the bar */
   overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
+  /*
+   * And deliberately NOT -webkit-overflow-scrolling: touch.
+   *
+   * It was here when this became the scroller, copied from the smaller
+   * scrollers further down the sheet, and on iOS it does a second thing
+   * nobody wants: an element carrying it becomes the containing block for
+   * every position:fixed descendant. Everything the reader puts on top of the
+   * page is fixed and lives inside here — the navigator and its scrim, the
+   * verse sheet, the modals — so all of them were being laid out against this
+   * box instead of against the screen. The navigator opened BELOW the header
+   * with its own row of controls hidden behind it, and the scrim dimmed the
+   * page while leaving the header bright.
+   *
+   * It buys nothing either way: iOS has scrolled overflow containers with
+   * momentum by default since 13, and the property is deprecated.
+   */
 }
 
 /* ---- ambient scene behind the glass ---- */
