@@ -258,6 +258,8 @@ export default function Reader({
   const placedRef = useRef<string | null>(null);
   /** the verse to come back to, read once from the remembered position */
   const restoreVerseRef = useRef<number | null>(null);
+  /** ends the placement still correcting itself, if there is one */
+  const stopPlacing = useRef<(() => void) | null>(null);
   const readRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -543,6 +545,9 @@ export default function Reader({
     return () => document.documentElement.classList.remove("reading");
   }, []);
 
+  // a placement still correcting itself has no page left to correct
+  useEffect(() => () => stopPlacing.current?.(), []);
+
   /**
    * Remember where a chapter heading is sitting, so the layout effect below
    * can put it back after the DOM grows above it. Call this immediately
@@ -623,19 +628,40 @@ export default function Reader({
     });
   }, [study, viewChapter]);
 
-  /** Put the reader at the top of a chapter, clear of the sticky header. */
+  /**
+   * Put the reader at the top of a chapter, and keep them there until the
+   * page stops moving underneath them.
+   *
+   * One scroll was not enough, and the way it failed was the worst way it
+   * could have. Everything this measures against is still settling when it
+   * first runs: the chapter heights are whatever the browser has arrived at
+   * so far, and the study extras — section headings, cross-references, the
+   * context chips — are not in the page at all yet. Measure once against
+   * that and the answer is short by however much grows above the chapter
+   * afterwards. Short of Psalm 119 is Psalm 117 and nobody notices. Short of
+   * Colossians 4 is the top of Colossians, because the whole book is only
+   * four chapters and the error is bigger than the book.
+   *
+   * So it aims, and then goes on checking its aim frame by frame and
+   * correcting, until the number it wants stops changing. It gives up the
+   * instant the reader touches the page — their thumb outranks anything this
+   * was in the middle of — and after a second regardless, so it can never
+   * turn into the thing fighting a scroll.
+   */
   const placeAt = (ch: number, verse?: number) => {
+    // any placement still in flight was for somewhere else
+    stopPlacing.current?.();
+
     // a remembered verse if there is one, the chapter's heading otherwise
-    const target =
+    const find = () =>
       (verse
         ? document.querySelector<HTMLElement>(`[data-v="${ch}:${verse}"]`)
         : null) ??
       document.querySelector<HTMLElement>(`.chap-head[data-ch="${ch}"]`);
-    if (!target) {
-      scrollToY(0);
-      return;
-    }
+
     /*
+     * Where the scroller would have to be for that line to sit at the top.
+     *
      * A rect is measured from the top of the WINDOW and a scroll position
      * from the top of the SCROLLER, and those are no longer the same place —
      * the header sits between them. Taking the scroller's own top off first
@@ -645,10 +671,54 @@ export default function Reader({
      * sticky header overlays whatever scrolls under it and the chapter
      * heading would have landed beneath it. Outside the scroller it overlays
      * nothing, so all that is wanted now is a little air above the heading.
+     *
+     * null means the line is not in the page yet, which is a reason to wait,
+     * never a reason to scroll. Sending the reader to the top of the book
+     * because the chapter could not be found is how they ended up at chapter
+     * one every time, and being told nothing about it.
      */
-    const top =
-      target.getBoundingClientRect().top - scrollerTop() + scrollY() - 10;
-    scrollToY(Math.max(0, top));
+    const wanted = (): number | null => {
+      const target = find();
+      if (!target) return null;
+      const top =
+        target.getBoundingClientRect().top - scrollerTop() + scrollY() - 10;
+      return Math.max(0, top);
+    };
+
+    let frames = 0;
+    let settledAt: number | null = null;
+    let raf = 0;
+    const started = Date.now();
+
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      for (const ev of ["touchstart", "wheel", "keydown", "pointerdown"]) {
+        window.removeEventListener(ev, stop);
+      }
+      stopPlacing.current = null;
+    };
+    // the reader's own hand ends this, wherever it had got to
+    for (const ev of ["touchstart", "wheel", "keydown", "pointerdown"]) {
+      window.addEventListener(ev, stop, { passive: true });
+    }
+    stopPlacing.current = stop;
+
+    const aim = () => {
+      const want = wanted();
+      if (want !== null) {
+        if (Math.abs(scrollY() - want) > 1) scrollToY(want);
+        // the target stops moving once the page below has finished arriving;
+        // two frames agreeing is the page holding still, not a coincidence
+        if (settledAt !== null && Math.abs(want - settledAt) <= 1) frames += 1;
+        else frames = 0;
+        settledAt = want;
+      }
+      // a second is far longer than any of this takes and still short enough
+      // that a page which never settles cannot hold the scroll hostage
+      if (frames >= 2 || Date.now() - started > 1000) stop();
+      else raf = requestAnimationFrame(aim);
+    };
+    aim();
   };
 
   /**
