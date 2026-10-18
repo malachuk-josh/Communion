@@ -168,6 +168,213 @@ const peakPath = (x: number, y: number, px: number) =>
 // The drawing
 // ---------------------------------------------------------------------------
 
+/** [left, top, right, bottom], in the map's own units. */
+type Box = [number, number, number, number];
+
+const hits = (a: Box, b: Box) =>
+  a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+
+/** How much of two boxes is the same ground — the cost of a crowded spot. */
+const overlap = (a: Box, b: Box) =>
+  Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) *
+  Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+
+/*
+ * Everything already written, filed by where it is.
+ *
+ * Every name tests itself against the names placed before it, and at full
+ * screen that is a thousand-odd places in the gazetteer against a few hundred
+ * names, on every frame of a pinch. Filed under the squares of a coarse grid,
+ * a test only looks at what is near it — the difference between a pass that
+ * fits comfortably inside a frame on a slower Android phone and one that
+ * does not.
+ */
+function boxIndex(cell: number) {
+  const cells = new Map<number, Box[]>();
+  const key = (cx: number, cy: number) => (cx + 32768) * 65536 + (cy + 32768);
+  const span = (b: Box) => [
+    Math.floor(b[0] / cell),
+    Math.floor(b[1] / cell),
+    Math.floor(b[2] / cell),
+    Math.floor(b[3] / cell),
+  ];
+  return {
+    add(b: Box) {
+      const [x0, y0, x1, y1] = span(b);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          const list = cells.get(key(cx, cy));
+          if (list) list.push(b);
+          else cells.set(key(cx, cy), [b]);
+        }
+      }
+    },
+    /** nothing filed here touches b */
+    clear(b: Box) {
+      const [x0, y0, x1, y1] = span(b);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const t of cells.get(key(cx, cy)) ?? []) if (hits(b, t)) return false;
+        }
+      }
+      return true;
+    },
+    /** how much of b is already covered, not counting `own` */
+    covered(b: Box, own?: Box) {
+      const [x0, y0, x1, y1] = span(b);
+      const seen = new Set<Box>();
+      let sum = 0;
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const t of cells.get(key(cx, cy)) ?? []) {
+            if (t === own || seen.has(t)) continue;
+            seen.add(t);
+            sum += overlap(b, t);
+          }
+        }
+      }
+      return sum;
+    },
+  };
+}
+
+/**
+ * The type each kind of name is set in, as globals.css sets it, in CSS
+ * pixels before the map's own scale is applied. Written out here because the
+ * placing has to know how big a name is before it is drawn; change a size in
+ * the stylesheet and change it here.
+ */
+const FACES = {
+  name: { size: 15, italic: false, serif: true, track: 0, upper: false, halo: 1.5 },
+  area: { size: 15, italic: true, serif: true, track: 0, upper: false, halo: 1.5 },
+  region: { size: 12, italic: false, serif: false, track: 0.14, upper: true, halo: 0 },
+  water: { size: 13, italic: true, serif: true, track: 0.06, upper: false, halo: 0 },
+  ground: { size: 10, italic: false, serif: false, track: 0.18, upper: true, halo: 0 },
+  range: { size: 12, italic: true, serif: true, track: 0.06, upper: false, halo: 0 },
+  site: { size: 11.5, italic: false, serif: true, track: 0, upper: false, halo: 1.25 },
+} as const;
+type Face = (typeof FACES)[keyof typeof FACES];
+
+/*
+ * How wide a name comes out, in CSS pixels.
+ *
+ * Measured rather than guessed. The old tests treated a name as a point, or as
+ * eighty pixels whatever it said — and "Lycaonia" was written straight over
+ * "Cilicia", because the test measured from where the word starts and Cilicia
+ * sat under where it ends. A canvas set in the map's own type, on the
+ * device's own fonts, says how wide the word really is.
+ */
+let ruler: CanvasRenderingContext2D | null | undefined;
+let families: { serif: string; sans: string } | null = null;
+const widths = new Map<string, number>();
+function widthOf(text: string, face: Face): number {
+  const shown = face.upper ? text.toUpperCase() : text;
+  const key = `${face.size}${face.italic}${face.serif}${face.track}|${shown}`;
+  const known = widths.get(key);
+  if (known !== undefined) return known;
+  if (ruler === undefined) {
+    ruler =
+      typeof document === "undefined"
+        ? null
+        : document.createElement("canvas").getContext("2d");
+  }
+  let w: number;
+  if (ruler) {
+    if (!families) {
+      const root = getComputedStyle(document.documentElement);
+      families = {
+        serif: root.getPropertyValue("--serif").trim() || "serif",
+        sans: root.getPropertyValue("--sans").trim() || "sans-serif",
+      };
+    }
+    ruler.font = `${face.italic ? "italic " : ""}${face.size}px ${
+      face.serif ? families.serif : families.sans
+    }`;
+    w = ruler.measureText(shown).width;
+  } else {
+    // no canvas to measure with: a generous average, which errs towards room
+    w = shown.length * face.size * 0.6;
+  }
+  // letter-spacing, which the canvas does not apply
+  w += shown.length * face.track * face.size;
+  widths.set(key, w);
+  return w;
+}
+
+/** The ground a name covers: anchored at x, sitting on the baseline at y. */
+function textBox(
+  x: number,
+  y: number,
+  w: number,
+  face: Face,
+  anchor: "start" | "middle" | "end",
+  px: number
+): Box {
+  // the halo the name is drawn with, and a hair of air beyond it
+  const pad = (face.halo + 1) * px;
+  const width = w * px;
+  const left = anchor === "start" ? x : anchor === "end" ? x - width : x - width / 2;
+  const ascent = face.size * (face.upper ? 0.72 : 0.78) * px;
+  const descent = face.size * (face.upper ? 0.04 : 0.24) * px;
+  return [left - pad, y - ascent - pad, left + width + pad, y + descent + pad];
+}
+
+/** Where a chapter's place may write its name, in pixels from its dot. */
+interface Spot {
+  dx: number;
+  dy: number;
+  anchor: "start" | "middle" | "end";
+  /** far enough from the dot to need a hairline back to it */
+  lead: boolean;
+}
+
+/**
+ * Every spot a name may take, best first: beside the dot on the side with
+ * more room, then the other side; centred just above and below; above and
+ * below to either side; and only then further off along a hairline, a line
+ * at a time, down and up, either side.
+ *
+ * A region the chapter names is different. It has no dot, so a hairline from
+ * it points at nothing — or, worse, at whatever town happens to sit on its
+ * anchor: Pisidia's line ended on Antioch's dot and read as Pisidia pointing
+ * at Antioch. So a region is written across its own ground, or a line or two
+ * off it, and never sent further on a line.
+ */
+function spotsFor(area: boolean, first: 1 | -1): Spot[] {
+  const beside = (side: 1 | -1, dy: number, lead: boolean): Spot => ({
+    dx: side * 5,
+    dy,
+    anchor: side > 0 ? "start" : "end",
+    lead,
+  });
+  const sides: (1 | -1)[] = [first, first > 0 ? -1 : 1];
+  if (area) {
+    // a region the chapter names is written across its own ground: centred,
+    // then a line or two up or down, and a little to either side — nearest
+    // first, and never far enough to need a line back
+    const near: Spot[] = [];
+    for (const dy of [4.5, -10.5, 19.5, -25.5, 34.5]) {
+      for (const dx of [0, -24, 24, -48, 48]) {
+        near.push({ dx, dy, anchor: "middle", lead: false });
+      }
+    }
+    return near.sort(
+      (a, b) => a.dx ** 2 + (a.dy - 4.5) ** 2 - (b.dx ** 2 + (b.dy - 4.5) ** 2)
+    );
+  }
+  const out: Spot[] = [];
+  for (const side of sides) out.push(beside(side, 4.5, false));
+  out.push({ dx: 0, dy: -8, anchor: "middle", lead: false });
+  out.push({ dx: 0, dy: 18, anchor: "middle", lead: false });
+  for (const side of sides) out.push(beside(side, -6, false), beside(side, 16, false));
+  for (let k = 2; k <= 9; k++) {
+    for (const side of sides) {
+      out.push(beside(side, 4.5 + 15 * k, true), beside(side, 4.5 - 15 * k, true));
+    }
+  }
+  return out;
+}
+
 /**
  * The map itself, at whatever part of the window it is asked for.
  *
@@ -186,6 +393,8 @@ function MapArt({
   label,
   spacing,
   crowd,
+  avoid,
+  glance = false,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -197,6 +406,14 @@ function MapArt({
   spacing: number;
   /** and how many of them there may be at once */
   crowd: number;
+  /** something drawn over the map that no name may be written under */
+  avoid?: React.RefObject<HTMLElement | null>;
+  /**
+   * The small map in the panel, read at a glance. A region the chapter names
+   * is left out of it when there is no room near its ground; full screen
+   * always writes it, crowded if it must be, and a pinch makes the room.
+   */
+  glance?: boolean;
 }) {
   const { lang } = useI18n();
   const [vx, vy, vw, vh] = view;
@@ -218,183 +435,294 @@ function MapArt({
    * everywhere, which is the only definition of the right size there is.
    */
   const [wide, setWide] = useState(0);
+  /**
+   * Where the thing drawn over the map sits — the panel's zoom button — in
+   * CSS pixels from the map's top-left corner, with the map's own size to
+   * convert it by. Null for the full-screen viewer, which has nothing on top.
+   */
+  const [cover, setCover] = useState<{
+    l: number;
+    t: number;
+    r: number;
+    b: number;
+    w: number;
+    h: number;
+  } | null>(null);
   useLayoutEffect(() => {
     const el = svgRef.current;
     if (!el) return;
-    const measure = () => setWide(el.getBoundingClientRect().width);
+    const measure = () => {
+      const s = el.getBoundingClientRect();
+      setWide(s.width);
+      const on = avoid?.current?.getBoundingClientRect();
+      setCover(
+        on
+          ? {
+              l: on.left - s.left,
+              t: on.top - s.top,
+              r: on.right - s.left,
+              b: on.bottom - s.top,
+              w: s.width,
+              h: s.height,
+            }
+          : null
+      );
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [avoid]);
   /** one CSS pixel, in map units */
   const px = vw / (wide || 1000);
 
   /*
-   * Where each name is written.
+   * Where every name on the map is written, decided in one pass.
    *
-   * Genesis 12 walks from Haran to Egypt, so its map is fifteen hundred
-   * kilometres wide — and four of the places it names, Shechem and Moreh and
-   * Bethel and Ai, sit within thirty of each other. Printed at their dots they
-   * are one illegible smudge.
+   * Four kinds of name share this map — the chapter's own places, the era's
+   * regions, the kinds of ground, and the gazetteer's countryside — and they
+   * used to be placed by four rules that could not see each other. A region
+   * was only checked against the edge of the frame, so "Lycaonia" went down
+   * on top of "Cilicia". A chapter name that collided was pushed down a line,
+   * and down again, with nothing to stop it at the bottom: Perga and Attalia
+   * went out through the foot of Acts 14's frame and left their hairlines
+   * pointing at nothing, and the zoom button sat on whatever was in its
+   * corner. Across the forty most crowded chapters that came to 137 names
+   * written over names, 185 cut off by the frame and 143 lines leaving it.
    *
-   * So a name that would land on one already written is pushed down a line,
-   * and a hairline goes back to the dot it belongs to. The dots never move:
-   * the map stays true, and the list of names beside the cluster is the thing
-   * that becomes readable. Zoom in far enough and the stacking undoes itself,
-   * because the crowding it answers is gone.
+   * Now every name is a measured box that must sit wholly inside the frame,
+   * clear of the button, and each kind is placed in order of what matters
+   * against everything placed before it. The chapter's towns come first and
+   * are never dropped: beside the dot, then above and below, then further
+   * off along a hairline — and if a cluster is truly too dense, the spot that
+   * covers least, still inside the frame. The regions the chapter names come
+   * next, written over their own ground — in the small panel, left for the
+   * full-screen map when there is no room there; full screen, always. The
+   * era's regions may move a line or two to find room, and the ground and
+   * the countryside are left out where they do not fit, which is what they
+   * were always for.
+   *
+   * The dots never move. The map stays true; only the writing makes room.
    */
-  const laid = useMemo(() => {
-    const lineH = px * 15;
-    const drop = px * 4.5;
-    const placed: { x: number; y: number; right: boolean }[] = [];
-    return [...data.places]
-      .sort((a, b) => a.y - b.y || a.x - b.x)
-      .map((p) => {
-        const right = p.x < vx + vw * 0.62;
-        let ly = p.y + drop;
-        for (let guard = 0; guard < 14; guard++) {
-          const clash = placed.some(
-            (q) =>
-              q.right === right &&
-              Math.abs(q.y - ly) < lineH &&
-              Math.abs(q.x - p.x) < px * 110
-          );
-          if (!clash) break;
-          ly += lineH;
-        }
-        placed.push({ x: p.x, y: ly, right });
-        return { ...p, ly, right, moved: ly - (p.y + drop) > 1 };
-      });
-  }, [data.places, vx, vw, px]);
-
-  /*
-   * The country between the pins.
-   *
-   * A chapter names four places on average, and four dots on an empty coast is
-   * what you get when you zoom into them — the ground in between is where the
-   * map runs out of things to say. But those four are four of 1,333, and the
-   * rest were there the whole time: Shiloh and Gibeon and Michmash do not stop
-   * existing because this chapter is about Bethel.
-   *
-   * So the window's whole gazetteer is offered, most-named first, and as many
-   * are taken as will stand apart at the size the map is currently drawn. The
-   * spacing is a fraction of the view, so this manages itself: at a glance a
-   * few of the great cities, and once a reader has pinched in, the whole
-   * countryside arriving as the room for it appears.
-   *
-   * The chapter's own places are seeded into the reckoning first and never
-   * dropped. Nothing here is tappable — these are not what the chapter is
-   * about, and a name that answers a touch by doing nothing is worse than one
-   * that plainly does not.
-   */
-  /*
-   * Which stretches of ground get named.
-   *
-   * Their anchors are the middle of whatever part of them is in the window, so
-   * a name can land anywhere — including across a town's. These give way to
-   * everything: they are the paper the chapter is printed on, and a reader who
-   * cannot read "Negev Desert" has lost less than one who cannot read
-   * "Beersheba".
-   */
-  const grounds = useMemo(() => {
-    const kept: Base["terrain"] = [];
-    for (const t of base.terrain) {
-      const half = (lang === "es" ? t.es : t.n).length * 4 * px;
-      if (t.x - half < vx || t.x + half > vx + vw) continue;
-      if (t.y < vy + px * 16 || t.y > vy + vh - px * 10) continue;
-      if (kept.some((k) => Math.hypot(k.x - t.x, k.y - t.y) < px * 100)) continue;
-      if (
-        data.places.some(
-          (q) => Math.abs(q.x - t.x) < px * 80 && Math.abs(q.y - t.y) < px * 18
-        )
-      ) {
-        continue;
-      }
-      kept.push(t);
+  const layout = useMemo(() => {
+    const frame: Box = [vx, vy, vx + vw, vy + vh];
+    const sees = (x: number, y: number) =>
+      x >= frame[0] && x <= frame[2] && y >= frame[1] && y <= frame[3];
+    // the button, from the element's pixels into the map's units: the map is
+    // drawn whole and centred inside its element
+    let button: Box | null = null;
+    if (cover && cover.w > 0 && cover.h > 0) {
+      const k = Math.min(cover.w / vw, cover.h / vh);
+      const ox = (cover.w - vw * k) / 2;
+      const oy = (cover.h - vh * k) / 2;
+      const air = 4;
+      button = [
+        vx + (cover.l - air - ox) / k,
+        vy + (cover.t - air - oy) / k,
+        vx + (cover.r + air - ox) / k,
+        vy + (cover.b + air - oy) / k,
+      ];
     }
-    return kept;
-  }, [base.terrain, data.places, lang, vx, vy, vw, vh, px]);
+    /*
+     * Wholly inside the frame, a little way in from its edge, and never under
+     * the button. These are walls, not crowding: a name crowded by another is
+     * still half legible, and one under the button or past the edge is not
+     * there at all.
+     */
+    const edge = px * 3;
+    const fits = (b: Box) =>
+      b[0] >= frame[0] + edge &&
+      b[1] >= frame[1] + edge &&
+      b[2] <= frame[2] - edge &&
+      b[3] <= frame[3] - edge &&
+      !(button && hits(b, button));
 
-  const near = useMemo(() => {
-    // squared, and compared squared: this runs the length of the gazetteer
-    // against everything kept so far, on every frame of a pinch, and
-    // Math.hypot is careful about overflow in a way nothing here needs
+    /** everything already on the map that a new name must not cover */
+    const taken = boxIndex(px * 48);
+    const clear = (b: Box) => taken.clear(b);
+    const covered = (b: Box, own?: Box) => taken.covered(b, own);
+
+    // The chapter's own dots first: marks on the map that no name may cover.
+    // A place outside the frame is left out, rather than drawn as half a name
+    // at the edge — full screen, it is there as soon as the map is moved.
+    const shown = data.places.filter((p) => sees(p.x, p.y));
+    const dotOf = new Map<Place, Box>();
+    for (const p of shown) {
+      if (markFor(p.t) === 0) continue;
+      const r = px * 4;
+      const box: Box = [p.x - r, p.y - r, p.x + r, p.y + r];
+      dotOf.set(p, box);
+      taken.add(box);
+    }
+
+    /*
+     * Towns first, then the regions the chapter names: a dot needs the room
+     * beside it, and a region can be written anywhere over its own ground.
+     *
+     * A town is never left out. In the few clusters too dense for any free
+     * spot — Nehemiah's gates, all within a few hundred yards of each other —
+     * it takes the spot that covers least, still inside the frame. A region
+     * with no free room near it is left out of the small map instead: written
+     * over a town it hides the town, sent away on a line it points at the
+     * wrong thing, and the full-screen map, four times the size, has room for
+     * it.
+     */
+    const isArea = (p: Place) => (markFor(p.t) === 0 ? 1 : 0);
+    const laid: (Place & {
+      lx: number;
+      ly: number;
+      anchor: Spot["anchor"];
+      lead: boolean;
+    })[] = [];
+    for (const p of [...shown].sort(
+      (a, b) => isArea(a) - isArea(b) || a.y - b.y || a.x - b.x
+    )) {
+      const area = isArea(p) === 1;
+      const face = area ? FACES.area : FACES.name;
+      const w = widthOf(p.n, face);
+      const spots = spotsFor(area, p.x < vx + vw * 0.62 ? 1 : -1);
+      const own = dotOf.get(p);
+      let pick = spots[0];
+      let pickBox: Box | null = null;
+      let least = Infinity;
+      for (const spot of spots) {
+        const box = textBox(p.x + spot.dx * px, p.y + spot.dy * px, w, face, spot.anchor, px);
+        if (!fits(box)) continue;
+        const cost = covered(box, own);
+        if (cost < least) {
+          least = cost;
+          pick = spot;
+          pickBox = box;
+        }
+        if (cost === 0) break;
+      }
+      if (area && least > 0 && glance) continue;
+      // nowhere inside the frame at all: a name wider than the map
+      if (!pickBox) {
+        pickBox = textBox(p.x + pick.dx * px, p.y + pick.dy * px, w, face, pick.anchor, px);
+      }
+      taken.add(pickBox);
+      laid.push({
+        ...p,
+        lx: p.x + pick.dx * px,
+        ly: p.y + pick.dy * px,
+        anchor: pick.anchor,
+        lead: pick.lead,
+      });
+    }
+
+    // The era's regions, centred on their country, a line or two off it if
+    // that is what it takes; left out if no line is free.
+    const named: { key: string; text: string; x: number; y: number; water?: boolean }[] = [];
+    for (const r of regions) {
+      const face = r.water ? FACES.water : FACES.region;
+      const text = lang === "es" ? r.es : r.en;
+      const w = widthOf(text, face);
+      for (const dy of [0, -14, 14, -28, 28]) {
+        const y = r.y + dy * px;
+        const box = textBox(r.x, y, w, face, "middle", px);
+        if (!fits(box) || !clear(box)) continue;
+        taken.add(box);
+        named.push({ key: r.en, text, x: r.x, y, water: r.water });
+        break;
+      }
+    }
+
+    // The kinds of ground, faintest of all, and a hundred pixels apart: they
+    // are the paper the chapter is printed on.
+    const grounds: { key: string; text: string; x: number; y: number; range: boolean }[] = [];
+    for (const t of base.terrain) {
+      if (grounds.some((g) => Math.hypot(g.x - t.x, g.y - t.y) < px * 100)) continue;
+      const range = t.k === "range";
+      const face = range ? FACES.range : FACES.ground;
+      const text = lang === "es" ? t.es : t.n;
+      const w = widthOf(text, face);
+      for (const dy of [0, -12, 12]) {
+        const y = t.y + dy * px;
+        const box = textBox(t.x, y, w, face, "middle", px);
+        if (!fits(box) || !clear(box)) continue;
+        taken.add(box);
+        grounds.push({ key: `${t.n}|${t.x}|${t.y}`, text, x: t.x, y, range });
+        break;
+      }
+    }
+
+    /*
+     * The country between the pins.
+     *
+     * A chapter names four places on average, and four dots on an empty coast
+     * is what you get when you zoom into them. Those four are four of 1,333,
+     * and the rest were there the whole time — so the window's gazetteer is
+     * offered, most-named first, and as many taken as will stand apart at the
+     * size the map is drawn. How far apart is `spacing`, measured between
+     * points, which is what makes the countryside arrive as a reader pinches
+     * in; whether a name actually fits is the boxes, which is what keeps it
+     * off everything already written. Nothing here is tappable: these are not
+     * what the chapter is about.
+     */
     const gap = (px * spacing) ** 2;
-    /*
-     * Inside the frame, not merely near it.
-     *
-     * A name is written beside its dot, so a dot admitted from just outside
-     * the edge takes its name off the edge with it, and the frame clips it —
-     * "Joppa" arriving as "oppa". A little pop-in while panning is the better
-     * of the two.
-     */
-    const margin = 0;
-    /*
-     * Seeded with where the chapter's names were actually WRITTEN, not only
-     * where their dots are.
-     *
-     * Four of them get pushed down a line to be read at all, and a name pushed
-     * down lands somewhere its dot is not — so seeding with dots alone let a
-     * background name settle on top of a moved one. Both go in: the dot is a
-     * mark on the map, and the label is a claim on the space beside it.
-     */
-    const taken = laid.flatMap((p) => [
-      { x: p.x, y: p.y },
-      { x: p.x, y: p.ly },
-    ]);
-    // and the era's own names, which are written across the map before any of
-    // these and must not be written over
-    for (const r of regions) taken.push({ x: r.x, y: r.y });
-    for (const t of grounds) taken.push({ x: t.x, y: t.y });
-    const out: { n: string; x: number; y: number; mark: number }[] = [];
-    /*
-     * Nothing that is already written on this map.
-     *
-     * The chapter's own places, obviously — but the era's regions too, which
-     * are drawn from the same world: the gazetteer has "the Great Sea" and
-     * "the Sea of Galilee" as places, and the era writes both across the water
-     * they name, so without this they print twice, a few pixels apart, in two
-     * different styles.
-     */
-    const named = new Set([
+    const already = new Set([
       ...data.places.map((p) => p.n.toLowerCase()),
       ...regions.map((r) => (lang === "es" ? r.es : r.en).toLowerCase()),
     ]);
-    for (const [n, x, y, , site] of base.sites) {
-      if (out.length >= crowd) break;
-      if (x < vx - margin || x > vx + vw + margin) continue;
-      if (y < vy - margin || y > vy + vh + margin) continue;
-      if (named.has(n.toLowerCase())) continue;
-      let clear = true;
-      for (const q of taken) {
-        const dx = q.x - x;
-        const dy = q.y - y;
-        /*
-         * Two tests, because a name is not a dot.
-         *
-         * The round one keeps the map from filling up — it is what `spacing`
-         * sets, and what makes the density answer the zoom. But a name is
-         * eighty pixels wide and twelve tall, so two dots comfortably apart on
-         * that test can still have their names meet in the middle: Magdal and
-         * Senna, a screen apart on the ground, printed as "Magdalsenna".
-         * The second test is the shape of the writing itself.
-         */
-        if (dx * dx + dy * dy < gap) {
-          clear = false;
-          break;
+    // the same filing for the density test, in squares one gap wide, so a
+    // site only measures itself against the squares around it
+    const reach = Math.max(px * spacing, 1e-9);
+    const pointCells = new Map<number, [number, number][]>();
+    const pointKey = (cx: number, cy: number) => (cx + 32768) * 65536 + (cy + 32768);
+    const file = (x: number, y: number) => {
+      const k = pointKey(Math.floor(x / reach), Math.floor(y / reach));
+      const list = pointCells.get(k);
+      if (list) list.push([x, y]);
+      else pointCells.set(k, [[x, y]]);
+    };
+    const crowded = (x: number, y: number) => {
+      const cx = Math.floor(x / reach);
+      const cy = Math.floor(y / reach);
+      for (let i = cx - 1; i <= cx + 1; i++) {
+        for (let j = cy - 1; j <= cy + 1; j++) {
+          for (const [qx, qy] of pointCells.get(pointKey(i, j)) ?? []) {
+            if ((qx - x) ** 2 + (qy - y) ** 2 < gap) return true;
+          }
         }
-        if (Math.abs(dx) < px * 66 && Math.abs(dy) < px * 12) {
-          clear = false;
+      }
+      return false;
+    };
+    for (const p of laid) {
+      file(p.x, p.y);
+      file(p.lx, p.ly);
+    }
+    for (const r of named) file(r.x, r.y);
+    for (const g of grounds) file(g.x, g.y);
+    const sites: { n: string; x: number; y: number; mark: number; side: 1 | -1 }[] = [];
+    for (const [n, x, y, , mark] of base.sites) {
+      if (sites.length >= crowd) break;
+      if (!sees(x, y)) continue;
+      if (already.has(n.toLowerCase())) continue;
+      if (crowded(x, y)) continue;
+      const dot: Box = [x - px * 3, y - px * 3, x + px * 3, y + px * 3];
+      if (mark && !clear(dot)) continue;
+      const w = widthOf(n, FACES.site);
+      const first: 1 | -1 = x < vx + vw * 0.72 ? 1 : -1;
+      let side: 1 | -1 | null = null;
+      let box: Box | null = null;
+      for (const s of [first, first > 0 ? -1 : 1] as (1 | -1)[]) {
+        const b = textBox(x + s * 4.5 * px, y + 3.6 * px, w, FACES.site, s > 0 ? "start" : "end", px);
+        if (fits(b) && clear(b)) {
+          side = s;
+          box = b;
           break;
         }
       }
-      if (!clear) continue;
-      taken.push({ x, y });
-      out.push({ n, x, y, mark: site });
+      if (!box || !side) continue;
+      if (mark) taken.add(dot);
+      taken.add(box);
+      file(x, y);
+      sites.push({ n, x, y, mark, side });
     }
-    return out;
-  }, [base.sites, laid, data.places, regions, grounds, lang, vx, vy, vw, vh, px, spacing, crowd]);
+
+    return { laid, named, grounds, sites };
+  }, [data.places, regions, base.terrain, base.sites, lang, vx, vy, vw, vh, px, spacing, crowd, cover, glance]);
 
   return (
     <svg
@@ -428,72 +756,51 @@ function MapArt({
       ))}
 
       {/* the kinds of ground, named faintest of all and only where they fit */}
-      {grounds.map((t) => (
+      {layout.grounds.map((g) => (
         <text
-          key={`g${t.n}`}
-          x={t.x}
-          y={t.y}
-          className={`mp-ground-name${t.k === "range" ? " mp-range-name" : ""}`}
+          key={`g${g.key}`}
+          x={g.x}
+          y={g.y}
+          className={`mp-ground-name${g.range ? " mp-range-name" : ""}`}
           textAnchor="middle"
         >
-          {lang === "es" ? t.es : t.n}
+          {g.text}
         </text>
       ))}
 
       {/* under everything the chapter itself names, and under the era's
           regions: this is the ground, not the subject */}
-      {near.map((p) => {
-        // written back towards the middle near the right edge, or the frame
-        // clips it: the same turn the chapter's own names take
-        const right = p.x < vx + vw * 0.72;
-        return (
-          <g key={`n${p.n}`} className="mp-site" aria-hidden>
-            {p.mark === 1 && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
-            {p.mark === 2 && (
-              <path d={peakPath(p.x, p.y, px * 0.82)} className="mp-peak" />
-            )}
-            <text
-              x={p.x + px * (right ? 4.5 : -4.5)}
-              y={p.y + px * 3.6}
-              textAnchor={right ? "start" : "end"}
-            >
-              {p.n}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* A country's name is centred on the middle of the country, so unlike
-          everything else here it needs room on BOTH sides of its anchor — and
-          "The Great Sea" is anchored near the left edge of the Holy Land's
-          window, where half of it fell off the frame. Measured against the
-          live view rather than the chapter's opening crop, so zooming in also
-          stops drawing the ones that have gone off the screen. */}
-      {regions
-        .filter((r) => {
-          const half = (lang === "es" ? r.es : r.en).length * 4.2 * px;
-          return (
-            r.x - half > vx &&
-            r.x + half < vx + vw &&
-            r.y > vy + px * 10 &&
-            r.y < vy + vh - px * 6
-          );
-        })
-        .map((r) => (
+      {layout.sites.map((p) => (
+        <g key={`n${p.n}`} className="mp-site" aria-hidden>
+          {p.mark === 1 && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
+          {p.mark === 2 && (
+            <path d={peakPath(p.x, p.y, px * 0.82)} className="mp-peak" />
+          )}
           <text
-            key={r.en}
-            x={r.x}
-            y={r.y}
-            className={`mp-region${r.water ? " mp-water" : ""}`}
-            textAnchor="middle"
+            x={p.x + px * 4.5 * p.side}
+            y={p.y + px * 3.6}
+            textAnchor={p.side > 0 ? "start" : "end"}
           >
-            {lang === "es" ? r.es : r.en}
+            {p.n}
           </text>
-        ))}
+        </g>
+      ))}
 
-      {laid.map((p) => {
-        const { right } = p;
+      {layout.named.map((r) => (
+        <text
+          key={r.key}
+          x={r.x}
+          y={r.y}
+          className={`mp-region${r.water ? " mp-water" : ""}`}
+          textAnchor="middle"
+        >
+          {r.text}
+        </text>
+      ))}
+
+      {layout.laid.map((p) => {
         const mark = markFor(p.t);
+        const side = p.anchor === "end" ? -1 : 1;
         return (
           <g
             key={p.n}
@@ -514,11 +821,11 @@ function MapArt({
             <circle cx={p.x} cy={p.y} r={px * 15} className="mp-hit" />
             {/* the hairline back to the dot, for a name that had to be moved
                 off it to be read at all */}
-            {p.moved && (
+            {p.lead && (
               <line
                 x1={p.x}
                 y1={p.y}
-                x2={p.x + px * (right ? 4 : -4)}
+                x2={p.lx - side * px}
                 y2={p.ly - px * 3.5}
                 className="mp-leader"
               />
@@ -530,9 +837,9 @@ function MapArt({
               <path d={peakPath(p.x, p.y, px)} className="mp-dot" />
             )}
             <text
-              x={p.x + px * (right ? 5 : -5)}
+              x={p.lx}
               y={p.ly}
-              textAnchor={right ? "start" : "end"}
+              textAnchor={p.anchor}
               className="mp-name"
             >
               {p.n}
@@ -906,6 +1213,8 @@ export default function ChapterMap({
   const [base, setBase] = useState<Base | null>(null);
   const [eras, setEras] = useState<Eras>({});
   const [full, setFull] = useState(false);
+  /** the zoom button in the panel's corner, which names keep clear of */
+  const expandRef = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -1066,9 +1375,11 @@ export default function ChapterMap({
              places are lost in — which is the one thing the panel is for. */
           spacing={36}
           crowd={34}
+          avoid={expandRef}
+          glance
           onPlace={onGoToVerse}
         />
-        <span className="mp-expand" aria-hidden>
+        <span className="mp-expand" aria-hidden ref={expandRef}>
           <Icon name="search" />
         </span>
       </div>
