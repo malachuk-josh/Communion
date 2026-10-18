@@ -392,9 +392,10 @@ export default function Reader({
    * closed the editor that had just taken focus, and left the keyboard with
    * nothing to type into.
    *
-   * Android carries out a focus() it is handed; iOS ignores one that no tap
-   * asked for. So on an iPhone the second editor sat unseen and harmless
-   * behind the sheet, and on Android every letter was the last one.
+   * It was reported on Android first and taken for an Android quirk; it was
+   * not one. React applies a typed letter before the keystroke that typed it
+   * has finished, so the second editor's focus() arrived as part of the
+   * reader's own key press, and iPhones honoured it the same way.
    */
   const [sheetNote, setSheetNote] = useState<string | null>(null);
   const [editingBm, setEditingBm] = useState<string | null>(null);
