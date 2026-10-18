@@ -380,6 +380,23 @@ export default function Reader({
   } | null>(null);
   const [bmSheetColl, setBmSheetColl] = useState("");
   const [bmSheetMsg, setBmSheetMsg] = useState("");
+  /**
+   * The bookmark sheet's note while it is being written: null until a key is
+   * pressed, with the saved note showing through until then.
+   *
+   * Its own, and not the inline editor's. The sheet used to write into
+   * editingNote, which is the state that means "the editor under this verse
+   * is open" — so the first key pressed in the sheet opened a second editor
+   * in the page behind it, and that editor's autoFocus took the cursor. The
+   * sheet's field lost focus, saved the one letter on its way out, which
+   * closed the editor that had just taken focus, and left the keyboard with
+   * nothing to type into.
+   *
+   * Android carries out a focus() it is handed; iOS ignores one that no tap
+   * asked for. So on an iPhone the second editor sat unseen and harmless
+   * behind the sheet, and on Android every letter was the last one.
+   */
+  const [sheetNote, setSheetNote] = useState<string | null>(null);
   const [editingBm, setEditingBm] = useState<string | null>(null);
   const [bmLabelDraft, setBmLabelDraft] = useState("");
   const [shareHint, setShareHint] = useState("");
@@ -1885,8 +1902,9 @@ export default function Reader({
     }
   };
 
-  const saveNote = async (key: string) => {
-    const text = noteDraft.trim();
+  /** Keep what was written on a verse — or forget the note, if it is empty. */
+  const commitNote = (key: string, draft: string) => {
+    const text = draft.trim();
     setNotes((prev) => {
       const next = { ...prev };
       if (text) next[key] = text;
@@ -1894,8 +1912,13 @@ export default function Reader({
       void writeLocalNotes(bookNr, next);
       return next;
     });
-    setEditingNote(null);
     void enqueue({ kind: "note.set", book: bookNr, ref: key, text, ts: Date.now() });
+  };
+
+  /** The inline editor's save: keep the note, and close the editor. */
+  const saveNote = (key: string) => {
+    commitNote(key, noteDraft);
+    setEditingNote(null);
   };
 
   const jumpToRef = (fromCh: number, ref: number[], fromVerse: number) => {
@@ -1952,6 +1975,7 @@ export default function Reader({
       setBmSheet({ c: ch, v: verse, end: verse });
       setBmSheetColl("");
       setBmSheetMsg("");
+      setSheetNote(null);
     } else if (bmSheet && parseBmKey(key)?.c === bmSheet.c) {
       setBmSheet(null);
     }
@@ -2423,6 +2447,13 @@ export default function Reader({
    * move what was written; it stays on the verse it was written about.
    */
   const bmNoteKey = bmSheet ? `${bmSheet.c}:${bmSheet.v}` : "";
+
+  /** Keep whatever has been written in the bookmark sheet, if anything has. */
+  const saveSheetNote = () => {
+    if (!bmSheet || sheetNote === null) return;
+    commitNote(bmNoteKey, sheetNote);
+    setSheetNote(null);
+  };
 
   /**
    * The words of a verse, each knowing what original stands behind it.
@@ -3324,7 +3355,7 @@ export default function Reader({
               type="button"
               className="lex-close"
               onClick={() => {
-                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                saveSheetNote();
                 setBmSheet(null);
               }}
               aria-label={t("search.close")}
@@ -3364,21 +3395,12 @@ export default function Reader({
           <p className="cal-label">{t("reader.note")}</p>
           <textarea
             className="bm-note"
-            value={
-              editingNote === bmNoteKey
-                ? noteDraft
-                : (notes[bmNoteKey] ?? "")
-            }
+            value={sheetNote ?? notes[bmNoteKey] ?? ""}
             placeholder={t("reader.notePlaceholder")}
             maxLength={1000}
             rows={3}
-            onChange={(e) => {
-              setEditingNote(bmNoteKey);
-              setNoteDraft(e.target.value);
-            }}
-            onBlur={() => {
-              if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
-            }}
+            onChange={(e) => setSheetNote(e.target.value)}
+            onBlur={saveSheetNote}
           />
           {/* Filing and hanging are different acts on the same verse, so they
               sit together: one puts it on a shelf of yours, the other puts it
@@ -3458,7 +3480,7 @@ export default function Reader({
               type="button"
               className="btn btn-sm"
               onClick={() => {
-                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                saveSheetNote();
                 shareVerse(bmSheet.c, bmSheet.v, bmSheet.end);
               }}
             >
@@ -3478,7 +3500,7 @@ export default function Reader({
               type="button"
               className="btn btn-sm btn-primary"
               onClick={() => {
-                if (editingNote === bmNoteKey) void saveNote(bmNoteKey);
+                saveSheetNote();
                 setBmSheet(null);
               }}
             >
