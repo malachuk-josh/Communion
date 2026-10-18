@@ -5,30 +5,50 @@
 // Runs from `npm run prebuild`.
 
 import { createHash } from "crypto";
-import { readdirSync, statSync, writeFileSync, existsSync } from "fs";
+import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 
 const PUBLIC = path.join(process.cwd(), "public");
 
-/** Every file in public/<dir>, as URLs, with a total byte count. */
+/**
+ * What a file says, in sixteen hex characters.
+ *
+ * The service worker hashes what it holds the same way, so the two can be
+ * compared file by file: a phone keeps every file whose hash still matches
+ * and replaces only the ones that changed. Sixty-four bits, because the only
+ * comparison ever made is one file against its own earlier self.
+ */
+function hashOf(file) {
+  return createHash("sha256").update(readFileSync(file)).digest("hex").slice(0, 16);
+}
+
+/**
+ * Every file in public/<dir>, as URLs, with a total byte count and each
+ * file's hash. The hashes are a list in the same order as the URLs rather than
+ * a map keyed by them, which would spell out all 800 paths a second time.
+ */
 function listDir(dir, filter = () => true) {
   const full = path.join(PUBLIC, dir);
-  if (!existsSync(full)) return { urls: [], bytes: 0 };
+  if (!existsSync(full)) return { urls: [], bytes: 0, hashes: [] };
   let bytes = 0;
+  const hashes = [];
   const urls = readdirSync(full)
     .filter((f) => f.endsWith(".json") && filter(f))
     .sort()
     .map((f) => {
-      bytes += statSync(path.join(full, f)).size;
+      const file = path.join(full, f);
+      bytes += statSync(file).size;
+      hashes.push(hashOf(file));
       return `/${dir}/${f}`;
     });
-  return { urls, bytes };
+  return { urls, bytes, hashes };
 }
 
 function merge(...parts) {
   return {
     urls: parts.flatMap((p) => p.urls),
     bytes: parts.reduce((s, p) => s + p.bytes, 0),
+    hashes: parts.flatMap((p) => p.hashes),
   };
 }
 
@@ -93,15 +113,18 @@ const tiers = {
   ),
 };
 
-// Every file's path and size. This moves only when the datasets themselves
-// change, which is what the service worker keys its data cache on — code
-// deploys must not cost anyone a re-download.
+// Every file's path and contents. This moves only when the datasets
+// themselves change — code deploys must not cost anyone a re-download — and
+// it moves for ANY change to them, which the old stamp of paths and sizes did
+// not: a corrected file that came out the same length was invisible to it.
+// The service worker reads it as "something here changed", and the hashes
+// above tell it what.
 const dataStamp = createHash("sha256")
   .update(
     Object.values(tiers)
-      .flatMap((t) => t.urls)
+      .flatMap((t) => t.urls.map((url, i) => `${url}=${t.hashes[i]}`))
       .sort()
-      .join("|") + Object.values(tiers).map((t) => t.bytes).join("|")
+      .join("|")
   )
   .digest("hex")
   .slice(0, 12);

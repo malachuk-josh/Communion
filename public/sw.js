@@ -143,7 +143,10 @@ async function dropStaleShell() {
     if (!res.ok) return;
     const manifest = await res.json();
     const built = manifest.built;
-    await dropStaleData(manifest.dataStamp);
+    // The data cache is not touched here any more. This runs inside activate,
+    // and every request the app makes waits for activate to finish — the
+    // per-file check below can take seconds the first time, which would be
+    // seconds of a frozen app. It runs from the first request instead.
     if (!built) return;
     const shell = await caches.open(SHELL);
     const markUrl = new URL(BUILD_MARK, self.location.origin).toString();
@@ -168,26 +171,153 @@ async function dropStaleShell() {
 }
 
 /**
+ * Bring the data cache into line with the datasets, one file at a time.
+ *
  * The dataset files are immutable in practice, so the data cache is not
- * versioned per deploy — re-downloading 30MB because a button moved would be
- * absurd. But a file can be *corrected*, and cache-first would then serve the
- * old one forever. The manifest carries a stamp over every file's path and
- * size; when that moves, what we hold is genuinely out of date.
+ * versioned per deploy — re-downloading 60MB because a button moved would be
+ * absurd. But a file can be corrected or improved, and cache-first would then
+ * serve the old one forever.
+ *
+ * This used to empty the whole cache whenever anything in the datasets
+ * changed, and only asked when a new worker activated — which is only when
+ * this file changes, and it went unchanged through every map release after
+ * the first. So phones kept the first version of every map they had opened
+ * while three better ones shipped past them. And had the check ever run, one
+ * improved map would have thrown a downloaded Bible away with it.
+ *
+ * The manifest now carries a hash of every file. Only files whose hash has
+ * moved are dropped; they come back fresh the next time they are asked for,
+ * and the offline screen shows them as the few left to fetch. Everything that
+ * did not change stays exactly where it is.
  */
-async function dropStaleData(stamp) {
-  if (!stamp) return;
+
+/**
+ * What the data cache last agreed with: the stamp, and every file's hash.
+ *
+ * The first marks held the stamp alone, which says that something changed but
+ * not what. A phone still carrying one has no record to compare against, so
+ * its first pass reads what it holds and hashes that instead.
+ */
+async function readDataMark(cache, markUrl) {
+  const seen = await cache.match(markUrl);
+  if (!seen) return null;
+  const text = await seen.text();
   try {
-    const data = await caches.open(DATA);
-    const markUrl = new URL(DATA_MARK, self.location.origin).toString();
-    const seen = await data.match(markUrl);
-    const previous = seen ? await seen.text() : null;
-    if (previous === stamp) return;
-    if (previous !== null) await caches.delete(DATA);
-    const fresh = await caches.open(DATA);
-    await fresh.put(markUrl, new Response(stamp));
+    const mark = JSON.parse(text);
+    if (
+      mark &&
+      typeof mark.stamp === "string" &&
+      mark.hashes &&
+      typeof mark.hashes === "object"
+    ) {
+      return mark;
+    }
   } catch {
-    // nothing to be done offline; the next activation tries again
+    // the old mark: a bare stamp, which is not JSON
   }
+  return { stamp: text, hashes: {} };
+}
+
+/** The same sixteen characters build-offline-manifest.mjs writes for a file. */
+async function hashOf(response) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    await response.arrayBuffer()
+  );
+  return Array.from(new Uint8Array(digest).slice(0, 8), (b) =>
+    b.toString(16).padStart(2, "0")
+  ).join("");
+}
+
+async function reconcile(manifest) {
+  const stamp = manifest && manifest.dataStamp;
+  if (!stamp || !manifest.tiers) return;
+  const want = new Map();
+  for (const tier of Object.values(manifest.tiers)) {
+    const urls = Array.isArray(tier.urls) ? tier.urls : [];
+    const hashes = Array.isArray(tier.hashes) ? tier.hashes : [];
+    urls.forEach((url, i) => {
+      if (typeof hashes[i] === "string") want.set(url, hashes[i]);
+    });
+  }
+  // a manifest from before the hashes has nothing to compare against
+  if (want.size === 0) return;
+
+  const data = await caches.open(DATA);
+  const markUrl = new URL(DATA_MARK, self.location.origin).toString();
+  const mark = await readDataMark(data, markUrl);
+  if (mark && mark.stamp === stamp) return;
+  const known = (mark && mark.hashes) || {};
+  // The folders the datasets live in. Anything else in this cache — the
+  // icons — is not the manifest's to judge, and must not be dropped for
+  // being absent from it.
+  const folder = (path) => path.slice(0, path.lastIndexOf("/") + 1);
+  const covered = new Set([...want.keys()].map(folder));
+
+  for (const request of await data.keys()) {
+    const path = new URL(request.url).pathname;
+    if (path === DATA_MARK) continue;
+    const now = want.get(path);
+    if (now === undefined) {
+      // removed from a folder the datasets still use: never asked for again
+      if (covered.has(folder(path))) await data.delete(request);
+      continue;
+    }
+    if (known[path] === now) continue;
+    // Never recorded — an old mark, or stored since the last pass — so what
+    // is actually held decides. Recorded and different is simply stale.
+    if (known[path] === undefined) {
+      const held = await data.match(request);
+      if (held && (await hashOf(held)) === now) continue;
+    }
+    await data.delete(request);
+  }
+  // Written last, so a pass cut short by the phone suspending the worker is
+  // simply run again rather than half-remembered.
+  await data.put(
+    markUrl,
+    new Response(JSON.stringify({ stamp, hashes: Object.fromEntries(want) }))
+  );
+}
+
+/** One pass at a time; anyone else who asks waits on the one running. */
+let reconciling = null;
+function reconcileData(manifest) {
+  if (!reconciling) {
+    reconciling = reconcile(manifest)
+      .catch(() => {
+        // storage refused or the worker was cut short: the next check retries
+      })
+      .finally(() => {
+        reconciling = null;
+      });
+  }
+  return reconciling;
+}
+
+/** When this worker last compared the datasets with the server. */
+let dataCheckedAt = 0;
+const DATA_CHECK_EVERY = 10 * 60 * 1000;
+
+/**
+ * Ask whether the datasets have moved, at most every ten minutes.
+ *
+ * Called from requests, not from activate, and that is what makes it work:
+ * a worker only activates when this file changes, and nothing about a
+ * corrected map changes this file. A worker is started for every launch, so
+ * every launch asks — and an unchanged manifest is revalidated rather than
+ * downloaded, so asking costs a 304.
+ */
+function checkData() {
+  const now = Date.now();
+  if (now - dataCheckedAt < DATA_CHECK_EVERY) return Promise.resolve();
+  dataCheckedAt = now;
+  return fetch("/offline-manifest.json", { cache: "no-cache" })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((manifest) => (manifest ? reconcileData(manifest) : undefined))
+    .catch(() => {
+      // no signal: what we hold is what we use, and the next launch asks again
+    });
 }
 
 self.addEventListener("activate", (event) => {
@@ -226,6 +356,12 @@ const isShell = (url, request) =>
 
 /** Never touches the network on a hit — these files don't change in place. */
 async function cacheFirst(request, cacheName) {
+  // A pass already running is about to say whether this file is stale. Most
+  // finish in well under a second; the first one on an old phone hashes what
+  // it holds and may not, and a read is never held up past this.
+  if (reconciling) {
+    await Promise.race([reconciling, new Promise((r) => setTimeout(r, 1500))]);
+  }
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
   if (hit) return hit;
@@ -261,8 +397,11 @@ self.addEventListener("fetch", (event) => {
 
   if (isData(url)) {
     event.respondWith(cacheFirst(request, DATA));
+    event.waitUntil(checkData());
   } else if (isShell(url, request)) {
     event.respondWith(networkFirst(request, SHELL));
+    // a page load is a launch, which is when to ask whether anything moved
+    if (request.mode === "navigate") event.waitUntil(checkData());
   } else if (isApi(url)) {
     event.respondWith(networkFirst(request, API));
   }
