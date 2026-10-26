@@ -41,42 +41,94 @@ html {
 }
 
 :root[data-theme="light"] {
-  background: #ede1c8;
+  background: #f3e8cf;
 }
 
 :root[data-theme="grey"] {
   background: #000;
 }
 
-/* ---- light mode: warm almond parchment ---- */
+/*
+ * ---- light mode: parchment ----
+ *
+ * It was called parchment and painted as a flat almond fill, with a violet
+ * glow left over from the dark theme in one corner. Parchment is a surface,
+ * not a colour: a fine tooth you can almost feel, a slow unevenness where it
+ * has aged, and edges a shade darker than the middle where it has been
+ * handled. All three are here, faint enough that a line of scripture on top
+ * of them reads exactly as crisply as it did on the flat fill.
+ *
+ * The tooth is generated noise, drawn live because it has to be sharp at the
+ * screen's own resolution and costs about a hundredth of a second. The
+ * mottling is the same kind of noise at a much larger scale; drawing that
+ * live cost a sixth of a second at iPhone resolution, and several times that
+ * on a modest Android phone, so it was drawn once into a small image
+ * (app/textures/parchment-mottle.png) that the browser simply enlarges — it
+ * is all soft gradient, and comes out of the enlargement unchanged.
+ */
 :root[data-theme="light"] {
-  --bg-0: #ede1c8;
-  --bg-1: #f7efdd;
-  --ink: #33281a;
-  --ink-dim: rgba(51, 40, 26, 0.68);
-  --ink-faint: rgba(51, 40, 26, 0.45);
-  --glass: rgba(255, 252, 243, 0.5);
-  --glass-strong: rgba(255, 252, 243, 0.72);
-  --glass-border: rgba(97, 74, 38, 0.18);
-  --glass-border-bright: rgba(97, 74, 38, 0.34);
-  --gold: #96691d;
-  --gold-soft: rgba(150, 105, 29, 0.14);
+  --bg-0: #e9d9b8;
+  --bg-1: #f3e7cc;
+  --ink: #2e2316;
+  --ink-dim: rgba(46, 35, 22, 0.7);
+  --ink-faint: rgba(46, 35, 22, 0.54);
+  --glass: rgba(250, 243, 226, 0.58);
+  --glass-strong: rgba(250, 243, 226, 0.78);
+  --glass-border: rgba(110, 78, 34, 0.2);
+  --glass-border-bright: rgba(110, 78, 34, 0.36);
+  --gold: #80530d;
+  --gold-soft: rgba(128, 83, 13, 0.14);
   --violet: #5d4fc0;
   --wj: #9c2b1c;
-  --bar: rgb(247, 240, 224);
+  --bar: rgb(243, 232, 207);
+  --paper-grain: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxODAnIGhlaWdodD0nMTgwJz48ZmlsdGVyIGlkPSdkJyB4PScwJyB5PScwJyB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9J3NSR0InPjxmZVR1cmJ1bGVuY2UgdHlwZT0nZnJhY3RhbE5vaXNlJyBiYXNlRnJlcXVlbmN5PScuOScgbnVtT2N0YXZlcz0nMycgc2VlZD0nNCcgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjxmZUNvbG9yTWF0cml4IHZhbHVlcz0nMCAwIDAgMCAuMjkgIDAgMCAwIDAgLjE5ICAwIDAgMCAwIC4wOCAgMC44MDAgMCAwIDAgLTAuNDQ4Jy8+PC9maWx0ZXI+PGZpbHRlciBpZD0nbCcgeD0nMCcgeT0nMCcgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSdzUkdCJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nLjknIG51bU9jdGF2ZXM9JzMnIHNlZWQ9JzknIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48ZmVDb2xvck1hdHJpeCB2YWx1ZXM9JzAgMCAwIDAgMSAgMCAwIDAgMCAuOTggIDAgMCAwIDAgLjkyICAtMC43MjAgMCAwIDAgMC4zMDInLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjZCknLz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbCknLz48L3N2Zz4=");
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 }
 
+/* the page: edges darkened by handling, the tooth, the mottling of age, a
+   little more light where the eye rests, and the parchment under all of it */
 :root[data-theme="light"] .bg-scene {
   background:
-    radial-gradient(52rem 36rem at 82% -8%, rgba(140, 110, 220, 0.12), transparent 62%),
-    radial-gradient(44rem 30rem at -12% 32%, rgba(196, 138, 48, 0.14), transparent 60%),
-    radial-gradient(40rem 34rem at 55% 118%, rgba(158, 120, 60, 0.16), transparent 65%),
-    radial-gradient(26rem 20rem at 30% 8%, rgba(255, 250, 238, 0.7), transparent 70%),
-    linear-gradient(160deg, var(--bg-1), var(--bg-0) 60%);
+    radial-gradient(135% 100% at 50% 40%, transparent 58%, rgba(120, 80, 32, 0.1) 82%, rgba(96, 62, 22, 0.2) 100%),
+    var(--paper-grain) 0 0 / 180px 180px,
+    url("./textures/parchment-mottle.png") 0 0 / 640px 640px,
+    radial-gradient(95% 65% at 50% 36%, rgba(255, 251, 240, 0.5), transparent 72%),
+    linear-gradient(175deg, var(--bg-1), var(--bg-0) 72%);
+}
+
+/*
+ * And the page has to be allowed to show. The scene sits at z-index -1, and
+ * <body> is filled with --bg-0; because <html> carries a colour of its own,
+ * the body's fill is not handed up to the canvas but drawn in the body's own
+ * box — above everything at z-index -1. So whatever was painted on the scene
+ * was never seen, in any theme: this one's parchment arrived as a flat colour
+ * until the body stood aside. Only here, for now — the other two themes look
+ * the way their readers know them, and showing their scenes would change that.
+ */
+:root[data-theme="light"] body {
+  background: transparent;
+}
+
+/*
+ * The header and the bottom bar are opaque on purpose (see .nav), so the page
+ * cannot show through them — they get the same tooth laid over their own
+ * colour instead, a little fainter, as a strip of the same sheet. Drawn
+ * underneath their contents rather than as part of their background, so
+ * nothing here touches the backgrounds those rules were careful about.
+ */
+:root[data-theme="light"] .nav::before,
+:root[data-theme="light"] .bottom-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--paper-grain) 0 0 / 180px 180px;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* installed app, light theme: the transparent status bar shows white text,
@@ -92,16 +144,30 @@ html {
   }
 }
 
+/* a fresher leaf laid on the old one: the same tooth through it, softened by
+   the blur, and its own edges a shade darker than its middle */
 :root[data-theme="light"] .glass {
   box-shadow:
-    0 14px 34px rgba(97, 74, 38, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 12px 30px rgba(92, 64, 26, 0.14),
+    inset 0 0 22px rgba(150, 108, 48, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* A leaf held up off the page. Dialogs, the navigator and the sheets that
+   rise from the bottom were the same see-through glass as a card, and seen
+   through the scrim behind them that came out a muddy beige — on the very
+   surfaces where commentary and the devotional are read. Nearly opaque, and
+   the lightest parchment in the app. */
+:root[data-theme="light"] .glass.modal,
+:root[data-theme="light"] .glass.side-panel,
+:root[data-theme="light"] .glass.lex-sheet {
+  background: rgba(249, 242, 224, 0.9);
 }
 
 :root[data-theme="light"] input,
 :root[data-theme="light"] select,
 :root[data-theme="light"] textarea {
-  background: rgba(255, 253, 246, 0.65);
+  background: rgba(252, 247, 233, 0.7);
 }
 
 :root[data-theme="light"] select option {
@@ -2450,10 +2516,11 @@ html.navhide .chap-arrow {
 
 :root[data-theme="light"] .ctx-map,
 :root[data-theme="light"] .map-full {
-  --map-sea: #bed2e4;
-  --map-land: #f8f1de;
-  --map-coast: rgba(97, 74, 38, 0.5);
-  --map-river: rgba(70, 105, 175, 0.75);
+  /* an old map's water and ground: a greyed sea, land the colour of the page */
+  --map-sea: #bfcdcc;
+  --map-land: #f3e6c8;
+  --map-coast: rgba(90, 64, 30, 0.55);
+  --map-river: rgba(62, 98, 140, 0.72);
   --map-desert: rgba(190, 145, 60, 0.16);
   --map-range: rgba(97, 74, 38, 0.13);
   --map-plain: rgba(70, 105, 175, 0.07);

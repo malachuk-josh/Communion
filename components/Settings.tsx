@@ -147,7 +147,7 @@ export default function Settings() {
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute(
         "content",
-        next === "light" ? "#ede1c8" : next === "grey" ? "#000000" : "#0b0d1a"
+        next === "light" ? "#f3e8cf" : next === "grey" ? "#000000" : "#0b0d1a"
       );
   };
 

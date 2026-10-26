@@ -27,7 +27,7 @@ const NEXT: Record<Theme, Theme> = {
 const BAR: Record<Theme, string> = {
   dark: "#0b0d1a",
   grey: "#000000",
-  light: "#ede1c8",
+  light: "#f3e8cf",
 };
 
 const LABEL: Record<Theme, string> = {
