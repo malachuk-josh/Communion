@@ -35,7 +35,7 @@ export default function AboutCommunion() {
         <h3>{t("about.studyTitle")}</h3>
         <p>{t("about.studyIntro")}</p>
         <ul className="about-list">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <li key={n}>{t(`about.study${n}` as MessageKey)}</li>
           ))}
         </ul>

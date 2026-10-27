@@ -59,7 +59,7 @@ const dictionaries = {
     "offline.failed": "Some files could not be downloaded. Try again on a better connection.",
     "offline.unavailable": "This browser can't store Scripture for offline use.",
     "offline.note":
-      "Hanging a verse on your wall and turning reminders on still need a connection. Everything else — reading, search, notes, bookmarks and reading plans — works offline and syncs when you're back.",
+      "Your wall and prayer list can be read offline, but changing them needs a connection, as does turning reminders on. Everything else — reading, search, notes, bookmarks and reading plans — works offline and syncs when you're back.",
     "menu.about": "About Communion",
     "menu.aboutDesc": "What this app is for and how to use it",
     "journal.title": "Journal",
@@ -76,7 +76,30 @@ const dictionaries = {
     "wall.takeDown": "Take {ref} down",
     "wall.hungBy": "Hung by {name}",
     "wall.mineEmpty": "Nothing on your wall yet. Keep a verse anywhere in Communion, then hang it here to have it in front of you.",
-    "wall.mineLead": "The verses you want in front of you, every time you open the app.",
+    "wall.mineLead": "The verses you want in front of you, and what you are praying about.",
+    "prayer.title": "Prayer",
+    "prayer.privacy": "Only you can see these.",
+    "prayer.add": "Add",
+    "prayer.placeholder": "What are you praying about?",
+    "prayer.empty":
+      "Nothing here yet. Add what you are praying about, mark the days you pray for it, and keep how it was answered.",
+    "prayer.pray": "Mark prayed today",
+    "prayer.prayedToday": "Prayed today",
+    "prayer.dayOne": "prayed on 1 day",
+    "prayer.days": "prayed on {n} days",
+    "prayer.markAnswered": "Mark answered",
+    "prayer.answerPlaceholder": "How was it answered? (optional)",
+    "prayer.answeredOn": "Answered {date}",
+    "prayer.answeredHeading": "Answered ({n})",
+    "prayer.reopen": "Still praying",
+    "prayer.edit": "Edit prayer",
+    "prayer.delete": "Delete prayer",
+    "prayer.deleteConfirm": "Delete this prayer? This cannot be undone.",
+    "prayer.fold": "Collapse",
+    "prayer.unfold": "Expand",
+    "prayer.foldAll": "Collapse all",
+    "prayer.unfoldAll": "Expand all",
+    "prayer.offline": "Changing your prayer list needs a connection.",
     "journal.leavePlan": "Leave {name}",
     "journal.leaveConfirm": "Leave {name}?\n\nIt comes off your journal and stops asking each morning. Your progress goes with it. You can start it again from Discover whenever you like.",
     "journal.restartPlan": "Start {name} again from day one",
@@ -174,13 +197,13 @@ const dictionaries = {
       "Read the Word in multiple translations (King James by default, Reina Valera 1909 in Spanish), search it, resize it, and follow it wherever a passage link takes you. Then stay with it: open a word to its original, keep a verse with a note, and walk a plan a day at a time.",
     "tour.share": "Share this demo",
     "tour.shareText":
-      "Take a look at Communion — the whole Bible with real study tools, and a journal for what you find.",
+      "Take a look at Communion — the whole Bible with real study tools: the Hebrew and Greek, commentary and maps.",
     "welcome.title": "Welcome to Communion",
     "welcome.lede":
       "A Bible app for reading and studying the Word. Here is what it can do — have a look, then step in.",
     "welcome.begin": "Begin reading",
     "welcome.more": "The full story, on the About page →",
-    "about.tourTitle": "A tour, in six screens",
+    "about.tourTitle": "A tour, in ten screens",
     "about.tourHint": "Every screen here is the app itself, not a mockup.",
     "about.tourReader": "The Word",
     "about.tourReaderDesc": "Scripture set like a book, reading on from chapter into chapter.",
@@ -190,8 +213,19 @@ const dictionaries = {
     "about.tourLexiconDesc": "Tap anything underlined for the Hebrew or Greek behind it.",
     "about.tourConcordance": "The concordance",
     "about.tourConcordanceDesc": "Every verse carrying that same original, quoted in place.",
+    "about.tourCommentary": "Commentary",
+    "about.tourCommentaryDesc":
+      "Matthew Henry on every chapter, and Spurgeon’s Treasury of David on the Psalms.",
+    "about.tourMaps": "Maps in context",
+    "about.tourMapsDesc":
+      "Where the chapter happened, and the places it names — tap one to find its verse.",
     "about.tourRed": "Christ's words in red",
     "about.tourRedDesc": "The way most printed Bibles set them — on in one tap.",
+    "about.tourDevotional": "Morning and Evening",
+    "about.tourDevotionalDesc": "Spurgeon’s two meditations a day, walked like any reading plan.",
+    "about.tourPrayer": "Prayer",
+    "about.tourPrayerDesc":
+      "A prayer list on your wall that only you can see — mark the days you pray, and keep how each was answered.",
     "about.tourJournal": "The Journal",
     "about.tourJournalDesc": "Your reading plans, each with its own reminder — mark today read right here.",
     "about.howTitle": "How to use Communion well",
@@ -202,7 +236,7 @@ const dictionaries = {
     "about.how3":
       "Keep what you find — bookmark a verse, write a note under it, and file it in a collection.",
     "about.how4":
-      "Hang a verse on your wall — the handful you want in front of you each time you open the app.",
+      "Hang a verse on your wall, and keep a prayer list beside it — mark the days you pray, and how each prayer is answered.",
     "about.how5":
       "Let each plan remind you — a morning plan and an evening one can each ask at their own hour.",
     "about.how6":
@@ -212,10 +246,16 @@ const dictionaries = {
     "about.study1": "Underlined words — tap one and a sheet opens on the Hebrew or Greek behind it: the word itself, its grammar, the Strong's entry and its King James usage, with a second tab holding the fuller Brown-Driver-Briggs or Abbott-Smith entry.",
     "about.study2": "The concordance — the sheet says how many verses carry that original and opens them beside the text, each quoted with the word marked, and the Septuagint alongside where the word is Greek. The commonest words list the first 250 of them.",
     "about.study3": "Cross-references — the passages Scripture ties to this one. Tap one to go, and a pill waits to bring you back.",
-    "about.study4": "Context — two short readings for the chapter: the setting it was written into, and the spirit of it.",
-    "about.study5": "Compare — the same verse in every translation Communion carries, the one you are reading first. They are lined up by number, so the Reina Valera can sit a verse out in the few chapters where it follows the Hebrew count.",
-    "about.study6": "Original text — where no word in a verse could be matched, the Hebrew and Greek behind it, each listed once, in the order the English runs.",
-    "about.study7": "Bookmark — keep a verse or a run of verses, write a note underneath, and file it in a collection.",
+    "about.study4":
+      "Context — where the chapter happened, on a map of the places it names, then two short readings: the setting it was written into, and the spirit of it.",
+    "about.study5":
+      "Commentary — Matthew Henry on the passage, and in the Psalms Spurgeon’s Treasury of David as well, opened beside the verse it is about.",
+    "about.study6":
+      "Compare — the same verse in every translation Communion carries, the one you are reading first. They are lined up by number, so the Reina Valera can sit a verse out in the few chapters where it follows the Hebrew count.",
+    "about.study7":
+      "Original text — where no word in a verse could be matched, the Hebrew and Greek behind it, each listed once, in the order the English runs.",
+    "about.study8":
+      "Bookmark — keep a verse or a run of verses, write a note underneath, and file it in a collection.",
     "about.studyUnderlines": "About the underlines: only the King James is tagged word by word. In every other translation a word is underlined when it can be matched to the Berean Standard Bible, which carries an original behind each of its own words — solid where the Berean uses that word for that original in this very verse, dotted where the match comes from its wording elsewhere and is likely rather than certain. Roughly a quarter of the words on a page carry an underline at all; checked against the King James, nine in ten of those are right, the solid ones more often than the dotted. A word with nothing behind it is left plain and cannot be tapped, because a guess would look exactly like a finding. The Reina Valera has no underlines: the evidence is in English, so its verses use Original text instead.",
     "about.footer": "Built so that two or three — anywhere on earth — can gather in His name.",
     "discover.title": "Discover",
@@ -464,7 +504,7 @@ const dictionaries = {
     "account.deleteLede": "This removes you and everything you have written here. It cannot be undone.",
     "account.deleteOpen": "Delete my account",
     "account.deleteWhatGoes":
-      "Everything of yours goes: your name, your bookmarks, notes and collections, your reading plans and the verses on your wall — and anything you wrote in the Gatherings or at the Table before they were taken out of the app.",
+      "Everything of yours goes: your name, your bookmarks, notes and collections, your reading plans, the verses on your wall and your prayers — and anything you wrote in the Gatherings or at the Table before they were taken out of the app.",
     "account.deleteWhatStays":
       "A collection or plan you shared stops opening for the people you sent it to. Nothing of yours is kept back.",
     "account.deleteType": "Type DELETE to confirm",
@@ -539,7 +579,7 @@ const dictionaries = {
     "offline.failed": "Algunos archivos no se pudieron descargar. Inténtalo con mejor conexión.",
     "offline.unavailable": "Este navegador no puede guardar las Escrituras sin conexión.",
     "offline.note":
-      "Colgar un versículo en tu pared y activar los recordatorios siguen necesitando conexión. Todo lo demás — lectura, búsqueda, notas, marcadores y planes — funciona sin conexión y se sincroniza al volver.",
+      "Tu pared y tu lista de oración se pueden leer sin conexión, pero para cambiarlas hace falta conexión, igual que para activar los recordatorios. Todo lo demás — lectura, búsqueda, notas, marcadores y planes — funciona sin conexión y se sincroniza al volver.",
     "menu.about": "Acerca de Communion",
     "menu.aboutDesc": "Para qué es esta app y cómo usarla",
     "journal.title": "Diario",
@@ -556,7 +596,31 @@ const dictionaries = {
     "wall.takeDown": "Descolgar {ref}",
     "wall.hungBy": "Colgada por {name}",
     "wall.mineEmpty": "Todavía no hay nada en tu pared. Guarda un versículo en cualquier parte de Communion y cuélgalo aquí para tenerlo delante.",
-    "wall.mineLead": "Los versículos que quieres tener delante cada vez que abres la app.",
+    "wall.mineLead":
+      "Los versículos que quieres tener delante, y aquello por lo que estás orando.",
+    "prayer.title": "Oración",
+    "prayer.privacy": "Solo tú puedes verlas.",
+    "prayer.add": "Añadir",
+    "prayer.placeholder": "¿Por qué estás orando?",
+    "prayer.empty":
+      "Aún no hay nada. Añade aquello por lo que estás orando, marca los días que oras por ello y guarda cómo fue respondido.",
+    "prayer.pray": "Marcar como orada",
+    "prayer.prayedToday": "Orada hoy",
+    "prayer.dayOne": "orada 1 día",
+    "prayer.days": "orada {n} días",
+    "prayer.markAnswered": "Marcar respondida",
+    "prayer.answerPlaceholder": "¿Cómo fue respondida? (opcional)",
+    "prayer.answeredOn": "Respondida el {date}",
+    "prayer.answeredHeading": "Respondidas ({n})",
+    "prayer.reopen": "Sigo orando",
+    "prayer.edit": "Editar oración",
+    "prayer.delete": "Eliminar oración",
+    "prayer.deleteConfirm": "¿Eliminar esta oración? No se puede deshacer.",
+    "prayer.fold": "Plegar",
+    "prayer.unfold": "Expandir",
+    "prayer.foldAll": "Plegar todo",
+    "prayer.unfoldAll": "Expandir todo",
+    "prayer.offline": "Para cambiar tu lista de oración hace falta conexión.",
     "journal.leavePlan": "Dejar {name}",
     "journal.leaveConfirm": "¿Dejar {name}?\n\nSale de tu diario y deja de recordártelo cada mañana. Tu progreso se va con él. Puedes empezarlo de nuevo desde Descubrir cuando quieras.",
     "journal.restartPlan": "Empezar {name} otra vez desde el día uno",
@@ -655,13 +719,13 @@ const dictionaries = {
       "Lee la Palabra en varias traducciones (King James por defecto, Reina Valera 1909 en español), búscala, ajusta su tamaño y síguela adonde te lleve cada pasaje. Luego quédate en ella: abre una palabra hasta su original, guarda un versículo con una nota y recorre un plan día a día.",
     "tour.share": "Comparte esta demo",
     "tour.shareText":
-      "Mira Communion — la Biblia completa con herramientas de estudio de verdad, y un diario para lo que encuentres.",
+      "Mira Communion — la Biblia completa con herramientas de estudio de verdad: el hebreo y el griego, comentario y mapas.",
     "welcome.title": "Bienvenido a Communion",
     "welcome.lede":
       "Una aplicación bíblica para leer y estudiar la Palabra. Esto es lo que puede hacer — míralo, y luego entra.",
     "welcome.begin": "Comenzar a leer",
     "welcome.more": "La historia completa, en Acerca de →",
-    "about.tourTitle": "Un recorrido en seis pantallas",
+    "about.tourTitle": "Un recorrido en diez pantallas",
     "about.tourHint": "Cada pantalla es la aplicación misma, no una maqueta.",
     "about.tourReader": "La Palabra",
     "about.tourReaderDesc": "La Escritura compuesta como un libro: la lectura sigue de capítulo en capítulo.",
@@ -671,8 +735,20 @@ const dictionaries = {
     "about.tourLexiconDesc": "Toca lo subrayado y verás el hebreo o el griego que hay detrás.",
     "about.tourConcordance": "La concordancia",
     "about.tourConcordanceDesc": "Cada versículo que lleva ese mismo original, citado allí mismo.",
+    "about.tourCommentary": "Comentario",
+    "about.tourCommentaryDesc":
+      "Matthew Henry en cada capítulo, y el Tesoro de David de Spurgeon en los Salmos.",
+    "about.tourMaps": "Mapas en contexto",
+    "about.tourMapsDesc":
+      "Dónde sucedió el capítulo y los lugares que nombra: toca uno para ir a su versículo.",
     "about.tourRed": "Las palabras de Cristo en rojo",
     "about.tourRedDesc": "Como las imprimen la mayoría de las Biblias — se activa con un toque.",
+    "about.tourDevotional": "Mañana y tarde",
+    "about.tourDevotionalDesc":
+      "Las dos meditaciones diarias de Spurgeon, recorridas como cualquier plan de lectura.",
+    "about.tourPrayer": "Oración",
+    "about.tourPrayerDesc":
+      "Una lista de oración en tu pared que solo tú ves: marca los días que oras y guarda cómo fue respondida cada una.",
     "about.tourJournal": "El Diario",
     "about.tourJournalDesc": "Tus planes de lectura, cada uno con su recordatorio — marca el día leído aquí mismo.",
     "about.howTitle": "Cómo aprovechar Communion",
@@ -683,7 +759,7 @@ const dictionaries = {
     "about.how3":
       "Guarda lo que encuentras: marca un versículo, escribe una nota debajo y archívalo en una colección.",
     "about.how4":
-      "Cuelga un versículo en tu pared: los pocos que quieres tener delante cada vez que abres la app.",
+      "Cuelga un versículo en tu pared y lleva a su lado una lista de oración: marca los días que oras y cómo es respondida cada oración.",
     "about.how5":
       "Deja que cada plan te lo recuerde: uno de la mañana y otro de la noche pueden pedírtelo cada uno a su hora.",
     "about.how6":
@@ -693,10 +769,16 @@ const dictionaries = {
     "about.study1": "Palabras subrayadas: toca una y se abre una ficha con el hebreo o el griego que hay detrás — la palabra misma, su gramática, la entrada de Strong y su uso en la King James, con una segunda pestaña que guarda la entrada ampliada de Brown-Driver-Briggs o Abbott-Smith.",
     "about.study2": "La concordancia: la ficha dice en cuántos versículos aparece ese original y los abre junto al texto, cada uno citado con la palabra resaltada, y la Septuaginta al lado cuando la palabra es griega. Las palabras más comunes muestran los primeros 250.",
     "about.study3": "Referencias cruzadas: los pasajes que la Escritura ata a este. Toca uno para ir, y un botón te espera para volver.",
-    "about.study4": "Contexto: dos lecturas breves del capítulo — el escenario en que fue escrito y lo espiritual de lo que dice.",
-    "about.study5": "Comparar: el mismo versículo en cada traducción que trae Communion, primero la que estás leyendo. Se alinean por número, así que la Reina Valera puede quedar un versículo corrida en los pocos capítulos donde sigue la cuenta hebrea.",
-    "about.study6": "Texto original: donde ninguna palabra del versículo pudo emparejarse, el hebreo y el griego que hay detrás, cada uno listado una vez, en el orden en que corre el inglés.",
-    "about.study7": "Marcador: guarda un versículo o una serie de versículos, escribe una nota debajo y archívalo en una colección.",
+    "about.study4":
+      "Contexto: dónde sucedió el capítulo, en un mapa de los lugares que nombra, y luego dos lecturas breves — el escenario en que fue escrito y lo espiritual de lo que dice.",
+    "about.study5":
+      "Comentario: Matthew Henry sobre el pasaje y, en los Salmos, también el Tesoro de David de Spurgeon, abiertos junto al versículo que comentan.",
+    "about.study6":
+      "Comparar: el mismo versículo en cada traducción que trae Communion, primero la que estás leyendo. Se alinean por número, así que la Reina Valera puede quedar un versículo corrida en los pocos capítulos donde sigue la cuenta hebrea.",
+    "about.study7":
+      "Texto original: donde ninguna palabra del versículo pudo emparejarse, el hebreo y el griego que hay detrás, cada uno listado una vez, en el orden en que corre el inglés.",
+    "about.study8":
+      "Marcador: guarda un versículo o una serie de versículos, escribe una nota debajo y archívalo en una colección.",
     "about.studyUnderlines": "Sobre los subrayados: solo la King James está etiquetada palabra por palabra. En las demás traducciones una palabra se subraya cuando puede emparejarse con la Berean Standard Bible, que lleva un original detrás de cada una de sus palabras — sólido cuando la Berean usa esa palabra para ese original en este mismo versículo, punteado cuando el emparejamiento viene de cómo lo dice en otro lugar y es probable, no seguro. Cerca de una cuarta parte de las palabras de la página lleva subrayado; comprobado contra la King James, nueve de cada diez aciertan, las sólidas más que las punteadas. Una palabra sin nada detrás se queda lisa y no se puede tocar, porque una suposición se vería igual que un hallazgo. La Reina Valera no lleva subrayados: la evidencia está en inglés, así que sus versículos usan Texto original.",
     "about.footer": "Creada para que dos o tres — en cualquier lugar del mundo — se congreguen en Su nombre.",
     "discover.title": "Descubre",
@@ -945,7 +1027,7 @@ const dictionaries = {
     "account.deleteLede": "Esto te elimina a ti y todo lo que has escrito aquí. No se puede deshacer.",
     "account.deleteOpen": "Eliminar mi cuenta",
     "account.deleteWhatGoes":
-      "Se va todo lo tuyo: tu nombre, tus marcadores, notas y colecciones, tus planes de lectura y los versículos de tu pared — y lo que escribiste en las Comunidades o en La Mesa antes de que salieran de la app.",
+      "Se va todo lo tuyo: tu nombre, tus marcadores, notas y colecciones, tus planes de lectura, los versículos de tu pared y tus oraciones — y lo que escribiste en las Comunidades o en La Mesa antes de que salieran de la app.",
     "account.deleteWhatStays":
       "Una colección o un plan que compartiste dejará de abrirse para quienes lo recibieron. No se guarda nada tuyo.",
     "account.deleteType": "Escribe DELETE para confirmar",

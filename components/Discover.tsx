@@ -21,6 +21,7 @@ import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
 import MyWall from "@/components/MyWall";
+import MyPrayers from "@/components/MyPrayers";
 import PlanBuilder from "@/components/PlanBuilder";
 import {
   isCustomPlanId,
@@ -95,7 +96,12 @@ export default function Discover() {
       </p>
 
       {tab === "wall" ? (
-        <MyWall />
+        <>
+          <MyWall />
+          {/* under the verses: what the reader is praying about, which is
+              theirs alone in the same way the wall is */}
+          <MyPrayers />
+        </>
       ) : (
         <>
           <VerseOfDay />

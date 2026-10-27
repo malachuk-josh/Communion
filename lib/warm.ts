@@ -9,10 +9,10 @@
 // empty because they never happened to open it with signal. Visiting a screen
 // is what saves it, and nobody visits screens in order to save them.
 //
-// So while there is signal, ask for the two things the server holds that the
-// device does not: the wall and the profile. The requests go through the
-// worker like any other, so the answers land in the same cache and are
-// already there the next time — with or without a network.
+// So while there is signal, ask for the few things the server holds that the
+// device does not: the wall, the prayer list beside it, and the profile. The
+// requests go through the worker like any other, so the answers land in the
+// same cache and are already there the next time — with or without a network.
 //
 // It used to ask for a good deal more — every Gathering and what was inside
 // it, the conversations at the Table, the calendar — and went with them. What
@@ -67,7 +67,11 @@ export async function warmOffline(force = false): Promise<void> {
   try {
     // a miss is a miss, not a stop: offline halfway through, or signed out,
     // and what got through got through
-    await Promise.all([ok(api("/api/wall")), ok(api("/api/profile"))]);
+    await Promise.all([
+      ok(api("/api/wall")),
+      ok(api("/api/wall/prayers")),
+      ok(api("/api/profile")),
+    ]);
     mark();
   } finally {
     running = false;

@@ -2808,8 +2808,8 @@ html.navhide .chap-arrow {
   justify-content: space-between;
   gap: 12px;
   margin: 26px 0 12px;
-  /* The Table carries two buttons now, and on a narrow phone they squeezed the
-     title until "THE TABLE" broke over two lines. Wrapping lets the actions
+  /* The prayer list carries two buttons, and on a narrow phone two buttons
+     squeeze a title until it breaks over two lines. Wrapping lets the actions
      take a line of their own instead, and costs nothing on the headings that
      carry one button or none — they never reach the point of wrapping. */
   flex-wrap: wrap;
@@ -4343,6 +4343,207 @@ button.compare-pick:last-child {
 
 .bm-hang {
   margin: 10px 0 2px;
+}
+
+/* ---- the prayer list (components/MyPrayers) -------------------------------
+   Under the verses on the reader's wall: what is still being prayed for, and
+   the answered prayer kept below it. */
+.prayer-section {
+  margin-top: 8px;
+}
+
+.pr-list {
+  display: grid;
+  gap: 10px;
+}
+
+.pr-compose,
+.pr-card {
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.pr-compose {
+  margin-bottom: 12px;
+}
+
+.pr-compose textarea,
+.pr-answer-edit textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 11px 13px;
+  resize: vertical;
+}
+
+.pr-compose textarea:focus,
+.pr-answer-edit textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* an answered prayer stays on the list, but stops asking for attention */
+.pr-card.answered {
+  opacity: 0.72;
+}
+
+.pr-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pr-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.pr-when,
+.pr-days {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.pr-days {
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* the edit and delete marks: icons the size of the type beside them, with
+   room enough round them to be pressed, and only delete turns red */
+.pr-icon {
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 4px;
+}
+
+.pr-icon:hover {
+  color: var(--gold);
+}
+
+.pr-icon.danger:hover {
+  color: #a33d33;
+}
+
+.pr-text {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pr-answer {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+}
+
+.pr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-answer-edit {
+  display: grid;
+  gap: 8px;
+}
+
+/* Prayed today is a state, so it holds its colour once pressed — and a
+   border as well as a colour, for the grey theme. */
+.pr-pray.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+/* A folded prayer is a line: when, and the first words with an ellipsis.
+   The newest few arrive open; everything older arrives folded, and the
+   caret — or the line itself — opens it out. The tools fold away with the
+   body: a card being skimmed past is not the moment for its delete button. */
+.pr-fold {
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  padding: 2px 4px;
+  cursor: pointer;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+.pr-fold .bn-caret {
+  display: inline-block;
+  font-size: 0.9rem;
+  transition: transform 0.18s;
+}
+
+.pr-fold .bn-caret.open {
+  transform: rotate(180deg);
+}
+
+.pr-card.pr-folded {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.pr-text-folded {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-dim);
+  cursor: pointer;
+  margin: 0;
+}
+
+/* the section header carries two small buttons — fold-all and add */
+.pr-head-tools {
+  display: inline-flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.pr-divider {
+  margin: 22px 0 10px;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* who can see the list, said where it is written */
+.pr-privacy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 12px;
+  font-size: 0.85rem;
 }
 
 /* In the sheet there is a line to itself and room on it, so the message can

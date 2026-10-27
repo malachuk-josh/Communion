@@ -210,6 +210,8 @@ export const keys = {
    * single delete by the reference itself.
    */
   userWall: (userId: string) => `user:${userId}:wall`,
+  /** the reader's own prayer list, beside the wall (lib/prayers.ts) */
+  userPrayers: (userId: string) => `user:${userId}:prayers`,
   /** Whom the owner has handed the dashboard to, beyond the owner. */
   trustedAdmins: "admin:trusted",
   /** Every time one account was stood in by another, and by whom. */

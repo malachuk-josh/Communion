@@ -4,7 +4,7 @@
 //
 // Once, and only once: a guest arriving for the first time, or somebody who
 // has just signed up, gets the tour before they get the app — the wordmark,
-// one line about what this is, the six screens, and a door. Everyone else
+// one line about what this is, the ten screens, and a door. Everyone else
 // opens straight onto Scripture, every time, because a welcome that keeps
 // welcoming is a doorman who won't let you in.
 //

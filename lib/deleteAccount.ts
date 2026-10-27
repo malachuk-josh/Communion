@@ -330,6 +330,7 @@ export async function deleteAccount(userId: string): Promise<Erasure> {
     keys.userConvs(userId),
     keys.userNotifs(userId),
     keys.userWall(userId),
+    keys.userPrayers(userId),
     keys.prayerRate(userId),
     keys.messageRate(userId),
     keys.inviteRate(userId),

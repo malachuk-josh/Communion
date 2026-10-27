@@ -2,7 +2,7 @@
 //
 // This is the page the share button hands out. Somebody arriving from a
 // social feed gets the tour without the app asking anything of them first —
-// the wordmark, the six screens, and a door into the reader. The metadata
+// the wordmark, the ten screens, and a door into the reader. The metadata
 // below is most of the point: it is what makes the link unfurl on a feed as
 // a picture of the app instead of a bare URL.
 //
@@ -13,13 +13,13 @@ import type { Metadata } from "next";
 import TourPageBody from "@/components/TourPage";
 
 export const metadata: Metadata = {
-  title: "Communion — a tour in six screens",
+  title: "Communion — a tour in ten screens",
   description:
-    "A Bible app for reading and studying the Word. The whole Bible with word-level study tools, a journal and reading plans. See it in six screens.",
+    "A Bible app for reading and studying the Word. The whole Bible with word-level study tools, commentary and maps, a journal, reading plans and a private prayer list. See it in ten screens.",
   openGraph: {
     title: "Communion — Read the Word. Gather in His name.",
     description:
-      "The whole Bible with word-level study tools, and a journal for what you find. A tour in six screens.",
+      "The whole Bible with word-level study tools, commentary and maps, and a journal for what you find. A tour in ten screens.",
     images: ["/tour/og.jpg"],
     type: "website",
   },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Communion — Read the Word. Gather in His name.",
     description:
-      "The whole Bible with word-level study tools, and a journal for what you find. A tour in six screens.",
+      "The whole Bible with word-level study tools, commentary and maps, and a journal for what you find. A tour in ten screens.",
     images: ["/tour/og.jpg"],
   },
 };

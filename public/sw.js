@@ -44,12 +44,12 @@ const DATA_PATHS = [
 
 // Read-only API responses worth showing stale.
 //
-// These are the server's own answers — the verses on the reader's wall, their
-// name and reminder hour — which this device does not keep anywhere else and
-// cannot reconstruct. With no signal the fetch throws, the screen catches it
-// and renders its empty state, and the home screen tells a reader their wall
-// is bare, which is a lie rather than an absence. Last-known is the truthful
-// answer.
+// These are the server's own answers — the verses on the reader's wall and the
+// prayers beside them, their name and reminder hour — which this device does
+// not keep anywhere else and cannot reconstruct. With no signal the fetch
+// throws, the screen catches it and renders its empty state, and the home
+// screen tells a reader their wall is bare, which is a lie rather than an
+// absence. Last-known is the truthful answer.
 //
 // An allowlist, not a denylist, because the cost of being wrong runs one way:
 // the licensed translations are served from /api/bible and their licences

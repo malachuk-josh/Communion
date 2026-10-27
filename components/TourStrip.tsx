@@ -1,6 +1,6 @@
 "use client";
 
-// The six-screen tour, as a strip that any page can shelve.
+// The ten-screen tour, as a strip that any page can shelve.
 //
 // It began life inside the About page and was pulled out the day the welcome
 // screen wanted it too. One list, one markup, so the two places that show the
@@ -23,11 +23,15 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 
 /** Every slide: the file stem under /tour, its pixel size, its i18n stem. */
 const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
-  { img: "reader", w: 720, h: 993, key: "tourReader" },
-  { img: "study", w: 720, h: 977, key: "tourStudy" },
-  { img: "lexicon", w: 720, h: 769, key: "tourLexicon" },
+  { img: "reader", w: 720, h: 992, key: "tourReader" },
+  { img: "study", w: 720, h: 976, key: "tourStudy" },
+  { img: "lexicon", w: 720, h: 772, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
+  { img: "commentary", w: 720, h: 1024, key: "tourCommentary" },
+  { img: "maps", w: 720, h: 1038, key: "tourMaps" },
   { img: "redletters", w: 720, h: 1066, key: "tourRed" },
+  { img: "devotional", w: 720, h: 1020, key: "tourDevotional" },
+  { img: "prayers", w: 720, h: 1122, key: "tourPrayer" },
   { img: "journal", w: 720, h: 1040, key: "tourJournal" },
 ];
 
