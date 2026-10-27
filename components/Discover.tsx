@@ -22,6 +22,8 @@ import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
 import MyWall from "@/components/MyWall";
 import MyPrayers from "@/components/MyPrayers";
+import { WallSignIn } from "@/components/SignInNeeded";
+import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
 import {
   isCustomPlanId,
@@ -45,6 +47,7 @@ const DISCOVER_TABS = ["scripture", "wall"] as const;
 export default function Discover() {
   const { t } = useI18n();
   const [tab, setTab] = useStickyTab("discover", "scripture", DISCOVER_TABS);
+  const account = useAccount();
   /*
    * The plan a reminder was about, if this page was opened by one.
    *
@@ -96,12 +99,19 @@ export default function Discover() {
       </p>
 
       {tab === "wall" ? (
-        <>
-          <MyWall />
-          {/* under the verses: what the reader is praying about, which is
-              theirs alone in the same way the wall is */}
-          <MyPrayers />
-        </>
+        // Both live on the account. Signed out, the server has nowhere to
+        // keep a verse or a prayer, so this asks for one rather than offer
+        // an empty wall and an Add button that cannot save.
+        signInNeeded(account) ? (
+          <WallSignIn />
+        ) : (
+          <>
+            <MyWall />
+            {/* under the verses: what the reader is praying about, which is
+                theirs alone in the same way the wall is */}
+            <MyPrayers />
+          </>
+        )
       ) : (
         <>
           <VerseOfDay />

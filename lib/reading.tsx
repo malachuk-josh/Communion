@@ -11,6 +11,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { readLocal, writeLocal } from "@/lib/storage";
@@ -30,6 +31,8 @@ interface ReadingContextValue {
   setPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
   study: boolean;
   toggleStudy: () => void;
+  /** on or off outright, for when a rule decides rather than a tap */
+  setStudyMode: (on: boolean) => void;
 }
 
 const ReadingContext = createContext<ReadingContextValue>({
@@ -39,17 +42,21 @@ const ReadingContext = createContext<ReadingContextValue>({
   setPanelOpen: () => {},
   study: false,
   toggleStudy: () => {},
+  setStudyMode: () => {},
 });
 
 export function ReadingProvider({ children }: { children: React.ReactNode }) {
   const [position, setPosition] = useState<ReadingPosition | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [study, setStudy] = useState(false);
+  /** the same answer, readable from a callback without a stale closure */
+  const studyRef = useRef(false);
 
   // read after mount: the server has no idea which mode this reader left in
   useEffect(() => {
     try {
       if (readLocal("communion.studyMode") === "1") {
+        studyRef.current = true;
         setStudy(true);
       }
     } catch {
@@ -57,24 +64,37 @@ export function ReadingProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const toggleStudy = useCallback(() => {
+  const setStudyMode = useCallback((on: boolean) => {
+    if (studyRef.current === on) return;
     // Study mode changes the height of every verse in the book, so the reader
     // has to note where they are BEFORE the switch — once React has committed
     // it, the old layout is gone and there is nothing left to measure against.
     window.dispatchEvent(new Event(STUDY_WILL_CHANGE));
-    setStudy((on) => {
-      try {
-        writeLocal("communion.studyMode", on ? "0" : "1");
-      } catch {
-        // storage blocked — the choice just won't outlive this visit
-      }
-      return !on;
-    });
+    studyRef.current = on;
+    try {
+      writeLocal("communion.studyMode", on ? "1" : "0");
+    } catch {
+      // storage blocked — the choice just won't outlive this visit
+    }
+    setStudy(on);
   }, []);
 
+  const toggleStudy = useCallback(
+    () => setStudyMode(!studyRef.current),
+    [setStudyMode]
+  );
+
   const value = useMemo(
-    () => ({ position, setPosition, panelOpen, setPanelOpen, study, toggleStudy }),
-    [position, panelOpen, study, toggleStudy]
+    () => ({
+      position,
+      setPosition,
+      panelOpen,
+      setPanelOpen,
+      study,
+      toggleStudy,
+      setStudyMode,
+    }),
+    [position, panelOpen, study, toggleStudy, setStudyMode]
   );
   return (
     <ReadingContext.Provider value={value}>{children}</ReadingContext.Provider>

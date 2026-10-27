@@ -77,6 +77,8 @@ const dictionaries = {
     "wall.hungBy": "Hung by {name}",
     "wall.mineEmpty": "Nothing on your wall yet. Keep a verse anywhere in Communion, then hang it here to have it in front of you.",
     "wall.mineLead": "The verses you want in front of you, and what you are praying about.",
+    "wall.signIn":
+      "Your wall and your prayer list are kept with your account, so they are there on every device. Sign in to start them.",
     "prayer.title": "Prayer",
     "prayer.privacy": "Only you can see these.",
     "prayer.add": "Add",
@@ -242,7 +244,8 @@ const dictionaries = {
     "about.how6":
       "Take it with you — download Scripture and the study tools in Settings, and read with no signal at all.",
     "about.studyTitle": "Study mode, and what it opens",
-    "about.studyIntro": "Tap the star in the header while you are reading and the chapter opens out a verse at a time, each with its own row of tools. Tap it again and the reading closes back to plain text.",
+    "about.studyIntro":
+      "Signed in, tap the star in the header while you are reading and the chapter opens out a verse at a time, each with its own row of tools. Tap it again and the reading closes back to plain text. Study mode needs an account because everything it keeps is saved to one.",
     "about.study1": "Underlined words — tap one and a sheet opens on the Hebrew or Greek behind it: the word itself, its grammar, the Strong's entry and its King James usage, with a second tab holding the fuller Brown-Driver-Briggs or Abbott-Smith entry.",
     "about.study2": "The concordance — the sheet says how many verses carry that original and opens them beside the text, each quoted with the word marked, and the Septuagint alongside where the word is Greek. The commonest words list the first 250 of them.",
     "about.study3": "Cross-references — the passages Scripture ties to this one. Tap one to go, and a pill waits to bring you back.",
@@ -494,12 +497,17 @@ const dictionaries = {
     "verse.matthewRef": "Matthew 18:20",
     "common.done": "Done",
     "common.close": "Close",
+    "common.notNow": "Not now",
     "common.save": "Save",
     "common.cancel": "Cancel",
     "common.copied": "Copied!",
     "common.loading": "Loading…",
     "admin.denied": "Nothing here.",
     "auth.signIn": "Sign in",
+    "study.gateTitle": "Study mode needs an account",
+    "study.gateBody":
+      "What you keep in study mode — bookmarks, notes, collections — is saved to your account, so it is on every device and is never lost with this browser. Sign in to open it.",
+    "study.gateHint": "Reading needs no account.",
     "account.deleteTitle": "Delete your account",
     "account.deleteLede": "This removes you and everything you have written here. It cannot be undone.",
     "account.deleteOpen": "Delete my account",
@@ -598,6 +606,8 @@ const dictionaries = {
     "wall.mineEmpty": "Todavía no hay nada en tu pared. Guarda un versículo en cualquier parte de Communion y cuélgalo aquí para tenerlo delante.",
     "wall.mineLead":
       "Los versículos que quieres tener delante, y aquello por lo que estás orando.",
+    "wall.signIn":
+      "Tu pared y tu lista de oración se guardan con tu cuenta, así están en todos tus dispositivos. Inicia sesión para empezarlas.",
     "prayer.title": "Oración",
     "prayer.privacy": "Solo tú puedes verlas.",
     "prayer.add": "Añadir",
@@ -765,7 +775,8 @@ const dictionaries = {
     "about.how6":
       "Llévala contigo: descarga la Escritura y las herramientas de estudio en Configuración, y lee sin ninguna señal.",
     "about.studyTitle": "El modo estudio y lo que abre",
-    "about.studyIntro": "Toca la estrella en la cabecera mientras lees y el capítulo se abre versículo por versículo, cada uno con su propia fila de herramientas. Tócala otra vez y la lectura vuelve al texto sencillo.",
+    "about.studyIntro":
+      "Con la sesión iniciada, toca la estrella en la cabecera mientras lees y el capítulo se abre versículo por versículo, cada uno con su propia fila de herramientas. Tócala otra vez y la lectura vuelve al texto sencillo. El modo estudio necesita una cuenta porque todo lo que guarda se guarda en ella.",
     "about.study1": "Palabras subrayadas: toca una y se abre una ficha con el hebreo o el griego que hay detrás — la palabra misma, su gramática, la entrada de Strong y su uso en la King James, con una segunda pestaña que guarda la entrada ampliada de Brown-Driver-Briggs o Abbott-Smith.",
     "about.study2": "La concordancia: la ficha dice en cuántos versículos aparece ese original y los abre junto al texto, cada uno citado con la palabra resaltada, y la Septuaginta al lado cuando la palabra es griega. Las palabras más comunes muestran los primeros 250.",
     "about.study3": "Referencias cruzadas: los pasajes que la Escritura ata a este. Toca uno para ir, y un botón te espera para volver.",
@@ -1017,12 +1028,17 @@ const dictionaries = {
     "verse.matthewRef": "Mateo 18:20",
     "common.done": "Listo",
     "common.close": "Cerrar",
+    "common.notNow": "Ahora no",
     "common.save": "Guardar",
     "common.cancel": "Cancelar",
     "common.copied": "¡Copiado!",
     "common.loading": "Cargando…",
     "admin.denied": "Aquí no hay nada.",
     "auth.signIn": "Iniciar sesión",
+    "study.gateTitle": "El modo estudio necesita una cuenta",
+    "study.gateBody":
+      "Lo que guardas en el modo estudio — marcadores, notas, colecciones — se guarda en tu cuenta, así está en todos tus dispositivos y no se pierde con este navegador. Inicia sesión para abrirlo.",
+    "study.gateHint": "Para leer no hace falta cuenta.",
     "account.deleteTitle": "Eliminar tu cuenta",
     "account.deleteLede": "Esto te elimina a ti y todo lo que has escrito aquí. No se puede deshacer.",
     "account.deleteOpen": "Eliminar mi cuenta",

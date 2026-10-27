@@ -10,6 +10,8 @@ import { onScroll as onPageScroll, scrollToY, scrollY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
+import { STUDY_AFTER_SIGN_IN, StudySignIn } from "@/components/SignInNeeded";
+import { signInNeeded, useAccount } from "@/lib/account";
 import ThemeToggle from "@/components/ThemeToggle";
 
 /**
@@ -69,8 +71,11 @@ export default function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const { lang, t } = useI18n();
-  const { position, panelOpen, setPanelOpen, study, toggleStudy } =
+  const { position, panelOpen, setPanelOpen, study, toggleStudy, setStudyMode } =
     useReading();
+  const account = useAccount();
+  /** the star was pressed by somebody with no account */
+  const [askSignIn, setAskSignIn] = useState(false);
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
   const [navHidden, setNavHidden] = useState(false);
@@ -296,6 +301,38 @@ export default function Nav() {
     nav.clearAppBadge?.().catch(() => {});
   }, []);
 
+  /*
+   * Study mode is for readers with an account: what it keeps is saved to one,
+   * and without one it would be kept nowhere but this device. Left on from
+   * before the rule, or from before signing out, it closes the moment Clerk
+   * says nobody is signed in — not before, or a signed-in reader would be
+   * thrown out of it while Clerk was still loading.
+   */
+  useEffect(() => {
+    if (study && signInNeeded(account)) setStudyMode(false);
+  }, [study, account, setStudyMode]);
+
+  // Asked for study mode, went to sign in: open it for them when they are back.
+  useEffect(() => {
+    if (!account.signedIn) return;
+    let wanted = false;
+    try {
+      wanted = sessionStorage.getItem(STUDY_AFTER_SIGN_IN) === "1";
+      sessionStorage.removeItem(STUDY_AFTER_SIGN_IN);
+    } catch {
+      // storage blocked: nothing was remembered, so there is nothing to do
+    }
+    if (wanted) setStudyMode(true);
+  }, [account.signedIn, setStudyMode]);
+
+  const pressStudy = () => {
+    if (!study && signInNeeded(account)) {
+      setAskSignIn(true);
+      return;
+    }
+    toggleStudy();
+  };
+
   const positionBook = position ? getBook(position.bookNr) : undefined;
   const bookName = positionBook
     ? lang === "es"
@@ -411,7 +448,7 @@ export default function Nav() {
               role="switch"
               aria-checked={study}
               className={`theme-toggle study-toggle${study ? " on" : ""}`}
-              onClick={toggleStudy}
+              onClick={pressStudy}
               aria-label={t("reader.study")}
               title={t("reader.study")}
             >
@@ -452,6 +489,11 @@ export default function Nav() {
           <span>{t("nav.reader")}</span>
         </Link>
       </nav>
+
+      {/* Outside both bars: they are glass, and a backdrop filter makes a
+          bar the containing block for anything fixed inside it — an overlay
+          placed there would be the size of the header. */}
+      {askSignIn && <StudySignIn onClose={() => setAskSignIn(false)} />}
     </>
   );
 }

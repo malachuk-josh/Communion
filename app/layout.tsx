@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LanguageProvider } from "@/lib/i18n";
 import { ReadingProvider } from "@/lib/reading";
+import { AccountProvider } from "@/lib/account";
 import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
 import ViewportInsets from "@/lib/viewport";
@@ -75,6 +76,7 @@ export default function RootLayout({
           }}
         />
         <LanguageProvider>
+          <AccountProvider>
           <ReadingProvider>
             <ViewportInsets />
             <div className="bg-scene" aria-hidden />
@@ -101,6 +103,7 @@ export default function RootLayout({
             <PushPrompt />
             <OfflineReady />
           </ReadingProvider>
+          </AccountProvider>
         </LanguageProvider>
       </body>
     </html>

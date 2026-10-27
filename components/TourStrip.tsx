@@ -28,7 +28,7 @@ const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
   { img: "lexicon", w: 720, h: 772, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
   { img: "commentary", w: 720, h: 1024, key: "tourCommentary" },
-  { img: "maps", w: 720, h: 1038, key: "tourMaps" },
+  { img: "maps", w: 720, h: 1042, key: "tourMaps" },
   { img: "redletters", w: 720, h: 1066, key: "tourRed" },
   { img: "devotional", w: 720, h: 1020, key: "tourDevotional" },
   { img: "prayers", w: 720, h: 1122, key: "tourPrayer" },

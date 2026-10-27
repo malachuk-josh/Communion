@@ -2594,10 +2594,37 @@ export default function Reader({
                             <Icon name="scroll" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* Context is the chapter; this is the passage. They
-                            sit next to each other because that is the order a
-                            reader wants them in — what is going on here, then
-                            what somebody made of it. */}
+                        {/* Second, straight after Context. It used to come
+                            after Commentary, which put it at the end of the
+                            row's first line — where a right thumb lands at the
+                            start of a swipe — and a verse already kept is
+                            un-kept by one press, with nothing on screen to say
+                            so. Here it is out of that thumb's way.
+
+                            Notes have no chip of their own: they are kept from
+                            the bookmark sheet, because a verse worth writing on
+                            is a verse worth keeping. */}
+                        <button
+                          type="button"
+                          className={`xref-chip note-chip${
+                            bmKeyAt(ch, v.verse)
+                              ? " has-note"
+                              : ""
+                          }`}
+                          onClick={() => toggleBookmark(ch, v.verse)}
+                          aria-pressed={!!bmKeyAt(ch, v.verse)}
+                          aria-label={t("reader.bookmarkToggle")}
+                          title={t("reader.bookmarkToggle")}
+                        >
+                          <Icon
+                            name="bookmark"
+                            filled={!!bmKeyAt(ch, v.verse)}
+                          />{" "}
+                          {t("reader.bookmark")}
+                        </button>
+                        {/* Context is the chapter; this is the passage —
+                            what is going on here, then what somebody made of
+                            it. */}
                         {(henryFor(ch, v.verse) ||
                           spurgeonFor(ch, v.verse)) && (
                           <button
@@ -2637,28 +2664,6 @@ export default function Reader({
                               <Icon name="letters" /> {t("reader.originals")}
                             </button>
                           )}
-                        <button
-                          type="button"
-                          className={`xref-chip note-chip${
-                            bmKeyAt(ch, v.verse)
-                              ? " has-note"
-                              : ""
-                          }`}
-                          onClick={() => toggleBookmark(ch, v.verse)}
-                          aria-pressed={!!bmKeyAt(ch, v.verse)}
-                          aria-label={t("reader.bookmarkToggle")}
-                          title={t("reader.bookmarkToggle")}
-                        >
-                          <Icon
-                            name="bookmark"
-                            filled={!!bmKeyAt(ch, v.verse)}
-                          />{" "}
-                          {t("reader.bookmark")}
-                        </button>
-                        {/* where the note chip was. Notes are kept from the
-                            bookmark sheet now — a verse worth writing on is a
-                            verse worth keeping, and that was two taps and two
-                            chips for one thought. */}
                         <button
                           type="button"
                           className="xref-chip"
@@ -3690,35 +3695,49 @@ export default function Reader({
 
       {contextOpen !== null && ctxOf(contextOpen) && (
         <div className="modal-overlay" onClick={() => setContextOpen(null)}>
-          <div className="glass modal" onClick={(e) => e.stopPropagation()}>
-            <h2>
-              <Icon name="scroll" /> {bookName} {contextOpen} — {t("reader.context")}
-            </h2>
-            {/* Where before what, because a reader who does not know the land
-                reads the setting as a list of names. The map draws itself only
-                for the chapters that name somewhere — a little over two in
-                three — and is simply absent from the rest. */}
-            <ChapterMap
-              bookNr={bookNr}
-              chapter={contextOpen}
-              onGoToVerse={(verse) => {
-                setContextOpen(null);
-                setChapter(contextOpen);
-                setHighlightVerse(verse);
-              }}
-            />
-            <div className="ctx-section">
-              <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>
-              <p>{ctxOf(contextOpen)!.practical}</p>
-            </div>
-            <div className="ctx-section">
-              <h3><Icon name="sparkle" /> {t("reader.ctxSpiritual")}</h3>
-              <p>{ctxOf(contextOpen)!.spiritual}</p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setContextOpen(null)}>
-                {t("common.cancel")}
+          <div
+            className="glass modal ctx-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* The way out sits in the heading, as it does on the commentary,
+                and the heading stays put while the rest scrolls under it: a
+                Cancel at the foot was a button you had to read past the map
+                and both readings to find. */}
+            <div className="mh-head">
+              <h2>
+                <Icon name="scroll" /> {bookName} {contextOpen} — {t("reader.context")}
+              </h2>
+              <button
+                type="button"
+                className="lex-close"
+                onClick={() => setContextOpen(null)}
+                aria-label={t("common.close")}
+              >
+                ✕
               </button>
+            </div>
+            <div className="ctx-body">
+              {/* Where before what, because a reader who does not know the
+                  land reads the setting as a list of names. The map draws
+                  itself only for the chapters that name somewhere — a little
+                  over two in three — and is simply absent from the rest. */}
+              <ChapterMap
+                bookNr={bookNr}
+                chapter={contextOpen}
+                onGoToVerse={(verse) => {
+                  setContextOpen(null);
+                  setChapter(contextOpen);
+                  setHighlightVerse(verse);
+                }}
+              />
+              <div className="ctx-section">
+                <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>
+                <p>{ctxOf(contextOpen)!.practical}</p>
+              </div>
+              <div className="ctx-section">
+                <h3><Icon name="sparkle" /> {t("reader.ctxSpiritual")}</h3>
+                <p>{ctxOf(contextOpen)!.spiritual}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -3755,7 +3774,7 @@ export default function Reader({
                       type="button"
                       className="lex-close"
                       onClick={() => setHenryOn(null)}
-                      aria-label={t("search.close")}
+                      aria-label={t("common.close")}
                     >
                       ✕
                     </button>

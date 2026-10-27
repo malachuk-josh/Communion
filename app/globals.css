@@ -2320,6 +2320,22 @@ html.navhide .chap-arrow {
   border-color: var(--gold);
 }
 
+/* The Context pop-up: the heading holds still, with the way out in it, and
+   the map and the two readings scroll beneath. A column, so the body takes
+   exactly the height the pop-up has left on any screen rather than a guess. */
+.ctx-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ctx-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .ctx-section {
   margin-bottom: 14px;
 }
@@ -4343,6 +4359,30 @@ button.compare-pick:last-child {
 
 .bm-hang {
   margin: 10px 0 2px;
+}
+
+/* ---- asked to sign in (components/SignInNeeded) ---- */
+.study-gate {
+  max-width: 440px;
+}
+
+.study-gate-body {
+  font-family: var(--serif);
+  font-size: 1.04rem;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.wall-signin {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.wall-signin p {
+  margin: 0;
+  color: var(--ink-dim);
+  line-height: 1.5;
 }
 
 /* ---- the prayer list (components/MyPrayers) -------------------------------
