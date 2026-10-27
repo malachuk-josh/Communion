@@ -182,10 +182,6 @@ html {
   background: rgba(74, 58, 30, 0.35);
 }
 
-:root[data-theme="light"] .invite-url {
-  background: rgba(97, 74, 38, 0.08);
-}
-
 :root[data-theme="light"] .error-text {
   color: #a33d33;
 }
@@ -531,12 +527,6 @@ html.reading .app-scroll::-webkit-scrollbar {
   gap: 3px;
   font-size: 0.84rem;
   padding: 7px 6px;
-}
-
-.discover-start {
-  display: flex;
-  justify-content: center;
-  margin: 22px 0 4px;
 }
 
 /* the chip is the only door to the reader's controls, so it carries a
@@ -1036,36 +1026,6 @@ nav.bottom-nav.glass {
   font-size: 0.92rem;
 }
 
-.settings-church + .settings-church {
-  margin-top: 12px;
-}
-
-.settings-church-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.settings-church-head h3 {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
-/* Deleting a Gathering is kept apart from the switch above it by a rule, so
-   that the last thing on the card is plainly a different kind of act from
-   the preference before it. */
-.settings-church-danger {
-  border-top: 1px solid var(--glass-border);
-  margin-top: 12px;
-  padding-top: 12px;
-  display: grid;
-  gap: 6px;
-  justify-items: start;
-}
-
 .about-card p {
   margin-bottom: 12px;
   line-height: 1.65;
@@ -1319,8 +1279,8 @@ html.welcoming {
  * On a wide screen the shelf stops being a shelf.
  *
  * Thumbed sideways is right for a phone and was quietly broken everywhere
- * else. The strip lays ten screens out in about 3,400px inside a 620px
- * column, hides its scrollbar, and a mouse wheel does not scroll a horizontal
+ * else. The strip laid ten screens out in about 3,400px inside a 620px
+ * column, hid its scrollbar, and a mouse wheel does not scroll a horizontal
  * container — so a desktop reader got two slides, no way to reach the other
  * eight, and eight blank frames where the pictures should be. Blank, because
  * the images are lazy and lazy images that are never scrolled into view are
@@ -1502,66 +1462,11 @@ html.welcoming {
   flex-wrap: wrap;
 }
 
-.gathering-row {
-  align-items: center;
-}
-
-/* ---- discover & requests ---- */
-.discover-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.discover-badges {
-  display: flex;
-  gap: 6px;
-}
-
-.mine-chip {
-  color: var(--gold);
-  border-color: var(--gold);
-}
-
-/* A session at a room you have not joined. Quieter than .mine-chip, because
-   this one is saying "not yours" and that is not news worth gold. */
-.session-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .open-chip {
   font-size: 0.7rem;
   padding: 1px 7px;
   color: var(--ink-faint);
   font-weight: 400;
-}
-
-/* The switch sits above the list rather than beside the tabs: it belongs to
-   what is being shown, not to which of the three is showing. */
-.sessions-open {
-  margin: 0 0 12px;
-  font-size: 0.86rem;
-  color: var(--ink-dim);
-}
-
-/* Same card, less of it — the ones you are in should carry the eye first. */
-.session-open {
-  opacity: 0.82;
-}
-
-.private-chip {
-  font-size: 0.72rem;
-  vertical-align: middle;
-  margin-left: 10px;
-}
-
-.request-row {
-  align-items: center;
 }
 
 /* ---- glass primitives ---- */
@@ -2357,25 +2262,9 @@ html.navhide .chap-arrow {
   transition: background 0.2s, border-color 0.2s;
 }
 
-.switch-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--ink-faint);
-  transition: transform 0.2s, background 0.2s;
-}
-
 .switch.on {
   background: var(--gold-soft);
   border-color: var(--gold);
-}
-
-.switch.on .switch-knob {
-  transform: translateX(20px);
-  background: var(--gold);
 }
 
 .scripture.study h2::after {
@@ -2429,34 +2318,6 @@ html.navhide .chap-arrow {
 .note-chip.has-note {
   background: var(--gold-soft);
   border-color: var(--gold);
-}
-
-.orig-line {
-  margin: 8px 0 0 20px;
-  font-size: 1.05em;
-  line-height: 1.9;
-  color: var(--ink);
-  opacity: 0.92;
-}
-
-.lit-line {
-  margin: 4px 0 0 20px;
-  font-family: var(--sans);
-  font-size: 0.82rem;
-  line-height: 1.55;
-  font-style: italic;
-  color: var(--ink-dim);
-}
-
-.lit-label {
-  font-style: normal;
-  font-size: 0.68rem;
-  color: var(--gold);
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  padding: 1px 7px;
-  margin-right: 4px;
-  vertical-align: middle;
 }
 
 .ctx-section {
@@ -2923,28 +2784,6 @@ html.navhide .chap-arrow {
   margin-top: 4px;
 }
 
-.church-row {
-  display: block;
-  padding: 18px 22px;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.church-row:hover {
-  border-color: var(--glass-border-bright);
-  background: var(--glass-strong);
-}
-
-.church-row h3 {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 1.2rem;
-}
-
-.church-row p {
-  color: var(--ink-dim);
-  font-size: 0.9rem;
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -2961,11 +2800,6 @@ html.navhide .chap-arrow {
   padding: 5px 12px;
   font-size: 0.84rem;
   color: var(--ink-dim);
-}
-
-.chip .role {
-  color: var(--gold);
-  font-size: 0.72rem;
 }
 
 .section-head {
@@ -2985,62 +2819,6 @@ html.navhide .chap-arrow {
   font-family: var(--serif);
   font-weight: 500;
   font-size: 1.25rem;
-}
-
-/* ---- sessions ---- */
-.session {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  padding: 16px 20px;
-}
-
-.session + .session {
-  margin-top: 12px;
-}
-
-.session-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-top: 3px;
-}
-
-.session-body {
-  flex: 1;
-}
-
-.session-body h3 {
-  font-size: 1.02rem;
-  font-weight: 600;
-}
-
-.session-meta {
-  color: var(--ink-dim);
-  font-size: 0.86rem;
-  margin-top: 2px;
-}
-
-.session-meta a {
-  color: var(--violet);
-}
-
-.rsvp-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
-.attendee-line {
-  margin-top: 8px;
-  font-size: 0.82rem;
-  opacity: 0.9;
-}
-
-.phone-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .menu-tiles {
@@ -3158,78 +2936,8 @@ button.menu-tile {
   width: auto;
 }
 
-/* ---- messages ---- */
-.conv-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.conv-avatar {
-  font-size: 1.45rem;
-}
-
-.conv-row-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
-.conv-body {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-}
-
-.conv-body small {
-  color: var(--ink-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.conv-unread {
-  display: inline-block;
-  margin-left: 8px;
-  background: var(--gold);
-  color: #221604;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  padding: 1px 7px;
-  vertical-align: middle;
-}
-
-.conv-time {
-  color: var(--ink-faint);
-  font-size: 0.78rem;
-  white-space: nowrap;
-}
-
-.nav-badge {
-  display: inline-block;
-  margin-left: 6px;
-  background: #d9544f;
-  color: #fff;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1;
-  padding: 3px 6px;
-  vertical-align: middle;
-}
-
 .bn-messages {
   position: relative;
-}
-
-.bn-badge {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  margin: 0;
 }
 
 .plans-lead {
@@ -3473,283 +3181,6 @@ button.menu-tile {
   display: flex;
   gap: 6px;
   white-space: nowrap;
-}
-
-.admin-expand td {
-  white-space: normal;
-}
-
-/* the two buttons a section heading can carry, side by side and never wrapped
-   onto the title's line */
-.head-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Choosing who an entry goes to, opened under the entry itself rather than
-   over the page: the journal expands in place everywhere else it asks a
-   question, and a sheet here would be the only thing that covered the list. */
-.jr-send {
-  display: grid;
-  gap: 10px;
-  padding: 12px 0 4px;
-  border-top: 1px solid var(--glass-border);
-  margin-top: 10px;
-  /* The row is a flex line — handle, passage, actions. Left to itself this
-     panel became a fourth column and squeezed the verse beside it to one word
-     per line. It belongs under the row, so it takes the full width and forces
-     the wrap that puts it there. */
-  flex: 0 0 100%;
-  width: 100%;
-}
-
-.jr-send .chips {
-  max-height: 190px;
-  overflow-y: auto;
-}
-
-.notif-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-/* the way to the rest of them, under the five that are shown */
-.notif-more {
-  display: flex;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.notif-list {
-  display: grid;
-  gap: 4px;
-}
-
-.notif-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-}
-
-.notif-row:hover {
-  border-color: var(--glass-border);
-}
-
-.notif-body {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-}
-
-.notif-body small {
-  color: var(--ink-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.thread {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100dvh - 210px);
-}
-
-/* The reply box is sticky, and sticky can only move inside its own parent.
-   On a topic with one short reply that parent is barely taller than the box
-   itself, so there is nothing to lift into and the keyboard covers it. This
-   gives it the same floor to push against that a message thread has. */
-.thread-page {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100dvh - 210px);
-}
-
-.thread-page .thread-posts {
-  flex: 1;
-}
-
-.thread-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.thread-head h1 {
-  font-size: 1.2rem;
-  font-weight: 500;
-}
-
-.thread-scroll {
-  flex: 1;
-}
-
-.thread-day {
-  text-align: center;
-  color: var(--ink-faint);
-  font-size: 0.76rem;
-  margin: 12px 0 6px;
-}
-
-.bubble {
-  position: relative;
-  max-width: 78%;
-  width: fit-content;
-  background: var(--glass-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px 16px 16px 5px;
-  padding: 9px 12px;
-  margin: 4px 0;
-  font-size: 0.95rem;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.bubble.mine {
-  margin-left: auto;
-  background: var(--gold-soft);
-  border-color: color-mix(in srgb, var(--gold) 40%, transparent);
-  border-radius: 16px 16px 5px 16px;
-}
-
-.bubble-time {
-  display: block;
-  font-size: 0.68rem;
-  color: var(--ink-faint);
-  margin-top: 3px;
-  text-align: right;
-}
-
-.bubble-del {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  background: var(--bg-1);
-  color: var(--ink-dim);
-  font-size: 0.7rem;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.bubble:hover .bubble-del,
-.bubble:focus-within .bubble-del {
-  opacity: 1;
-}
-
-/* touch devices have no hover — keep it discreetly visible */
-@media (hover: none) {
-  .bubble-del {
-    opacity: 0.55;
-  }
-}
-
-.thread-head h1 {
-  flex: 1;
-  min-width: 0;
-}
-
-.composer {
-  position: sticky;
-  /* 64px clears the bottom nav; with a keyboard up the nav is behind it
-     anyway, so clear the keyboard instead. max(), never a sum: iOS does not
-     zero the safe-area inset when the keyboard opens, and adding the two
-     leaves a 34px dead strip. */
-  bottom: max(
-    calc(64px + env(safe-area-inset-bottom, 0px)),
-    calc(var(--kb, 0px) + 8px)
-  );
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 16px;
-  margin-top: 12px;
-}
-
-.verse-card {
-  display: grid;
-  gap: 2px;
-  padding: 4px 2px;
-}
-
-.verse-card-kind {
-  font-size: 0.72rem;
-  color: var(--ink-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.verse-card strong {
-  color: var(--gold);
-}
-
-.verse-card em {
-  color: var(--ink-dim);
-  font-size: 0.88rem;
-}
-
-.verse-card small {
-  color: var(--ink-faint);
-  font-size: 0.75rem;
-}
-
-.share-picker {
-  margin-top: 12px;
-}
-
-.share-list {
-  display: grid;
-  gap: 4px;
-  max-height: calc(var(--vvh, 100dvh) * 0.4);
-  overflow-y: auto;
-}
-
-.share-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: none;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.share-row:hover {
-  border-color: var(--gold);
-}
-
-.share-row-body {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-}
-
-.share-row-body small {
-  color: var(--ink-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.composer input {
-  flex: 1;
-  min-width: 0;
 }
 
 .menu-tile-emoji {
@@ -4124,60 +3555,6 @@ button.menu-tile {
   color: var(--ink-dim);
   font-size: 0.88rem;
 }
-
-.post-row {
-  margin-bottom: 10px;
-}
-
-.post-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.post-head strong {
-  flex: 1;
-  min-width: 0;
-}
-
-.post-text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.post-attach {
-  display: grid;
-  gap: 3px;
-  margin-top: 8px;
-  padding: 9px 11px;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-}
-
-.post-attach .verse-card-kind {
-  margin-bottom: 1px;
-}
-
-/* keep the picker clear of the sticky composer */
-.attach-picker {
-  margin-top: 8px;
-  padding-bottom: 8px;
-}
-
-.attach-picker .share-list {
-  max-height: calc(var(--vvh, 100dvh) * 0.3);
-}
-
-.attach-chip-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.88rem;
-  margin-bottom: 10px;
-}
-
 
 .bm-sheet-title {
   font-size: 1.15rem;
@@ -4557,7 +3934,7 @@ button.compare-pick:last-child {
 /* the word study's four actions share one row at any width */
 .word-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .word-actions .btn {
@@ -4584,43 +3961,6 @@ button.compare-pick:last-child {
   white-space: nowrap;
 }
 
-.lex-peers {
-  margin-top: 8px;
-  max-height: calc(var(--vvh, 100dvh) * 0.3);
-  overflow-y: auto;
-}
-
-.share-tabs {
-  margin-bottom: 8px;
-}
-
-.share-tabs button {
-  flex: 1;
-}
-
-.share-gatherings {
-  display: grid;
-  gap: 6px;
-}
-
-/* the discussions inside the Gathering you opened */
-.share-threads {
-  margin: 6px 0 2px 14px;
-}
-
-.verse-card em {
-  white-space: pre-wrap;
-}
-
-.phone-prefix {
-  color: var(--ink-dim);
-  font-size: 0.92rem;
-  padding: 6px 8px;
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  background: var(--glass);
-}
-
 .rsvp-btn {
   font-size: 0.8rem;
   padding: 5px 11px;
@@ -4636,20 +3976,6 @@ button.compare-pick:last-child {
   background: var(--gold-soft);
   border-color: var(--gold);
   color: var(--gold);
-}
-
-.rsvp-count {
-  font-size: 0.78rem;
-  color: var(--ink-faint);
-  align-self: center;
-}
-
-/* ---- session type picker ---- */
-.type-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
 }
 
 .type-card {
@@ -4685,106 +4011,8 @@ button.compare-pick:last-child {
   display: block;
 }
 
-.type-card .desc {
-  font-size: 0.78rem;
-  color: var(--ink-dim);
-  display: block;
-  margin-top: 2px;
-}
-
-/* ---- month grid ---- */
-/* The members and the calendar are two separate things and were touching:
-   the chips row has no margin of its own and the card below starts hard
-   against it, so the two read as one bordered block. Its own class rather
-   than a margin on .chips, which is a dozen other rows across the app. */
-.member-chips {
-  margin-bottom: 14px;
-}
-
-.month-grid {
-  margin-bottom: 18px;
-}
-
-.month-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.month-title {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  color: var(--gold);
-  text-transform: capitalize;
-}
-
-.month-cells {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.dow {
-  text-align: center;
-  font-size: 0.72rem;
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  padding-bottom: 4px;
-}
-
-.day {
-  min-height: 44px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--ink-dim);
-  font: inherit;
-  font-size: 0.82rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 4px 2px;
-  gap: 2px;
-}
-
-.day.today {
-  border-color: var(--glass-border-bright);
-  color: var(--ink);
-}
-
-.day.has-events {
-  background: var(--gold-soft);
-  border-color: var(--gold);
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.day-dots {
-  font-size: 0.68rem;
-  line-height: 1;
-  letter-spacing: -1px;
-}
-
-.session-tools {
-  display: flex;
-  gap: 6px;
-}
-
-.cal-row,
-.quick-create {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.quick-create {
-  margin: -4px 0 14px;
-}
-
+/* ---- small print and pill links ----
+   Named for the calendar, where they began; every screen uses them now. */
 .cal-label {
   font-size: 0.78rem;
   color: var(--ink-faint);
@@ -4810,58 +4038,9 @@ button.compare-pick:last-child {
   flex-basis: 100%;
 }
 
-.member-pick {
-  background: rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin: -6px 0 14px;
-}
-
-.member-pick-list {
-  display: grid;
-  gap: 2px;
-  margin-top: 6px;
-}
-
-.member-pick-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 0.9rem;
-  padding: 3px 0;
-  cursor: pointer;
-}
-
-.member-pick-row.disabled {
-  color: var(--ink-faint);
-  cursor: default;
-}
-
-.member-pick-row em {
-  font-size: 0.76rem;
-  color: var(--ink-faint);
-}
-
-.member-pick-row input[type="checkbox"] {
-  width: auto;
-  accent-color: var(--gold);
-}
-
-.title-edit {
-  margin-left: 10px;
-  vertical-align: middle;
-}
-
 .passage-link {
   color: var(--gold);
   border-bottom: 1px dotted var(--gold);
-}
-
-/* ---- email invite ---- */
-.email-invite-row {
-  display: grid;
-  gap: 8px;
 }
 
 .email-sent {
@@ -4882,7 +4061,8 @@ button.compare-pick:last-child {
   justify-content: center;
   padding: 16px;
   padding-top: calc(16px + var(--vv-top, 0px));
-  /* max(), never a sum — see .composer */
+  /* max(), never a sum: iOS does not zero the safe-area inset when the
+     keyboard opens, and adding the two leaves a 34px dead strip */
   padding-bottom: max(16px, env(safe-area-inset-bottom, 0px), var(--kb, 0px));
 }
 
@@ -4922,49 +4102,6 @@ button.compare-pick:last-child {
   margin: -8px 0 16px;
 }
 
-.step-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
-  color: var(--ink-faint);
-}
-
-.step-dot.active {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: var(--gold-soft);
-}
-
-.modal-sub {
-  color: var(--ink-dim);
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-
-.about-box {
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  padding: 16px 18px;
-  margin-bottom: 16px;
-}
-
-.about-lead {
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-}
-
-.about-emoji {
-  font-size: 1.35rem;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-
 .toggle-row {
   display: flex;
   align-items: center;
@@ -4984,31 +4121,6 @@ button.compare-pick:last-child {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 18px;
-}
-
-.form-row {
-  display: flex;
-  gap: 12px;
-}
-
-.form-row .field {
-  flex: 1;
-}
-
-.invite-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.invite-url {
-  font-size: 0.8rem;
-  word-break: break-all;
-  color: var(--ink-faint);
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-top: 12px;
 }
 
 .notice {
@@ -5102,22 +4214,6 @@ button.compare-pick:last-child {
   line-height: 0;
 }
 
-/* ---- Journal ----------------------------------------------------------
-   One screen for everything this account has made: notes, kept verses and
-   plan progress, each sorted into its own kind. Rows are cards so they read
-   as the same material as the rest of the app, but a good deal quieter —
-   there can be hundreds of them, and .card's 22px would make a wall. */
-/* who the other person is, in the terms the app can answer it in */
-.thread-shared {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 0 4px 10px;
-  font-size: 0.8rem;
-  color: var(--ink-faint);
-  line-height: 1.5;
-}
-
 /* ---- walls ---- */
 /* A wall reads shut: reference, who hung it, and nothing else until it is
    asked for. The rows are tighter than a journal row for the same reason —
@@ -5199,23 +4295,21 @@ button.compare-pick:last-child {
 }
 
 /*
- * Lift the row an open menu belongs to.
+ * Lift the row a confirmation floats out of.
  *
- * Every row is .glass, and backdrop-filter makes a stacking context, so the
- * NEXT row down painted over the menu hanging out of this one — and took its
- * taps with it: elementFromPoint at the foot of the menu came back holding
- * the reference of the bookmark underneath. A z-index on the menu alone
- * cannot win that, because the contest is between the rows, not between the
- * menu and anything.
- */
-/*
+ * Every row is .glass, and backdrop-filter makes a stacking context, so a
+ * neighbouring row paints over whatever hangs out of this one — here the
+ * "hung" note below, which floats over the row rather than pushing it about.
+ * A z-index on the note alone cannot win that, because the contest is between
+ * the rows. (It was first written for the menu that chose which wall, when
+ * there was more than one wall to choose from.)
+ *
  * Rows only. The bookmark sheet used to be in this rule, and `position:
  * relative` on a sheet that is `position: fixed` is not a lift — it is a drop:
  * the sheet left the viewport and landed 47,000px down the document, which
  * from the reader's side looked like the button closing it. The sheet is
  * z-index 70 already and has no sibling to lose to.
  */
-.jr-row:has(.hang-menu),
 .jr-row:has(.hang-done) {
   position: relative;
   z-index: 61;
@@ -5247,8 +4341,16 @@ button.compare-pick:last-child {
   pointer-events: none;
 }
 
+.bm-hang {
+  margin: 10px 0 2px;
+}
+
 /* In the sheet there is a line to itself and room on it, so the message can
    simply be part of the page the way any other confirmation is. */
+.hang-inline {
+  display: block;
+}
+
 .hang-inline .hang-done {
   position: static;
   display: block;
@@ -5257,225 +4359,6 @@ button.compare-pick:last-child {
   border: 0;
   box-shadow: none;
   padding: 0;
-}
-
-/* Opens upward as often as down, so it is anchored to the button's edge and
-   allowed to scroll: a bookmark row near the bottom of a long journal would
-   otherwise drop its menu off the page. */
-.hang-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  z-index: 60;
-  min-width: 208px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding: 10px;
-  border-radius: 14px;
-  display: grid;
-  gap: 2px;
-  /* Opaque, and it has to be. .glass is translucent by design, which is right
-     for a card sitting on the page and wrong for a menu sitting ON a card:
-     the verse underneath read straight through the options and neither could
-     be made out. A menu is a thing in front, so it is drawn in front. */
-  background: var(--bg-1);
-  border: 1px solid var(--glass-border-bright);
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
-}
-
-/* The same list, in the flow. No shadow and no lift: it is not sitting on the
-   sheet, it is part of it, and it pushes what follows down rather than
-   covering it. */
-.hang-list {
-  display: grid;
-  gap: 2px;
-  margin: 8px 0 2px;
-  padding: 8px;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass);
-}
-
-.hang-inline {
-  display: block;
-}
-
-.hang-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 9px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-size: 0.88rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.hang-item:hover {
-  background: var(--glass-strong);
-}
-
-.hang-item:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.bm-hang {
-  margin: 10px 0 2px;
-}
-
-/* Who is being asked, on the prayer wall's compose box.
-
-   In the flow rather than floating over it: the composer is a form, and a
-   menu that covers the box you are typing in to tell you where the words are
-   going is the wrong way round. Opening it pushes the buttons down, which is
-   the honest thing for a list whose length is the reader's own membership. */
-.pr-where {
-  display: grid;
-  gap: 6px;
-}
-
-.pr-where-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  background: var(--glass);
-  color: inherit;
-  font: inherit;
-  font-size: 0.88rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.pr-where-btn:hover {
-  border-color: var(--glass-border-bright);
-}
-
-.pr-where-list {
-  display: grid;
-  gap: 2px;
-  max-height: 220px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 8px 10px;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  background: var(--glass);
-}
-
-.pr-where-list .toggle-row {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-/* ---- answering a message without words (components/MessageThread) ---- */
-
-/* Under the bubble and on the same side of the thread as it, so a reaction
-   reads as belonging to the message rather than floating between two. */
-.react-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: -2px 0 8px;
-}
-
-.react-row.mine {
-  justify-content: flex-end;
-}
-
-.react-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background: var(--glass);
-  color: var(--ink-dim);
-  font: inherit;
-  font-size: 0.78rem;
-  line-height: 1.6;
-  cursor: pointer;
-}
-
-/* the one you gave, marked — a count you are part of reads differently */
-.react-chip.on {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.react-chip span {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Quiet, but a control. Shaped like the chips it sits beside so it reads as
-   something to press rather than as a mark left on the page — at half opacity
-   and with no edge it looked like a smudge under the bubble. Every message
-   carries one, so it stays dim until wanted. */
-.react-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background: var(--glass);
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.react-add svg {
-  width: 14px;
-  height: 14px;
-}
-
-.react-add:hover,
-.react-row:has(.react-picker) .react-add {
-  color: var(--ink-dim);
-  border-color: var(--glass-border-bright);
-}
-
-/* In the flow rather than over the thread: the thread scrolls, and a menu
-   positioned over a scroller is a menu that parts company with the message
-   it belongs to the moment anybody moves. */
-.react-picker {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px 5px;
-  border: 1px solid var(--glass-border-bright);
-  border-radius: 999px;
-  background: var(--bg-1);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
-}
-
-.react-picker button {
-  border: 0;
-  background: none;
-  padding: 3px 5px;
-  border-radius: 999px;
-  font-size: 1.05rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.react-picker button:hover,
-.react-picker button.on {
-  background: var(--glass-strong);
 }
 
 /* ---- plans people write for themselves (components/PlanBuilder) ---- */
@@ -5598,6 +4481,12 @@ button.compare-pick:last-child {
   border-top: 1px solid var(--glass-border);
 }
 
+/* ---- Journal ----------------------------------------------------------
+   One screen for everything this account has made: notes, kept verses and
+   plan progress, each sorted into its own kind. Rows are cards so they read
+   as the same material as the rest of the app, but a good deal quieter —
+   there can be hundreds of them, and .card's 22px would make a wall. */
+
 /* The day's action, on a line of its own under the plan. */
 .jr-plan-foot {
   flex-basis: 100%;
@@ -5709,10 +4598,6 @@ button.compare-pick:last-child {
 .jr-list {
   display: grid;
   gap: 10px;
-}
-
-.jr-list-tight {
-  gap: 6px;
 }
 
 /* the sibling rule that spaces stacked cards would fight the grid gap */
@@ -5999,192 +4884,6 @@ button.compare-pick:last-child {
   font-size: 0.9rem;
 }
 
-/* ---- the prayer list -----------------------------------------------------
-   A Gathering's open requests, and the answered ones kept below them. */
-.pr-compose,
-.pr-card {
-  padding: 16px 18px;
-  display: grid;
-  gap: 10px;
-}
-
-.pr-compose textarea,
-.pr-answer-edit textarea {
-  width: 100%;
-  font: inherit;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--ink);
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 11px 13px;
-  resize: vertical;
-}
-
-.pr-compose textarea:focus,
-.pr-answer-edit textarea:focus {
-  outline: none;
-  border-color: var(--gold);
-}
-
-/* an answered request stays on the list, but stops asking for attention */
-.pr-card.answered {
-  opacity: 0.72;
-}
-
-.pr-head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.pr-who {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.9rem;
-  color: var(--ink-dim);
-}
-
-.pr-anon {
-  font-style: italic;
-}
-
-.pr-when {
-  margin-left: 8px;
-  font-size: 0.8rem;
-  color: var(--ink-faint);
-}
-
-/* which Gathering a request came from, on the wall — its own line, because
-   the name of a Gathering is as long as somebody chose to make it */
-.pr-from {
-  display: block;
-  margin-top: 3px;
-  font-size: 0.78rem;
-  color: var(--ink-faint);
-}
-
-.pr-from:hover {
-  color: var(--gold);
-}
-
-.pr-tools {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
-
-.pr-text {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 1.02rem;
-  line-height: 1.55;
-  white-space: pre-wrap;
-}
-
-.pr-answer {
-  margin: 0;
-  padding: 8px 11px;
-  border-radius: 10px;
-  background: var(--gold-soft);
-  color: var(--gold);
-  font-size: 0.92rem;
-}
-
-.pr-actions,
-.pr-answer-edit {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.pr-answer-edit {
-  display: grid;
-  gap: 8px;
-}
-
-/* "I am praying for this" is a state, so it holds its colour once pressed —
-   and a border as well as a colour, for the grey theme */
-.pr-pray.active {
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-soft);
-}
-
-.pr-count {
-  font-size: 0.85rem;
-  color: var(--ink-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-
-/* ---- folding the wall ---- */
-/* A folded request is a line: who, when, where, and the first words with an
-   ellipsis. The newest few arrive open; everything older arrives folded, and
-   the caret — or the line itself — opens it out. The tools fold away with
-   the body: a card being skimmed past is not the moment for its delete
-   button. */
-.pr-fold {
-  border: 0;
-  background: none;
-  color: var(--ink-faint);
-  padding: 2px 4px;
-  cursor: pointer;
-  line-height: 1;
-  align-self: flex-start;
-}
-
-.pr-fold .bn-caret {
-  display: inline-block;
-  font-size: 0.9rem;
-  transition: transform 0.18s;
-}
-
-.pr-fold .bn-caret.open {
-  transform: rotate(180deg);
-}
-
-.pr-card.pr-folded {
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
-
-.pr-text-folded {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--ink-dim);
-  cursor: pointer;
-  margin: 0;
-}
-
-/* the section header carries two small buttons now — fold-all and ask */
-.pr-head-tools {
-  display: inline-flex;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-
-.pr-divider {
-  margin: 22px 0 10px;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-/* who can see the prayer list, said where it is asked about */
-.pr-privacy {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: -4px 0 12px;
-  font-size: 0.85rem;
-}
-
 /* ---- the navigator's history ---------------------------------------------
    Where the reader has been sent, under a heading that behaves exactly like
    the two testaments above it. */
@@ -6253,75 +4952,6 @@ button.compare-pick:last-child {
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
-}
-
-/* What the Gathering is reading — see components/ChurchPlan. The bar is a
-   background gradient rather than a nested element so a row stays one line
-   of markup and the list keeps its rhythm at any width. */
-.cohort-name {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  color: var(--ink);
-  margin-bottom: 2px;
-}
-
-.cohort-me {
-  color: var(--gold);
-  font-size: 0.92rem;
-  margin: 10px 0 4px;
-}
-
-.cohort-list {
-  list-style: none;
-  display: grid;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.cohort-list li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.5rem auto;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-}
-
-.cohort-who {
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cohort-bar {
-  height: 5px;
-  border-radius: 3px;
-  background: linear-gradient(
-    to right,
-    var(--gold) var(--pct, 0%),
-    var(--glass) var(--pct, 0%)
-  );
-}
-
-.cohort-day {
-  color: var(--ink-dim);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* not started: present, but plainly not walking yet */
-.cohort-waiting .cohort-who,
-.cohort-waiting .cohort-day {
-  opacity: 0.55;
-}
-
-.cohort-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0;
-  max-height: 46vh;
-  overflow-y: auto;
 }
 
 /* A switched-off account in the admin table. Dimmed rather than hidden: the

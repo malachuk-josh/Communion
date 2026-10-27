@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Icon, { SESSION_ICON } from "@/components/Icon";
+import Icon from "@/components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { readOutbox } from "@/lib/localStore";
@@ -20,7 +20,6 @@ import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
-import StartGathering from "@/components/StartGathering";
 import MyWall from "@/components/MyWall";
 import PlanBuilder from "@/components/PlanBuilder";
 import {
@@ -28,11 +27,6 @@ import {
   type CustomPlanRow,
   type PublicPlanCard,
 } from "@/lib/customPlanTypes";
-import type { DiscoverChurch, SessionType, WorshipEvent } from "@/lib/types";
-
-
-
-type Gathering = WorshipEvent & { churchName: string };
 
 function refLabel(ref: VerseRef, lang: Lang): string {
   const book = getBook(ref.b);
@@ -40,14 +34,16 @@ function refLabel(ref: VerseRef, lang: Lang): string {
   return `${name} ${ref.c}:${ref.v}${ref.ve ? `–${ref.ve}` : ""}`;
 }
 
-/** The toggles, in the order the row shows them. */
-const DISCOVER_TABS = ["scripture", "wall", "gatherings"] as const;
+/**
+ * The toggles, in the order the row shows them. A third, Gatherings, went
+ * with the Gatherings themselves; a reader whose saved tab was that one lands
+ * on Scripture, because useStickyTab only restores a tab still listed here.
+ */
+const DISCOVER_TABS = ["scripture", "wall"] as const;
 
 export default function Discover() {
   const { t } = useI18n();
   const [tab, setTab] = useStickyTab("discover", "scripture", DISCOVER_TABS);
-  const [churches, setChurches] = useState<DiscoverChurch[] | null>(null);
-  const [gatherings, setGatherings] = useState<Gathering[]>([]);
   /*
    * The plan a reminder was about, if this page was opened by one.
    *
@@ -74,19 +70,10 @@ export default function Discover() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    api<{ churches: DiscoverChurch[]; gatherings: Gathering[] }>("/api/discover")
-      .then((res) => {
-        setChurches(res.churches);
-        setGatherings(res.gatherings ?? []);
-      })
-      .catch(() => setChurches([]));
-  }, []);
-
   return (
     <div>
       <h1 className="page-title">{t("discover.title")}</h1>
-      {/* two things worth discovering: the Word, and the people reading it */}
+      {/* the Word, and the verses this reader has put up from it */}
       <div className="lang-toggle discover-tabs" role="group">
         <button
           className={tab === "scripture" ? "active" : ""}
@@ -95,8 +82,6 @@ export default function Discover() {
         >
           <Icon name="book" /> {t("discover.tabScripture")}
         </button>
-        {/* between the Word and the people, which is where it belongs: the
-            verses on it came from the one and are held with the other */}
         <button
           className={tab === "wall" ? "active" : ""}
           onClick={() => setTab("wall")}
@@ -104,46 +89,18 @@ export default function Discover() {
         >
           <Icon name="wall" /> {t("wall.mine")}
         </button>
-        <button
-          className={tab === "gatherings" ? "active" : ""}
-          onClick={() => setTab("gatherings")}
-          aria-pressed={tab === "gatherings"}
-        >
-          <Icon name="church" /> {t("discover.tabGatherings")}
-        </button>
       </div>
       <p className="subtitle">
-        {tab === "scripture"
-          ? t("discover.subtitleScripture")
-          : tab === "wall"
-            ? t("wall.mineLead")
-            : t("discover.subtitle")}
+        {tab === "scripture" ? t("discover.subtitleScripture") : t("wall.mineLead")}
       </p>
 
       {tab === "wall" ? (
         <MyWall />
-      ) : tab === "scripture" ? (
+      ) : (
         <>
           <VerseOfDay />
           <TopicsSection />
           <PlansSection open={openPlan} />
-        </>
-      ) : (
-        <>
-          <GatheringsSection gatherings={gatherings} />
-          <ChurchDirectory churches={churches} />
-          <div className="discover-start">
-            <StartGathering
-              className="btn btn-primary"
-              // new Gatherings start public, so it belongs in the directory
-              onCreated={(church) =>
-                setChurches((prev) => [
-                  { ...church, memberCount: 1, mine: true },
-                  ...(prev ?? []),
-                ])
-              }
-            />
-          </div>
         </>
       )}
     </div>
@@ -209,7 +166,7 @@ function VerseOfDay() {
               <Icon name="book" /> {t("discover.openReader")}
             </Link>
             <button className="btn btn-sm" onClick={share}>
-              <Icon name="share" /> {copied ? t("churches.copied") : t("discover.share")}
+              <Icon name="share" /> {copied ? t("common.copied") : t("discover.share")}
             </button>
           </div>
         </>
@@ -262,7 +219,7 @@ function TopicsSection() {
             </div>
             <div className="modal-actions">
               <button className="btn" onClick={() => setOpen(null)}>
-                {t("session.cancel")}
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -878,129 +835,5 @@ function CustomPlans({
         );
       })}
     </div>
-  );
-}
-
-function GatheringsSection({ gatherings }: { gatherings: Gathering[] }) {
-  const { lang, t } = useI18n();
-  if (gatherings.length === 0) return null;
-  return (
-    <>
-      <div className="section-head">
-        <h2>{t("discover.gatherings")}</h2>
-      </div>
-      {gatherings.map((event) => {
-        const when = new Date(event.startsAt).toLocaleString(
-          lang === "es" ? "es" : "en",
-          {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          }
-        );
-        return (
-          <Link
-            key={event.id}
-            href={`/churches/${event.churchId}`}
-            className="glass session gathering-row"
-          >
-            <span className="session-icon"><Icon name={SESSION_ICON[event.type]} /></span>
-            <div className="session-body">
-              <h3>{event.title}</h3>
-              <p className="session-meta">
-                <Icon name="church" /> {event.churchName} · {when}
-              </p>
-            </div>
-          </Link>
-        );
-      })}
-    </>
-  );
-}
-
-function ChurchDirectory({ churches }: { churches: DiscoverChurch[] | null }) {
-  const { t } = useI18n();
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<"new" | "big">("new");
-
-  const filtered = useMemo(() => {
-    if (!churches) return null;
-    const q = query.trim().toLowerCase();
-    const list = churches.filter(
-      (c) =>
-        !q ||
-        c.name.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q)
-    );
-    return [...list].sort((a, b) =>
-      sort === "big" ? b.memberCount - a.memberCount : b.createdAt - a.createdAt
-    );
-  }, [churches, query, sort]);
-
-  return (
-    <>
-      <div className="section-head">
-        <h2>{t("discover.churches")}</h2>
-        <div className="lang-toggle" role="group">
-          <button
-            className={sort === "new" ? "active" : ""}
-            onClick={() => setSort("new")}
-          >
-            {t("discover.sortNew")}
-          </button>
-          <button
-            className={sort === "big" ? "active" : ""}
-            onClick={() => setSort("big")}
-          >
-            {t("discover.sortBig")}
-          </button>
-        </div>
-      </div>
-      <div className="glass search-bar">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("discover.searchChurches")}
-          maxLength={60}
-        />
-        <span aria-hidden><Icon name="search" /></span>
-      </div>
-
-      {filtered === null ? (
-        <p className="skeleton">{t("common.loading")}</p>
-      ) : filtered.length === 0 ? (
-        <div className="glass card empty">
-          <blockquote className="founding-verse">
-            {t("verse.matthew")}
-            <cite>{t("verse.matthewRef")}</cite>
-          </blockquote>
-          <p>{t("discover.empty")}</p>
-        </div>
-      ) : (
-        filtered.map((church) => (
-          <Link
-            key={church.id}
-            href={`/churches/${church.id}`}
-            className="glass church-row card"
-          >
-            <div className="discover-head">
-              <h3>{church.name}</h3>
-              <span className="discover-badges">
-                {church.mine && (
-                  <span className="chip mine-chip">✓ {t("discover.mine")}</span>
-                )}
-                <span className="chip">
-                  <Icon name="people" /> {t(church.memberCount === 1 ? "discover.memberOne" : "discover.members", { count: String(church.memberCount) })}
-                </span>
-              </span>
-            </div>
-            {church.description && <p>{church.description}</p>}
-          </Link>
-        ))
-      )}
-    </>
   );
 }

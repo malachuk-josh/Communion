@@ -1,19 +1,16 @@
-// Verses hung where other people can see them.
+// The reader's wall: the verses they have put up on their home screen.
 //
-// Two walls, one shape. A Gathering's wall is the verses its members have put
-// up for each other — the passages the group is actually built on, which
-// until now lived in the description or in somebody's memory. A reader's own
-// wall is the same act with an audience of one, and it sits on their home
-// screen.
-//
-// A wall is not a collection. A collection is filing — private, ordered,
-// yours. Hanging is publishing, even when the room is small: it says "this
-// one, for us". So the two are stored apart, and a verse can be in both, in
+// A wall is not a collection. A collection is filing — ordered, kept for
+// later. Hanging a verse says "this one, in front of me, now", which is a
+// different act, so the two are stored apart and a verse can be in both, in
 // either, or in neither.
+//
+// There used to be a second kind, a Gathering's wall, with members and a
+// founder who could take things down. The Gatherings are gone, and what is
+// left is the wall with an audience of one.
 
 import { db, keys } from "@/lib/db";
 import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
-import { getChurch, getRole } from "@/lib/churches";
 
 export interface WallEntry {
   /** the bookmark key, which is also its place on the wall */
@@ -33,14 +30,8 @@ export interface WallEntry {
 /** How many one wall will hold. Past this it stops being a wall. */
 export const WALL_MAX = 60;
 
-const wallKey = (scope: { churchId?: string; userId: string }) =>
-  scope.churchId ? keys.churchWall(scope.churchId) : keys.userWall(scope.userId);
-
-export async function listWall(scope: {
-  churchId?: string;
-  userId: string;
-}): Promise<WallEntry[]> {
-  const raw = (await db().hgetall(wallKey(scope))) ?? {};
+export async function listWall(scope: { userId: string }): Promise<WallEntry[]> {
+  const raw = (await db().hgetall(keys.userWall(scope.userId))) ?? {};
   const out: WallEntry[] = [];
   for (const [key, value] of Object.entries(raw)) {
     const ref = parseBmKey(key);
@@ -52,16 +43,15 @@ export async function listWall(scope: {
       // a row we cannot read is a row we do not hang
     }
   }
-  // newest first: a wall is a record of what the room is thinking about now
+  // newest first: a wall is a record of what is on the reader's mind now
   return out.sort((a, b) => b.at - a.at);
 }
 
 export type HangResult =
   | { ok: true; entry: WallEntry }
-  | { ok: false; reason: "bad_key" | "not_a_member" | "no_such_wall" | "full" };
+  | { ok: false; reason: "bad_key" | "full" };
 
 export async function hangVerse(opts: {
-  churchId?: string;
   userId: string;
   displayName: string;
   key: string;
@@ -70,22 +60,10 @@ export async function hangVerse(opts: {
   const ref = parseBmKey(opts.key);
   if (!ref || !BM_KEY.test(opts.key)) return { ok: false, reason: "bad_key" };
 
-  if (opts.churchId) {
-    const church = await getChurch(opts.churchId);
-    if (!church) return { ok: false, reason: "no_such_wall" };
-    // Members only. A wall is the room speaking to itself, and somebody who
-    // has not joined the room is not part of that conversation.
-    if (!(await getRole(opts.churchId, opts.userId))) {
-      return { ok: false, reason: "not_a_member" };
-    }
-  }
-
   const kv = db();
-  const key = wallKey(opts);
+  const key = keys.userWall(opts.userId);
 
-  // Already up. Left as whoever hung it first hung it: a wall records who
-  // brought a verse to the room, and the second person to reach for it did
-  // not bring it.
+  // already up: left as it was first hung, with its note and its date
   const alreadyUp = async (): Promise<WallEntry | null> => {
     const held = await listWall(opts);
     return held.find((e) => e.key === opts.key) ?? null;
@@ -97,14 +75,11 @@ export async function hangVerse(opts: {
     if (entry) return { ok: true, entry };
   }
   /*
-   * Counted, then written, with no transaction between — so two people
+   * Counted, then written, with no transaction between — so two devices
    * hanging a verse at the same instant on a wall with one space left can
    * both find it. Deliberately left that way: each write is a single field
    * that clobbers nothing, so the failure is a wall of sixty-one, and it
-   * corrects itself the moment anybody takes one down. Every mechanism that
-   * would close the gap on this store — reserve-then-verify, or a rollback —
-   * risks deleting a verse somebody legitimately hung, which is a worse thing
-   * to be wrong about than a number.
+   * corrects itself the moment one comes down.
    */
   if (Object.keys(existing).length >= WALL_MAX) {
     return { ok: false, reason: "full" };
@@ -118,22 +93,8 @@ export async function hangVerse(opts: {
     at: Date.now(),
     ...(opts.note?.trim() ? { note: opts.note.trim().slice(0, 200) } : {}),
   };
-  /*
-   * Asked once more, immediately before writing.
-   *
-   * Two people can reach for the same verse in the same second — which is
-   * not a freak event on a wall, it is what a room reading together looks
-   * like — and both would have passed the check above with the field empty.
-   * The second write then replaced the first hanger's name, their note and
-   * their timestamp with its own, so the wall credited the wrong person for
-   * bringing the verse. That is the one thing this hash records that cannot
-   * be worked out again from anywhere else.
-   *
-   * A re-read cannot close the window completely without a transaction the
-   * store does not have, but it shrinks it to the gap between these two
-   * lines, and it only ever declines to overwrite — nothing is lost either
-   * way round.
-   */
+  // asked once more immediately before writing, so a second device hanging
+  // the same verse in the same second keeps the first one's note and date
   if (((await kv.hgetall(key)) ?? {})[opts.key]) {
     const winner = await alreadyUp();
     if (winner) return { ok: true, entry: winner };
@@ -144,40 +105,14 @@ export async function hangVerse(opts: {
   return { ok: true, entry };
 }
 
-/**
- * Take a verse down.
- *
- * Whoever hung it, and the Gathering's founder. Not every member: a wall the
- * room built should not be editable by whoever happens to disagree with one
- * verse on it, and the founder is who answers for the room.
- */
+/** Take a verse down. */
 export async function unhangVerse(opts: {
-  churchId?: string;
   userId: string;
   key: string;
 }): Promise<boolean> {
   const kv = db();
-  const key = wallKey(opts);
-  const raw = (await kv.hgetall(key))?.[opts.key];
-  if (!raw) return false;
-
-  if (opts.churchId) {
-    let mine = false;
-    try {
-      mine = (JSON.parse(raw) as { by?: string }).by === opts.userId;
-    } catch {
-      mine = false;
-    }
-    if (!mine) {
-      const church = await getChurch(opts.churchId);
-      if (church?.founderId !== opts.userId) return false;
-    }
-  }
+  const key = keys.userWall(opts.userId);
+  if (!(await kv.hgetall(key))?.[opts.key]) return false;
   await kv.hdel(key, opts.key);
   return true;
-}
-
-/** Every wall goes when its Gathering does. */
-export async function deleteChurchWall(churchId: string): Promise<void> {
-  await db().del(keys.churchWall(churchId));
 }

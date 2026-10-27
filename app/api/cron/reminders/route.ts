@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getBook } from "@/lib/bible";
-import { buildIcs } from "@/lib/calendar";
 import { db, keys } from "@/lib/db";
 import { resolvePlan } from "@/lib/customPlans";
 import {
@@ -9,14 +8,15 @@ import {
   markNudged,
   nudgedOn,
 } from "@/lib/planReminders";
-import { emailEnabled, reminderEmail, sendEmail } from "@/lib/email";
 import { pushEnabled, sendPushToUser } from "@/lib/push";
-import { sendSms, smsEnabled } from "@/lib/sms";
 
-// Daily reminder sweep (Vercel Cron, see vercel.json): notifies every member
-// of a Church about sessions starting within the next 24 hours, over every
-// configured channel — email (Brevo), web push (VAPID), and SMS (Brevo,
-// opt-in per user in Settings). Each event is reminded once (remindedAt).
+// Hourly reminder sweep (Vercel Cron, see vercel.json): nudges each reader by
+// web push at the hour each of their reading plans asks for.
+//
+// It used to remind every member of a Gathering about sessions starting within
+// the day as well, by email, push and text message. The Gatherings are gone,
+// and the sessions with them, so a reading plan is the only thing left in the
+// app with an hour of its own — and push the only channel it was ever sent on.
 
 export const dynamic = "force-dynamic";
 
@@ -25,136 +25,11 @@ export async function GET(req: Request) {
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!emailEnabled() && !pushEnabled() && !smsEnabled()) {
-    return NextResponse.json({ skipped: "no reminder channels configured" });
+  if (!pushEnabled()) {
+    return NextResponse.json({ skipped: "push is not configured" });
   }
-
-  const kv = db();
-  const now = Date.now();
-  const ids = await kv.zrangebyscore(
-    keys.allEvents,
-    now,
-    now + 24 * 60 * 60 * 1000
-  );
-
-  let emails = 0;
-  let pushes = 0;
-  let sms = 0;
-  let reminded = 0;
-  for (const eventId of ids) {
-    const event = await kv.hgetall(keys.event(eventId));
-    if (!event?.churchId || event.remindedAt) continue;
-
-    const church = await kv.hgetall(keys.church(event.churchId));
-    const members = (await kv.hgetall(keys.churchMembers(event.churchId))) ?? {};
-    const churchName = church?.name ?? "your Gathering";
-    const title = event.title ?? "Worship session";
-
-    // attach an .ics so calendar apps recognize the session natively
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
-    const ics = buildIcs(
-      {
-        id: eventId,
-        churchId: event.churchId,
-        title,
-        startsAt: Number(event.startsAt),
-        durationMin: Number(event.durationMin) || 60,
-        passageRef: event.passageRef || undefined,
-        meetingUrl: event.meetingUrl || undefined,
-        details: event.details || undefined,
-      },
-      churchName,
-      origin
-    );
-    const attachment = {
-      name: "session.ics",
-      contentBase64: Buffer.from(ics, "utf-8").toString("base64"),
-    };
-
-    const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-    const client =
-      clerkOn && emailEnabled()
-        ? await (await import("@clerk/nextjs/server")).clerkClient()
-        : null;
-
-    for (const userId of Object.keys(members)) {
-      /*
-       * The time is written once per member, not once per event.
-       *
-       * It used to be rendered a single time in UTC and mailed to everybody,
-       * which meant a Wednesday 7pm session in Ohio was announced as
-       * "Thursday, 12:00 AM UTC" — the wrong hour, on the wrong day, to every
-       * person it was sent to. A reminder that misstates the time is worse
-       * than no reminder, because people act on it.
-       *
-       * The zone is the one their device reports when it syncs. When we have
-       * never heard from them, it falls back to UTC and says so — the label
-       * is always printed, so a reader can tell an unconverted time from
-       * their own.
-       */
-      const profile = (await kv.hgetall(keys.user(userId))) ?? {};
-      const when = new Date(Number(event.startsAt)).toLocaleString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZone: profile.planReminderTz || "UTC",
-        timeZoneName: "short",
-      });
-      const message = reminderEmail(
-        churchName,
-        title,
-        when,
-        event.meetingUrl || undefined
-      );
-      const smsText =
-        `Communion: ${title} with ${churchName} — ${when}. ` +
-        (event.meetingUrl || `${origin}/churches/${event.churchId}`);
-
-      if (client && userId.startsWith("user_")) {
-        try {
-          const user = await client.users.getUser(userId);
-          const email = user.primaryEmailAddress?.emailAddress;
-          if (
-            email &&
-            (await sendEmail(email, message.subject, message.html, attachment))
-          ) {
-            emails++;
-          }
-        } catch {
-          // deleted user — skip
-        }
-      }
-      // Not gated on push being configured. sendPushToUser writes the
-      // notification to the reader's history before it looks at a VAPID key
-      // at all, and the history is the record of what happened — whether or
-      // not this deployment can also make a phone buzz about it.
-      pushes += await sendPushToUser(userId, {
-        title: `⛪ ${title}`,
-        body: `${churchName} · ${when}`,
-        url: `/churches/${event.churchId}`,
-        tag: `reminder-${eventId}`,
-      });
-      if (smsEnabled() && profile.phone && profile.smsReminders === "1") {
-        if (await sendSms(profile.phone, smsText)) sms++;
-      }
-    }
-
-    await kv.hset(keys.event(eventId), { remindedAt: now });
-    reminded++;
-  }
-
   const plans = await sweepPlanReminders();
-
-  return NextResponse.json({
-    upcoming: ids.length,
-    reminded,
-    emails,
-    pushes,
-    sms,
-    plans,
-  });
+  return NextResponse.json({ plans });
 }
 
 /** The hour it is right now in a given IANA timezone (falls back to UTC). */
@@ -196,7 +71,6 @@ function dayIn(timeZone: string | undefined): string {
  * another asking at nine.
  */
 async function sweepPlanReminders(): Promise<{ notified: number }> {
-  // no push gate: see the note above the session reminder
   const kv = db();
   const userIds = await kv.smembers(keys.planUsers);
   let notified = 0;

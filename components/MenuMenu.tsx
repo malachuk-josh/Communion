@@ -145,7 +145,7 @@ export default function MenuMenu({
               <Icon name="tools" />
               <span>
                 <strong>Admin</strong>
-                <small>People, Gatherings, and activity</small>
+                <small>People and activity</small>
               </span>
             </Link>
           )}

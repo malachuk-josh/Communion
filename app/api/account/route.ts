@@ -17,8 +17,8 @@ export const dynamic = "force-dynamic";
  *
  * Same-origin is checked for the reason the admin routes check it: with Clerk
  * this route is authorised by a cookie, and a cookie is authority a form on
- * another site can borrow. A one-click delete-everything link posted into a
- * Gathering would otherwise work on whoever opened it.
+ * another site can borrow. A one-click delete-everything link posted anywhere
+ * would otherwise work on whoever opened it.
  *
  * The word has to be typed. Not decoration — this is the one action in the
  * app that cannot be undone, and a misplaced tap should not be able to reach

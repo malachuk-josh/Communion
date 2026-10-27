@@ -2,11 +2,11 @@
 
 // The reader's own wall, on their home screen.
 //
-// The same component the Gatherings use, with the room reduced to one person.
-// Nothing is shared from here and nobody else can see it, so there is no
-// "hung by" worth reading — but it is left in rather than special-cased away,
-// because a verse somebody hung a year ago and their own name beside it is
-// not the wrong thing to meet on a home screen.
+// Drawn by the component the Gatherings' walls used, with the room reduced
+// to one person. Nothing is shared from here and nobody else can see it, so
+// there is no "hung by" worth reading — but it is left in rather than
+// special-cased away, because a verse somebody hung a year ago and their own
+// name beside it is not the wrong thing to meet on a home screen.
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";

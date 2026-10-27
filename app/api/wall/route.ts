@@ -3,9 +3,7 @@ import { getDisplayName, getUserId } from "@/lib/auth";
 import { seedDefaultWall } from "@/lib/defaultWall";
 import { hangVerse, listWall, unhangVerse } from "@/lib/wall";
 
-// A reader's own wall: the verses on their home screen. No membership to
-// check — it is theirs — so this is the same three verbs with the church
-// scope left off.
+// A reader's own wall: the verses on their home screen.
 
 export async function GET(req: Request) {
   const userId = await getUserId(req);

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
-import { api } from "@/lib/client";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
 import { onScroll as onPageScroll, scrollToY, scrollY } from "@/lib/scroller";
@@ -18,13 +17,7 @@ import ThemeToggle from "@/components/ThemeToggle";
  * and the desktop row are written from the same order by hand — if they ever
  * disagree, a swipe would go somewhere the reader cannot see it went.
  */
-const TAB_ORDER = [
-  "/discover",
-  "/churches",
-  "/menu/messages",
-  "/menu/journal",
-  "/",
-] as const;
+const TAB_ORDER = ["/discover", "/menu/journal", "/"] as const;
 
 /*
  * What counts as a swipe across the tabs.
@@ -80,7 +73,6 @@ export default function Nav() {
     useReading();
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
-  const [pendingMsgs, setPendingMsgs] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
   /** which way the last swipe went, read once by the animation after it lands */
   const swipeDir = useRef<number | null>(null);
@@ -211,8 +203,9 @@ export default function Nav() {
    */
   useEffect(() => {
     const at = TAB_ORDER.indexOf(pathname as (typeof TAB_ORDER)[number]);
-    // a page under no tab — the menu, a Gathering, a conversation — is a place
-    // the reader arrived at deliberately, and not somewhere to be flicked out of
+    // a page under no tab — the menu, settings, a plan somebody shared — is a
+    // place the reader arrived at deliberately, and not somewhere to be flicked
+    // out of
     if (at === -1) return;
 
     let from: { x: number; y: number; t: number } | null = null;
@@ -290,37 +283,18 @@ export default function Nav() {
     };
   }, [pathname, router]);
 
-  // pending badge: unread direct messages. Refreshes on navigation, on
-  // returning to the app, and every 45s; mirrors to the app icon badge where
-  // the platform supports it.
+  /*
+   * Clear the app icon's badge, once.
+   *
+   * It counted unread messages from the Table, and the Table is gone — but a
+   * badge set on a home screen icon outlives the code that set it, and with
+   * nothing left to count it would sit there for good saying there was
+   * something to read.
+   */
   useEffect(() => {
-    let cancelled = false;
-    const refresh = () => {
-      api<{ messages: number }>("/api/messages/unread")
-        .then((res) => {
-          if (cancelled) return;
-          setPendingMsgs(res.messages);
-          const nav = navigator as Navigator & {
-            setAppBadge?: (n: number) => Promise<void>;
-            clearAppBadge?: () => Promise<void>;
-          };
-          if (res.messages > 0) nav.setAppBadge?.(res.messages).catch(() => {});
-          else nav.clearAppBadge?.().catch(() => {});
-        })
-        .catch(() => {});
-    };
-    refresh();
-    const timer = window.setInterval(refresh, 45000);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [pathname]);
+    const nav = navigator as Navigator & { clearAppBadge?: () => Promise<void> };
+    nav.clearAppBadge?.().catch(() => {});
+  }, []);
 
   const positionBook = position ? getBook(position.bookNr) : undefined;
   const bookName = positionBook
@@ -360,16 +334,11 @@ export default function Nav() {
   };
 
   const isWord = pathname === "/";
-  const isChurches =
-    pathname.startsWith("/churches") || pathname.startsWith("/join");
-  const isCalendar = pathname.startsWith("/calendar");
   const isDiscover = pathname.startsWith("/discover");
-  const isMessages = pathname.startsWith("/menu/messages");
   const isJournal = pathname.startsWith("/menu/journal");
   const isMenu =
-    (!isMessages && !isJournal && pathname.startsWith("/menu")) ||
-    pathname.startsWith("/settings") ||
-    isCalendar;
+    (!isJournal && pathname.startsWith("/menu")) ||
+    pathname.startsWith("/settings");
 
   return (
     <>
@@ -386,21 +355,6 @@ export default function Nav() {
               className={`nav-link${isDiscover ? " active" : ""}`}
             >
               {t("nav.discover")}
-            </Link>
-            <Link
-              href="/churches"
-              className={`nav-link${isChurches ? " active" : ""}`}
-            >
-              {t("nav.churches")}
-            </Link>
-            <Link
-              href="/menu/messages"
-              className={`nav-link${isMessages ? " active" : ""}`}
-            >
-              {t("menu.messages")}
-              {pendingMsgs > 0 && (
-                <span className="nav-badge">{pendingMsgs}</span>
-              )}
             </Link>
             <Link
               href="/menu/journal"
@@ -479,26 +433,12 @@ export default function Nav() {
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
-        {/* Five tabs, and Menu is not one of them any more — it moved to the
-            header, which is reachable without taking a place in the bar. The
-            journal took the place it left. */}
+        {/* Three tabs, for reading on your own: Home, the Journal, and the
+            Word. Gatherings and the Table were taken out, and the Menu lives
+            in the header, reachable without a place in the bar. */}
         <Link href="/discover" className={isDiscover ? "active" : ""}>
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
-        </Link>
-        <Link href="/churches" className={isChurches ? "active" : ""}>
-          <span className="bn-icon"><Icon name="church" /></span>
-          <span>{t("nav.churches")}</span>
-        </Link>
-        <Link
-          href="/menu/messages"
-          className={`bn-messages${isMessages ? " active" : ""}`}
-        >
-          <span className="bn-icon"><Icon name="table" /></span>
-          <span>{t("menu.messages")}</span>
-          {pendingMsgs > 0 && (
-            <span className="nav-badge bn-badge">{pendingMsgs}</span>
-          )}
         </Link>
         <Link
           href="/menu/journal"

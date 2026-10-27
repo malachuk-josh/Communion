@@ -17,9 +17,9 @@ export default function OfflineReady() {
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // unsupported or blocked (private mode) — the app still works online
       });
-      // Once there is a worker to store the answers, quietly fetch the
-      // Gatherings and conversations this device would otherwise only hold if
-      // the reader happened to have opened them before losing signal.
+      // Once there is a worker to store the answers, quietly fetch the wall
+      // and the profile, which this device would otherwise only hold if the
+      // reader happened to have opened them before losing signal.
       navigator.serviceWorker.ready
         .then(() => {
           stop = startWarming();

@@ -24,9 +24,53 @@
 // thorough is paid once and is the right cost to pay.
 
 import { db, keys } from "@/lib/db";
-import { deleteChurch } from "@/lib/churches";
 import { unpublishPlan } from "@/lib/customPlans";
-import { convIdFor } from "@/lib/messages";
+
+/*
+ * The Gatherings and the Table have been taken out of the app, but what
+ * people put in them is still in the database — and somebody asking to be
+ * deleted is asking for that too. So the two pieces of those features this
+ * sweep needs live here now, beside the only code with a reason left to call
+ * them.
+ */
+
+/** A conversation between two people, named the same from either end. */
+function convIdFor(a: string, b: string): string {
+  return [a, b].sort().join("~");
+}
+
+/** A Gathering with nobody left in it, and everything that hung in it. */
+async function deleteChurch(churchId: string): Promise<void> {
+  const kv = db();
+  const members = Object.keys((await kv.hgetall(keys.churchMembers(churchId))) ?? {});
+  const all = (key: string) => kv.zrangebyscore(key, 0, Number.MAX_SAFE_INTEGER);
+
+  for (const id of await all(keys.churchThreads(churchId))) {
+    await kv.del(keys.threadPosts(id));
+    await kv.del(keys.thread(id));
+  }
+  for (const id of await all(keys.churchEvents(churchId))) {
+    await kv.del(keys.eventRsvps(id));
+    await kv.del(keys.event(id));
+  }
+  // prayers asked inside a Gathering are indexed only here: once this set
+  // goes the requests are unreachable, and unreachable is not the same as gone
+  for (const id of await all(keys.churchPrayers(churchId))) {
+    await kv.del(keys.prayerPrayed(id));
+    await kv.del(keys.prayer(id));
+  }
+  await kv.del(keys.churchWall(churchId));
+  await kv.del(keys.churchThreads(churchId));
+  await kv.del(keys.churchEvents(churchId));
+  await kv.del(keys.churchPrayers(churchId));
+  await kv.del(keys.churchRequests(churchId));
+  await kv.del(keys.churchMembers(churchId));
+  await kv.del(keys.church(churchId));
+  for (const userId of members) {
+    await kv.srem(keys.userChurches(userId), churchId);
+  }
+  await kv.srem(keys.allChurches, churchId);
+}
 
 /** Books are 1..66; notes are keyed per book, so there are 66 keys to clear. */
 const BOOK_COUNT = 66;

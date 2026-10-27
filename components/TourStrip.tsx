@@ -1,6 +1,6 @@
 "use client";
 
-// The ten-screen tour, as a strip that any page can shelve.
+// The six-screen tour, as a strip that any page can shelve.
 //
 // It began life inside the About page and was pulled out the day the welcome
 // screen wanted it too. One list, one markup, so the two places that show the
@@ -28,10 +28,6 @@ const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
   { img: "lexicon", w: 720, h: 769, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
   { img: "redletters", w: 720, h: 1066, key: "tourRed" },
-  { img: "gathering", w: 720, h: 869, key: "tourGathering" },
-  { img: "sessions", w: 720, h: 929, key: "tourSessions" },
-  { img: "prayer", w: 720, h: 891, key: "tourPrayer" },
-  { img: "conversations", w: 720, h: 803, key: "tourConversations" },
   { img: "journal", w: 720, h: 1040, key: "tourJournal" },
 ];
 

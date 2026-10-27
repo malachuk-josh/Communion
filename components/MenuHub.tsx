@@ -78,7 +78,7 @@ export default function MenuHub() {
             <span className="menu-tile-emoji"><Icon name="tools" /></span>
             <span className="menu-tile-body">
               <strong>Admin</strong>
-              <small>People, Gatherings, and activity</small>
+              <small>People and activity</small>
             </span>
             <span className="menu-tile-arrow">→</span>
           </Link>

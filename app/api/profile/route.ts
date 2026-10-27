@@ -3,11 +3,14 @@ import { getDisplayName, getUserId, nameNotAddress } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
 import { isTrusted } from "@/lib/admin";
 import { pushEnabled } from "@/lib/push";
-import { isValidPhone, smsEnabled } from "@/lib/sms";
-import { syncListing } from "@/lib/directory";
 
-// Reminder preferences: phone number + SMS opt-in, and feature availability
-// flags so Settings can show accurate state per deployment.
+// The reader's name, their reading-reminder hour, and what this deployment can
+// do, so Settings shows accurate state.
+//
+// It also held a phone number for text-message reminders and a switch for
+// being listed in the people directory. Both existed for the Gatherings and
+// the Table — the texts announced sessions, and the directory was how you
+// found somebody to message — and both went with them.
 
 export async function GET(req: Request) {
   const userId = await getUserId(req);
@@ -17,17 +20,9 @@ export async function GET(req: Request) {
   const profile = (await db().hgetall(keys.user(userId))) ?? {};
 
   /*
-   * Adopt the name the account already has.
-   *
-   * displayName was only ever written by starting a Gathering, accepting an
-   * invite, or typing it into this screen — so somebody who signed in and read
-   * their Bible had none at all. That was invisible while the only use of a
-   * name was labelling a member list, and became a real fault the moment the
-   * directory existed: with nothing stored they were unlisted, and unlisted
-   * looked exactly like having asked for privacy, which they had not.
-   *
-   * Clerk knows who they are. Take that, once, and keep it — so the directory
-   * can find them, and so conversations stop calling them "Believer".
+   * Adopt the name the account already has, once, so a reader who has never
+   * typed one into this screen is still called by their name rather than
+   * "Believer" — on their own wall, among other places.
    */
   if (!profile.displayName) {
     const known = await getDisplayName(req);
@@ -37,19 +32,11 @@ export async function GET(req: Request) {
     }
   }
 
-  // Listing is kept in step here as well as on write, so the directory fills
-  // itself from ordinary use — everyone who opens their settings is listed by
-  // doing so, and nobody needs a migration to become findable.
-  await syncListing(userId, profile).catch(() => {});
   return NextResponse.json({
     displayName: profile.displayName ?? "",
-    private: profile.private === "1",
-    phone: profile.phone ?? "",
-    smsReminders: profile.smsReminders === "1",
     planReminder: profile.planReminder === "off" ? "off" : "on",
     planReminderHour: Number(profile.planReminderHour ?? 7),
     pushAvailable: pushEnabled(),
-    smsAvailable: smsEnabled(),
     // what the menu uses to decide whether the admin tile exists at all
     isAdmin: await isTrusted(userId),
   });
@@ -62,9 +49,6 @@ export async function POST(req: Request) {
   }
   const body = (await req.json().catch(() => null)) as {
     displayName?: string;
-    private?: boolean;
-    phone?: string;
-    smsReminders?: boolean;
     planReminderHour?: number | "off";
     planReminderTz?: string;
   } | null;
@@ -74,34 +58,12 @@ export async function POST(req: Request) {
 
   const updates: Record<string, string> = {};
   if (body.displayName !== undefined) {
-    // Whatever is stored here is what the directory is searched by, so the
-    // last way an address could reach a public list is somebody typing one
-    // into this field — most likely not realising where it goes.
+    // a name, never an email address typed in by mistake
     const name = nameNotAddress(body.displayName).slice(0, 60);
     if (!name) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
     updates.displayName = name;
-  }
-  if (body.private !== undefined) {
-    updates.private = body.private ? "1" : "";
-  }
-  if (body.phone !== undefined) {
-    let phone = body.phone.replace(/[\s().-]/g, "");
-    // Domestic convenience: a bare 10-digit number is a US/Canada number
-    if (/^\d{10}$/.test(phone)) phone = `+1${phone}`;
-    else if (/^1\d{10}$/.test(phone)) phone = `+${phone}`;
-    if (phone && !isValidPhone(phone)) {
-      return NextResponse.json(
-        { error: "Invalid phone — use international format, e.g. +15551234567" },
-        { status: 400 }
-      );
-    }
-    updates.phone = phone;
-    if (!phone) updates.smsReminders = ""; // no number → no SMS opt-in
-  }
-  if (body.smsReminders !== undefined) {
-    updates.smsReminders = body.smsReminders ? "1" : "";
   }
   if (body.planReminderHour !== undefined) {
     if (body.planReminderHour === "off") {
@@ -119,9 +81,5 @@ export async function POST(req: Request) {
     updates.planReminderTz = body.planReminderTz.slice(0, 64);
   }
   await db().hset(keys.user(userId), updates);
-  // The name or the setting may just have changed; the directory is derived
-  // from both, so it is rebuilt from what the profile now says rather than
-  // patched from what this request happened to carry.
-  await syncListing(userId, await db().hgetall(keys.user(userId)));
   return NextResponse.json({ ok: true });
 }

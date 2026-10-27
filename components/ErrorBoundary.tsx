@@ -84,8 +84,8 @@ export class ErrorBoundary extends Component<Props, State> {
  *
  * A class cannot read a hook, so the pathname is picked up here and handed
  * down. Without it a broken page would poison every page after it: the error
- * state has nothing to clear it, and the reader would tap Gatherings, tap
- * Journal, and be told the same thing each time.
+ * state has nothing to clear it, and the reader would tap Home, tap Journal,
+ * and be told the same thing each time.
  */
 export default function PageBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={usePathname()}>{children}</ErrorBoundary>;

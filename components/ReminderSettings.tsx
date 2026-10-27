@@ -1,9 +1,11 @@
 "use client";
 
-// Reminders & notifications: web-push enable/disable for this device, and
-// the phone number + SMS opt-in stored on the user profile. Push is a
-// per-device browser subscription; SMS is a per-user preference that goes
-// live once the Brevo account has SMS credits and a registered sender.
+// Reminders: web push on or off for this device. Push is a per-device browser
+// subscription, so it is switched here, on the device, rather than kept on the
+// account; when and for which plan a reminder comes is set on the plan itself.
+//
+// Text-message reminders sat beside it, with a phone number to send them to.
+// They announced Gathering sessions, and went with the Gatherings.
 
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
@@ -27,44 +29,11 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-/** Stored E.164 → what the input shows: US numbers without their +1 prefix. */
-function toDisplay(e164: string): string {
-  return /^\+1\d{10}$/.test(e164) ? e164.slice(2) : e164;
-}
-
-/** Input value → E.164 to store: bare 10 digits get the +1 prefix. */
-function toE164(input: string): string {
-  const cleaned = input.replace(/[\s().-]/g, "");
-  if (!cleaned) return "";
-  if (cleaned.startsWith("+")) return cleaned;
-  const digits = cleaned.replace(/\D/g, "");
-  if (/^1\d{10}$/.test(digits)) return `+${digits}`;
-  return `+1${digits}`;
-}
-
 export default function ReminderSettings() {
   const { t } = useI18n();
   const [push, setPush] = useState<PushState>("loading");
-  const [phone, setPhone] = useState("");
-  const [smsOptIn, setSmsOptIn] = useState(false);
-  const [smsAvailable, setSmsAvailable] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    api<{
-      phone: string;
-      smsReminders: boolean;
-      smsAvailable: boolean;
-    }>("/api/profile")
-      .then((res) => {
-        setPhone(toDisplay(res.phone));
-        setSmsOptIn(res.smsReminders);
-        setSmsAvailable(res.smsAvailable);
-      })
-      .catch(() => {});
-
     if (!VAPID_PUBLIC) {
       setPush("unavailable");
       return;
@@ -123,28 +92,6 @@ export default function ReminderSettings() {
     setPush("off");
   };
 
-  const saveSms = async () => {
-    if (saving) return;
-    setSaving(true);
-    setSaved(false);
-    setError("");
-    try {
-      await api("/api/profile", {
-        method: "POST",
-        body: {
-          phone: toE164(phone),
-          smsReminders: smsOptIn && !!phone.trim(),
-        },
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <>
       <div className="section-head">
@@ -183,49 +130,6 @@ export default function ReminderSettings() {
             which is the ordinary case — so it moved onto each plan, in the
             Journal, where the plan already lives. */}
         <p className="cal-hint">{t("settings.planMoved")}</p>
-
-        <div className="pref-row" style={{ alignItems: "flex-start" }}>
-          <span><Icon name="chat" /> {t("settings.smsTitle")}</span>
-          <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
-            <span className="phone-row">
-              {!phone.trim().startsWith("+") && (
-                <span className="phone-prefix">+1</span>
-              )}
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(555) 123-4567"
-                maxLength={20}
-                style={{ maxWidth: 160 }}
-              />
-            </span>
-            <small className="cal-hint">{t("settings.phoneIntlHint")}</small>
-            <label className="toggle-row" style={{ margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={smsOptIn}
-                onChange={(e) => setSmsOptIn(e.target.checked)}
-                disabled={!phone.trim()}
-              />
-              {t("settings.smsLabel")}
-            </label>
-            <button
-              className="btn btn-sm"
-              onClick={saveSms}
-              disabled={saving}
-            >
-              {saved ? `✓ ${t("settings.saved")}` : t("common.save")}
-            </button>
-          </div>
-        </div>
-        {smsOptIn && (
-          <p className="notice" style={{ marginTop: 6 }}>
-            {t("settings.smsConsent")}
-            {!smsAvailable && <> {t("settings.smsPending")}</>}
-          </p>
-        )}
-        {error && <p className="error-text">{error}</p>}
       </div>
     </>
   );

@@ -131,10 +131,6 @@ export default function Journal() {
   const [verses, setVerses] = useState<Record<string, string>>({});
   /** which row's share just landed on the clipboard */
   const [copied, setCopied] = useState<string | null>(null);
-  /** which entry is choosing a recipient, by the same id the row uses */
-  const [sendFor, setSendFor] = useState<string | null>(null);
-  /** why a collection could not be readied for sending, if it could not */
-  const [sendGroupError, setSendGroupError] = useState("");
   /** the one row open for editing, if any */
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -823,30 +819,6 @@ export default function Journal() {
     }
   };
 
-  /**
-   * Hand a whole shelf to somebody at the Table.
-   *
-   * The panel cannot open until the collection has an address, since that
-   * address is the whole of what gets sent — so the tap that asks for it is
-   * also the tap that publishes it, and the panel waits on the answer. It is
-   * one round trip, once per collection, and never again for that shelf.
-   */
-  const openGroupSend = async (id: string) => {
-    const key = `g-send-${id}`;
-    if (sendFor === key) {
-      setSendFor(null);
-      return;
-    }
-    setSendFor(key);
-    setSendGroupError("");
-    if (collections[id]?.share) return;
-    try {
-      await publishCollection(id);
-    } catch {
-      setSendGroupError(t("journal.sendGroupUnavailable"));
-    }
-  };
-
   // ---- shaping ------------------------------------------------------------
 
   /** Notes grouped under their book, in canonical order. */
@@ -1022,10 +994,10 @@ export default function Journal() {
       <h1 className="page-title">{t("journal.title")}</h1>
       <p className="subtitle">{t("journal.subtitle")}</p>
 
-      {/* The same control the Table uses, and the same classes: three chips
-          that wrapped onto two rows are three segments of one switch now, and
-          the two screens are read the same way. The count rides inside its
-          own segment rather than beside it. */}
+      {/* The same control the home screen uses, and the same classes: three
+          chips that wrapped onto two rows are three segments of one switch
+          now, and the two screens are read the same way. The count rides
+          inside its own segment rather than beside it. */}
       <div className="lang-toggle discover-tabs jr-tabs" role="group">
         {TABS.map((entry) => (
           <button
@@ -1077,14 +1049,14 @@ export default function Journal() {
                               className="rsvp-btn"
                               onClick={closeEdit}
                             >
-                              {t("session.cancel")}
+                              {t("common.cancel")}
                             </button>
                             <button
                               type="button"
                               className="rsvp-btn jr-danger"
                               onClick={() => saveNote(row, "")}
                             >
-                              {t("threads.delete")}
+                              {t("journal.deleteNote")}
                             </button>
                             <button
                               type="button"
@@ -1126,20 +1098,7 @@ export default function Journal() {
                             share(id, entryText(row, row.text, verseLink(row)))
                           }
                         />
-                        <SendButton
-                          label={t("journal.sendToTable")}
-                          onClick={() =>
-                            setSendFor((cur) => (cur === id ? null : id))
-                          }
-                        />
                       </span>
-                      {sendFor === id && (
-                        <SendPanel
-                          attach={{ b: row.b, c: row.c, v: row.v, kind: "note", label: row.text }}
-                          refText={refLabel(row, lang)}
-                          onClose={() => setSendFor(null)}
-                        />
-                      )}
                     </div>
                   );
                 })}
@@ -1157,8 +1116,6 @@ export default function Journal() {
           />
         ) : (
           bookmarkGroups.map((group) => {
-            // the address this shelf was published at, if it has been
-            const shelfToken = group.id ? collections[group.id]?.share : "";
             return (
             <section key={group.id || "unfiled"} className="jr-group">
               <h2 className="jr-group-head">
@@ -1198,7 +1155,7 @@ export default function Journal() {
                       className="rsvp-btn"
                       onClick={closeEdit}
                     >
-                      {t("session.cancel")}
+                      {t("common.cancel")}
                     </button>
                     <button
                       type="button"
@@ -1245,26 +1202,7 @@ export default function Journal() {
                     )
                   }
                 />
-                {/* Unfiled has no shelf to send — it is the absence of one */}
-                {group.id && (
-                  <SendButton
-                    label={t("journal.sendGroupToTable", { name: group.name })}
-                    onClick={() => void openGroupSend(group.id)}
-                  />
-                )}
               </h2>
-              {sendFor === `g-send-${group.id}` &&
-                (shelfToken ? (
-                  <SendPanel
-                    attach={{ kind: "collection", token: shelfToken }}
-                    refText={group.name}
-                    onClose={() => setSendFor(null)}
-                  />
-                ) : sendGroupError ? (
-                  <p className="error-text">{sendGroupError}</p>
-                ) : (
-                  <p className="skeleton">{t("common.loading")}</p>
-                ))}
               {/* A shut shelf renders nothing rather than hiding it: a hundred
                   verses off screen still cost a hundred rows of layout, and
                   the count in the heading already says what is in there. */}
@@ -1339,7 +1277,7 @@ export default function Journal() {
                               className="rsvp-btn"
                               onClick={closeEdit}
                             >
-                              {t("session.cancel")}
+                              {t("common.cancel")}
                             </button>
                             <button
                               type="button"
@@ -1436,28 +1374,7 @@ export default function Journal() {
                             )
                           }
                         />
-                        <SendButton
-                          label={t("journal.sendToTable")}
-                          onClick={() =>
-                            setSendFor((cur) =>
-                              cur === row.key ? null : row.key
-                            )
-                          }
-                        />
                       </span>
-                      {sendFor === row.key && (
-                        <SendPanel
-                          attach={{
-                            b: row.b,
-                            c: row.c,
-                            v: row.v,
-                            kind: "bookmark",
-                            label: row.entry.l,
-                          }}
-                          refText={refLabel(row, lang)}
-                          onClose={() => setSendFor(null)}
-                        />
-                      )}
                     </div>
                   );
                 })}
@@ -1730,149 +1647,6 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
  * messaging app to open: on a laptop this button would be a dead end, and the
  * share sheet next to it already does the right thing there.
  */
-
-/**
- * Hand a passage to somebody at the Table.
- *
- * The composer inside a conversation could already attach a bookmark or a
- * note, but only once you were in the conversation — which meant the journal,
- * where those things actually live, could share to everywhere except the one
- * place inside this app. This is that missing direction: from the entry to the
- * person, rather than from the person to the entry.
- *
- * People you are already talking with come first and need no typing. The rest
- * of the directory is behind the same search the Table uses.
- */
-function SendPanel({
-  attach,
-  refText,
-  onClose,
-}: {
-  attach:
-    | {
-        b: number;
-        c: number;
-        v: number;
-        kind: "bookmark" | "note";
-        label?: string;
-      }
-    /* a shelf, which is not anywhere in scripture — it goes as the address of
-       its published snapshot, and the card is built from that, not from here */
-    | { kind: "collection"; token: string };
-  refText: string;
-  onClose: () => void;
-}) {
-  const { t } = useI18n();
-  const [q, setQ] = useState("");
-  const [people, setPeople] = useState<{ userId: string; displayName: string }[] | null>(null);
-  const [busy, setBusy] = useState("");
-  const [sent, setSent] = useState("");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      Promise.all([
-        api<{ conversations: { peerId: string; peerName: string }[] }>(
-          "/api/messages"
-        ).catch(() => ({ conversations: [] })),
-        api<{ users: { userId: string; displayName: string }[] }>(
-          `/api/users?q=${encodeURIComponent(q.trim())}`
-        ).catch(() => ({ users: [] })),
-      ]).then(([mine, all]) => {
-        if (cancelled) return;
-        const seen = new Map<string, string>();
-        for (const c of mine.conversations ?? []) seen.set(c.peerId, c.peerName);
-        for (const u of all.users ?? []) if (!seen.has(u.userId)) seen.set(u.userId, u.displayName);
-        const term = q.trim().toLowerCase();
-        setPeople(
-          [...seen]
-            .map(([userId, displayName]) => ({ userId, displayName }))
-            .filter((p) => !term || p.displayName.toLowerCase().includes(term))
-        );
-      });
-    }, 250);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [q]);
-
-  const send = async (peerId: string, name: string) => {
-    if (busy) return;
-    setBusy(peerId);
-    setError("");
-    try {
-      await api(`/api/messages/${peerId}`, {
-        method: "POST",
-        body: { text: refText, attach },
-      });
-      setSent(name);
-      window.setTimeout(onClose, 1400);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy("");
-    }
-  };
-
-  return (
-    <div className="jr-send">
-      {sent ? (
-        <p className="cal-hint">{t("journal.sentTo", { name: sent })}</p>
-      ) : (
-        <>
-          <input
-            className="input"
-            type="search"
-            autoComplete="off"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("messages.findPlaceholder")}
-            aria-label={t("messages.findAnyone")}
-          />
-          {people === null ? (
-            <p className="skeleton">{t("common.loading")}</p>
-          ) : people.length === 0 ? (
-            <p className="cal-hint">{t("messages.findNone")}</p>
-          ) : (
-            <div className="chips">
-              {people.map((p) => (
-                <button
-                  key={p.userId}
-                  type="button"
-                  className="chip"
-                  disabled={!!busy}
-                  onClick={() => send(p.userId, p.displayName)}
-                >
-                  {p.displayName}
-                </button>
-              ))}
-            </div>
-          )}
-          {error && <p className="error-text">{error}</p>}
-          <button type="button" className="btn btn-sm" onClick={onClose}>
-            {t("session.cancel")}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
-function SendButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className="jr-share jr-share-btn"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-    >
-      <Icon name="envelope" />
-    </button>
-  );
-}
 
 function ShareButton({
   copied,

@@ -15,9 +15,9 @@ export const dynamic = "force-dynamic";
  * Start standing in an account.
  *
  * Owner only. Not trusted admins: reading the dashboard is a report, and
- * being somebody is a different thing entirely — it can post as them, write
- * to their journal, and leave their Gatherings. That stays with the one
- * person who answers for the app.
+ * being somebody is a different thing entirely — it can write in their
+ * journal, change their plans and take verses off their wall. That stays with
+ * the one person who answers for the app.
  */
 export async function POST(req: Request) {
   const me = await getRealUserId(req);
@@ -51,10 +51,12 @@ export async function POST(req: Request) {
 
   // An id nobody has ever used is not an account. Minting a ticket for one
   // would conjure the user into being the moment any screen wrote to it — a
-  // profile row, a directory listing, a name — so it is refused here.
-  const profile = await db().hgetall(keys.user(target));
-  const theirGatherings = await db().smembers(keys.userChurches(target));
-  if (!profile && theirGatherings.length === 0) {
+  // profile row, a bookmark, a name — so it is refused here.
+  const [profile, bookmarks] = await Promise.all([
+    db().hgetall(keys.user(target)),
+    db().hgetall(keys.userBookmarks(target)),
+  ]);
+  if (!profile && !bookmarks) {
     return NextResponse.json({ error: "No such account." }, { status: 404 });
   }
 

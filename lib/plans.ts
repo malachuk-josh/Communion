@@ -264,8 +264,8 @@ const nt90: Plan = {
  * A devotional rather than a course of reading, and it earns its place among
  * the plans anyway: it is a year long, it is walked a day at a time, and
  * everything the app already does for a plan — enrolling, the day count, the
- * hour it asks at, a Gathering walking it together — is exactly what somebody
- * reading a daily devotional wants.
+ * hour it asks at — is exactly what somebody reading a daily devotional
+ * wants.
  *
  * Each day points at the two chapters his two meditations are drawn from, so
  * the reading is there to open in context. The meditations themselves are

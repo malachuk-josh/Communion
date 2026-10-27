@@ -11,12 +11,13 @@ import { WALL_MAX, type WallEntry } from "@/lib/wall";
  * to add to rather than something to set up.
  *
  * These four, and not four at random. Matthew 18:20 is the verse this app is
- * named for and built on. Galatians 6:10 is what a Gathering is supposed to do
- * once it has gathered. John 3:16 is the one verse anybody arriving already
- * knows, which makes it the one that says "yes, this is that book". And
- * Philippians 3:13-14 is kept as the run it is, because the forgetting in
- * verse 13 is only worth anything with the pressing on in verse 14 — and
- * because a wall of promises with nothing asked of the reader is a poster.
+ * named for and built on. Galatians 6:10 is what the reading is supposed to
+ * turn into, as we have opportunity. John 3:16 is the one verse anybody
+ * arriving already knows, which makes it the one that says "yes, this is that
+ * book". And Philippians 3:13-14 is kept as the run it is, because the
+ * forgetting in verse 13 is only worth anything with the pressing on in verse
+ * 14 — and because a wall of promises with nothing asked of the reader is a
+ * poster.
  */
 interface SeedVerse {
   b: number;

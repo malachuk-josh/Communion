@@ -31,7 +31,7 @@ import { readLocal, writeLocal } from "@/lib/storage";
  * show a tab it has never heard of shows nothing at all.
  */
 export function useStickyTab<T extends string>(
-  /** unique per page: "journal", "discover", "table", "gatherings" */
+  /** unique per page: "journal", "discover" */
   page: string,
   fallback: T,
   valid: readonly T[]

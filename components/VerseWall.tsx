@@ -1,15 +1,14 @@
 "use client";
 
-// A wall of verses, hung by people.
+// A wall of verses: the handful a reader chose to keep in front of
+// themselves, on their home screen.
 //
-// A Gathering's wall opens shut, and that is deliberate: its job is to say at
-// a glance what a room is built on, and six references read in two seconds do
-// that where six verses in full are a page nobody scrolls. A reader's own wall
-// opens read, because it is not a glance at somebody else's room — it is the
-// handful of verses they chose to keep in front of themselves, and putting
-// them behind a tap makes a filing cabinet of what was meant to be a wall.
-// Either way the text is already there, fetched when the wall was, so opening
-// and closing costs nothing.
+// It opens read, because putting the verses behind a tap makes a filing
+// cabinet of what was meant to be a wall. Each can still be closed to its
+// reference; the text is already there, fetched when the wall was, so opening
+// and closing costs nothing. (Opening shut is still an option because a
+// Gathering's wall used to open that way — a glance at what a room was built
+// on. The Gatherings went; the option is harmless and stays.)
 //
 // An open verse can also be double-tapped to go and read it in context. The
 // book button beside the reference does the same thing and is the discoverable

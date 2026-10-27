@@ -1,7 +1,7 @@
 // Standing in someone else's account for a while, and coming back out.
 //
 // Some faults cannot be seen from outside the account they happen in — a
-// Gathering that will not load for one person, a bookmark that will not sync,
+// plan that will not load for one person, a bookmark that will not sync,
 // a screen that reads wrongly only when the data behind it is theirs. The
 // owner needs to be able to look, and no description of the problem is a
 // substitute for looking.

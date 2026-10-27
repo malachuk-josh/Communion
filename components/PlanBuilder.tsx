@@ -250,7 +250,7 @@ export default function PlanBuilder({
         {error && <p className="error-text">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn btn-sm" onClick={onClose}>
-            {t("session.cancel")}
+            {t("common.cancel")}
           </button>
           <button
             type="button"

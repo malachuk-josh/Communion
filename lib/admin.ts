@@ -9,11 +9,11 @@
 //                what keeps it from being handed round by mistake.
 //
 //   trusted      people the owner has switched on from the dashboard. They
-//                see everything the dashboard shows and can remove a
-//                Gathering. They cannot grant trust, and they cannot stand
-//                in another person's account: both of those stay with the
-//                owner, because they are the two powers that could be used
-//                to take the app away from the person who owns it.
+//                see everything the dashboard shows. They cannot grant
+//                trust, and they cannot stand in another person's account:
+//                both of those stay with the owner, because they are the two
+//                powers that could be used to take the app away from the
+//                person who owns it.
 //
 // Every admin route must ask isTrusted() (or isOwner(), where the stricter
 // answer is the right one) before returning anything.
@@ -64,12 +64,12 @@ export async function setTrusted(
  * Switching an account off.
  *
  * Deactivating is not deleting and is not meant to be. Everything the person
- * wrote stays exactly where it is — their Gatherings, the verses they hung,
- * the prayers the room is still carrying — because moderating somebody is not
- * a reason to tear pages out of other people's rooms. What changes is that
- * they can no longer act: lib/auth stops answering to their identity, so every
- * route in the app refuses them from the next request onward. Switching it
- * back on restores them whole, which is the point of doing it this way.
+ * wrote stays exactly where it is — their journal, their plans, the verses on
+ * their wall — because a decision about somebody should be one that can be
+ * taken back, and a deletion cannot. What changes is that they can no longer
+ * act: lib/auth stops answering to their identity, so every route in the app
+ * refuses them from the next request onward. Switching it back on restores
+ * them whole, which is the point of doing it this way.
  *
  * Owners cannot be switched off, here and again at the route. A power that can
  * turn off the person holding it is a power that can take the app away.
@@ -222,28 +222,12 @@ async function recentTakeovers(limit: number): Promise<Takeover[]> {
   return out.sort((a, b) => b.at - a.at).slice(0, limit);
 }
 
-export interface AdminGathering {
-  id: string;
-  name: string;
-  description: string;
-  visibility: string;
-  createdAt: number;
-  memberCount: number;
-  adminName: string;
-  threadCount: number;
-  eventCount: number;
-  members: { userId: string; displayName: string; role: string }[];
-}
-
 export interface AdminUser {
   userId: string;
   displayName: string;
   email?: string;
   createdAt?: number;
   lastSignInAt?: number;
-  phone?: string;
-  smsReminders: boolean;
-  gatherings: number;
   bookmarks: number;
   pushDevices: number;
   guest: boolean;
@@ -267,27 +251,21 @@ export interface AdminSummary {
     users: number;
     clerkUsers: number;
     guests: number;
-    gatherings: number;
-    publicGatherings: number;
-    privateGatherings: number;
-    members: number;
-    events: number;
-    threads: number;
+    /** walking at least one reading plan */
+    onPlan: number;
+    bookmarks: number;
     pushDevices: number;
   };
-  gatherings: AdminGathering[];
   users: AdminUser[];
 }
 
 async function countFor(userId: string) {
   const kv = db();
-  const [churches, bookmarks, push] = await Promise.all([
-    kv.smembers(keys.userChurches(userId)),
+  const [bookmarks, push] = await Promise.all([
     kv.hgetall(keys.userBookmarks(userId)),
     kv.hgetall(keys.userPushSubs(userId)),
   ]);
   return {
-    gatherings: churches.length,
     bookmarks: Object.keys(bookmarks ?? {}).length,
     pushDevices: Object.keys(push ?? {}).length,
   };
@@ -300,55 +278,17 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
   // read straight through: the dashboard is the one screen that must never
   // show a stale answer about who is switched off
   const deactivated = new Set(await kv.smembers(keys.deactivatedUsers));
-  const churchIds = await kv.smembers(keys.allChurches);
 
-  const gatherings: AdminGathering[] = [];
-  const seenUsers = new Set<string>();
-  let members = 0;
-  let events = 0;
-  let threads = 0;
-
-  for (const churchId of churchIds) {
-    const raw = await kv.hgetall(keys.church(churchId));
-    if (!raw?.name) continue;
-    const memberMap = (await kv.hgetall(keys.churchMembers(churchId))) ?? {};
-    const memberIds = Object.keys(memberMap);
-    memberIds.forEach((id) => seenUsers.add(id));
-    members += memberIds.length;
-
-    const [churchEvents, churchThreads] = await Promise.all([
-      kv.zrangebyscore(keys.churchEvents(churchId), 0, Number.MAX_SAFE_INTEGER),
-      kv.zrangebyscore(keys.churchThreads(churchId), 0, Number.MAX_SAFE_INTEGER),
-    ]);
-    events += churchEvents.length;
-    threads += churchThreads.length;
-
-    const memberDetails = await Promise.all(
-      memberIds.map(async (id) => {
-        const profile = await kv.hgetall(keys.user(id));
-        return {
-          userId: id,
-          displayName: profile?.displayName ?? "Believer",
-          role: memberMap[id] === "founder" ? "admin" : "member",
-        };
-      })
-    );
-
-    gatherings.push({
-      id: churchId,
-      name: raw.name,
-      description: raw.description ?? "",
-      visibility: raw.visibility === "private" ? "private" : "public",
-      createdAt: Number(raw.createdAt) || 0,
-      memberCount: memberIds.length,
-      adminName:
-        memberDetails.find((m) => m.role === "admin")?.displayName ?? "—",
-      threadCount: churchThreads.length,
-      eventCount: churchEvents.length,
-      members: memberDetails,
-    });
-  }
-  gatherings.sort((a, b) => b.createdAt - a.createdAt);
+  /*
+   * Who there is to list. Accounts come from Clerk, below; a guest has no
+   * account and is known only by what they have kept on the server. This used
+   * to be the members of every Gathering, which was most of the guests there
+   * were. Now it is the readers walking a plan — the one set the server keeps
+   * of people by what they do — and whoever the owner has trusted or switched
+   * off, who must be listed for those switches to be found again.
+   */
+  const onPlan = await kv.smembers(keys.planUsers);
+  const seenUsers = new Set<string>([...onPlan, ...trusted, ...deactivated]);
 
   // Clerk accounts, when configured — these carry email and sign-in data
   const clerkProfiles = new Map<
@@ -384,16 +324,14 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
       return {
         userId,
         displayName: profile.displayName || clerk?.name || "Believer",
-        // Somebody's email and phone number are theirs, not the app's, and a
-        // trusted admin was given the dashboard to keep an eye on Gatherings
-        // rather than to collect the congregation's contact details. The
-        // counts, the names and the activity are all still here; the two
-        // fields nobody needs in order to moderate are not.
+        // Somebody's email address is theirs, not the app's, and a trusted
+        // admin was given the dashboard to keep an eye on the app rather than
+        // to collect its readers' contact details. The counts, the names and
+        // the activity are all still here; the one field nobody needs in
+        // order to moderate is not.
         email: viewerIsOwner ? clerk?.email : undefined,
-        phone: viewerIsOwner ? profile.phone || undefined : undefined,
         createdAt: clerk?.createdAt,
         lastSignInAt: clerk?.lastSignInAt,
-        smsReminders: profile.smsReminders === "1",
         guest: !userId.startsWith("user_"),
         trusted: isOwner(userId) || trusted.has(userId),
         deactivated: !isOwner(userId) && deactivated.has(userId),
@@ -431,17 +369,10 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
       users: users.length,
       clerkUsers: clerkCount || users.filter((u) => !u.guest).length,
       guests: users.filter((u) => u.guest).length,
-      gatherings: gatherings.length,
-      publicGatherings: gatherings.filter((f) => f.visibility === "public")
-        .length,
-      privateGatherings: gatherings.filter((f) => f.visibility === "private")
-        .length,
-      members,
-      events,
-      threads,
+      onPlan: onPlan.length,
+      bookmarks: users.reduce((sum, u) => sum + u.bookmarks, 0),
       pushDevices: users.reduce((sum, u) => sum + u.pushDevices, 0),
     },
-    gatherings,
     users,
   };
 }

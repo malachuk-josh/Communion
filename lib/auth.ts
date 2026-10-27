@@ -17,7 +17,7 @@ const clerkEnabled = () => !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
  * identity at all — it was a claim, and the app believed every claim. Anybody
  * who learned another guest's id (they travel: a shared collection, a listed
  * plan, an invite the server answered) could send it and *be* them — read
- * their messages, write as them, delete their Gatherings. It was also why
+ * their notes, write as them, delete what they had kept. It was also why
  * every per-person limit in the app was decorative, since a new header was a
  * new person with a fresh allowance.
  *
@@ -193,8 +193,9 @@ export async function getDisplayName(
   bodyName?: string
 ): Promise<string> {
   // A visit must not rename the person visited. Standing in someone's account
-  // and starting a Gathering would otherwise write the OWNER's Clerk name over
-  // their profile, which is the one trace of a look round nobody should leave.
+  // and opening their settings would otherwise write the OWNER's Clerk name
+  // over their profile, which is the one trace of a look round nobody should
+  // leave.
   const real = await getRealUserId(req);
   const standingIn = real && isOwner(real) ? await actingAs(req, real) : null;
   if (standingIn) {

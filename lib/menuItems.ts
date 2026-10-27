@@ -19,7 +19,6 @@ export interface MenuItem {
 }
 
 export const MENU_ITEMS: MenuItem[] = [
-  { href: "/calendar", icon: "calendar", key: "calendar" },
   { href: "/menu/settings", icon: "gear", key: "settings" },
   { href: "/menu/about", icon: "dove", key: "about" },
 ];

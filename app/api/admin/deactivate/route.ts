@@ -13,10 +13,9 @@ export const dynamic = "force-dynamic";
 /**
  * Switch an account off, or back on.
  *
- * The owner alone. A trusted admin can already remove a Gathering, which is
- * the largest thing they can do to a room — but this is the largest thing
- * anyone can do to a person, and it is the one power that could be turned on
- * the people who granted it. It stays where trust and standing-in stay.
+ * The owner alone. This is the largest thing anyone can do to a person here,
+ * and it is the one power that could be turned on the people who granted it.
+ * It stays where trust and standing-in stay.
  *
  * The real session, not the effective one, so the owner does not lose this by
  * standing in somebody's account — and so that standing in an account can

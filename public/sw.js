@@ -44,11 +44,12 @@ const DATA_PATHS = [
 
 // Read-only API responses worth showing stale.
 //
-// These are the server's own answers about Gatherings, the Table and the
-// calendar — things this device does not author and cannot reconstruct. With
-// no signal the fetch throws, every screen catches it and renders its empty
-// state, and the app tells a reader they have no Gatherings and no messages,
-// which is a lie rather than an absence. Last-known is the truthful answer.
+// These are the server's own answers — the verses on the reader's wall, their
+// name and reminder hour — which this device does not keep anywhere else and
+// cannot reconstruct. With no signal the fetch throws, the screen catches it
+// and renders its empty state, and the home screen tells a reader their wall
+// is bare, which is a lie rather than an absence. Last-known is the truthful
+// answer.
 //
 // An allowlist, not a denylist, because the cost of being wrong runs one way:
 // the licensed translations are served from /api/bible and their licences
@@ -62,42 +63,25 @@ const DATA_PATHS = [
 //
 // The manifest is here rather than in DATA because every build regenerates it;
 // cache-first would pin a client to the file sizes of whenever it first looked.
-const API_PATHS = [
-  "/api/churches", // Gatherings: the list, and each one's members and events
-  "/api/threads", // a discussion inside a Gathering
-  "/api/messages", // the Table: the inbox, a conversation, the unread count
-  "/api/notifications", // what was missed; the reader re-checks its age
-  "/api/calendar",
-  "/api/discover",
-  "/api/prayers",
-  "/api/profile",
-  "/offline-manifest.json",
-];
+const API_PATHS = ["/api/wall", "/api/profile", "/offline-manifest.json"];
 
 // Named and refused, so that adding to the list above stays a decision rather
-// than an accident of prefix matching. /api/churches would otherwise swallow
-// the invite codes, which sit under a Gathering's id and so cannot be excluded
-// by prefix — hence patterns rather than a second list of paths.
+// than an accident of prefix matching.
 const API_NEVER = [
   /^\/api\/bible\b/, // borrowed text: the licences forbid keeping it
   /^\/api\/sync\b/, // asks who we are; a cached answer is the wrong person
   /^\/api\/admin\b/,
   /^\/api\/search\b/,
-  /\/invites(\/|$)/, // an invite code is a key, not a record
-  /\/ics(\/|$)/, // a calendar download, not a screen
 ];
 
 /** Pages worth guaranteeing offline; the rest fill in as they are visited. */
 const SHELL_ROUTES = [
   "/",
   "/manifest.webmanifest",
-  "/churches",
   "/discover",
   "/menu",
   "/menu/journal",
-  "/menu/messages",
   "/menu/settings",
-  "/calendar",
 ];
 
 /** Where the shell cache records which build populated it. */
@@ -320,6 +304,28 @@ function checkData() {
     });
 }
 
+/**
+ * Answers kept for endpoints that are no longer on the list above.
+ *
+ * The Gatherings, the Table and the calendar left the app, and their last
+ * answers — conversations among them — would otherwise sit in this cache for
+ * good, never asked for again and never shown. When the list shrinks, its
+ * copies go with it.
+ */
+async function dropUnlisted() {
+  try {
+    const cache = await caches.open(API);
+    const kept = await cache.keys();
+    await Promise.all(
+      kept
+        .filter((request) => !isApi(new URL(request.url)))
+        .map((request) => cache.delete(request))
+    );
+  } catch {
+    // nothing cached, or storage refused: nothing to drop
+  }
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -330,6 +336,7 @@ self.addEventListener("activate", (event) => {
         )
       )
       .then(dropStaleShell)
+      .then(dropUnlisted)
       .then(() => self.clients.claim())
   );
 });
@@ -411,50 +418,8 @@ self.addEventListener("fetch", (event) => {
 // reporting progress back so it can draw a bar.
 const MAX_CACHE_URLS = 2000;
 
-/**
- * Pages the warm-up may ask to have kept.
- *
- * SHELL_ROUTES covers the addresses that are the same for everybody. A
- * Gathering's page and a conversation's page have an id in them, so they
- * cannot be listed ahead of time — and without them the loss of signal leaves
- * the data cached and no page to show it in: the reader gets the app's root
- * document instead, which is a different screen entirely.
- */
-const PAGE_PREFIXES = ["/churches/", "/menu/messages/"];
-const MAX_CACHE_PAGES = 60;
-
 self.addEventListener("message", (event) => {
   const msg = event.data;
-  if (msg && msg.type === "cache-pages") {
-    const paths = (Array.isArray(msg.paths) ? msg.paths : [])
-      .filter(
-        (u) =>
-          typeof u === "string" &&
-          u.startsWith("/") &&
-          !u.startsWith("//") &&
-          PAGE_PREFIXES.some((p) => u.startsWith(p))
-      )
-      .slice(0, MAX_CACHE_PAGES);
-    event.waitUntil(
-      (async () => {
-        const cache = await caches.open(SHELL);
-        for (const path of paths) {
-          try {
-            // as a navigation would ask for it, so what is stored is the
-            // document and not a router payload
-            const res = await fetch(path, {
-              headers: { accept: "text/html" },
-              cache: "no-store",
-            });
-            if (res.ok) await cache.put(path, res.clone());
-          } catch {
-            // no signal, or the page is gone: the next run tries again
-          }
-        }
-      })()
-    );
-    return;
-  }
   if (!msg || msg.type !== "cache-urls") return;
   // only same-origin dataset paths, and only so many: this message is how the
   // offline screen asks for files, not a general-purpose fetch-and-store

@@ -185,11 +185,7 @@ export function db(): KV {
 }
 
 export const keys = {
-  allEvents: "events:all",
-  allChurches: "churches:all",
-  churchRequests: (churchId: string) => `church:${churchId}:requests`,
   user: (userId: string) => `user:${userId}`,
-  userChurches: (userId: string) => `user:${userId}:churches`,
   userPlans: (userId: string) => `user:${userId}:plans`,
   userNotes: (userId: string, bookNr: number) =>
     `user:${userId}:notes:${bookNr}`,
@@ -204,6 +200,37 @@ export const keys = {
   /** a published copy of one, readable by anyone holding the token */
   sharedPlan: (token: string) => `shared:plan:${token}`,
   sharedCollection: (token: string) => `shared:${token}`,
+  planUsers: "plans:users",
+  /**
+   * The verses hung on a reader's own wall.
+   *
+   * A hash keyed by the bookmark key rather than a list, so a verse hangs
+   * once however often it is reached for — a wall with the same reference on
+   * it three times is a noticeboard, not a wall — and so taking one down is a
+   * single delete by the reference itself.
+   */
+  userWall: (userId: string) => `user:${userId}:wall`,
+  /** Whom the owner has handed the dashboard to, beyond the owner. */
+  trustedAdmins: "admin:trusted",
+  /** Every time one account was stood in by another, and by whom. */
+  adminTakeovers: "admin:takeovers",
+  /** Accounts the owner has switched off. Nothing of theirs is deleted. */
+  deactivatedUsers: "admin:deactivated",
+  /** Every switching off and back on again, with who did it. */
+  adminDeactivations: "admin:deactivations",
+
+  /*
+   * What the Gatherings, the Table and the calendar left behind.
+   *
+   * Those features are gone from the app; what people put in them is still in
+   * the store. Nothing reads these keys now except account deletion, which
+   * erases a person's share of them as it always did — and they are listed
+   * whole, the unused ones too, so the data can be found and cleared out.
+   */
+  allEvents: "events:all",
+  allChurches: "churches:all",
+  churchRequests: (churchId: string) => `church:${churchId}:requests`,
+  userChurches: (userId: string) => `user:${userId}:churches`,
   convMessages: (convId: string) => `conv:${convId}`,
   /**
    * Reactions to the messages in one conversation.
@@ -217,51 +244,21 @@ export const keys = {
   convReactions: (convId: string) => `conv:${convId}:reactions`,
   userConvs: (userId: string) => `user:${userId}:convs`,
   userNotifs: (userId: string) => `user:${userId}:notifs`,
-  planUsers: "plans:users",
-  /**
-   * Everyone who can be found by name: userId → display name.
-   *
-   * A hash rather than a set, so a search reads one key instead of one per
-   * user, and so that going private is a deletion rather than a flag anybody
-   * has to remember to check. Absent from here is exactly what private means.
-   */
+  /** userId → display name, for the people search that went with the Table */
   directory: "users:directory",
   churchThreads: (churchId: string) => `church:${churchId}:threads`,
-  /**
-   * The verses hung on a Gathering's wall, and on a reader's own.
-   *
-   * A hash keyed by the bookmark key rather than a list, so a verse hangs
-   * once however many people reach for it — a wall with the same reference
-   * on it three times is a noticeboard, not a wall — and so taking one down
-   * is a single delete by the reference itself.
-   */
   churchWall: (churchId: string) => `church:${churchId}:wall`,
-  userWall: (userId: string) => `user:${userId}:wall`,
   churchPrayers: (churchId: string) => `church:${churchId}:prayers`,
-  /** the open wall, which belongs to no Gathering */
+  /** the open prayer wall, which belonged to no Gathering */
   publicPrayers: "prayers:public",
-  /** how many a person has posted to it lately, so a wall cannot be flooded */
+  /** how many prayer requests a person had posted lately */
   prayerRate: (userId: string) => `user:${userId}:prayerRate`,
-  /** how many messages a person has sent lately — see lib/rateLimit */
+  /** how many messages a person had sent lately */
   messageRate: (userId: string) => `user:${userId}:messageRate`,
-  /** how many invite emails a person has had sent lately */
+  /** how many invite emails a person had had sent lately */
   inviteRate: (userId: string) => `user:${userId}:inviteRate`,
-  /**
-   * How many Gatherings a person has started lately.
-   *
-   * Same shape and same reason as the line above: a timestamped member per
-   * attempt, so counting the last twelve hours is one read of one key and an
-   * old entry ages out of the answer without anyone sweeping for it.
-   */
+  /** how many Gatherings a person had started lately */
   churchRate: (userId: string) => `user:${userId}:churchRate`,
-  /** Whom the owner has handed the dashboard to, beyond the owner. */
-  trustedAdmins: "admin:trusted",
-  /** Every time one account was stood in by another, and by whom. */
-  adminTakeovers: "admin:takeovers",
-  /** Accounts the owner has switched off. Nothing of theirs is deleted. */
-  deactivatedUsers: "admin:deactivated",
-  /** Every switching off and back on again, with who did it. */
-  adminDeactivations: "admin:deactivations",
   prayer: (prayerId: string) => `prayer:${prayerId}`,
   prayerPrayed: (prayerId: string) => `prayer:${prayerId}:prayed`,
   thread: (threadId: string) => `thread:${threadId}`,
