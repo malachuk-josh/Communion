@@ -1595,6 +1595,31 @@ select option {
   margin-bottom: 18px;
 }
 
+/* Words or Ask Claude, under the search bar, for the people with Ask */
+.search-modes {
+  display: flex;
+  gap: 6px;
+  margin: -6px 0 14px;
+}
+
+.search-modes .chip {
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+/* why Claude chose a passage, between its reference and its words */
+.search-why {
+  display: block;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+}
+
+.search-credit {
+  margin-top: 10px;
+}
+
 .search-results-head {
   display: flex;
   align-items: center;

@@ -34,7 +34,7 @@ import {
   bmRefLabel,
   parseBmKey,
 } from "@/lib/bookmarkKey";
-import { api } from "@/lib/client";
+import { api, guestId } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import ChapterMap from "@/components/ChapterMap";
@@ -104,6 +104,10 @@ interface SearchResult {
   chapter: number;
   verse: number;
   text: string;
+  /** a passage Claude found can run on to here */
+  end?: number;
+  /** and comes with a line on why it answers the request */
+  why?: string;
 }
 
 interface LexEntry {
@@ -410,6 +414,16 @@ export default function Reader({
   const [searchedIn, setSearchedIn] = useState("");
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
+  /**
+   * Search by describing, for the people with Ask: the request goes to Claude,
+   * which answers with references (app/api/study/find). The reader's choice
+   * between that and the word search is remembered on the device.
+   */
+  const [findMode, setFindMode] = useState(false);
+  /** whether the results showing came from Claude rather than the words */
+  const [foundByClaude, setFoundByClaude] = useState(false);
+  /** what Claude said with them, or why there are none */
+  const [findNote, setFindNote] = useState("");
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
   // Ask lives inside Compare, for the people the owner has switched on, and
   // the one pill's lamp says so rather than a second pill joining the row
@@ -539,6 +553,7 @@ export default function Reader({
       setPt(savedPt);
       ptRef.current = savedPt;
       setWeight(readTextWeight());
+      setFindMode(readLocal("communion.findMode") === "1");
     } catch {
       // corrupted storage — start fresh at the default passage
     }
@@ -2341,10 +2356,115 @@ export default function Reader({
     };
   }, [setPanelOpen]);
 
+  const askable = askStatus.allowed && askStatus.ready !== false;
+  const describing = askable && findMode;
+
+  const chooseFindMode = (on: boolean) => {
+    setFindMode(on);
+    writeLocal("communion.findMode", on ? "1" : "0");
+  };
+
+  /**
+   * A described search: Claude names the passages, and their words come from
+   * this device's own copy of the translation being read — the same way every
+   * other verse on the screen does — so nothing it returns is a quotation that
+   * could be wrong. A reference whose verse is not in that chapter is dropped
+   * when the words are looked for.
+   */
+  const runFind = async (q: string) => {
+    setSearching(true);
+    setResults([]);
+    setSearchTotal(0);
+    setFoundByClaude(true);
+    setFindNote("");
+    try {
+      const res = await fetch("/api/study/find", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-guest-id": guestId() },
+        body: JSON.stringify({ q, lang }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        results?: { bookNr: number; chapter: number; verse: number; end: number; why: string }[];
+        note?: string;
+        refused?: boolean;
+        left?: number;
+        error?: string;
+        resetsAt?: number;
+      };
+      if (!res.ok) {
+        if (json.error === "person-limit" || json.error === "app-limit") {
+          const next = {
+            ...askStatus,
+            left: 0,
+            limit: json.error === "app-limit" ? ("app" as const) : ("person" as const),
+            resetsAt: json.resetsAt ?? askStatus.resetsAt,
+          };
+          setAskStatus(next);
+          setFindNote(
+            t(json.error === "app-limit" ? "ask.appLimit" : "ask.personLimit", {
+              n: String(askStatus.perPerson ?? ""),
+              time: new Date(next.resetsAt ?? Date.now()).toLocaleTimeString(
+                lang === "es" ? "es" : "en-US",
+                { hour: "numeric", minute: "2-digit" }
+              ),
+            })
+          );
+        } else {
+          setFindNote(
+            t(
+              json.error === "busy"
+                ? "ask.busy"
+                : json.error === "not-ready" || json.error === "not-allowed"
+                  ? "ask.notReady"
+                  : "ask.failed"
+            )
+          );
+        }
+        return;
+      }
+      if (typeof json.left === "number") setAskStatus({ ...askStatus, left: json.left });
+      const wordsOf = async (tr: string, f: NonNullable<typeof json.results>[number]) => {
+        const chapter = await fetchChapter(tr, f.bookNr, f.chapter);
+        return chapter.verses
+          .filter((x) => x.verse >= f.verse && x.verse <= f.end)
+          .map((x) => x.text.trim())
+          .join(" ");
+      };
+      const rows = await Promise.all(
+        (json.results ?? []).map(async (f) => {
+          // the translation being read, or the King James if that one
+          // cannot be had just now
+          let text = await wordsOf(translation, f).catch(() => "");
+          if (!text && translation !== DEFAULT_TRANSLATION) {
+            text = await wordsOf(DEFAULT_TRANSLATION, f).catch(() => "");
+          }
+          return text
+            ? { bookNr: f.bookNr, chapter: f.chapter, verse: f.verse, end: f.end, why: f.why, text }
+            : null;
+        })
+      );
+      const kept = rows.filter((r): r is NonNullable<typeof r> => r !== null);
+      setResults(kept);
+      setSearchTotal(kept.length);
+      setSearchedIn(translation);
+      setFindNote(json.refused ? t("ask.refused") : (json.note ?? ""));
+    } catch {
+      setFindNote(t(navigator.onLine === false ? "ask.offline" : "ask.failed"));
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const runSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     if (q.length < 3 || searching) return;
+    if (describing) {
+      void runFind(q);
+      return;
+    }
+    setFoundByClaude(false);
+    setFindNote("");
     setSearching(true);
     setResults([]);
     setSearchTotal(0);
@@ -2402,32 +2522,59 @@ export default function Reader({
   /** The search bar. Lives in the control sheet, and again above a result
    *  list so a query can be refined without reopening the sheet. */
   const searchBar = (fromSheet: boolean) => (
-    <form
-      className="glass search-bar"
-      onSubmit={(e) => {
-        runSearch(e);
-        if (fromSheet) {
-          setPanelOpen(false);
-          scrollToY(0);
-        }
-      }}
-    >
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t("search.placeholder")}
-        maxLength={60}
-        autoFocus={fromSheet}
-      />
-      <button
-        className="btn btn-sm"
-        type="submit"
-        disabled={query.trim().length < 3 || searching}
+    <>
+      <form
+        className="glass search-bar"
+        onSubmit={(e) => {
+          runSearch(e);
+          if (fromSheet) {
+            setPanelOpen(false);
+            scrollToY(0);
+          }
+        }}
       >
-        <Icon name="search" /> {t("search.button")}
-      </button>
-    </form>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t(describing ? "find.placeholder" : "search.placeholder")}
+          maxLength={describing ? 300 : 60}
+          autoFocus={fromSheet}
+          enterKeyHint="search"
+        />
+        <button
+          className="btn btn-sm"
+          type="submit"
+          disabled={query.trim().length < 3 || searching}
+        >
+          <Icon name={describing ? "lamp" : "search"} /> {t("search.button")}
+        </button>
+      </form>
+      {/* For the people with Ask: the words as they are, or a description
+          for Claude to find passages from. The lamp is Ask's, as on Compare. */}
+      {askable && (
+        <div className="search-modes" role="radiogroup" aria-label={t("find.mode")}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!findMode}
+            className={`chip${!findMode ? " chip-active" : ""}`}
+            onClick={() => chooseFindMode(false)}
+          >
+            <Icon name="search" /> {t("find.words")}
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={findMode}
+            className={`chip${findMode ? " chip-active" : ""}`}
+            onClick={() => chooseFindMode(true)}
+          >
+            <Icon name="lamp" /> {t("find.ask")}
+          </button>
+        </div>
+      )}
+    </>
   );
 
   /**
@@ -2584,14 +2731,20 @@ export default function Reader({
         <div className="search-results">
           <div className="search-results-head">
             <span>
-              {searching
-                ? t("search.searching")
-                : searchTotal === 0
-                  ? t("search.none")
-                  : t("search.results", { count: String(searchTotal) }) +
-                    (searchTotal > results.length
-                      ? ` — ${t("search.limited", { count: String(results.length) })}`
-                      : "")}
+              {foundByClaude
+                ? searching
+                  ? t("find.searching")
+                  : searchTotal === 0
+                    ? findNote || t("find.none")
+                    : t("find.results", { count: String(searchTotal) })
+                : searching
+                  ? t("search.searching")
+                  : searchTotal === 0
+                    ? t("search.none")
+                    : t("search.results", { count: String(searchTotal) }) +
+                      (searchTotal > results.length
+                        ? ` — ${t("search.limited", { count: String(results.length) })}`
+                        : "")}
             </span>
             <button
               type="button"
@@ -2612,6 +2765,9 @@ export default function Reader({
               })}
             </p>
           )}
+          {foundByClaude && !searching && searchTotal > 0 && findNote && (
+            <p className="cal-hint search-in">{findNote}</p>
+          )}
           {results.map((r) => (
             <button
               key={`${r.bookNr}-${r.chapter}-${r.verse}`}
@@ -2621,10 +2777,21 @@ export default function Reader({
             >
               <span className="ref">
                 {bookNameOf(r.bookNr)} {r.chapter}:{r.verse}
+                {r.end && r.end > r.verse ? `–${r.end}` : ""}
               </span>
-              <p>{highlight(r.text)}</p>
+              {r.why && <span className="search-why">{r.why}</span>}
+              {/* a description has no words of its own to mark in the text */}
+              <p>{r.why !== undefined ? r.text : highlight(r.text)}</p>
             </button>
           ))}
+          {foundByClaude && !searching && (
+            <p className="ask-hint search-credit">
+              {t("find.credit")}
+              {typeof askStatus.left === "number" && askStatus.left > 0 && (
+                <> · {t("ask.left", { n: String(askStatus.left) })}</>
+              )}
+            </p>
+          )}
         </div>
       )}
 
