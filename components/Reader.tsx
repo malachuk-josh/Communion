@@ -4184,14 +4184,9 @@ export default function Reader({
                 className="sp-icon-btn"
                 onNavigate={() => setPanelOpen(false)}
               />
-              <button
-                type="button"
-                className="lex-close"
-                onClick={() => setPanelOpen(false)}
-                aria-label={t("common.close")}
-              >
-                ✕
-              </button>
+              {/* No close button of its own: the tab on the page's right edge
+                  that opened the panel closes it, and so do a tap on the
+                  shade beside it and Escape. */}
             </div>
 
             {/* pinned: search, translation and bookmarks stay put while the
