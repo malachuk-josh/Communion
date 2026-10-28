@@ -15,6 +15,13 @@ export const PT_DEFAULT = 14;
 /** Regular, then four steps heavier. */
 export const WEIGHT_MAX = 4;
 
+/**
+ * Semibold, the middle step, until a reader chooses otherwise. Anyone who has
+ * moved the slider keeps where they left it, Regular included: only a device
+ * with nothing saved takes the default.
+ */
+export const WEIGHT_DEFAULT = 2;
+
 const PT_KEY = "communion.textPt";
 const WEIGHT_KEY = "communion.textWeight";
 
@@ -38,8 +45,12 @@ export function writeTextPt(pt: number): void {
 }
 
 export function readTextWeight(): number {
-  const saved = Number(readLocal(WEIGHT_KEY));
-  return Number.isInteger(saved) && saved >= 0 && saved <= WEIGHT_MAX ? saved : 0;
+  // nothing saved reads as the default, not as Number(null), which is 0
+  const raw = readLocal(WEIGHT_KEY);
+  const saved = raw === null || raw === "" ? NaN : Number(raw);
+  return Number.isInteger(saved) && saved >= 0 && saved <= WEIGHT_MAX
+    ? saved
+    : WEIGHT_DEFAULT;
 }
 
 export function writeTextWeight(level: number): void {

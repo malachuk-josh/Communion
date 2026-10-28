@@ -23,6 +23,7 @@ import {
   readTextPt,
   readTextWeight,
   strokeOf,
+  WEIGHT_DEFAULT,
   writeTextPt,
   writeTextWeight,
 } from "@/lib/readingText";
@@ -83,7 +84,7 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
   const [redLetter, setRedLetter] = useState(false);
   // how Scripture is set in The Word; see lib/readingText
   const [pt, setPt] = useState(PT_DEFAULT);
-  const [weight, setWeight] = useState(0);
+  const [weight, setWeight] = useState(WEIGHT_DEFAULT);
 
   useEffect(() => {
     setRedLetter(readRedLetter());

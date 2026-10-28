@@ -85,6 +85,7 @@ import {
   readTextPt,
   readTextWeight,
   strokeOf,
+  WEIGHT_DEFAULT,
   writeTextPt,
   writeTextWeight,
 } from "@/lib/readingText";
@@ -258,7 +259,7 @@ export default function Reader({
   const [loading, setLoading] = useState(true);
   const [pt, setPt] = useState(PT_DEFAULT);
   /** how much heavier than regular the letters are set, from Settings */
-  const [weight, setWeight] = useState(0);
+  const [weight, setWeight] = useState(WEIGHT_DEFAULT);
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
   /** The verse held still for the length of a pinch — see the handler. */
