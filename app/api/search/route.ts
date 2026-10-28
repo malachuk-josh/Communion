@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
-import { DEFAULT_TRANSLATION, isLicensed, isTranslation } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, isLicensed, isTranslation, parseBooksParam } from "@/lib/bible";
 
 /** A book file: chapter number → [verse, text] pairs. */
 type BookFile = Record<string, [number, string][]>;
@@ -44,6 +44,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const translation = searchParams.get("t") ?? "";
   const query = (searchParams.get("q") ?? "").trim();
+  // the books to look in (lib/bible's booksParam), or all of them
+  const only = parseBooksParam(searchParams.get("b"));
 
   if (!isTranslation(translation) || normalize(query).length < 3) {
     return NextResponse.json({ error: "Invalid search" }, { status: 400 });
@@ -68,6 +70,7 @@ export async function GET(req: Request) {
 
     books.forEach((book, i) => {
       const bookNr = i + 1;
+      if (only && !only.has(bookNr)) return;
       for (const [chapter, rows] of Object.entries(book)) {
         for (const [verse, text] of rows) {
           if (normalize(text).includes(needle)) {

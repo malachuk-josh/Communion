@@ -6,12 +6,11 @@
 // feels like turning to it rather than picking from three dropdowns.
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import { BOOKS, DEFAULT_TRANSLATION, getBook, isLicensed } from "@/lib/bible";
+import { BOOKS, DEFAULT_TRANSLATION, LAST_OT_BOOK, getBook, isLicensed } from "@/lib/bible";
 import { readHistory, type Visit } from "@/lib/history";
 import { useI18n } from "@/lib/i18n";
 import { fetchBook } from "@/lib/scripture";
 
-const LAST_OT_BOOK = 39;
 /** Chapters to a row. Must match repeat(N) on .bn-ch-row in globals.css. */
 const PER_ROW = 5;
 

@@ -14,10 +14,14 @@ import {
   DEFAULT_TRANSLATION,
   NOTE_MAX,
   TRANSLATIONS,
+  WHOLE_BIBLE,
+  booksParam,
   getBook,
   getTranslation,
   isLicensed,
+  scopeBooks,
   type ChapterData,
+  type SearchScope,
   type Verse,
 } from "@/lib/bible";
 import { acrosticAt } from "@/lib/acrostic";
@@ -71,6 +75,7 @@ import {
   writeLocalState,
 } from "@/lib/sync";
 import AskVerse, { useAskStatus } from "@/components/AskVerse";
+import SearchScopeRow, { useScopeName } from "@/components/SearchScope";
 import Concordance from "@/components/Concordance";
 import ReadingSliders from "@/components/ReadingSliders";
 import TypefacePicker from "@/components/TypefacePicker";
@@ -401,6 +406,11 @@ export default function Reader({
   const [searchedIn, setSearchedIn] = useState("");
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
+  /** where a word search looks: a testament, books, or everything */
+  const [scope, setScope] = useState<SearchScope>(WHOLE_BIBLE);
+  const scopeName = useScopeName();
+  /** the latest word search, so an answer to an earlier one is dropped */
+  const searchSeq = useRef(0);
   /**
    * Search by describing, for the people with Ask: the request goes to Claude,
    * which answers with references (app/api/study/find). The reader's choice
@@ -2392,14 +2402,23 @@ export default function Reader({
       void runFind(q);
       return;
     }
+    await searchWords(q, scope);
+  };
+
+  /** Search the words, in the books the filters allow. */
+  const searchWords = async (q: string, within: SearchScope) => {
+    const seq = ++searchSeq.current;
+    const only = scopeBooks(within);
     setFoundByClaude(false);
     setFindNote("");
     setSearching(true);
     setResults([]);
     setSearchTotal(0);
+    let found: { results: SearchResult[]; total: number; searchedIn: string };
     try {
       const res = await fetch(
-        `/api/search?t=${translation}&q=${encodeURIComponent(q)}`
+        `/api/search?t=${translation}&q=${encodeURIComponent(q)}` +
+          (only ? `&b=${booksParam(only)}` : "")
       );
       if (!res.ok) throw new Error("search failed");
       const json = (await res.json()) as {
@@ -2407,22 +2426,29 @@ export default function Reader({
         total: number;
         searchedIn?: string;
       };
-      setResults(json.results);
-      setSearchTotal(json.total);
-      setSearchedIn(json.searchedIn ?? translation);
+      found = { ...json, searchedIn: json.searchedIn ?? translation };
     } catch {
       // offline: scan the static book files already on this device
       try {
-        const local = await searchLocal(translation, q);
-        setResults(local.results);
-        setSearchTotal(local.total);
-        setSearchedIn(local.searchedIn);
+        found = await searchLocal(translation, q, only);
       } catch {
-        setResults([]);
-        setSearchTotal(0);
+        found = { results: [], total: 0, searchedIn: "" };
       }
-    } finally {
-      setSearching(false);
+    }
+    // a filter changed while this was out: the newer search answers instead
+    if (seq !== searchSeq.current) return;
+    setResults(found.results);
+    setSearchTotal(found.total);
+    setSearchedIn(found.searchedIn);
+    setSearching(false);
+  };
+
+  /** A filter changed: results already showing are searched again within it. */
+  const chooseScope = (next: SearchScope) => {
+    setScope(next);
+    const q = query.trim();
+    if (results !== null && !foundByClaude && !describing && q.length >= 3) {
+      void searchWords(q, next);
     }
   };
 
@@ -2508,6 +2534,8 @@ export default function Reader({
           </button>
         </div>
       )}
+      {/* the word search's filters; a description goes to Claude whole */}
+      {!describing && <SearchScopeRow scope={scope} onChange={chooseScope} />}
     </>
   );
 
@@ -2698,6 +2726,9 @@ export default function Reader({
                 name: getTranslation(searchedIn)?.abbrev ?? searchedIn,
               })}
             </p>
+          )}
+          {!foundByClaude && scopeBooks(scope) && (
+            <p className="cal-hint search-in">{t("search.within", { where: scopeName(scope) })}</p>
           )}
           {foundByClaude && !searching && searchTotal > 0 && findNote && (
             <p className="cal-hint search-in">{findNote}</p>

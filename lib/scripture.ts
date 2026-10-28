@@ -270,6 +270,8 @@ export interface LocalSearchResult {
 export async function searchLocal(
   translation: string,
   query: string,
+  /** the books to look in, or null for all of them */
+  only: number[] | null = null,
   limit = 50
 ): Promise<{ results: LocalSearchResult[]; total: number; searchedIn: string }> {
   const normalize = (s: string) =>
@@ -288,6 +290,7 @@ export async function searchLocal(
   // results came from.
   const from = isLicensed(translation) ? "kjv" : translation;
   for (let bookNr = 1; bookNr <= 66; bookNr++) {
+    if (only && !only.includes(bookNr)) continue;
     let book: BookFile;
     try {
       book = await loadBook(from, bookNr);

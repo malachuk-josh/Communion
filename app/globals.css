@@ -1874,6 +1874,75 @@ mark {
   margin: 10px 0 0;
 }
 
+/* The word search's filters: Old Testament, New Testament, Books. Under the
+   modes in the navigator, and over the results with the bar there. */
+.search-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -6px 0 14px;
+}
+
+.sp-pad .search-scope {
+  margin: 8px 0 0;
+}
+
+.search-modes + .search-scope {
+  margin-top: 0;
+}
+
+.sp-pad .search-modes + .search-scope {
+  margin-top: 8px;
+}
+
+.search-scope .chip {
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 374px) {
+  .search-scope .chip {
+    font-size: 0.7rem;
+    padding-inline: 10px;
+  }
+}
+
+/* the books sheet opens from inside the navigator, so it stands over it */
+.modal-overlay.over-panel {
+  z-index: 80;
+}
+
+.book-picker h3 {
+  margin: 14px 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.book-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.book-picker-grid .chip {
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* sixty-six books are taller than a phone: Clear and Done stay in reach at
+   the foot of the sheet while it scrolls, on the bars' own solid colour */
+.book-picker .modal-actions {
+  position: sticky;
+  bottom: -24px;
+  margin: 16px -24px -24px;
+  padding: 12px 24px 16px;
+  background: var(--bar);
+  border-top: 1px solid var(--glass-border);
+}
+
 /* translation and bookmarks ride above the book list, one row */
 .sp-top {
   display: flex;

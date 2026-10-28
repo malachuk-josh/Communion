@@ -352,6 +352,55 @@ export function getBook(nr: number): Book | undefined {
   return BOOKS.find((b) => b.nr === nr);
 }
 
+/** The last book of the Old Testament: Malachi. */
+export const LAST_OT_BOOK = 39;
+
+/**
+ * Where a word search looks: either testament, any books besides, or — with
+ * nothing chosen — the whole Bible. The choices add up rather than narrow:
+ * the Old Testament and Matthew is thirty-nine books and one more.
+ */
+export interface SearchScope {
+  ot: boolean;
+  nt: boolean;
+  books: number[];
+}
+
+export const WHOLE_BIBLE: SearchScope = { ot: false, nt: false, books: [] };
+
+/** The books a scope covers, in order, or null for all sixty-six. */
+export function scopeBooks(scope: SearchScope): number[] | null {
+  const found = new Set(scope.books);
+  for (const b of BOOKS) {
+    if (b.nr <= LAST_OT_BOOK ? scope.ot : scope.nt) found.add(b.nr);
+  }
+  if (found.size === 0 || found.size === BOOKS.length) return null;
+  return [...found].sort((a, b) => a - b);
+}
+
+/** Books for a query string, runs closed up: "1-39,43". */
+export function booksParam(books: number[]): string {
+  const runs: string[] = [];
+  for (let i = 0; i < books.length; i++) {
+    let j = i;
+    while (j + 1 < books.length && books[j + 1] === books[j] + 1) j++;
+    runs.push(j > i ? `${books[i]}-${books[j]}` : String(books[i]));
+    i = j;
+  }
+  return runs.join(",");
+}
+
+/** booksParam read back: the books, or null for anything else. */
+export function parseBooksParam(param: string | null): Set<number> | null {
+  if (!param || !/^\d+(-\d+)?(,\d+(-\d+)?)*$/.test(param)) return null;
+  const books = new Set<number>();
+  for (const run of param.split(",")) {
+    const [from, to = from] = run.split("-").map(Number);
+    for (let n = Math.max(1, from); n <= Math.min(BOOKS.length, to); n++) books.add(n);
+  }
+  return books.size ? books : null;
+}
+
 /**
  * How long a note on a verse may be. Room for a saved answer from Ask under
  * whatever was written there already, which the old thousand was not.
