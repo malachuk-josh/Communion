@@ -3185,7 +3185,15 @@ export default function Reader({
         aria-label={t(panelOpen ? "reader.closePanel" : "reader.openPanel")}
         title={t(panelOpen ? "reader.closePanel" : "reader.openPanel")}
       >
+        {/* three lines above the icon and three below, a handle's grip, so
+            the tab reads as something to take hold of */}
+        <svg className="pt-grip" viewBox="0 0 10 8" aria-hidden="true">
+          <path d="M1.5 1h7M1.5 4h7M1.5 7h7" />
+        </svg>
         <Icon name={panelOpen ? "close" : "book"} />
+        <svg className="pt-grip" viewBox="0 0 10 8" aria-hidden="true">
+          <path d="M1.5 1h7M1.5 4h7M1.5 7h7" />
+        </svg>
       </button>
 
       {pinchShow !== null && (

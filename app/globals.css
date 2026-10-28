@@ -2262,8 +2262,10 @@ mark {
   width: 24px;
   height: 70px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 0 0 0 2px;
   border-right: none;
   border-radius: 14px 0 0 14px;
@@ -2273,6 +2275,19 @@ mark {
 
 .panel-tab.open {
   z-index: 71;
+}
+
+/* the grip above and below the icon: three short lines, a little quieter
+   than the icon so the icon still says what the tab is */
+.panel-tab .pt-grip {
+  width: 10px;
+  height: 8px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  opacity: 0.7;
 }
 
 .panel-tab svg {
