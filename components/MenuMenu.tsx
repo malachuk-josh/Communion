@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import { MENU_ITEMS, shareCommunion } from "@/lib/menuItems";
+import { MENU_ITEMS, announceHomeTab, shareCommunion } from "@/lib/menuItems";
 
 export default function MenuMenu({
   className = "theme-toggle settings-gear",
@@ -112,7 +112,10 @@ export default function MenuMenu({
               className={`menu-pop-item${
                 pathname.startsWith(item.href) ? " on" : ""
               }`}
-              onClick={leave}
+              onClick={() => {
+                announceHomeTab(item.href);
+                leave();
+              }}
             >
               <Icon name={item.icon} />
               <span>

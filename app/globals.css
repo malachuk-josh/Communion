@@ -3632,6 +3632,91 @@ button.menu-tile {
   white-space: nowrap;
 }
 
+/* inside Home, where the tab row is the heading: the download button alone,
+   at the right, above the first card */
+.settings-head-tab {
+  justify-content: flex-end;
+  margin: -6px 0 10px;
+}
+
+.settings-head-tab .settings-offline-btn {
+  margin-top: 0;
+}
+
+/* ---- how Scripture is set: the preview and its two sliders ---- */
+.reading-preview {
+  font-family: var(--serif);
+  line-height: 1.85;
+  margin-bottom: 18px;
+  overflow-wrap: break-word;
+}
+
+.reading-preview-ref {
+  font-family: var(--sans);
+  font-size: 0.62em;
+  color: var(--gold);
+  white-space: nowrap;
+  -webkit-text-stroke-width: 0;
+}
+
+.slider-field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.slider-value {
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+
+/* the small A and the large (or heavy) A at either end say what the slider
+   does before it is touched */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-end {
+  flex: none;
+  width: 1.4em;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.slider-end-big {
+  font-size: 1.35rem;
+}
+
+.slider-end-bold {
+  font-weight: 800;
+  -webkit-text-stroke-width: 0.06em;
+}
+
+/* the app's inputs are boxes; a range is a track, and takes none of that */
+.slider-row input[type="range"] {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  accent-color: var(--gold);
+  height: 28px;
+  cursor: pointer;
+}
+
 /* How far a bookmark runs. Sits above the collections, because how much of
    the passage you are keeping is decided before where you file it. */
 .bm-through {

@@ -19,9 +19,25 @@ export interface MenuItem {
 }
 
 export const MENU_ITEMS: MenuItem[] = [
-  { href: "/menu/settings", icon: "gear", key: "settings" },
+  // Settings lives in Home now; the menu still knows the way there
+  { href: "/discover?tab=settings", icon: "gear", key: "settings" },
   { href: "/menu/about", icon: "dove", key: "about" },
 ];
+
+/**
+ * Say which of Home's tabs a link is for, to a Home that is already open.
+ *
+ * Following a link to the page you are on changes only its address — Next
+ * keeps the page mounted — so Home never re-reads which tab was asked for,
+ * and picking Settings from the menu while on Home did nothing. The link
+ * still navigates as usual; this is the word to the page already there.
+ */
+export const HOME_TAB_EVENT = "communion:home-tab";
+
+export function announceHomeTab(href: string): void {
+  const tab = new URL(href, window.location.origin).searchParams.get("tab");
+  if (tab) window.dispatchEvent(new CustomEvent(HOME_TAB_EVENT, { detail: tab }));
+}
 
 /**
  * Pass Communion on.

@@ -1,5 +1,6 @@
-import Settings from "@/components/Settings";
+import { redirect } from "next/navigation";
 
+// Settings moved into Home as its third tab; keep old links working.
 export default function SettingsPage() {
-  return <Settings />;
+  redirect("/discover?tab=settings");
 }

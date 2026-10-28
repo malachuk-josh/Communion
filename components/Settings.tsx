@@ -18,6 +18,27 @@ import DeleteAccount from "@/components/DeleteAccount";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import { writeLocal } from "@/lib/storage";
 import { useDocumentTheme, type Theme } from "@/lib/theme";
+import {
+  PT_DEFAULT,
+  PT_MAX,
+  PT_MIN,
+  WEIGHT_MAX,
+  readTextPt,
+  readTextWeight,
+  strokeOf,
+  writeTextPt,
+  writeTextWeight,
+} from "@/lib/readingText";
+import type { MessageKey } from "@/lib/i18n";
+
+/** What each step of the boldness slider is called, from regular up. */
+const WEIGHT_NAMES: MessageKey[] = [
+  "settings.weight0",
+  "settings.weight1",
+  "settings.weight2",
+  "settings.weight3",
+  "settings.weight4",
+];
 
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -55,7 +76,12 @@ function ClerkAccount() {
   );
 }
 
-export default function Settings() {
+/**
+ * Settings, which lives as the third tab of Home. `embedded` is that tab: no
+ * way back to the menu and no title of its own, since Home already has both
+ * a title and a row of tabs above it. Standing alone it is the old page.
+ */
+export default function Settings({ embedded = false }: { embedded?: boolean }) {
   const { lang, setLang, t } = useI18n();
   // follows the header's theme button too, so the right one is always marked
   const theme = useDocumentTheme();
@@ -67,9 +93,14 @@ export default function Settings() {
   const [nameError, setNameError] = useState("");
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [redLetter, setRedLetter] = useState(false);
+  // how Scripture is set in The Word; see lib/readingText
+  const [pt, setPt] = useState(PT_DEFAULT);
+  const [weight, setWeight] = useState(0);
 
   useEffect(() => {
     setRedLetter(readRedLetter());
+    setPt(readTextPt());
+    setWeight(readTextWeight());
     api<{ displayName: string }>("/api/profile")
       .then((res) => setDisplayName(res.displayName))
       .catch(() => {})
@@ -132,24 +163,35 @@ export default function Settings() {
     );
   }
 
+  const offlineButton = (
+    <button
+      type="button"
+      className="btn btn-sm settings-offline-btn"
+      onClick={() => setOfflineOpen(true)}
+    >
+      <Icon name="download" /> {t("menu.offline")}
+    </button>
+  );
+
   return (
     <div>
-      <BackToMenu />
-      {/* The way to the download screen sits with the title, not buried under
-          the sections — it is a place to go, not a preference to set. */}
-      <div className="settings-head">
-        <div>
-          <h1 className="page-title">{t("settings.title")}</h1>
-          <p className="subtitle">{t("settings.subtitle")}</p>
-        </div>
-        <button
-          type="button"
-          className="btn btn-sm settings-offline-btn"
-          onClick={() => setOfflineOpen(true)}
-        >
-          <Icon name="download" /> {t("menu.offline")}
-        </button>
-      </div>
+      {/* The way to the download screen sits at the head of the page, not
+          buried under the sections — it is a place to go, not a preference to
+          set. Inside Home it heads the tab on its own. */}
+      {embedded ? (
+        <div className="settings-head settings-head-tab">{offlineButton}</div>
+      ) : (
+        <>
+          <BackToMenu />
+          <div className="settings-head">
+            <div>
+              <h1 className="page-title">{t("settings.title")}</h1>
+              <p className="subtitle">{t("settings.subtitle")}</p>
+            </div>
+            {offlineButton}
+          </div>
+        </>
+      )}
 
       {/* First, and on its own: the one setting people come back to change,
           and the only one whose effect is visible the moment it is pressed. */}
@@ -177,6 +219,77 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Under the theme, and the same kind of choice: how the page looks.
+          The verse at the top is set exactly as The Word will set it, so the
+          sliders are judged by their effect rather than by a number. */}
+      <div className="section-head">
+        <h2>{t("settings.reading")}</h2>
+      </div>
+      <div className="glass card reading-card">
+        <p
+          className="reading-preview"
+          style={{ fontSize: `${pt}pt`, WebkitTextStrokeWidth: strokeOf(weight) }}
+        >
+          {t("settings.previewVerse")}{" "}
+          <span className="reading-preview-ref">{t("settings.previewRef")}</span>
+        </p>
+        <label className="slider-field">
+          <span className="slider-label">
+            {t("reader.textSize")}
+            <span className="slider-value">{pt} pt</span>
+          </span>
+          <span className="slider-row">
+            <span className="slider-end" aria-hidden>
+              A
+            </span>
+            <input
+              type="range"
+              min={PT_MIN}
+              max={PT_MAX}
+              step={1}
+              value={pt}
+              aria-valuetext={`${pt} pt`}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setPt(next);
+                writeTextPt(next);
+              }}
+            />
+            <span className="slider-end slider-end-big" aria-hidden>
+              A
+            </span>
+          </span>
+        </label>
+        <label className="slider-field">
+          <span className="slider-label">
+            {t("settings.boldness")}
+            <span className="slider-value">{t(WEIGHT_NAMES[weight])}</span>
+          </span>
+          <span className="slider-row">
+            <span className="slider-end" aria-hidden>
+              A
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={WEIGHT_MAX}
+              step={1}
+              value={weight}
+              aria-valuetext={t(WEIGHT_NAMES[weight])}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setWeight(next);
+                writeTextWeight(next);
+              }}
+            />
+            <span className="slider-end slider-end-bold" aria-hidden>
+              A
+            </span>
+          </span>
+        </label>
+        <p className="cal-hint">{t("settings.readingHint")}</p>
       </div>
 
       {/* Second, under the theme and with it: language and red letters are

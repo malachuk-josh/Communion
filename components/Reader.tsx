@@ -76,6 +76,15 @@ import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import { readLocal, writeLocal } from "@/lib/storage";
+import {
+  PT_DEFAULT,
+  PT_MAX,
+  PT_MIN,
+  readTextPt,
+  readTextWeight,
+  strokeOf,
+  writeTextPt,
+} from "@/lib/readingText";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
 const DEFAULT_CHAPTER = 18;
@@ -83,10 +92,8 @@ const DEFAULT_VERSE = 20;
 
 // Text size is a point size, the way type has always been set — 14 pt, not
 // 112%. A multiplier had no natural stopping places, so a pinch slid through
-// a continuum and the smallest movement changed the text.
-const PT_MIN = 10;
-const PT_MAX = 30;
-const PT_DEFAULT = 14;
+// a continuum and the smallest movement changed the text. The limits, and
+// the weight Settings can add, are in lib/readingText.
 /** How far you must spread your fingers to gain one point. */
 const PINCH_STEP = 1.12;
 
@@ -266,6 +273,8 @@ export default function Reader({
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pt, setPt] = useState(PT_DEFAULT);
+  /** how much heavier than regular the letters are set, from Settings */
+  const [weight, setWeight] = useState(0);
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
   /** The verse held still for the length of a pinch — see the handler. */
@@ -524,24 +533,10 @@ export default function Reader({
         // first visit: land on the founding verse, gently highlighted
         setHighlightVerse(DEFAULT_VERSE);
       }
-      const savedPt = Number(readLocal("communion.textPt"));
-      if (savedPt >= PT_MIN && savedPt <= PT_MAX) {
-        setPt(savedPt);
-        ptRef.current = savedPt;
-      } else {
-        // carried over from when this was a multiplier: 1.0 was the default,
-        // so the same reader lands on the same default point size
-        const old = Number(readLocal("communion.textScale"));
-        if (old > 0) {
-          const migrated = Math.min(
-            PT_MAX,
-            Math.max(PT_MIN, Math.round(old * PT_DEFAULT))
-          );
-          setPt(migrated);
-          ptRef.current = migrated;
-          writeLocal("communion.textPt", String(migrated));
-        }
-      }
+      const savedPt = readTextPt();
+      setPt(savedPt);
+      ptRef.current = savedPt;
+      setWeight(readTextWeight());
     } catch {
       // corrupted storage — start fresh at the default passage
     }
@@ -978,7 +973,7 @@ export default function Reader({
             });
           });
         }
-        writeLocal("communion.textPt", String(ptRef.current));
+        writeTextPt(ptRef.current);
         window.setTimeout(() => setPinchShow(null), 800);
       }
     };
@@ -2262,7 +2257,7 @@ export default function Reader({
     holdVerse();
     setPt(next);
     ptRef.current = next;
-    writeLocal("communion.textPt", String(next));
+    writeTextPt(next);
   };
 
   const runSearch = async (e: React.FormEvent) => {
@@ -2580,7 +2575,10 @@ export default function Reader({
           <article
             key={`${bookNr}-${ch}`}
             className={`scripture${study ? " study" : ""}`}
-            style={{ fontSize: `${pt}pt` }}
+            style={{
+              fontSize: `${pt}pt`,
+              WebkitTextStrokeWidth: strokeOf(weight),
+            }}
           >
             {/* Prose sets its chapter number as the drop cap that opens it,
                 the way a printed Bible does, so the heading above would only

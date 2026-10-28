@@ -25,6 +25,8 @@ import MyPrayers from "@/components/MyPrayers";
 import { WallSignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
+import Settings from "@/components/Settings";
+import { HOME_TAB_EVENT } from "@/lib/menuItems";
 import {
   isCustomPlanId,
   type CustomPlanRow,
@@ -38,11 +40,12 @@ function refLabel(ref: VerseRef, lang: Lang): string {
 }
 
 /**
- * The toggles, in the order the row shows them. A third, Gatherings, went
- * with the Gatherings themselves; a reader whose saved tab was that one lands
- * on Scripture, because useStickyTab only restores a tab still listed here.
+ * The toggles, in the order the row shows them. Settings came in third when it
+ * left the menu. A tab that used to be here, Gatherings, went with the
+ * Gatherings themselves; a reader whose saved tab was that one lands on
+ * Scripture, because useStickyTab only restores a tab still listed here.
  */
-const DISCOVER_TABS = ["scripture", "wall"] as const;
+const DISCOVER_TABS = ["scripture", "wall", "settings"] as const;
 
 export default function Discover() {
   const { t } = useI18n();
@@ -70,7 +73,29 @@ export default function Discover() {
       // the link outranks what the page would otherwise remember.
       setTab("scripture");
     }
+    // Settings used to be a page of its own, and the links that went there —
+    // the menu's, the concordance's "download for offline" — now come here
+    // and say which tab they mean. #offline opens the download screen inside.
+    if (
+      new URLSearchParams(window.location.search).get("tab") === "settings" ||
+      window.location.hash === "#offline"
+    ) {
+      setTab("settings");
+    }
     // setTab is stable, and listing it would re-run this on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // the menu asking for a tab while Home is already the page (lib/menuItems)
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const wanted = (e as CustomEvent<string>).detail;
+      if ((DISCOVER_TABS as readonly string[]).includes(wanted)) {
+        setTab(wanted as (typeof DISCOVER_TABS)[number]);
+      }
+    };
+    window.addEventListener(HOME_TAB_EVENT, onAsk);
+    return () => window.removeEventListener(HOME_TAB_EVENT, onAsk);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,12 +118,25 @@ export default function Discover() {
         >
           <Icon name="wall" /> {t("wall.mine")}
         </button>
+        <button
+          className={tab === "settings" ? "active" : ""}
+          onClick={() => setTab("settings")}
+          aria-pressed={tab === "settings"}
+        >
+          <Icon name="gear" /> {t("settings.title")}
+        </button>
       </div>
       <p className="subtitle">
-        {tab === "scripture" ? t("discover.subtitleScripture") : t("wall.mineLead")}
+        {tab === "scripture"
+          ? t("discover.subtitleScripture")
+          : tab === "wall"
+            ? t("wall.mineLead")
+            : t("settings.subtitle")}
       </p>
 
-      {tab === "wall" ? (
+      {tab === "settings" ? (
+        <Settings embedded />
+      ) : tab === "wall" ? (
         // Both live on the account. Signed out, the server has nowhere to
         // keep a verse or a prayer, so this asks for one rather than offer
         // an empty wall and an Add button that cannot save.
