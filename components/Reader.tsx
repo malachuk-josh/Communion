@@ -2293,7 +2293,7 @@ export default function Reader({
    */
   useEffect(() => {
     const QUIET =
-      "button, a, input, textarea, select, label, [role='button'], [role='dialog'], .nav, .bottom-nav, .modal-overlay, .lex-sheet, .side-panel, .panel-scrim, .verse-note, .note-edit";
+      "button, a, input, textarea, select, label, [role='button'], [role='dialog'], [aria-modal='true'], .nav, .bottom-nav, .modal-overlay, .lex-sheet, .side-panel, .panel-scrim, .verse-note, .note-edit";
     const answersTaps = (target: EventTarget | null) =>
       target instanceof Element && !!target.closest(QUIET);
     let down: { x: number; y: number; t: number } | null = null;
@@ -2362,6 +2362,9 @@ export default function Reader({
   const chooseFindMode = (on: boolean) => {
     setFindMode(on);
     writeLocal("communion.findMode", on ? "1" : "0");
+    // a description can run to 300 characters and the word search takes 60;
+    // left long, the words would search for nothing and say so
+    if (!on) setQuery((q) => q.slice(0, 60));
   };
 
   /**
