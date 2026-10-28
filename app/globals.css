@@ -2221,7 +2221,8 @@ mark {
 
 /* painted like the bar they sit beside — its colour and sheen, and no blur —
    so the bottom edge reads as one row, and no verse shows through an arrow */
-.chap-arrow.glass {
+.chap-arrow.glass,
+.panel-tab.glass {
   background:
     linear-gradient(
       180deg,
@@ -2244,6 +2245,39 @@ mark {
 .chap-arrow:disabled {
   opacity: 0.25;
   cursor: default;
+}
+
+/* The tab on the right edge of The Word that opens and closes the reading
+   controls. Halfway up, clear of the header and the bottom row, and narrow:
+   at 24px it overlaps the 16px margin by a sliver, so a line passing behind
+   it loses at most the edge of a letter. Under the pop-ups (50 and up) while
+   the panel is shut; over the panel and its shade (69, 70) while it is open,
+   so it can close what it opened. Painted like the chapter arrows. */
+.panel-tab {
+  position: fixed;
+  top: 50%;
+  right: env(safe-area-inset-right, 0px);
+  transform: translateY(-50%);
+  z-index: 45;
+  width: 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 2px;
+  border-right: none;
+  border-radius: 14px 0 0 14px;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.panel-tab.open {
+  z-index: 71;
+}
+
+.panel-tab svg {
+  width: 15px;
+  height: 15px;
 }
 
 @media (min-width: 640px) {

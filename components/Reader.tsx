@@ -104,15 +104,6 @@ const DEFAULT_VERSE = 20;
 /** How far you must spread your fingers to gain one point. */
 const PINCH_STEP = 1.12;
 
-/**
- * Double tap on the page: up to DOUBLE_GAP between the two taps. When the
- * first lands on an underlined word, the word holds its own tap for WORD_WAIT
- * before opening (see openWordSoon), and a second finger coming down inside
- * that wait makes it a double tap instead.
- */
-const DOUBLE_GAP = 400;
-const WORD_WAIT = 260;
-
 interface SearchResult {
   bookNr: number;
   chapter: number;
@@ -253,17 +244,6 @@ export default function Reader({
   const [studyRange, setStudyRange] = useState({ key: "", lo: 1, hi: 0 });
   /** where a chapter heading sat before something grew above it */
   const holdRef = useRef<{ sel: string; top: number } | null>(null);
-  /**
-   * A finger's tap on an underlined word, waiting to see if a second follows:
-   * when it ended, the opening it is holding back, and whether a second touch
-   * has come down in time and is holding it longer.
-   */
-  const wordTap = useRef<{
-    at: number;
-    timer: number | null;
-    pending: (() => void) | null;
-    held: boolean;
-  }>({ at: 0, timer: null, pending: null, held: false });
   /** the chapter on screen, readable from inside a fetch callback */
   const viewChapterRef = useRef(1);
   /** the chapter asked for, readable from the book load that ignores it */
@@ -2292,160 +2272,6 @@ export default function Reader({
     writeTextPt(next);
   };
 
-  /**
-   * Open an underlined word: at once from a mouse or a key, and from a finger
-   * only after WORD_WAIT, in case the tap was the first of a double tap. The
-   * double-tap handler below cancels it when a second tap comes.
-   */
-  const openWordSoon = (open: () => void) => {
-    const w = wordTap.current;
-    if (w.timer !== null) window.clearTimeout(w.timer);
-    w.timer = null;
-    w.held = false;
-    const byFinger = performance.now() - w.at < 150;
-    w.at = 0;
-    if (!byFinger) {
-      w.pending = null;
-      open();
-      return;
-    }
-    w.pending = open;
-    w.timer = window.setTimeout(() => {
-      w.timer = null;
-      const pending = w.pending;
-      w.pending = null;
-      pending?.();
-    }, WORD_WAIT);
-  };
-
-  /*
-   * Double-tap the page to open the navigator.
-   *
-   * Anywhere on the open page — the text, the margins, the space between
-   * chapters — but never on something that already answers a tap: a button,
-   * a link, a pill, a note, or anything in a pop-up. Two taps, each one a
-   * touch that went down and came up in place, close together in time and on
-   * the screen. A scroll is not a tap, and a pinch is two fingers, so neither
-   * can start one. The page is pan-only (touch-action on <html>), so a double
-   * tap was never a zoom and nothing is taken from it.
-   *
-   * The underlined words in study mode are the exception to "never on
-   * something that answers a tap", because they are most of the page there:
-   * in the King James nearly every word is one, and with them left out a
-   * double tap had to land twice in the slivers between words and lines —
-   * about half the screen, in pieces a few pixels wide. So a word counts as
-   * page, and its own tap waits WORD_WAIT to see whether a second one is
-   * coming (openWordSoon). A second finger down inside that wait holds the
-   * word shut until it lifts: a tap there makes the double tap, and anything
-   * else — a scroll, a tap far away — lets the word open after all.
-   *
-   * On the whole document while The Word is open, not just the column, so
-   * the margins count too; the header and the bottom bar are left out, being
-   * made of things to press. A mouse double-click does the same, words aside:
-   * a click opens a word at once, so a double-click there is two clicks.
-   */
-  useEffect(() => {
-    const QUIET =
-      "button, a, input, textarea, select, label, [role='button'], [role='dialog'], [aria-modal='true'], .nav, .bottom-nav, .modal-overlay, .lex-sheet, .side-panel, .panel-scrim, .verse-note, .note-edit";
-    const onWord = (target: EventTarget | null) =>
-      target instanceof Element && !!target.closest(".scripture button.w");
-    const quiet = (target: EventTarget | null) =>
-      target instanceof Element && !!target.closest(QUIET);
-    const answersTaps = (target: EventTarget | null) =>
-      quiet(target) && !onWord(target);
-    let down: { x: number; y: number; t: number } | null = null;
-    let last: { x: number; y: number; t: number; word: boolean } | null = null;
-    let fingers = 0;
-    const w = wordTap.current;
-    /** let a held word open after all: the second touch was not its double */
-    const release = () => {
-      if (!w.held) return;
-      w.held = false;
-      const pending = w.pending;
-      w.pending = null;
-      pending?.();
-    };
-    const onStart = (e: TouchEvent) => {
-      fingers = Math.max(fingers, e.touches.length);
-      // a second finger down while a tapped word is still waiting holds it
-      if (last?.word && w.timer !== null && performance.now() - last.t < WORD_WAIT) {
-        window.clearTimeout(w.timer);
-        w.timer = null;
-        w.held = true;
-      }
-      const p = e.touches[0];
-      down =
-        e.touches.length === 1
-          ? { x: p.clientX, y: p.clientY, t: performance.now() }
-          : null;
-    };
-    const onEnd = (e: TouchEvent) => {
-      if (e.touches.length > 0) return; // a finger still on the glass
-      const wasPinch = fingers > 1;
-      fingers = 0;
-      const p = e.changedTouches[0];
-      const now = performance.now();
-      const tapped =
-        !wasPinch &&
-        !!down &&
-        Math.hypot(p.clientX - down.x, p.clientY - down.y) < 16 &&
-        now - down.t < 350 &&
-        !answersTaps(e.target);
-      down = null;
-      if (!tapped) {
-        last = null;
-        release();
-        return;
-      }
-      const word = onWord(e.target);
-      if (
-        last &&
-        (last.word ? w.held : now - last.t < DOUBLE_GAP) &&
-        Math.hypot(p.clientX - last.x, p.clientY - last.y) < 48
-      ) {
-        last = null;
-        // the word the first tap landed on stays shut
-        w.held = false;
-        w.pending = null;
-        // No click after it. The browser turns a tap into a click a moment
-        // later, and by then the navigator's scrim is under the finger — so
-        // the second tap would open the panel and its click would close it.
-        e.preventDefault();
-        setPanelOpen(true);
-      } else {
-        release();
-        last = { x: p.clientX, y: p.clientY, t: now, word };
-        // the word's own click comes straight after this, and waits
-        if (word) w.at = now;
-      }
-    };
-    // a touch the browser took over, for a scroll or a gesture of its own
-    const onCancel = () => {
-      down = null;
-      last = null;
-      fingers = 0;
-      release();
-    };
-    const onDouble = (e: MouseEvent) => {
-      if (quiet(e.target)) return;
-      // a double-click selects the word under it; that was not the point
-      window.getSelection()?.removeAllRanges();
-      setPanelOpen(true);
-    };
-    document.addEventListener("touchstart", onStart, { passive: true });
-    // not passive: the double tap's touchend cancels the click that follows
-    document.addEventListener("touchend", onEnd, { passive: false });
-    document.addEventListener("touchcancel", onCancel);
-    document.addEventListener("dblclick", onDouble);
-    return () => {
-      document.removeEventListener("touchstart", onStart);
-      document.removeEventListener("touchend", onEnd);
-      document.removeEventListener("touchcancel", onCancel);
-      document.removeEventListener("dblclick", onDouble);
-      if (w.timer !== null) window.clearTimeout(w.timer);
-    };
-  }, [setPanelOpen]);
-
   const askable = askStatus.allowed && askStatus.ready !== false;
   const describing = askable && findMode;
 
@@ -3016,9 +2842,7 @@ export default function Reader({
                                       tok[2] ? "" : " approx"
                                     }`}
                                     onClick={() =>
-                                      openWordSoon(() =>
-                                        openWord(ch, m[2], tok[1]!, v.verse, !tok[2])
-                                      )
+                                      openWord(ch, m[2], tok[1]!, v.verse, !tok[2])
                                     }
                                   >
                                     {paintRed(m[2], red, cur)}
@@ -3346,6 +3170,22 @@ export default function Reader({
         title={t("reader.next")}
       >
         ›
+      </button>
+
+      {/* The way to the reading controls from anywhere on the page: a small
+          tab on the right edge, halfway up, that opens the panel and closes
+          it again. It stays above the panel and its shade while the panel is
+          open, so the tap that opened it is the tap that puts it away. */}
+      <button
+        type="button"
+        className={`glass panel-tab${panelOpen ? " open" : ""}`}
+        onClick={() => setPanelOpen(!panelOpen)}
+        aria-expanded={panelOpen}
+        aria-controls="reader-panel"
+        aria-label={t(panelOpen ? "reader.closePanel" : "reader.openPanel")}
+        title={t(panelOpen ? "reader.closePanel" : "reader.openPanel")}
+      >
+        <Icon name={panelOpen ? "close" : "book"} />
       </button>
 
       {pinchShow !== null && (
@@ -4441,7 +4281,6 @@ export default function Reader({
                   }}
                 />
                 <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
-                <p className="cal-hint">{t("reader.doubleTapHint")}</p>
               </div>
             </div>
           </div>

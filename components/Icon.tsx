@@ -57,14 +57,16 @@ const PATHS = {
     "M9.5 14h5",
   ],
   // the Parchment theme: an open scroll on its two rollers, handles showing
-  // above and below, a line or two written between. Not `scroll` above,
-  // which is a page with a curled edge and stands for reading plans; this
-  // one is the book of the ancient world, and the theme's own.
+  // above and below, a line or two written between, and the sheet's edges
+  // gone wavy the way the old leaf-of-paper icon had them. Not `scroll`
+  // above, which is a page with a curled edge and stands for reading plans;
+  // this one is the book of the ancient world, and the theme's own.
   parchment: [
     "M4.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
     "M19.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
     "M4.5 2.8v1.7M4.5 19.5v1.7M19.5 2.8v1.7M19.5 19.5v1.7",
-    "M6 6.5h12M6 17.5h12",
+    "M6 6.8c2-1.6 4 1.6 6 0s4-1.6 6 0",
+    "M6 17.2c2-1.6 4 1.6 6 0s4-1.6 6 0",
     "M9 10.5h6M9 13.5h4.5",
   ],
   // a map pin: the Context pop-up, which is where it happened. Not a folded
