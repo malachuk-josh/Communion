@@ -136,13 +136,31 @@ for (let i = 0; i < starts.length; i++) {
   const body = xml.slice(from, to);
 
   const entry = { verses: [] };
+  /*
+   * Inside the quotations, until his own voice comes back.
+   *
+   * The notes have headings of their own, and in a dozen psalms the first of
+   * them is "TITLE." — notes on the psalm's title, gathered from other
+   * writers like the rest. Read on its own that heading looks exactly like
+   * Spurgeon's introduction, and every quotation after it was being joined to
+   * the overview: some twelve thousand words of other men's sayings, under
+   * Spurgeon's name, at the head of Psalms 42, 51 and the others. So what
+   * follows the notes heading is notes until his exposition or his hints
+   * begin again.
+   */
+  let inNotes = false;
   for (const section of sectionsOf(body)) {
     const name = section.name.toUpperCase();
     // the quoted writers are not Spurgeon; the reading lists are not commentary
     // "Explanatory Notes and Quaint Sayings", and the "Notes relating to the
     // psalm as a whole" that Psalm 119 uses in its place, are both gathered
     // from other writers. The reading lists are bibliography, not commentary.
-    if (/NOTES|QUAINT SAYINGS/.test(name) || name.startsWith("WORK")) continue;
+    if (/NOTES|QUAINT SAYINGS/.test(name) || name.startsWith("WORK")) {
+      inNotes = true;
+      continue;
+    }
+    if (name.includes("EXPOSITION") || name.startsWith("HINTS")) inNotes = false;
+    if (inNotes) continue;
 
     /*
      * The heading over a psalm is not always called the same thing. Most have

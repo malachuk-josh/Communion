@@ -5786,3 +5786,46 @@ button.compare-pick:last-child {
   width: 13px;
   height: 13px;
 }
+
+/* ---- the commentary that goes with a plan's day ---- */
+
+/* which plan this day belongs to, under "Day 12" */
+.guide-plan {
+  margin: -8px 0 12px;
+  font-size: 0.82rem;
+  color: var(--gold);
+}
+
+/* told once, at the top, in Spanish only */
+.guide-lang {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+
+.guide-note + .guide-note {
+  margin-top: 1.2em;
+}
+
+/* the verses a note is about, small, so it reads as a signpost */
+.guide-span {
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.mh-body .guide-span + p {
+  margin-top: 0;
+}
+
+.guide-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}

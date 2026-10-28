@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import Devotional from "@/components/Devotional";
+import CommentaryGuide from "@/components/CommentaryGuide";
 import HangOnWall from "@/components/HangOnWall";
 import { api } from "@/lib/client";
 import { DEFAULT_TRANSLATION, NOTE_MAX, getBook } from "@/lib/bible";
@@ -26,7 +27,7 @@ import {
 } from "@/lib/bookmarkKey";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
-import { PLANS } from "@/lib/plans";
+import { PLANS, readingHref, readingLabel } from "@/lib/plans";
 import type { PlanHour } from "@/lib/planReminders";
 import type { CustomPlanRow } from "@/lib/customPlanTypes";
 import { readOutbox } from "@/lib/localStore";
@@ -1483,6 +1484,7 @@ function PlanRow({
 }) {
   const { lang, t } = useI18n();
   const [devotional, setDevotional] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const pct = Math.round((done / total) * 100);
   const next = done < total ? plan.days[done] : null;
   // where the plan puts you next — its first reading is where the link lands
@@ -1502,10 +1504,10 @@ function PlanRow({
       </div>
       <p className="jr-plan-meta">
         {next && target
-          ? `${t("journal.next", { n: String(done + 1) })} · ${bookName(
-              target.b,
-              lang
-            )} ${target.c}`
+          ? `${t("journal.next", { n: String(done + 1) })} · ${readingLabel(
+              target,
+              bookName(target.b, lang)
+            )}`
           : t("discover.planDone")}
       </p>
     </>
@@ -1519,10 +1521,7 @@ function PlanRow({
           back pill. The Word is a whole screen with its own bottom bar and no
           other route home. */}
       {target ? (
-        <Link
-          href={`/?b=${target.b}&c=${target.c}&from=journal`}
-          className="jr-go"
-        >
+        <Link href={readingHref(target, "journal")} className="jr-go">
           {body}
         </Link>
       ) : (
@@ -1584,10 +1583,30 @@ function PlanRow({
               <Icon name="sun" /> {t("devotional.open")}
             </button>
           )}
+          {/* The same for a plan read with a commentary: Henry's notes on the
+              day's chapters, or Spurgeon's on its psalm, are the guide the
+              plan was chosen for. */}
+          {plan.guide && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setGuideOpen(true)}
+            >
+              <Icon name="quote" /> {t("guide.open")}
+            </button>
+          )}
         </div>
       )}
       {devotional && (
         <Devotional day={done + 1} onClose={() => setDevotional(false)} />
+      )}
+      {guideOpen && done < total && (
+        <CommentaryGuide
+          plan={plan}
+          day={done + 1}
+          onClose={() => setGuideOpen(false)}
+          onMark={() => onMark(plan.id, total)}
+        />
       )}
       {done < total && (
         <label className="jr-plan-remind">

@@ -77,6 +77,7 @@ import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import { readLocal, writeLocal } from "@/lib/storage";
+import { intoParagraphs } from "@/lib/paragraphs";
 import {
   PT_DEFAULT,
   PT_MAX,
@@ -168,29 +169,6 @@ function StudyStar() {
       />
     </svg>
   );
-}
-
-/**
- * Long prose into paragraphs a person can find their place in again.
- *
- * Henry and Spurgeon both write in unbroken blocks — Spurgeon especially, who
- * was setting type for a Victorian weekly and had no reason to break for a
- * phone. Split on sentence ends and regrouped to a few hundred characters,
- * which is close enough to a paragraph to read like one.
- */
-function intoParagraphs(text: string): string[] {
-  return text
-    .split(/\n{2,}/)
-    .flatMap((block) =>
-      block.split(/(?<=\.)\s+(?=[A-Z"'])/).reduce<string[]>((paras, sentence) => {
-        const last = paras[paras.length - 1];
-        if (last && last.length < 420) paras[paras.length - 1] = `${last} ${sentence}`;
-        else paras.push(sentence);
-        return paras;
-      }, [])
-    )
-    .map((p) => p.trim())
-    .filter(Boolean);
 }
 
 export default function Reader({

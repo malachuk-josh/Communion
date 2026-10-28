@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBook } from "@/lib/bible";
+import { readingLabel } from "@/lib/plans";
 import { db, keys } from "@/lib/db";
 import { resolvePlan } from "@/lib/customPlans";
 import {
@@ -117,14 +118,13 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
       if (fields[`${field}:on`] === today) continue; // read today already
 
       const readings = plan.days[done].readings;
-      const first = getBook(readings[0].b);
-      const last = getBook(readings[readings.length - 1].b);
+      const first = readings[0];
+      const last = readings[readings.length - 1];
+      // a day that is part of a chapter says which part — "Psalms 119:9–16"
       const label =
         readings.length === 1
-          ? `${first?.en} ${readings[0].c}`
-          : `${first?.en} ${readings[0].c} – ${last?.en} ${
-              readings[readings.length - 1].c
-            }`;
+          ? readingLabel(first, getBook(first.b)?.en ?? "")
+          : `${getBook(first.b)?.en} ${first.c} – ${getBook(last.b)?.en} ${last.c}`;
 
       await sendPushToUser(userId, {
         title: plan.name,

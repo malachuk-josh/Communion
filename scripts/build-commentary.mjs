@@ -76,7 +76,13 @@ function spanOf(raw) {
   return { from: nums[0], to: nums[nums.length - 1] };
 }
 
-const lines = readFileSync(SOURCE, "utf8").split("\n");
+// The edition ends with its indexes: every scripture reference it cites, then
+// some twelve thousand links back into CCEL's own site. None of it is Henry,
+// and with nothing to stop it all of it was read as the last section of the
+// last chapter — thirty-six thousand words of index under Revelation 22:20.
+const all = readFileSync(SOURCE, "utf8").split("\n");
+const indexes = all.findIndex((line) => line.trim() === "Indexes");
+const lines = indexes > 0 ? all.slice(0, indexes) : all;
 const bookAt = (line) => {
   const m = CENTRED.exec(line);
   return m ? BY_NAME.get(norm(m[1])) ?? null : null;

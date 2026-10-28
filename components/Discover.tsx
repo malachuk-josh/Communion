@@ -16,7 +16,13 @@ import {
 import { fetchChapter } from "@/lib/scripture";
 import { getBook, type Verse } from "@/lib/bible";
 import { verseOfTheDay, type VerseRef } from "@/lib/devotional";
-import { PLANS, PLAN_CATEGORIES } from "@/lib/plans";
+import {
+  PLANS,
+  PLAN_CATEGORIES,
+  readingHref,
+  readingLabel,
+  type Reading,
+} from "@/lib/plans";
 import { TOPICS, type Topic } from "@/lib/topics";
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
@@ -442,10 +448,11 @@ function PlansSection({ open }: { open: string | null }) {
         ? []
         : PLANS.filter((p) => p.category === filter);
 
-  const dayLabel = (day: { readings: { b: number; c: number }[] }) => {
-    const refs = day.readings.map((r) =>
-      refLabel({ ...r, v: 1 }, lang).replace(/:1$/, "")
-    );
+  const dayLabel = (day: { readings: Reading[] }) => {
+    const refs = day.readings.map((r) => {
+      const book = getBook(r.b);
+      return readingLabel(r, book ? (lang === "es" ? book.es : book.en) : "");
+    });
     return refs.length <= 2 ? refs.join(" · ") : `${refs[0]} – ${refs.at(-1)}`;
   };
 
@@ -504,6 +511,11 @@ function PlansSection({ open }: { open: string | null }) {
           + {t("builder.build")}
         </button>
       </div>
+      {/* what makes these plans different is not on their cards, so it is
+          said once above them: where the commentary for a day is found */}
+      {filter === "commentary" && (
+        <p className="subtitle plans-lead">{t("discover.guideLead")}</p>
+      )}
       {filter === "discover" && (
         <PublicShelf
           plans={shelf}
@@ -593,10 +605,7 @@ function PlansSection({ open }: { open: string | null }) {
               ) : (
                 today && (
                   <div className="plan-actions">
-                    <Link
-                      className="cal-link"
-                      href={`/?b=${today.readings[0].b}&c=${today.readings[0].c}`}
-                    >
+                    <Link className="cal-link" href={readingHref(today.readings[0])}>
                       <Icon name="book" /> {t("discover.day", { n: String(done + 1) })}:{" "}
                       {dayLabel(today)}
                     </Link>

@@ -4,13 +4,37 @@
 
 import type { IconName } from "@/components/Icon";
 import { MORNING_EVENING } from "@/lib/morningEvening";
+import { TREASURY_PARTS } from "@/lib/treasuryParts";
+
+/**
+ * One reading: a chapter, or — where a plan has to divide a long one — the
+ * run of verses `v` to `ve` within it.
+ */
+export interface Reading {
+  b: number;
+  c: number;
+  v?: number;
+  ve?: number;
+}
 
 export interface PlanDay {
   /** Chapters to read today — usually one, sometimes a short run */
-  readings: { b: number; c: number }[];
+  readings: Reading[];
 }
 
-export type PlanCategory = "gospels" | "foundations" | "wisdom" | "journeys";
+export type PlanCategory =
+  | "gospels"
+  | "foundations"
+  | "wisdom"
+  | "journeys"
+  | "commentary";
+
+/**
+ * Whose commentary walks beside a plan, day by day. Matthew Henry has written
+ * on every chapter of the Bible, and Spurgeon's Treasury of David on every
+ * psalm, so either can go with any day of a plan built for them.
+ */
+export type PlanGuide = "henry" | "spurgeon";
 
 export interface Plan {
   id: string;
@@ -19,6 +43,8 @@ export interface Plan {
   /** English title, for server-side notifications (the UI uses i18n) */
   name: string;
   days: PlanDay[];
+  /** set on the plans read with a commentary; see components/CommentaryGuide */
+  guide?: PlanGuide;
 }
 
 export const PLAN_CATEGORIES: PlanCategory[] = [
@@ -26,7 +52,18 @@ export const PLAN_CATEGORIES: PlanCategory[] = [
   "foundations",
   "wisdom",
   "journeys",
+  "commentary",
 ];
+
+/** "John 3", or "Psalms 119:9–16" for a day that is part of a chapter. */
+export function readingLabel(r: Reading, bookName: string): string {
+  return `${bookName} ${r.c}${r.v ? `:${r.v}–${r.ve}` : ""}`;
+}
+
+/** Where a reading opens in The Word: at its first verse, if it has one. */
+export function readingHref(r: Reading, from?: string): string {
+  return `/?b=${r.b}&c=${r.c}${r.v ? `&v=${r.v}` : ""}${from ? `&from=${from}` : ""}`;
+}
 
 /** One chapter a day through a whole book. */
 const book = (b: number, chapters: number): PlanDay[] =>
@@ -240,22 +277,24 @@ const genesis50: Plan = { id: "genesis50", icon: "globe", category: "journeys",
 const acts28: Plan = { id: "acts28", icon: "fire", category: "journeys",
   name: "Acts in 28 Days", days: book(44, 28) };
 
+/** Every chapter of the Bible, Genesis → Revelation, in order. */
+const BIBLE = [
+  50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42,
+  150, 31, 12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4,
+  28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5,
+  3, 5, 1, 1, 1, 22,
+].flatMap((count, i) => chaptersOf(i + 1, count));
+
+/** The New Testament's 260 chapters, Matthew → Revelation. */
+const NEW_TESTAMENT = BIBLE.filter((r) => r.b >= 40);
+
 /** The New Testament, Matthew → Revelation, about two chapters a day. */
 const nt90: Plan = {
   id: "nt90",
   icon: "books",
   category: "journeys",
   name: "The New Testament in 90 Days",
-  days: (() => {
-    const NT: [number, number][] = [
-      [40, 28], [41, 16], [42, 24], [43, 21], [44, 28], [45, 16], [46, 16],
-      [47, 13], [48, 6], [49, 6], [50, 4], [51, 4], [52, 5], [53, 3],
-      [54, 6], [55, 4], [56, 3], [57, 1], [58, 13], [59, 5], [60, 5],
-      [61, 3], [62, 5], [63, 1], [64, 1], [65, 1], [66, 22],
-    ];
-    const refs = NT.flatMap(([b, count]) => chaptersOf(b, count));
-    return spread(refs, 90);
-  })(),
+  days: spread(NEW_TESTAMENT, 90),
 };
 
 /**
@@ -294,17 +333,80 @@ const bible365: Plan = {
   icon: "sparkle",
   category: "journeys",
   name: "The Whole Bible in a Year",
-  days: (() => {
-    const COUNTS = [
-      50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42,
-      150, 31, 12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4,
-      28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5,
-      3, 5, 1, 1, 1, 22,
-    ];
-    const refs = COUNTS.flatMap((count, i) => chaptersOf(i + 1, count));
-    // 1,189 chapters across 365 days — a few days carry an extra chapter
-    return spread(refs, 365);
-  })(),
+  // 1,189 chapters across 365 days — a few days carry an extra chapter
+  days: spread(BIBLE, 365),
+};
+
+// ---- With commentary -----------------------------------------------------
+//
+// Plans read beside one of the commentaries the app carries, so each day has
+// a guide as well as a reading: Matthew Henry, who wrote on every chapter, or
+// Spurgeon's Treasury of David on the Psalms. The readings are ordinary — the
+// commentary is what makes them these plans, and it opens from the day in the
+// Journal (components/CommentaryGuide).
+//
+// Henry's plans go a chapter at a time, because that is how he wrote: his
+// notes on a chapter are a few minutes' reading, about five hundred words in
+// the Old Testament and nine hundred in the New. The year is the exception,
+// at three or four chapters a day, and its description says so.
+
+const henryjohn21: Plan = { id: "henryjohn21", icon: "book", category: "commentary",
+  name: "John with Matthew Henry", days: book(43, 21), guide: "henry" };
+const henryromans16: Plan = { id: "henryromans16", icon: "scroll", category: "commentary",
+  name: "Romans with Matthew Henry", days: book(45, 16), guide: "henry" };
+const henryproverbs31: Plan = { id: "henryproverbs31", icon: "owl", category: "commentary",
+  name: "Proverbs with Matthew Henry", days: book(20, 31), guide: "henry" };
+const henrygenesis50: Plan = { id: "henrygenesis50", icon: "sunrise", category: "commentary",
+  name: "Genesis with Matthew Henry", days: book(1, 50), guide: "henry" };
+
+/** A chapter a day: 260 days, which is a year of weekdays. */
+const henrynt260: Plan = {
+  id: "henrynt260",
+  icon: "books",
+  category: "commentary",
+  name: "The New Testament with Matthew Henry",
+  days: chunked(NEW_TESTAMENT, 1),
+  guide: "henry",
+};
+
+const henrybible365: Plan = {
+  id: "henrybible365",
+  icon: "candle",
+  category: "commentary",
+  name: "The Bible in a Year with Matthew Henry",
+  days: spread(BIBLE, 365),
+  guide: "henry",
+};
+
+/**
+ * Psalms read with the Treasury, a psalm a day — or part of one, where
+ * Spurgeon wrote too much on it for a single sitting. Where those divisions
+ * fall is worked out from the Treasury itself; see lib/treasuryParts.
+ */
+const withTreasury = (psalms: number[]): PlanDay[] =>
+  psalms.flatMap((c) =>
+    TREASURY_PARTS[c]
+      ? TREASURY_PARTS[c].map(([v, ve]) => ({ readings: [{ b: 19, c, v, ve }] }))
+      : [{ readings: [{ b: 19, c }] }]
+  );
+
+/** The same fourteen as Psalms of Comfort, read with Spurgeon. */
+const treasurycomfort: Plan = {
+  id: "treasurycomfort",
+  icon: "dove",
+  category: "commentary",
+  name: "Psalms of Comfort with Spurgeon",
+  days: withTreasury([23, 27, 34, 46, 91, 121, 139, 42, 62, 63, 103, 116, 130, 145]),
+  guide: "spurgeon",
+};
+
+const treasury: Plan = {
+  id: "treasury",
+  icon: "music",
+  category: "commentary",
+  name: "The Psalms with Spurgeon",
+  days: withTreasury(Array.from({ length: 150 }, (_, i) => i + 1)),
+  guide: "spurgeon",
 };
 
 export const PLANS: Plan[] = [
@@ -328,6 +430,14 @@ export const PLANS: Plan[] = [
   nt90,
   bible365,
   morneve,
+  treasurycomfort,
+  henryjohn21,
+  henryromans16,
+  henryproverbs31,
+  henrygenesis50,
+  treasury,
+  henrynt260,
+  henrybible365,
 ];
 
 export function getPlan(id: string): Plan | undefined {

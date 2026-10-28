@@ -357,11 +357,47 @@ const dictionaries = {
     "plan.bible365.desc": "Genesis to Revelation, three to four chapters a day.",
     "plan.morneve": "Morning and Evening",
     "plan.morneve.desc": "Spurgeon’s two meditations a day, with the chapters they are drawn from.",
+    "plan.treasurycomfort":
+      "Psalms of Comfort with Spurgeon",
+    "plan.treasurycomfort.desc":
+      "Fourteen psalms for hard days, each with Spurgeon’s own exposition from The Treasury of David.",
+    "plan.henryjohn21":
+      "John with Matthew Henry",
+    "plan.henryjohn21.desc":
+      "The Gospel of John a chapter a day, with Henry’s commentary on each chapter to read beside it.",
+    "plan.henryromans16":
+      "Romans with Matthew Henry",
+    "plan.henryromans16.desc":
+      "Paul’s letter a chapter a day, with Henry following the argument of each chapter.",
+    "plan.henryproverbs31":
+      "Proverbs with Matthew Henry",
+    "plan.henryproverbs31.desc":
+      "A chapter of Proverbs for each day of the month, with Henry’s plain, practical notes on each.",
+    "plan.henrygenesis50":
+      "Genesis with Matthew Henry",
+    "plan.henrygenesis50.desc":
+      "From creation to Joseph, a chapter a day, with Henry’s commentary on each.",
+    "plan.treasury":
+      "The Psalms with Spurgeon",
+    "plan.treasury.desc":
+      "All 150 psalms with The Treasury of David, a psalm a day. The longest are spread over two or three days, and Psalm 119 is read a stanza at a time.",
+    "plan.henrynt260":
+      "The New Testament with Matthew Henry",
+    "plan.henrynt260.desc":
+      "Matthew to Revelation, a chapter a day, each with Henry’s commentary: 260 days, a year of weekdays.",
+    "plan.henrybible365":
+      "The Bible in a Year with Matthew Henry",
+    "plan.henrybible365.desc":
+      "Genesis to Revelation in a year, three or four chapters a day, with Henry’s commentary on every one. A longer daily sitting.",
     "planCat.gospels": "Gospels",
     "planCat.foundations": "Foundations",
     "planCat.wisdom": "Wisdom",
     "planCat.journeys": "Journeys",
+    "planCat.commentary":
+      "With commentary",
     "discover.plansLead": "Pick a rhythm — a week, a month, or a year in the Word.",
+    "discover.guideLead":
+      "Read through Scripture with Matthew Henry or Spurgeon beside you. Add a plan, and each day’s commentary opens from it in your Journal.",
     "discover.planLength": "{n} days",
     "discover.planMine": "In progress",
     "reader.chapter": "Chapter",
@@ -598,6 +634,24 @@ const dictionaries = {
     "devotional.evening": "Evening",
     "devotional.none": "There is no reading for this day.",
     "devotional.who": "Charles Spurgeon (1834–1892), Morning and Evening. Public domain.",
+    "guide.open":
+      "Today’s commentary",
+    "guide.read":
+      "Read {ref}",
+    "guide.verse":
+      "Verse {n}",
+    "guide.verses":
+      "Verses {from}–{to}",
+    "guide.versesFrom":
+      "From verse {n}",
+    "guide.wholePsalm":
+      "The whole psalm",
+    "guide.none":
+      "There is no commentary for this day.",
+    "guide.failed":
+      "The commentary couldn’t be loaded. Check your connection and try again.",
+    "guide.english":
+      "Matthew Henry and Spurgeon wrote in English, and their commentary is shown as they wrote it.",
   },
   es: {
     "app.tagline": "Lee la Palabra. Congrégate en Su nombre.",
@@ -953,11 +1007,47 @@ const dictionaries = {
     "plan.bible365.desc": "De Génesis a Apocalipsis, tres o cuatro capítulos al día.",
     "plan.morneve": "Mañana y tarde",
     "plan.morneve.desc": "Las dos meditaciones diarias de Spurgeon, con los capítulos de donde nacen.",
+    "plan.treasurycomfort":
+      "Salmos de consuelo con Spurgeon",
+    "plan.treasurycomfort.desc":
+      "Catorce salmos para los días difíciles, cada uno con la exposición del propio Spurgeon en El Tesoro de David.",
+    "plan.henryjohn21":
+      "Juan con Matthew Henry",
+    "plan.henryjohn21.desc":
+      "El Evangelio de Juan, un capítulo al día, con el comentario de Henry sobre cada capítulo para leer a su lado.",
+    "plan.henryromans16":
+      "Romanos con Matthew Henry",
+    "plan.henryromans16.desc":
+      "La carta de Pablo, un capítulo al día, con Henry siguiendo el argumento de cada capítulo.",
+    "plan.henryproverbs31":
+      "Proverbios con Matthew Henry",
+    "plan.henryproverbs31.desc":
+      "Un capítulo de Proverbios para cada día del mes, con las notas sencillas y prácticas de Henry sobre cada uno.",
+    "plan.henrygenesis50":
+      "Génesis con Matthew Henry",
+    "plan.henrygenesis50.desc":
+      "De la creación a José, un capítulo al día, con el comentario de Henry sobre cada uno.",
+    "plan.treasury":
+      "Los Salmos con Spurgeon",
+    "plan.treasury.desc":
+      "Los 150 salmos con El Tesoro de David, un salmo al día. Los más largos se reparten en dos o tres días, y el Salmo 119 se lee por estrofas.",
+    "plan.henrynt260":
+      "El Nuevo Testamento con Matthew Henry",
+    "plan.henrynt260.desc":
+      "De Mateo a Apocalipsis, un capítulo al día, cada uno con el comentario de Henry: 260 días, un año de días laborables.",
+    "plan.henrybible365":
+      "La Biblia en un año con Matthew Henry",
+    "plan.henrybible365.desc":
+      "De Génesis a Apocalipsis en un año, tres o cuatro capítulos al día, con el comentario de Henry sobre cada uno. Una lectura diaria más larga.",
     "planCat.gospels": "Evangelios",
     "planCat.foundations": "Fundamentos",
     "planCat.wisdom": "Sabiduría",
     "planCat.journeys": "Travesías",
+    "planCat.commentary":
+      "Con comentario",
     "discover.plansLead": "Elige tu ritmo: una semana, un mes o un año en la Palabra.",
+    "discover.guideLead":
+      "Recorre la Escritura con Matthew Henry o Spurgeon a tu lado. Añade un plan, y el comentario de cada día se abre desde él en tu Diario. El comentario está en inglés.",
     "discover.planLength": "{n} días",
     "discover.planMine": "En curso",
     "reader.chapter": "Capítulo",
@@ -1194,6 +1284,24 @@ const dictionaries = {
     "devotional.evening": "Tarde",
     "devotional.none": "No hay lectura para este día.",
     "devotional.who": "Charles Spurgeon (1834–1892), Mañana y tarde. Dominio público.",
+    "guide.open":
+      "Comentario de hoy",
+    "guide.read":
+      "Leer {ref}",
+    "guide.verse":
+      "Versículo {n}",
+    "guide.verses":
+      "Versículos {from}–{to}",
+    "guide.versesFrom":
+      "Desde el versículo {n}",
+    "guide.wholePsalm":
+      "Todo el salmo",
+    "guide.none":
+      "No hay comentario para este día.",
+    "guide.failed":
+      "No se pudo cargar el comentario. Revisa tu conexión e inténtalo de nuevo.",
+    "guide.english":
+      "Matthew Henry y Spurgeon escribieron en inglés, y su comentario se muestra tal como lo escribieron.",
   },
 } as const;
 

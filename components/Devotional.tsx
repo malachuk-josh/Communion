@@ -17,6 +17,7 @@ import { createPortal } from "react-dom";
 import Icon from "@/components/Icon";
 import { getBook } from "@/lib/bible";
 import { useI18n } from "@/lib/i18n";
+import { intoParagraphs } from "@/lib/paragraphs";
 
 interface Reading {
   ref: string;
@@ -39,26 +40,6 @@ function year(): Promise<Year> {
       .catch(() => ({}));
   }
   return held;
-}
-
-/**
- * Long prose into paragraphs.
- *
- * Spurgeon wrote for a Victorian page and did not break for a phone. Split at
- * sentence ends and regrouped, which is close enough to a paragraph to read
- * like one — the same treatment the commentary panel gives him.
- */
-function intoParagraphs(text: string): string[] {
-  return text
-    .split(/(?<=\.)\s+(?=[A-Z"'])/)
-    .reduce<string[]>((paras, sentence) => {
-      const last = paras[paras.length - 1];
-      if (last && last.length < 420) paras[paras.length - 1] = `${last} ${sentence}`;
-      else paras.push(sentence);
-      return paras;
-    }, [])
-    .map((p) => p.trim())
-    .filter(Boolean);
 }
 
 export default function Devotional({
