@@ -2304,6 +2304,27 @@ html.navhide .chap-arrow {
   z-index: 71;
 }
 
+/* On a phone, open, the tab reaches left to meet the panel's edge, so the
+   two read as one piece and the whole strip of shade beside the panel is
+   the way to close it. It grows with the panel's fold-out, in the same time
+   and curve, and its left corners square off where it joins. The width is
+   what is left of the screen beside the panel: .side-panel's own
+   min(88vw, 390px), and the inset the tab already stands clear of. On a
+   wider screen that strip is hundreds of pixels across, so the tab keeps its
+   size there. */
+@media (max-width: 639px) {
+  .panel-tab {
+    transition: width 0.26s cubic-bezier(0.22, 0.8, 0.3, 1),
+      border-radius 0.26s cubic-bezier(0.22, 0.8, 0.3, 1);
+  }
+
+  .panel-tab.open {
+    width: calc(100vw - min(88vw, 390px) - env(safe-area-inset-right, 0px));
+    border-left: none;
+    border-radius: 0;
+  }
+}
+
 /* the grip above and below the icon: three short upright lines, a little
    quieter than the icon so the icon still says what the tab is */
 .panel-tab .pt-grip {
