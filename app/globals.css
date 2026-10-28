@@ -1800,6 +1800,25 @@ mark {
   margin-bottom: 0;
 }
 
+/* the navigator's search button, its icon alone: square, so it reads as a
+   button and not a stray glyph */
+.search-go-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+}
+
+/* The Words / Ask Claude pills tuck up under the bar above a result list,
+   whose bar keeps a margin below it; here the bar has none, so they stand
+   off it instead of riding up into it */
+.sp-pad .search-modes {
+  margin: 10px 0 0;
+}
+
 /* translation and bookmarks ride above the book list, one row */
 .sp-top {
   display: flex;

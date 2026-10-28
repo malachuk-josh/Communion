@@ -2545,12 +2545,18 @@ export default function Reader({
           autoFocus={fromSheet}
           enterKeyHint="search"
         />
+        {/* In the navigator the button is its icon alone: the panel is
+            narrow, and a labelled button left the field too short to show
+            what to type. Above the results there is room for the word. */}
         <button
-          className="btn btn-sm"
+          className={`btn btn-sm${fromSheet ? " search-go-icon" : ""}`}
           type="submit"
           disabled={query.trim().length < 3 || searching}
+          aria-label={t("search.button")}
+          title={t("search.button")}
         >
-          <Icon name={describing ? "lamp" : "search"} /> {t("search.button")}
+          <Icon name={describing ? "lamp" : "search"} />
+          {!fromSheet && <> {t("search.button")}</>}
         </button>
       </form>
       {/* For the people with Ask: the words as they are, or a description
