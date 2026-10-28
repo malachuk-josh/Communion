@@ -33,7 +33,6 @@ import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
 import Settings from "@/components/Settings";
 import { HOME_TAB_EVENT, HOME_TABS } from "@/lib/menuItems";
-import { PULL_REFRESH_EVENT } from "@/components/PullToRefresh";
 import { scrollToY } from "@/lib/scroller";
 import {
   isCustomPlanId,
@@ -115,21 +114,6 @@ export default function Discover() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // A pull to refresh comes back to Discover, whichever tab it was pulled
-  // from. Remembered before the reload, so the page that loads opens there;
-  // and a ?tab= or #offline in the address goes too, or the reloaded page
-  // would follow it straight back to Settings.
-  useEffect(() => {
-    const onRefresh = () => {
-      setTab("scripture");
-      if (window.location.search || window.location.hash) {
-        window.history.replaceState(null, "", "/discover");
-      }
-    };
-    window.addEventListener(PULL_REFRESH_EVENT, onRefresh);
-    return () => window.removeEventListener(PULL_REFRESH_EVENT, onRefresh);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div>
