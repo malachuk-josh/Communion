@@ -1598,6 +1598,9 @@ select option {
 /* Words or Ask Claude, under the search bar, for the people with Ask */
 .search-modes {
   display: flex;
+  /* a pill that cannot fit goes onto a line of its own, whole, rather than
+     breaking its label in two */
+  flex-wrap: wrap;
   gap: 6px;
   margin: -6px 0 14px;
 }
@@ -1605,6 +1608,17 @@ select option {
 .search-modes .chip {
   cursor: pointer;
   font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* "By Word" and "Illuminated Search" side by side need about 250px, and the
+   Spanish pair 276; the navigator on a 320px phone gives them 249. A little
+   smaller there, and both languages sit on one row. */
+@media (max-width: 374px) {
+  .search-modes .chip {
+    font-size: 0.7rem;
+    padding-inline: 10px;
+  }
 }
 
 /* why Claude chose a passage, between its reference and its words */

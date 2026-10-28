@@ -295,7 +295,7 @@ const dictionaries = {
     "about.ai2":
       "Ask the scholars — in Commentary, choose one of seven teachers of the church, from Augustine to Spurgeon, and ask him about the passage. The answers are Claude writing in his manner, never his own words. Where the app has his commentary on the passage — Henry on every book, Spurgeon on the Psalms — the answer is drawn from it; the others answer from what Claude learned of them. The About pill beside each name says who he was.",
     "about.ai3":
-      "Find verses by describing them — in the search in The Word’s side panel, switch to Ask Claude and describe what you are looking for, like “when I can’t sleep for worrying”. Claude names the passages; the words you see are the app’s own, in the translation you are reading.",
+      "Find verses by describing them — in the search in The Word’s side panel, switch to Illuminated Search and describe what you are looking for, like “when I can’t sleep for worrying”. Claude names the passages; the words you see are the app’s own, in the translation you are reading.",
     "about.aiHow":
       "Each answer is written fresh. With a question about a verse, Claude is given the question, the conversation so far and the verse’s reference — and its wording too, for translations in the public domain such as the King James — with instructions to stay with the passage, ground what it says in Scripture, keep it short, say so when something is uncertain, and never invent a quotation or a source. The wording of licensed translations such as the ESV and NIV is never sent.",
     "about.aiLimits":
@@ -428,8 +428,8 @@ const dictionaries = {
     "reader.pinchHint": "Pinch the text to resize it.",
     "reader.doubleTapHint": "Double-tap the page to open this panel.",
     "find.mode": "How to search",
-    "find.words": "Words",
-    "find.ask": "Ask Claude",
+    "find.words": "By Word",
+    "find.ask": "Illuminated Search",
     "find.placeholder": "Ask for verses…",
     "find.searching": "Claude is looking…",
     "find.results": "{count} passages found by Claude",
@@ -961,7 +961,7 @@ const dictionaries = {
     "about.ai2":
       "Preguntar a los eruditos — en Comentario, elige a uno de siete maestros de la iglesia, de Agustín a Spurgeon, y pregúntale sobre el pasaje. Las respuestas son de Claude, escritas a su manera, nunca palabras suyas. Cuando la app tiene su comentario del pasaje —Henry en todos los libros, Spurgeon en los Salmos—, la respuesta parte de él; los demás responden con lo que Claude aprendió de ellos. El botón Acerca de junto a cada nombre cuenta quién fue.",
     "about.ai3":
-      "Encontrar versículos describiéndolos — en la búsqueda del panel lateral de La Palabra, cambia a Preguntar a Claude y describe lo que buscas, como «cuando la preocupación no me deja dormir». Claude indica los pasajes; las palabras que ves son las de la app, en la traducción que estás leyendo.",
+      "Encontrar versículos describiéndolos — en la búsqueda del panel lateral de La Palabra, cambia a Búsqueda iluminada y describe lo que buscas, como «cuando la preocupación no me deja dormir». Claude indica los pasajes; las palabras que ves son las de la app, en la traducción que estás leyendo.",
     "about.aiHow":
       "Cada respuesta se escribe de nuevo. Con una pregunta sobre un versículo, Claude recibe la pregunta, la conversación hasta ese momento y la referencia del versículo —y también su texto, en las traducciones de dominio público como la King James o la Reina Valera 1909—, con instrucciones de ceñirse al pasaje, fundar en la Escritura lo que dice, ser breve, decirlo cuando algo es incierto y no inventar nunca una cita ni una fuente. El texto de las traducciones con licencia, como la ESV y la NIV, nunca se envía.",
     "about.aiLimits":
@@ -1094,8 +1094,8 @@ const dictionaries = {
     "reader.pinchHint": "Pellizca el texto para cambiar su tamaño.",
     "reader.doubleTapHint": "Toca dos veces la página para abrir este panel.",
     "find.mode": "Cómo buscar",
-    "find.words": "Palabras",
-    "find.ask": "Preguntar a Claude",
+    "find.words": "Por palabra",
+    "find.ask": "Búsqueda iluminada",
     "find.placeholder": "Pide versículos…",
     "find.searching": "Claude está buscando…",
     "find.results": "{count} pasajes encontrados por Claude",
