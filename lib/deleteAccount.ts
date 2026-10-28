@@ -325,6 +325,7 @@ export async function deleteAccount(userId: string): Promise<Erasure> {
     keys.userPushSubs(userId),
     keys.userBookmarks(userId),
     keys.userCollections(userId),
+    keys.userBookPlaces(userId),
     keys.userSeeds(userId),
     keys.userCustomPlans(userId),
     keys.userConvs(userId),

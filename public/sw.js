@@ -40,6 +40,9 @@ const DATA_PATHS = [
   "/devotional/",
   "/maps/",
   "/icons/",
+  // the Bookshelf's books: their text, covers and illustrations, which are
+  // published once and replaced whole when a book is revised
+  "/books/",
 ];
 
 // Read-only API responses worth showing stale.
@@ -82,6 +85,9 @@ const SHELL_ROUTES = [
   "/menu",
   "/menu/journal",
   "/menu/settings",
+  // one page for every Bookshelf book and every part of one, so a book saved
+  // for offline reading opens with no signal (see components/BookView)
+  "/bookshelf",
 ];
 
 /** Where the shell cache records which build populated it. */
@@ -387,6 +393,12 @@ async function networkFirst(request, cacheName) {
   } catch (err) {
     const hit = await cache.match(request);
     if (hit) return hit;
+    // A page reached with a query it was never stored under — a Bookshelf
+    // book's part, /bookshelf?b=…&p=… — is the same page as the one that was.
+    if (request.mode === "navigate") {
+      const same = await cache.match(request, { ignoreSearch: true });
+      if (same) return same;
+    }
     // a navigation with nothing cached for it still gets the app shell
     if (request.mode === "navigate") {
       const root = await cache.match("/");

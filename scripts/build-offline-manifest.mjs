@@ -104,10 +104,36 @@ const commentary = merge(
   listDir("devotional")
 );
 
+/*
+ * The Bookshelf, a tier per book: its text and its pictures, a few megabytes
+ * each, and a book is something somebody chooses to keep rather than part of
+ * a set. Read from public/books, so a book added there is offered here.
+ */
+const BOOK_FILE = /\.(json|webp|jpg|png)$/;
+const books = Object.fromEntries(
+  (existsSync(path.join(PUBLIC, "books")) ? readdirSync(path.join(PUBLIC, "books")) : [])
+    .sort()
+    .map((slug) => {
+      const dir = path.join(PUBLIC, "books", slug);
+      let bytes = 0;
+      const hashes = [];
+      const urls = readdirSync(dir)
+        .filter((f) => BOOK_FILE.test(f))
+        .sort()
+        .map((f) => {
+          bytes += statSync(path.join(dir, f)).size;
+          hashes.push(hashOf(path.join(dir, f)));
+          return `/books/${slug}/${f}`;
+        });
+      return [`book:${slug}`, { urls, bytes, hashes }];
+    })
+);
+
 const tiers = {
   reading,
   study,
   commentary,
+  ...books,
   ...Object.fromEntries(
     Object.entries(translations).map(([id, t]) => [`translation:${id}`, t])
   ),

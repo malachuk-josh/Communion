@@ -5994,3 +5994,645 @@ button.compare-pick:last-child {
   justify-content: flex-end;
   margin-top: 14px;
 }
+
+/* ---- the Bookshelf -------------------------------------------------------
+   Books to read beside Scripture: the shelf in the Discover tab, a book's own
+   page, and a part of it (components/Bookshelf, components/BookView).
+
+   A part is set the way its PDF sets it: a small gold chapter label over the
+   title, a knot under it, the picture in a gold frame, a drop cap in a framed
+   box, justified text, and verse set in. In the book's own faces — Sorts Mill
+   Goudy and Libre Baskerville, scoped to .bk by lib/bookFonts — and in the
+   reader's theme: Parchment's colours are the PDF's, and Illuminated and grey
+   lend theirs to the same ornaments. */
+
+.shelf {
+  margin-top: 26px;
+}
+
+.shelf-row {
+  display: grid;
+  gap: 12px;
+}
+
+.shelf-book {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.shelf-cover img,
+.shelf-cover-blank {
+  display: block;
+  width: 92px;
+  height: auto;
+  aspect-ratio: 720 / 1029;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.shelf-cover-blank {
+  background: var(--gold-soft);
+}
+
+.shelf-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shelf-title {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.shelf-author {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.shelf-blurb {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shelf-go {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--gold);
+}
+
+/* "In English", on a Spanish reader's shelf */
+.bk-lang {
+  align-self: flex-start;
+  margin: 2px 0;
+  padding: 1px 9px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  color: var(--gold);
+}
+
+/* ---- a book's own page ---- */
+
+.bk-missing {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding: 30px 0;
+}
+
+.bk-home {
+  display: grid;
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.bk-cover {
+  justify-self: center;
+  width: min(62%, 250px);
+}
+
+.bk-cover img,
+.bk-cover-blank {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 720 / 1029;
+  border-radius: 6px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+.bk-about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bk-book-title {
+  margin: 0;
+  font-family: var(--bk-title), var(--serif);
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.bk-book-author {
+  margin: 0;
+  font-family: var(--bk-text), var(--serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-dim);
+}
+
+.bk-blurb {
+  margin: 10px 0 4px;
+  font-family: var(--bk-text), var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.bk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bk-actions .btn {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* which chapter "Continue" goes to, under the word itself */
+.bk-btn-sub {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.bk-offline {
+  margin-top: 6px;
+}
+
+.bk-saved {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--gold);
+}
+
+.bk-toc {
+  margin-top: 26px;
+}
+
+.bk-toc h2 {
+  margin: 0 0 6px;
+  font-family: var(--bk-title), var(--serif);
+  font-weight: 400;
+  font-size: 1.3rem;
+}
+
+.bk-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bk-toc-part {
+  margin: 14px 0 4px;
+  font-family: var(--bk-text), var(--serif);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.bk-toc-row {
+  display: grid;
+  grid-template-columns: 1.8em minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--bk-text), var(--serif);
+  font-size: 1.08rem;
+}
+
+.bk-toc-row:not(:has(.bk-toc-n)) .bk-toc-title {
+  grid-column: 1 / 3;
+}
+
+.bk-toc-n {
+  color: var(--gold);
+  text-align: right;
+}
+
+.bk-toc-min {
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+}
+
+/* the part the reader is in */
+.bk-toc-row.here {
+  background: var(--gold-soft);
+  border-radius: 8px;
+}
+
+@media (min-width: 640px) {
+  .bk-home {
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .bk-cover {
+    width: 100%;
+  }
+}
+
+/* ---- a part of a book ---- */
+
+.bk-part {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.bk-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bk-bar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--bk-text), var(--serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--ink-faint);
+}
+
+.bk-head {
+  margin: 14px 0 10px;
+  text-align: center;
+}
+
+.bk-head-quiet {
+  margin-bottom: 18px;
+}
+
+.bk-orn,
+.bk-rule {
+  display: block;
+  margin: 0 auto;
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.bk-orn {
+  width: min(240px, 70%);
+  height: auto;
+  opacity: 0.85;
+}
+
+.bk-orn circle {
+  fill: var(--gold);
+  stroke: none;
+}
+
+.bk-rule {
+  width: 150px;
+  height: auto;
+  margin-top: 10px;
+}
+
+.bk-label {
+  margin: 16px 0 0;
+  font-family: var(--bk-text), var(--serif);
+  font-size: 0.98rem;
+  color: var(--gold);
+}
+
+.bk-title {
+  margin: 4px 0 0;
+  font-family: var(--bk-title), var(--serif);
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+/* The chapter's picture: across the page on a phone, above the opening;
+   beside it on anything wider, as the PDF has it. */
+.bk-figure {
+  margin: 16px 0 18px;
+}
+
+.bk-figure-btn {
+  display: block;
+  width: 100%;
+  padding: 4px;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  background: var(--gold-soft);
+  cursor: zoom-in;
+}
+
+.bk-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 9px;
+}
+
+@media (min-width: 640px) {
+  .bk-figure {
+    float: right;
+    width: 44%;
+    margin: 6px 0 14px 22px;
+  }
+}
+
+.bk-text {
+  font-family: var(--bk-text), var(--serif);
+  /* the reader's own text size from The Word, a touch larger because
+     Goudy's letters sit small on their body */
+  font-size: calc(var(--bk-size, 14pt) * 1.08);
+  line-height: 1.6;
+  color: var(--ink);
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+.bk-p {
+  margin: 0 0 0.8em;
+}
+
+/* The opening paragraph is set ragged, as the PDF sets the lines beside its
+   drop cap: justified, three short lines beside a box open up into gaps. */
+.bk-first {
+  text-align: left;
+}
+
+/* figures that read as figures — Goudy's old-style 1 is a small "ı" */
+.bk-label,
+.bk-toc-n,
+.bk-turn-name {
+  font-variant-numeric: lining-nums;
+}
+
+.bk-ref-piece {
+  white-space: nowrap;
+}
+
+/* The drop cap: the letter in its own framed box, three lines deep, as the
+   PDF draws it — cream on brown in a gold frame. */
+.bk-drop {
+  float: left;
+  width: 1.32em;
+  margin: 0.08em 0.16em 0 0;
+  font-family: var(--bk-title), var(--serif);
+  font-size: 3.05em;
+  line-height: 1.32;
+  text-align: center;
+  color: #f5ecd7;
+  background: linear-gradient(180deg, #7b5d2c, #5e4521);
+  border: 2px solid var(--gold);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px rgba(245, 236, 215, 0.22);
+}
+
+.bk-verse {
+  margin: 0.2em 0 1em 0.7em;
+  font-size: 0.95em;
+  text-align: left;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+
+.bk-stanza {
+  margin: 0 0 0.8em;
+}
+
+/* a line too long for a phone wraps under itself, set in a little */
+.bk-line {
+  display: block;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+
+.bk-sig {
+  margin: 0.6em 0 1em;
+  text-align: right;
+  letter-spacing: 0.1em;
+}
+
+.bk-table-wrap {
+  overflow-x: auto;
+  margin: 0.6em 0 1em;
+}
+
+.bk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86em;
+  line-height: 1.4;
+  text-align: left;
+  hyphens: manual;
+}
+
+.bk-table th {
+  padding: 6px 8px 6px 0;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--gold);
+  border-bottom: 1px solid var(--gold);
+}
+
+.bk-table td {
+  padding: 8px 8px 8px 0;
+  vertical-align: top;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* On a phone three columns leave the reasons a word wide: each row becomes
+   an entry instead — the old name, an arrow, the new one, and why under it. */
+@media (max-width: 559px) {
+  .bk-table thead {
+    display: none;
+  }
+
+  .bk-table,
+  .bk-table tbody,
+  .bk-table tr {
+    display: block;
+  }
+
+  .bk-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .bk-table td {
+    display: inline;
+    padding: 0;
+    border: none;
+  }
+
+  .bk-table td:nth-child(1)::after {
+    content: " → ";
+    color: var(--gold);
+  }
+
+  .bk-table td:nth-child(2) {
+    color: var(--gold);
+  }
+
+  .bk-table td:nth-child(3) {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.94em;
+    color: var(--ink-dim);
+  }
+}
+
+/* Bunyan's Bible references, still in their brackets: each one a quiet tap */
+.bk-ref {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--gold);
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.bk-mark {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 4px;
+}
+
+.bk-marked {
+  font-size: 0.9rem;
+  color: var(--gold);
+}
+
+.bk-turn {
+  clear: both;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 20px 0 10px;
+}
+
+.bk-turn-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.bk-turn-next {
+  text-align: right;
+}
+
+.bk-turn-dir {
+  font-size: 0.78rem;
+  color: var(--gold);
+}
+
+.bk-turn-name {
+  font-family: var(--bk-text), var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+
+.bk-loading {
+  height: 60vh;
+  margin-top: 20px;
+  border-radius: 12px;
+}
+
+/* a picture, on its own, as large as the screen allows */
+.bk-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(8, 8, 12, 0.94);
+  cursor: zoom-out;
+}
+
+.bk-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.bk-viewer-close {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: 14px;
+  color: #f2f0ea;
+  border-color: rgba(242, 240, 234, 0.4);
+}
+
+.bk-verse-pop .bk-pop-tr {
+  font-family: var(--sans);
+  font-size: 0.7em;
+  color: var(--ink-faint);
+}
+
+.bk-pop-text {
+  margin: 4px 0 6px;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.bk-pop-text sup {
+  margin-right: 2px;
+  color: var(--gold);
+}
+
+.bk-pop-wait {
+  height: 4.5em;
+  border-radius: 8px;
+}
+
+/* a whole chapter, cited by Bunyan as "Rom. 3", scrolls inside the pop-up */
+.bk-pop-text {
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+/* Grey keeps no colour of its own, so the drop cap's brown box turns grey
+   with everything else. The pictures do not: they are the book, painted for
+   it, and grey is the theme a new reader starts in — greying them would show
+   most readers a different book from the one that was made. */
+:root[data-theme="grey"] .bk img,
+:root[data-theme="grey"] .shelf-cover img {
+  filter: none;
+}
+
+:root[data-theme="grey"] .bk-drop {
+  color: #f2f0ea;
+  background: linear-gradient(180deg, #4b4c50, #2f3033);
+}

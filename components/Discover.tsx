@@ -28,6 +28,7 @@ import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
 import MyWall from "@/components/MyWall";
 import MyPrayers from "@/components/MyPrayers";
+import Bookshelf from "@/components/Bookshelf";
 import { WallSignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
@@ -173,6 +174,9 @@ export default function Discover() {
         <>
           <VerseOfDay />
           <TopicsSection />
+          {/* the books, above the plans: reading materials sit together, and
+              the covers are seen before the long list of plans */}
+          <Bookshelf />
           <PlansSection open={openPlan} />
         </>
       )}
@@ -529,6 +533,9 @@ function PlansSection({ open }: { open: string | null }) {
           said once above them: where the commentary for a day is found */}
       {filter === "commentary" && (
         <p className="subtitle plans-lead">{t("discover.guideLead")}</p>
+      )}
+      {filter === "bookshelf" && (
+        <p className="subtitle plans-lead">{t("shelf.planLead")}</p>
       )}
       {filter === "discover" && (
         <PublicShelf

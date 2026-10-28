@@ -121,7 +121,8 @@ export default function Nav() {
    * but the edge tab.
    */
   useEffect(() => {
-    if (pathname !== "/") {
+    // The Word, and a Bookshelf book, which is read the same way
+    if (pathname !== "/" && pathname !== "/bookshelf") {
       setNavHidden(false);
       return;
     }
@@ -417,7 +418,8 @@ export default function Nav() {
   };
 
   const isWord = pathname === "/";
-  const isDiscover = pathname.startsWith("/discover");
+  // the Bookshelf's books open from the Discover tab, and belong to Home
+  const isDiscover = pathname.startsWith("/discover") || pathname.startsWith("/bookshelf");
   const isJournal = pathname.startsWith("/menu/journal");
 
   // Home pressed while Home is already the page: back to its Discover tab,

@@ -205,6 +205,8 @@ export const keys = {
   userPushSubs: (userId: string) => `user:${userId}:push`,
   userBookmarks: (userId: string) => `user:${userId}:bookmarks`,
   userCollections: (userId: string) => `user:${userId}:collections`,
+  /** where the reader is in each Bookshelf book (app/api/bookshelf/place) */
+  userBookPlaces: (userId: string) => `user:${userId}:bookplaces`,
   userSeeds: (userId: string) => `user:${userId}:seeds`,
   /** reading plans a reader wrote for themselves (lib/customPlans.ts) */
   userCustomPlans: (userId: string) => `user:${userId}:custom`,

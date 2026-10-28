@@ -15,6 +15,14 @@ export interface Reading {
   c: number;
   v?: number;
   ve?: number;
+  /**
+   * A part of a Bookshelf book instead of a chapter of Scripture: the book's
+   * slug, the part's id and its title. `b` and `c` are nought on these, so
+   * anything that looks up a Bible book for one finds none and moves on.
+   */
+  shelf?: string;
+  part?: string;
+  title?: string;
 }
 
 export interface PlanDay {
@@ -27,7 +35,8 @@ export type PlanCategory =
   | "foundations"
   | "wisdom"
   | "journeys"
-  | "commentary";
+  | "commentary"
+  | "bookshelf";
 
 /**
  * Whose commentary walks beside a plan, day by day. Matthew Henry has written
@@ -53,15 +62,26 @@ export const PLAN_CATEGORIES: PlanCategory[] = [
   "wisdom",
   "journeys",
   "commentary",
+  "bookshelf",
 ];
 
-/** "John 3", or "Psalms 119:9–16" for a day that is part of a chapter. */
+/**
+ * "John 3", or "Psalms 119:9–16" for a day that is part of a chapter — or a
+ * Bookshelf chapter's own title.
+ */
 export function readingLabel(r: Reading, bookName: string): string {
+  if (r.shelf) return r.title ?? r.part ?? "";
   return `${bookName} ${r.c}${r.v ? `:${r.v}–${r.ve}` : ""}`;
 }
 
-/** Where a reading opens in The Word: at its first verse, if it has one. */
+/**
+ * Where a reading opens: in The Word, at its first verse if it has one, or on
+ * the Bookshelf at the part.
+ */
 export function readingHref(r: Reading, from?: string): string {
+  if (r.shelf) {
+    return `/bookshelf?b=${r.shelf}&p=${r.part}${from ? `&from=${from}` : ""}`;
+  }
   return `/?b=${r.b}&c=${r.c}${r.v ? `&v=${r.v}` : ""}${from ? `&from=${from}` : ""}`;
 }
 
@@ -409,6 +429,47 @@ const treasury: Plan = {
   guide: "spurgeon",
 };
 
+/*
+ * The Bookshelf's books, a chapter a day. The titles are the book's own (its
+ * book.json), repeated here because plans are read on the server too — by the
+ * reminder sweep, which names the day's reading in its notification.
+ */
+const PILGRIM = [
+  "The City of Destruction",
+  "Mr. Worldly Wiseman",
+  "The Wicket Gate",
+  "The Interpreter’s House",
+  "The Cross and the Hill Difficulty",
+  "The Palace Beautiful",
+  "Apollyon",
+  "The Valley of the Shadow of Death",
+  "Faithful",
+  "Talkative",
+  "Vanity Fair",
+  "The Trial of Faithful",
+  "Mr. Self-Interest",
+  "Demas and the Pillar of Salt",
+  "Doubting Castle",
+  "The Delectable Mountains",
+  "Ignorance and Little-Faith",
+  "The Enchanted Ground",
+  "Ignorance and Temporary",
+  "The Land of Beulah and the River",
+  "The Celestial City",
+];
+
+const pilgrim21: Plan = {
+  id: "pilgrim21",
+  icon: "mountain",
+  category: "bookshelf",
+  name: "From This World to the Next",
+  days: PILGRIM.map((title, i) => ({
+    readings: [
+      { b: 0, c: 0, shelf: "from-this-world", part: String(i + 1).padStart(2, "0"), title },
+    ],
+  })),
+};
+
 export const PLANS: Plan[] = [
   john21,
   mark16,
@@ -438,6 +499,7 @@ export const PLANS: Plan[] = [
   treasury,
   henrynt260,
   henrybible365,
+  pilgrim21,
 ];
 
 export function getPlan(id: string): Plan | undefined {

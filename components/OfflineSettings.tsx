@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
+import { shelfBook } from "@/lib/bookshelf";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { TRANSLATIONS } from "@/lib/bible";
 import { onPendingChange, flush, startSync } from "@/lib/sync";
@@ -72,6 +73,10 @@ export default function OfflineSettings({
         if (id === "study") {
           return { title: t("offline.study"), detail: t("offline.studyDesc") };
         }
+        if (id.startsWith("book:")) {
+          const book = shelfBook(id.slice(5));
+          return { title: book?.title ?? id.slice(5), detail: t("offline.bookDesc") };
+        }
         const code = id.replace("translation:", "");
         const tr = TRANSLATIONS.find((x) => x.id === code);
         return {
@@ -81,7 +86,15 @@ export default function OfflineSettings({
       };
       // reading first, then the extra translations, then the study tools
       const order = (id: string) =>
-        id === "reading" ? 0 : id === "study" ? 2 : id === "commentary" ? 3 : 1;
+        id === "reading"
+          ? 0
+          : id === "study"
+            ? 2
+            : id === "commentary"
+              ? 3
+              : id.startsWith("book:")
+                ? 4
+                : 1;
       return Promise.all(
         Object.entries(data.tiers)
           .sort((a, b) => order(a[0]) - order(b[0]))
