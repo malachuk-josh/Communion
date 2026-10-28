@@ -117,10 +117,12 @@ html {
  * cannot show through them — they get the same tooth laid over their own
  * colour instead, a little fainter, as a strip of the same sheet. Drawn
  * underneath their contents rather than as part of their background, so
- * nothing here touches the backgrounds those rules were careful about.
+ * nothing here touches the backgrounds those rules were careful about. The
+ * chapter arrows beside the bar are painted like it, and take its grain too.
  */
 :root[data-theme="light"] .nav::before,
-:root[data-theme="light"] .bottom-nav::before {
+:root[data-theme="light"] .bottom-nav::before,
+:root[data-theme="light"] .chap-arrow::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -775,10 +777,7 @@ html.reading .app-scroll::-webkit-scrollbar {
  * layer the scrolling thread can carry on its own, and taking work away was
  * only ever half of getting one.
  *
- * Hiding it in The Word moves to `transform` with it. Sliding on `bottom` was
- * right while there was no layer to slide; with one, it is a quarter-second
- * of relayout on the one screen where somebody is also flicking, and the
- * translate is free.
+ * It no longer hides in The Word (see Nav.tsx), so nothing moves it at all.
  */
 .bottom-nav {
   position: fixed;
@@ -804,7 +803,6 @@ html.reading .app-scroll::-webkit-scrollbar {
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
-  transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
 /* .glass is declared further down this file, and both of the things it gives
@@ -838,16 +836,6 @@ nav.bottom-nav.glass {
 
 .scripture-notice a {
   color: inherit;
-}
-
-/* reading down The Word tucks the bar out of sight (see Nav.tsx) */
-.bottom-nav.nav-hidden {
-  /* far enough to clear the bar and its shadow on any inset. A translate and
-     not `bottom`, so the bar keeps the one layer it was given and the slide
-     costs no layout — see part four above. */
-  transform: translate3d(0, 140px, 0);
-  opacity: 0;
-  pointer-events: none;
 }
 
 .bottom-nav a {
@@ -2162,10 +2150,14 @@ mark {
   opacity: 0.85;
 }
 
-/* ---- floating chapter arrows ---- */
+/* ---- floating chapter arrows ----
+   In the bottom corners, level with the bar between them: its bottom edge
+   (the same expression as .bottom-nav's) plus half the difference between
+   the bar's 68px and an arrow's 44px. Three tabs leave the room for them on
+   the narrowest phones — 320px wide still has a few pixels either side. */
 .chap-arrow {
   position: fixed;
-  bottom: calc(max(4px, env(safe-area-inset-bottom, 0px)) + 70px);
+  bottom: calc(max(4px, calc(env(safe-area-inset-bottom, 0px) - 6px)) + 12px);
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -2178,7 +2170,21 @@ mark {
   color: var(--ink);
   z-index: 39;
   cursor: pointer;
-  transition: bottom 0.28s ease, opacity 0.2s;
+  transition: opacity 0.2s;
+}
+
+/* painted like the bar they sit beside — its colour and sheen, and no blur —
+   so the bottom edge reads as one row, and no verse shows through an arrow */
+.chap-arrow.glass {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.02)
+    ),
+    var(--bar);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .chap-arrow-l {
@@ -2192,11 +2198,6 @@ mark {
 .chap-arrow:disabled {
   opacity: 0.25;
   cursor: default;
-}
-
-/* when the nav bar hides, the arrows settle into the freed corner space */
-html.navhide .chap-arrow {
-  bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + 6px);
 }
 
 @media (min-width: 640px) {
