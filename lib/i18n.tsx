@@ -24,8 +24,8 @@ const dictionaries = {
       "EB Garamond — a revival of Claude Garamond’s sixteenth-century types, the classic face of printed books.",
     "settings.face.literata":
       "Literata — drawn for reading books on screens, first for Google Play Books.",
-    "settings.face.lora":
-      "Lora — a contemporary serif with roots in calligraphy, warm and even.",
+    "settings.face.kurale":
+      "Kurale — flared, brush-drawn letters in the manner of Papyrus, as if written on a scroll.",
     "settings.face.merriweather":
       "Merriweather — sturdy and open, made to read comfortably on small screens.",
     "settings.face.atkinson":
@@ -687,8 +687,8 @@ const dictionaries = {
       "EB Garamond: una recreación de los tipos de Claude Garamond del siglo XVI, la letra clásica del libro impreso.",
     "settings.face.literata":
       "Literata: diseñada para leer libros en pantalla, primero para Google Play Libros.",
-    "settings.face.lora":
-      "Lora: una serif contemporánea con raíces caligráficas, cálida y regular.",
+    "settings.face.kurale":
+      "Kurale: letras abiertas, trazadas a pincel al modo de Papyrus, como escritas en un rollo.",
     "settings.face.merriweather":
       "Merriweather: robusta y abierta, hecha para leerse con comodidad en pantallas pequeñas.",
     "settings.face.atkinson":

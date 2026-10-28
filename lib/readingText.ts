@@ -36,7 +36,7 @@ export const FACES = [
   "default",
   "garamond",
   "literata",
-  "lora",
+  "kurale",
   "merriweather",
   "atkinson",
 ] as const;

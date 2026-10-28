@@ -2,9 +2,14 @@
 //
 // Five, beside the app's own book face, and each chosen to be unlike the
 // others: an old-style face from the history of printed books, one drawn for
-// reading books on screens, a warm contemporary serif, a sturdy one for small
-// screens, and a sans-serif made for legibility. All are under the SIL Open
-// Font License.
+// reading books on screens, a hand-lettered one in the manner of Papyrus, a
+// sturdy one for small screens, and a sans-serif made for legibility. All are
+// under the SIL Open Font License.
+//
+// Papyrus itself was asked for and is not here because it cannot be: it is a
+// commercial Monotype face, and serving it from the app would need a paid web
+// licence. Kurale was chosen from twenty-odd free faces as the nearest in
+// spirit — flared, brushed strokes — that still reads easily for a chapter.
 //
 // Through next/font, so they are served from the app itself rather than from
 // Google: the build fetches them once, and they come with the rest of the
@@ -19,15 +24,15 @@
 import {
   Atkinson_Hyperlegible,
   EB_Garamond,
+  Kurale,
   Literata,
-  Lora,
   Merriweather,
 } from "next/font/google";
 import type { Face } from "@/lib/readingText";
 
 const garamond = EB_Garamond({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 const literata = Literata({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
-const lora = Lora({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
+const kurale = Kurale({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 const merriweather = Merriweather({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 const atkinson = Atkinson_Hyperlegible({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 
@@ -36,7 +41,7 @@ type WebFace = Exclude<Face, "default">;
 const FAMILY: Record<WebFace, string> = {
   garamond: garamond.style.fontFamily,
   literata: literata.style.fontFamily,
-  lora: lora.style.fontFamily,
+  kurale: kurale.style.fontFamily,
   merriweather: merriweather.style.fontFamily,
   atkinson: atkinson.style.fontFamily,
 };
@@ -45,7 +50,7 @@ const FAMILY: Record<WebFace, string> = {
 export const FACE_NAMES: Record<WebFace, string> = {
   garamond: "Garamond",
   literata: "Literata",
-  lora: "Lora",
+  kurale: "Kurale",
   merriweather: "Merriweather",
   atkinson: "Atkinson",
 };
