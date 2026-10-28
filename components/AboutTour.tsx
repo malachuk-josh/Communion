@@ -12,7 +12,6 @@ export default function AboutTour() {
   return (
     <>
       <h3>{t("about.tourTitle")}</h3>
-      <p className="tour-hint">{t("about.tourHint")}</p>
       <TourStrip />
       <ShareTour />
     </>

@@ -1182,13 +1182,6 @@ html.welcoming {
    height that is fixed and the widths that follow — a shelf of photographs,
    not a contact sheet. Every img carries its aspect-ratio inline, so the
    shelf takes its final shape before anything has loaded. */
-.tour-hint {
-  font-size: 0.86rem;
-  font-style: italic;
-  color: var(--ink-faint);
-  margin-top: -2px;
-}
-
 .tour-strip {
   display: flex;
   align-items: flex-start;
