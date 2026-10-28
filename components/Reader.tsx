@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   DEFAULT_TRANSLATION,
+  NOTE_MAX,
   TRANSLATIONS,
   getBook,
   getTranslation,
@@ -69,6 +70,7 @@ import {
   writeLocalNotes,
   writeLocalState,
 } from "@/lib/sync";
+import AskVerse, { useAskStatus } from "@/components/AskVerse";
 import Concordance from "@/components/Concordance";
 import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
@@ -398,6 +400,10 @@ export default function Reader({
   const [searchTotal, setSearchTotal] = useState(0);
   const [searching, setSearching] = useState(false);
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
+  // Ask lives inside Compare, for the people the owner has switched on, and
+  // the one pill says so rather than a second pill joining the row
+  const [askStatus, setAskStatus] = useAskStatus(study);
+  const compareLabel = t(askStatus.allowed ? "reader.compareAsk" : "reader.compare");
   const sheetRef = useRef<HTMLDivElement>(null);
   /** the "Found in N verses" pill, so closing the concordance returns here */
   const concBtnRef = useRef<HTMLButtonElement>(null);
@@ -2399,6 +2405,85 @@ export default function Reader({
     return made;
   };
 
+  /* The Compare pop-up's body: one verse in every translation, and the
+     licences that come with them. Named here because it goes in one of two
+     places — on its own, or above Ask for the people who have it. */
+  const compareBody = compareAt && (
+    <>
+      <div className="compare-list">
+        {[
+          ...TRANSLATIONS.filter((tr) => tr.id === translation),
+          ...TRANSLATIONS.filter((tr) => tr.id !== translation),
+        ].map((tr) => {
+          const said = compareRows[tr.id];
+          const inner = (
+            <>
+              <p className="compare-abbrev">
+                {tr.abbrev}
+                {tr.id === translation ? (
+                  <span className="compare-here">
+                    {t("reader.compareReading")}
+                  </span>
+                ) : (
+                  typeof said === "string" && (
+                    <span className="compare-go">
+                      {t("reader.compareOpen")}
+                    </span>
+                  )
+                )}
+              </p>
+              {said === undefined ? (
+                <p className="skeleton">{t("common.loading")}</p>
+              ) : said === null ? (
+                <p className="cal-hint">{t("reader.compareMissing")}</p>
+              ) : (
+                <p className="compare-text">{said}</p>
+              )}
+            </>
+          );
+          /* A verse you can read is a door you can take: any row that
+             is not the one you are reading closes the window and
+             carries the reading itself into that translation, still
+             standing on this verse. Rows with nothing to show stay
+             plain — an empty room is not a destination. */
+          return tr.id !== translation && typeof said === "string" ? (
+            <button
+              key={tr.id}
+              type="button"
+              className="compare-row compare-pick"
+              onClick={() => {
+                setChapter(compareAt.ch);
+                setHighlightVerse(compareAt.v);
+                setCompareAt(null);
+                setTranslation(tr.id);
+              }}
+            >
+              {inner}
+            </button>
+          ) : (
+            <div
+              key={tr.id}
+              className={`compare-row${
+                tr.id === translation ? " reading" : ""
+              }`}
+            >
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+      {/* the licence for each borrowed translation follows its text
+          wherever that text goes, and this is one of those places */}
+      {TRANSLATIONS.filter((tr) => tr.notice && compareRows[tr.id]).map(
+        (tr) => (
+          <p key={tr.id} className="scripture-notice">
+            {tr.notice}
+          </p>
+        )
+      )}
+    </>
+  );
+
   return (
     <div className={panelOpen || concFor ? "reader-open" : undefined}>
       {results !== null && searchBar(false)}
@@ -2668,10 +2753,10 @@ export default function Reader({
                           type="button"
                           className="xref-chip"
                           onClick={() => openCompare(ch, v.verse)}
-                          aria-label={t("reader.compare")}
-                          title={t("reader.compare")}
+                          aria-label={compareLabel}
+                          title={compareLabel}
                         >
-                          <Icon name="books" /> {t("reader.compare")}
+                          <Icon name="books" /> {compareLabel}
                         </button>
                       </span>
                       {note && editingNote !== key && (
@@ -2690,7 +2775,7 @@ export default function Reader({
                             value={noteDraft}
                             onChange={(e) => setNoteDraft(e.target.value)}
                             placeholder={t("reader.notePlaceholder")}
-                            maxLength={1000}
+                            maxLength={NOTE_MAX}
                             rows={3}
                             autoFocus
                           />
@@ -3205,7 +3290,7 @@ export default function Reader({
             className="bm-note"
             value={sheetNote ?? notes[bmNoteKey] ?? ""}
             placeholder={t("reader.notePlaceholder")}
-            maxLength={1000}
+            maxLength={NOTE_MAX}
             rows={3}
             onChange={(e) => setSheetNote(e.target.value)}
             onBlur={saveSheetNote}
@@ -3328,9 +3413,11 @@ export default function Reader({
           role="presentation"
         >
           <div
-            className="glass modal compare-modal"
+            className={`glass modal compare-modal${
+              askStatus.allowed ? " asking" : ""
+            }`}
             role="dialog"
-            aria-label={t("reader.compare")}
+            aria-label={t(askStatus.allowed ? "reader.compareAsk" : "reader.compare")}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="lex-head">
@@ -3341,91 +3428,46 @@ export default function Reader({
                 type="button"
                 className="lex-close"
                 onClick={() => setCompareAt(null)}
-                aria-label={t("search.close")}
+                aria-label={t("common.close")}
               >
                 ✕
               </button>
             </div>
-            <div className="compare-list">
-              {[
-                ...TRANSLATIONS.filter((tr) => tr.id === translation),
-                ...TRANSLATIONS.filter((tr) => tr.id !== translation),
-              ].map((tr) => {
-                const said = compareRows[tr.id];
-                const inner = (
-                  <>
-                    <p className="compare-abbrev">
-                      {tr.abbrev}
-                      {tr.id === translation ? (
-                        <span className="compare-here">
-                          {t("reader.compareReading")}
-                        </span>
-                      ) : (
-                        typeof said === "string" && (
-                          <span className="compare-go">
-                            {t("reader.compareOpen")}
-                          </span>
-                        )
-                      )}
-                    </p>
-                    {said === undefined ? (
-                      <p className="skeleton">{t("common.loading")}</p>
-                    ) : said === null ? (
-                      <p className="cal-hint">{t("reader.compareMissing")}</p>
-                    ) : (
-                      <p className="compare-text">{said}</p>
-                    )}
-                  </>
-                );
-                /* A verse you can read is a door you can take: any row that
-                   is not the one you are reading closes the window and
-                   carries the reading itself into that translation, still
-                   standing on this verse. Rows with nothing to show stay
-                   plain — an empty room is not a destination. */
-                return tr.id !== translation && typeof said === "string" ? (
-                  <button
-                    key={tr.id}
-                    type="button"
-                    className="compare-row compare-pick"
-                    onClick={() => {
-                      setChapter(compareAt.ch);
-                      setHighlightVerse(compareAt.v);
-                      setCompareAt(null);
-                      setTranslation(tr.id);
-                    }}
-                  >
-                    {inner}
-                  </button>
-                ) : (
-                  <div
-                    key={tr.id}
-                    className={`compare-row${
-                      tr.id === translation ? " reading" : ""
-                    }`}
-                  >
-                    {inner}
-                  </div>
-                );
-              })}
-            </div>
-            {/* the licence for each borrowed translation follows its text
-                wherever that text goes, and this is one of those places */}
-            {TRANSLATIONS.filter((tr) => tr.notice && compareRows[tr.id]).map(
-              (tr) => (
-                <p key={tr.id} className="scripture-notice">
-                  {tr.notice}
-                </p>
-              )
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={() => setCompareAt(null)}
+            {askStatus.allowed ? (
+              <AskVerse
+                key={`${bookNr}:${compareAt.ch}:${compareAt.v}`}
+                bookNr={bookNr}
+                ch={compareAt.ch}
+                v={compareAt.v}
+                translation={translation}
+                texts={Object.fromEntries(
+                  Object.entries(compareRows).filter(
+                    (row): row is [string, string] => typeof row[1] === "string"
+                  )
+                )}
+                status={askStatus}
+                onStatus={setAskStatus}
+                note={notes[`${compareAt.ch}:${compareAt.v}`]}
+                onSaveNote={(text) =>
+                  commitNote(`${compareAt.ch}:${compareAt.v}`, text)
+                }
               >
-                {t("common.done")}
-              </button>
-            </div>
+                {compareBody}
+              </AskVerse>
+            ) : (
+              <>
+                {compareBody}
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={() => setCompareAt(null)}
+                  >
+                    {t("common.done")}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

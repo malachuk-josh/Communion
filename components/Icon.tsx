@@ -55,6 +55,14 @@ const PATHS = {
     "M9.5 10.5h5V21h-5z",
     "M9.5 14h5",
   ],
+  // "Thy word is a lamp unto my feet" (Psalm 119:105): the clay oil lamp of
+  // the psalmist's day, flame at the spout. Marks Ask.
+  lamp: [
+    "M3.5 13h10.5l6.8-2-3.6 4.3a4 4 0 0 1-3 1.7H8a4.5 4.5 0 0 1-4.5-4z",
+    "M20.2 4.4c1.2 1.6 1.8 2.6 1.8 3.6a1.8 1.8 0 0 1-3.6 0c0-1 .6-2 1.8-3.6z",
+    "M8.2 13a1.8 1.8 0 0 1 3.6 0",
+    "M9.6 17l-.7 2.6h5.7l-.7-2.6",
+  ],
   anchor: [
     "M12 8.5V21",
     "M12 7.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
@@ -165,6 +173,7 @@ const PATHS = {
     "M8.5 21c0-4.2 3.5-6.4 3.5-6.4s3.5 2.2 3.5 6.4",
   ],
   check: ["M4.5 12.5l5 5 10-11"],
+  send: ["M12 19.5V5", "M6 11l6-6 6 6"],
   close: ["M5.5 5.5l13 13M18.5 5.5l-13 13"],
   // the way back from wherever a reference took you: an arrow that turns round
   back: ["M9 5.5L3.5 11 9 16.5", "M3.5 11h11a6 6 0 0 1 6 6v1.5"],

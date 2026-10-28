@@ -3160,6 +3160,22 @@ button.menu-tile {
   color: var(--ink-dim);
 }
 
+/* the study-mode questions: four figures and the terms they run on */
+.admin-ask .admin-stat {
+  padding: 8px 6px;
+}
+
+.admin-ask > .admin-sub {
+  max-width: none;
+  text-align: center;
+}
+
+.admin-ask-warn {
+  font-size: 0.86rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
 }
@@ -3696,6 +3712,163 @@ button.compare-pick:last-child {
   text-transform: none;
   font-size: 0.7rem;
   color: var(--gold);
+}
+
+/* ---- Ask, under the translations ----
+   With Ask the pop-up is a column: the heading holds still at the top, the
+   question box at the foot, and between them the translations and the
+   conversation scroll as one. The list loses its own scroll — two scrollers,
+   one inside the other, is a trap for a thumb. */
+.compare-modal.asking {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 14px;
+}
+
+.compare-modal.asking .compare-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.compare-modal.asking .compare-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.ask-thread {
+  border-top: 1px solid var(--glass-border);
+  margin-top: 6px;
+}
+
+.ask-exchange {
+  padding: 12px 0 4px;
+  scroll-margin-top: 6px;
+}
+
+/* the reader's question on the right, as said to someone; the answer full
+   width beneath it, as read */
+.ask-q {
+  width: fit-content;
+  max-width: 88%;
+  margin-left: auto;
+  background: var(--gold-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px 14px 4px 14px;
+  padding: 7px 12px;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ask-a {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ask-wait {
+  color: var(--ink-faint);
+  animation: ask-breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes ask-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.ask-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+}
+
+.ask-save:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.ask-box {
+  flex: none;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 10px;
+}
+
+.ask-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.ask-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ask-starters .chip {
+  cursor: pointer;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.ask-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ask-input {
+  flex: 1;
+  resize: none;
+  min-height: 42px;
+  max-height: 120px;
+  line-height: 1.4;
+}
+
+.ask-send {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--gold);
+  color: var(--bg-0);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.ask-send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ask-hint {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.ask-full {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .compare-text {

@@ -352,6 +352,12 @@ export function getBook(nr: number): Book | undefined {
   return BOOKS.find((b) => b.nr === nr);
 }
 
+/**
+ * How long a note on a verse may be. Room for a saved answer from Ask under
+ * whatever was written there already, which the old thousand was not.
+ */
+export const NOTE_MAX = 4000;
+
 export interface Verse {
   verse: number;
   text: string;

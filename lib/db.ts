@@ -8,6 +8,8 @@ export interface KV {
   hgetall(key: string): Promise<Record<string, string> | null>;
   hset(key: string, value: Record<string, string | number>): Promise<void>;
   hdel(key: string, field: string): Promise<void>;
+  /** add to a numeric field, starting from 0, and return the new value */
+  hincrby(key: string, field: string, by: number): Promise<number>;
   sadd(key: string, member: string): Promise<void>;
   srem(key: string, member: string): Promise<void>;
   smembers(key: string): Promise<string[]>;
@@ -56,6 +58,9 @@ function upstashKV(redis: Redis): KV {
     },
     async hdel(key, field) {
       await redis.hdel(key, field);
+    },
+    async hincrby(key, field, by) {
+      return Number(await redis.hincrby(key, field, by));
     },
     async sadd(key, member) {
       await redis.sadd(key, member);
@@ -128,6 +133,14 @@ function memoryKV(): KV {
     },
     async hdel(key, field) {
       delete store.hashes.get(key)?.[field];
+    },
+    async hincrby(key, field, by) {
+      expired(key);
+      const existing = store.hashes.get(key) ?? {};
+      const next = (Number(existing[field]) || 0) + by;
+      existing[field] = String(next);
+      store.hashes.set(key, existing);
+      return next;
     },
     async sadd(key, member) {
       const set = store.sets.get(key) ?? new Set<string>();
@@ -214,6 +227,10 @@ export const keys = {
   userPrayers: (userId: string) => `user:${userId}:prayers`,
   /** Whom the owner has handed the dashboard to, beyond the owner. */
   trustedAdmins: "admin:trusted",
+  /** Whom the owner has let ask questions in study mode (lib/ask.ts). */
+  askUsers: "ask:users",
+  /** One UTC day of questions: counts and tokens, per person and in all. */
+  askDay: (day: string) => `ask:day:${day}`,
   /** Every time one account was stood in by another, and by whom. */
   adminTakeovers: "admin:takeovers",
   /** Accounts the owner has switched off. Nothing of theirs is deleted. */

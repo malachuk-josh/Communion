@@ -21,6 +21,7 @@ interface AdminUser {
   guest: boolean;
   trusted: boolean;
   deactivated: boolean;
+  ask: boolean;
 }
 
 interface Takeover {
@@ -40,6 +41,16 @@ interface Deactivation {
   byName: string;
 }
 
+interface AskSummary {
+  configured: boolean;
+  model: string;
+  perPerson: number;
+  perApp: number;
+  today: { questions: number; spend: number };
+  month: { questions: number; spend: number };
+  people: Record<string, { questions: number; spend: number }>;
+}
+
 interface Summary {
   viewerId: string;
   viewerIsOwner: boolean;
@@ -48,6 +59,7 @@ interface Summary {
   deactivations: Deactivation[];
   totals: Record<string, number>;
   users: AdminUser[];
+  ask: AskSummary;
 }
 
 const TOTALS: { key: string; label: string }[] = [
@@ -58,6 +70,10 @@ const TOTALS: { key: string; label: string }[] = [
   { key: "bookmarks", label: "Bookmarks" },
   { key: "pushDevices", label: "Push devices" },
 ];
+
+/** An estimate in dollars, to the cent once there are cents to show. */
+const dollars = (n: number) =>
+  n > 0 && n < 0.01 ? "under $0.01" : `$${n.toFixed(2)}`;
 
 const date = (ts?: number) =>
   ts ? new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -102,6 +118,46 @@ export default function AdminDashboard() {
               ...prev,
               users: prev.users.map((x) =>
                 x.userId === u.userId ? { ...x, trusted: next } : x
+              ),
+            }
+          : prev
+      );
+    } catch (e) {
+      window.alert((e as Error).message);
+    } finally {
+      setBusyUser(null);
+    }
+  };
+
+  /**
+   * Let someone ask questions in study mode, or stop them.
+   *
+   * Its own switch rather than part of trust, because the two give different
+   * things: trust shows somebody the dashboard, and this spends the owner's
+   * API credit. Wanting a friend to have the one is no reason to give them
+   * the other.
+   */
+  const toggleAsk = async (u: AdminUser) => {
+    const next = !u.ask;
+    const warning = next
+      ? `Let ${u.displayName} ask questions in study mode?\n\n` +
+        `Answers come from your Anthropic API credit, up to ` +
+        `${data?.ask.perPerson ?? 25} questions a day for them, and ` +
+        `${data?.ask.perApp ?? 300} a day across everyone.`
+      : `Stop ${u.displayName} asking questions in study mode?`;
+    if (!window.confirm(warning)) return;
+    setBusyUser(u.userId);
+    try {
+      await api("/api/admin/ask", {
+        method: "POST",
+        body: { userId: u.userId, ask: next },
+      });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              users: prev.users.map((x) =>
+                x.userId === u.userId ? { ...x, ask: next } : x
               ),
             }
           : prev
@@ -213,6 +269,43 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* What the study-mode questions are costing. An estimate from the
+          token counts at list price; Anthropic's console has the bill. */}
+      <div className="section-head">
+        <h2>Ask in study mode</h2>
+      </div>
+      <div className="glass card admin-ask">
+        {!data.ask.configured && (
+          <p className="admin-ask-warn">
+            <Icon name="lock" /> No ANTHROPIC_API_KEY is set on this
+            deployment, so nobody can ask yet. Add it in Vercel → Settings →
+            Environment Variables, then redeploy.
+          </p>
+        )}
+        <div className="admin-totals">
+          <div className="admin-stat">
+            <strong>{data.ask.today.questions}</strong>
+            <small>Questions today</small>
+          </div>
+          <div className="admin-stat">
+            <strong>{dollars(data.ask.today.spend)}</strong>
+            <small>Spent today</small>
+          </div>
+          <div className="admin-stat">
+            <strong>{data.ask.month.questions}</strong>
+            <small>Last 30 days</small>
+          </div>
+          <div className="admin-stat">
+            <strong>{dollars(data.ask.month.spend)}</strong>
+            <small>Spent, 30 days</small>
+          </div>
+        </div>
+        <p className="admin-sub">
+          {data.ask.perPerson} questions a person a day, {data.ask.perApp} in
+          all; the day turns at midnight UTC. Model: {data.ask.model}.
+        </p>
+      </div>
+
       <div className="section-head">
         <h2>People ({data.users.length})</h2>
       </div>
@@ -228,6 +321,7 @@ export default function AdminDashboard() {
               <th>Joined</th>
               <th>Last seen</th>
               <th>Trusted</th>
+              <th>Ask</th>
               {data.viewerIsOwner && <th />}
             </tr>
           </thead>
@@ -268,6 +362,33 @@ export default function AdminDashboard() {
                       <span className="admin-sub">
                         {u.trusted ? (isMe ? "you" : "yes") : "—"}
                       </span>
+                    )}
+                  </td>
+                  <td>
+                    {/* the owner's own is always on, and shows as such;
+                        accounts only, as the server insists */}
+                    {data.viewerIsOwner && !isMe && !u.guest ? (
+                      <button
+                        type="button"
+                        className={`trust-toggle${u.ask ? " on" : ""}`}
+                        role="switch"
+                        aria-checked={u.ask}
+                        aria-label={`Ask in study mode for ${u.displayName}`}
+                        disabled={busyUser === u.userId}
+                        onClick={() => toggleAsk(u)}
+                      >
+                        <span className="trust-knob" />
+                      </button>
+                    ) : (
+                      <span className="admin-sub">
+                        {u.ask ? (isMe ? "you" : "yes") : "—"}
+                      </span>
+                    )}
+                    {data.ask.people[u.userId] && (
+                      <div className="admin-sub">
+                        {data.ask.people[u.userId].questions} today ·{" "}
+                        {dollars(data.ask.people[u.userId].spend)}
+                      </div>
                     )}
                   </td>
                   {data.viewerIsOwner && (

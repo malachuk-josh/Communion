@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { getBook } from "@/lib/bible";
+import { NOTE_MAX, getBook } from "@/lib/bible";
 import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 import { resolvePlan } from "@/lib/customPlans";
@@ -277,7 +277,7 @@ export async function POST(req: Request) {
             rejected++;
             break;
           }
-          const text = (op.text ?? "").trim().slice(0, 1000);
+          const text = (op.text ?? "").trim().slice(0, NOTE_MAX);
           const key = keys.userNotes(userId, Number(op.book));
           if (text) await kv.hset(key, { [op.ref]: text });
           else await kv.hdel(key, op.ref);

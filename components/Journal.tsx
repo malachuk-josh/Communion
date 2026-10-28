@@ -17,7 +17,7 @@ import BackToMenu from "@/components/BackToMenu";
 import Devotional from "@/components/Devotional";
 import HangOnWall from "@/components/HangOnWall";
 import { api } from "@/lib/client";
-import { DEFAULT_TRANSLATION, getBook } from "@/lib/bible";
+import { DEFAULT_TRANSLATION, NOTE_MAX, getBook } from "@/lib/bible";
 import {
   bmRefLabel,
   bmVerses,
@@ -1039,7 +1039,7 @@ export default function Journal() {
                             value={draft}
                             autoFocus
                             rows={4}
-                            maxLength={1000}
+                            maxLength={NOTE_MAX}
                             placeholder={t("reader.notePlaceholder")}
                             onChange={(e) => setDraft(e.target.value)}
                           />

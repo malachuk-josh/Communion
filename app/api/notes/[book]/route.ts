@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth";
-import { getBook } from "@/lib/bible";
+import { NOTE_MAX, getBook } from "@/lib/bible";
 import { db, keys } from "@/lib/db";
 
 // Personal study notes, keyed per user per book: { "chapter:verse": text }
@@ -43,7 +43,7 @@ export async function POST(
   if (chapter < 1 || chapter > book.chapters) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
   }
-  const text = (body?.text ?? "").trim().slice(0, 1000);
+  const text = (body?.text ?? "").trim().slice(0, NOTE_MAX);
   const key = keys.userNotes(userId, bookNr);
   if (text) {
     await db().hset(key, { [ref]: text });

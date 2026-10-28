@@ -345,6 +345,7 @@ export async function deleteAccount(userId: string): Promise<Erasure> {
   await kv.hdel(keys.directory, userId);
   await kv.srem(keys.planUsers, userId);
   await kv.srem(keys.trustedAdmins, userId);
+  await kv.srem(keys.askUsers, userId);
   await kv.srem(keys.deactivatedUsers, userId);
 
   // ---- and the profile itself, last --------------------------------------

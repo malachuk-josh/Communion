@@ -21,6 +21,7 @@
 import { nanoid } from "nanoid";
 import { db, keys } from "@/lib/db";
 import { impersonationEnabled } from "@/lib/impersonate";
+import { askIds, askSummary, type AskSummary } from "@/lib/ask";
 
 const DEFAULT_OWNERS = ["user_3GNx7nrvGoTT4MowltjVNjsttb2"];
 
@@ -235,6 +236,8 @@ export interface AdminUser {
   trusted: boolean;
   /** switched off by the owner — signed in or not, they can do nothing */
   deactivated: boolean;
+  /** may ask questions in study mode; the owner's own row reads true */
+  ask: boolean;
 }
 
 export interface AdminSummary {
@@ -257,6 +260,8 @@ export interface AdminSummary {
     pushDevices: number;
   };
   users: AdminUser[];
+  /** questions asked in study mode, and what they are costing */
+  ask: AskSummary;
 }
 
 async function countFor(userId: string) {
@@ -278,6 +283,8 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
   // read straight through: the dashboard is the one screen that must never
   // show a stale answer about who is switched off
   const deactivated = new Set(await kv.smembers(keys.deactivatedUsers));
+  const asking = new Set(await askIds());
+  const ask = await askSummary();
 
   /*
    * Who there is to list. Accounts come from Clerk, below; a guest has no
@@ -288,7 +295,12 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
    * off, who must be listed for those switches to be found again.
    */
   const onPlan = await kv.smembers(keys.planUsers);
-  const seenUsers = new Set<string>([...onPlan, ...trusted, ...deactivated]);
+  const seenUsers = new Set<string>([
+    ...onPlan,
+    ...trusted,
+    ...deactivated,
+    ...asking,
+  ]);
 
   // Clerk accounts, when configured — these carry email and sign-in data
   const clerkProfiles = new Map<
@@ -335,6 +347,7 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
         guest: !userId.startsWith("user_"),
         trusted: isOwner(userId) || trusted.has(userId),
         deactivated: !isOwner(userId) && deactivated.has(userId),
+        ask: isOwner(userId) || asking.has(userId),
         ...counts,
       };
     })
@@ -374,5 +387,6 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
       pushDevices: users.reduce((sum, u) => sum + u.pushDevices, 0),
     },
     users,
+    ask,
   };
 }
