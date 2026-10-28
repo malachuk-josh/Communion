@@ -407,8 +407,12 @@ export default function Reader({
    * Search by describing, for the people with Ask: the request goes to Claude,
    * which answers with references (app/api/study/find). The reader's choice
    * between that and the word search is remembered on the device.
+   *
+   * It is the default for them: a reader with Ask starts in Illuminated
+   * Search, and only a reader who has chosen By Word is kept there. Without
+   * Ask this is never read (see `describing`), so it costs nobody anything.
    */
-  const [findMode, setFindMode] = useState(false);
+  const [findMode, setFindMode] = useState(true);
   /** whether the results showing came from Claude rather than the words */
   const [foundByClaude, setFoundByClaude] = useState(false);
   /** what Claude said with them, or why there are none */
@@ -557,7 +561,7 @@ export default function Reader({
           setFace(wantedFace);
         });
       }
-      setFindMode(readLocal("communion.findMode") === "1");
+      setFindMode(readLocal("communion.findMode") !== "0");
     } catch {
       // corrupted storage — start fresh at the default passage
     }
