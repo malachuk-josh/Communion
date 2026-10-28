@@ -3541,6 +3541,22 @@ button.menu-tile {
   line-height: 1;
 }
 
+/* the journal sheet's bookmark: the same round button as the way out beside
+   it, gold and filled while the verse is kept */
+.bm-toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+}
+
+.bm-toggle.on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
 .lex-body {
   max-height: calc(var(--vvh, 100dvh) * 0.46);
   overflow-y: auto;

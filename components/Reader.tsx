@@ -401,9 +401,8 @@ export default function Reader({
   const [searching, setSearching] = useState(false);
   const { setPosition, panelOpen, setPanelOpen, study } = useReading();
   // Ask lives inside Compare, for the people the owner has switched on, and
-  // the one pill says so rather than a second pill joining the row
+  // the one pill's lamp says so rather than a second pill joining the row
   const [askStatus, setAskStatus] = useAskStatus(study);
-  const compareLabel = t(askStatus.allowed ? "reader.compareAsk" : "reader.compare");
   const sheetRef = useRef<HTMLDivElement>(null);
   /** the "Found in N verses" pill, so closing the concordance returns here */
   const concBtnRef = useRef<HTMLButtonElement>(null);
@@ -1853,12 +1852,36 @@ export default function Reader({
     setHighlightVerse(last.v);
   };
 
-  const toggleBookmark = (ch: number, verse: number) => {
-    // Pressing a verse that is part of a run takes the whole run: the run is
-    // the bookmark, and half of one is not a thing that can be kept. The sheet
-    // is where a run is shortened, which is where you would go to shorten it.
+  /**
+   * Open a verse's page of the journal: its bookmark, its note, its
+   * collection and its place on the wall, all in the one sheet.
+   *
+   * Opening it changes nothing. The pill under the verse used to be the
+   * bookmark itself, and one press on a kept verse un-kept it, with nothing on
+   * the screen to say so; keeping is now a toggle inside, where it is seen.
+   * A verse inside a kept run opens the run, because the run is what is kept.
+   */
+  const openJournal = (ch: number, verse: number) => {
     const held = bmKeyAt(ch, verse);
-    const key = held ?? bmKeyOf(bookNr, ch, verse);
+    const run = held ? parseBmKey(held) : null;
+    setPanelOpen(false);
+    setBmSheet(
+      run ? { c: run.c, v: run.v, end: run.end } : { c: ch, v: verse, end: verse }
+    );
+    setBmSheetColl("");
+    setBmSheetMsg("");
+    setSheetNote(null);
+  };
+
+  /**
+   * Keep the verse, or the run the sheet is showing, or stop keeping it.
+   *
+   * A verse that is part of a run takes the whole run: the run is the
+   * bookmark, and half of one is not a thing that can be kept.
+   */
+  const toggleBookmark = (ch: number, verse: number, end = verse) => {
+    const held = bmKeyAt(ch, verse);
+    const key = held ?? bmKeyOf(bookNr, ch, verse, end);
     const removing = !!held;
     const next = { ...bookmarks };
     if (removing) delete next[key];
@@ -1870,16 +1893,6 @@ export default function Reader({
         ? { kind: "bookmark.del", key, ts: Date.now() }
         : { kind: "bookmark.set", key, t: Date.now(), ts: Date.now() }
     );
-    // saving a verse opens the organise/share sheet; removing just removes
-    if (!removing) {
-      setPanelOpen(false);
-      setBmSheet({ c: ch, v: verse, end: verse });
-      setBmSheetColl("");
-      setBmSheetMsg("");
-      setSheetNote(null);
-    } else if (bmSheet && parseBmKey(key)?.c === bmSheet.c) {
-      setBmSheet(null);
-    }
   };
 
   /**
@@ -1987,7 +2000,8 @@ export default function Reader({
   };
 
   const updateBookmark = (key: string, patch: { label?: string; coll?: string }) => {
-    const entry = { ...bookmarks[key] };
+    // filing a verse in a collection keeps it: a collection is of bookmarks
+    const entry = { ...(bookmarks[key] ?? { t: Date.now() }) };
     if (patch.label !== undefined) {
       if (patch.label.trim()) entry.l = patch.label.trim();
       else delete entry.l;
@@ -2348,6 +2362,8 @@ export default function Reader({
    * move what was written; it stays on the verse it was written about.
    */
   const bmNoteKey = bmSheet ? `${bmSheet.c}:${bmSheet.v}` : "";
+  /** whether the verse the journal sheet is open on is kept */
+  const sheetKept = !!bmSheet && !!bmKeyAt(bmSheet.c, bmSheet.v);
 
   /** Keep whatever has been written in the bookmark sheet, if anything has. */
   const saveSheetNote = () => {
@@ -2676,36 +2692,28 @@ export default function Reader({
                             aria-label={t("reader.context")}
                             title={t("reader.context")}
                           >
-                            <Icon name="scroll" /> {t("reader.context")}
+                            <Icon name="pin" /> {t("reader.context")}
                           </button>
                         )}
-                        {/* Second, straight after Context. It used to come
-                            after Commentary, which put it at the end of the
-                            row's first line — where a right thumb lands at the
-                            start of a swipe — and a verse already kept is
-                            un-kept by one press, with nothing on screen to say
-                            so. Here it is out of that thumb's way.
-
-                            Notes have no chip of their own: they are kept from
-                            the bookmark sheet, because a verse worth writing on
-                            is a verse worth keeping. */}
+                        {/* Second, straight after Context, out of the way of
+                            a right thumb starting a swipe. Journal, not
+                            Bookmark: it opens the verse's page of the journal
+                            — the bookmark, the note, the collection, the wall
+                            — and changes nothing by being pressed. Lit when
+                            the verse is kept or written on. */}
                         <button
                           type="button"
                           className={`xref-chip note-chip${
-                            bmKeyAt(ch, v.verse)
+                            bmKeyAt(ch, v.verse) || notes[`${ch}:${v.verse}`]
                               ? " has-note"
                               : ""
                           }`}
-                          onClick={() => toggleBookmark(ch, v.verse)}
-                          aria-pressed={!!bmKeyAt(ch, v.verse)}
-                          aria-label={t("reader.bookmarkToggle")}
-                          title={t("reader.bookmarkToggle")}
+                          onClick={() => openJournal(ch, v.verse)}
+                          aria-haspopup="dialog"
+                          aria-label={t("reader.journal")}
+                          title={t("reader.journal")}
                         >
-                          <Icon
-                            name="bookmark"
-                            filled={!!bmKeyAt(ch, v.verse)}
-                          />{" "}
-                          {t("reader.bookmark")}
+                          <Icon name="scroll" /> {t("reader.journal")}
                         </button>
                         {/* Context is the chapter; this is the passage —
                             what is going on here, then what somebody made of
@@ -2753,10 +2761,12 @@ export default function Reader({
                           type="button"
                           className="xref-chip"
                           onClick={() => openCompare(ch, v.verse)}
-                          aria-label={compareLabel}
-                          title={compareLabel}
+                          aria-label={t("reader.compare")}
+                          title={t("reader.compare")}
                         >
-                          <Icon name="books" /> {compareLabel}
+                          {/* the lamp says Ask is inside, without a word */}
+                          <Icon name={askStatus.allowed ? "lamp" : "books"} />{" "}
+                          {t("reader.compare")}
                         </button>
                       </span>
                       {note && editingNote !== key && (
@@ -3233,10 +3243,14 @@ export default function Reader({
       )}
 
       {bmSheet !== null && (
-        <div className="glass lex-sheet bm-sheet" role="dialog">
+        <div
+          className="glass lex-sheet bm-sheet"
+          role="dialog"
+          aria-label={t("reader.journal")}
+        >
           <div className="lex-head">
             <span className="lex-lemma bm-sheet-title">
-              <Icon name="bookmark" />{" "}
+              <Icon name="scroll" />{" "}
               {bmRefLabel(bookName, {
                 b: bookNr,
                 c: bmSheet.c,
@@ -3244,6 +3258,22 @@ export default function Reader({
                 end: bmSheet.end,
               })}
             </span>
+            {/* Keeping the verse: a toggle in plain sight at the top of the
+                sheet, filled when it is kept, beside the way out. */}
+            <button
+              type="button"
+              className={`lex-close bm-toggle${sheetKept ? " on" : ""}`}
+              onClick={() => toggleBookmark(bmSheet.c, bmSheet.v, bmSheet.end)}
+              aria-pressed={sheetKept}
+              aria-label={t(
+                sheetKept ? "reader.removeBookmark" : "reader.bookmarkToggle"
+              )}
+              title={t(
+                sheetKept ? "reader.removeBookmark" : "reader.bookmarkToggle"
+              )}
+            >
+              <Icon name="bookmark" filled={sheetKept} />
+            </button>
             <button
               type="button"
               className="lex-close"
@@ -3265,9 +3295,13 @@ export default function Reader({
             <select
               value={bmSheet.end}
               aria-label={t("reader.bmThrough")}
-              onChange={(e) =>
-                setBookmarkEnd(bmSheet.c, bmSheet.v, Number(e.target.value))
-              }
+              onChange={(e) => {
+                // a kept run is redrawn; one not kept is only what the sheet
+                // shares, hangs and would keep, so choosing it keeps nothing
+                const end = Number(e.target.value);
+                if (sheetKept) setBookmarkEnd(bmSheet.c, bmSheet.v, end);
+                else setBmSheet({ ...bmSheet, end });
+              }}
             >
               {(chDataOf(bmSheet.c)?.verses ?? [])
                 .filter((x) => x.verse >= bmSheet.v)
@@ -3280,11 +3314,10 @@ export default function Reader({
                 ))}
             </select>
           </div>
-          {/* Keeping a verse and writing on it are one act, so they are one
-              sheet. The note is the first thing under the reference because it
-              is the thing you had in mind when you pressed the bookmark; the
-              filing can wait. It saves on its own, so leaving the sheet by any
-              route keeps what was written. */}
+          {/* Keeping a verse and writing on it are one sheet. The note is the
+              first thing under the reference because it is usually what the
+              sheet was opened for; the filing can wait. It saves on its own, so
+              leaving the sheet by any route keeps what was written. */}
           <p className="cal-label">{t("reader.note")}</p>
           <textarea
             className="bm-note"
@@ -3417,7 +3450,7 @@ export default function Reader({
               askStatus.allowed ? " asking" : ""
             }`}
             role="dialog"
-            aria-label={t(askStatus.allowed ? "reader.compareAsk" : "reader.compare")}
+            aria-label={t("reader.compare")}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="lex-head">
@@ -3747,7 +3780,7 @@ export default function Reader({
                 and both readings to find. */}
             <div className="mh-head">
               <h2>
-                <Icon name="scroll" /> {bookName} {contextOpen} — {t("reader.context")}
+                <Icon name="pin" /> {bookName} {contextOpen} — {t("reader.context")}
               </h2>
               <button
                 type="button"

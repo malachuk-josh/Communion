@@ -55,6 +55,13 @@ const PATHS = {
     "M9.5 10.5h5V21h-5z",
     "M9.5 14h5",
   ],
+  // a map pin: the Context pop-up, which is where it happened. Not a folded
+  // map, which at pill size is three upright strips — the same shape as the
+  // books on Compare beside it.
+  pin: [
+    "M12 21.2c-4.4-4.5-6.6-8.1-6.6-11a6.6 6.6 0 0 1 13.2 0c0 2.9-2.2 6.5-6.6 11z",
+    circle(12, 10.2, 2.4),
+  ],
   // "Thy word is a lamp unto my feet" (Psalm 119:105): the clay oil lamp of
   // the psalmist's day, flame at the spout. Marks Ask.
   lamp: [
