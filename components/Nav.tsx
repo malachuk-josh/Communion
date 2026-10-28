@@ -26,7 +26,7 @@ import ThemeToggle from "@/components/ThemeToggle";
  * and the desktop row are written from the same order by hand — if they ever
  * disagree, a swipe would go somewhere the reader cannot see it went.
  */
-const TAB_ORDER = ["/", "/discover", "/menu/journal"] as const;
+const TAB_ORDER = ["/discover", "/", "/menu/journal"] as const;
 
 /*
  * What counts as a swipe across the tabs.
@@ -436,18 +436,18 @@ export default function Nav() {
               where a destination lives */}
           <div className="nav-links">
             <Link
-              href="/"
-              className={`nav-link${isWord ? " active" : ""}`}
-              onClick={wordClick}
-            >
-              {t("nav.reader")}
-            </Link>
-            <Link
               href="/discover"
               className={`nav-link${isDiscover ? " active" : ""}`}
               onClick={homeClick}
             >
               {t("nav.discover")}
+            </Link>
+            <Link
+              href="/"
+              className={`nav-link${isWord ? " active" : ""}`}
+              onClick={wordClick}
+            >
+              {t("nav.reader")}
             </Link>
             <Link
               href="/menu/journal"
@@ -519,14 +519,10 @@ export default function Nav() {
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
-        {/* Three tabs, for reading on your own: the Word first, because
-            reading is what the app is for, then Home and the Journal. The
-            Menu lives in the header, reachable without a place in the bar.
-            In The Word it tucks away as the reader reads down (see above). */}
-        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon"><Icon name="book" /></span>
-          <span>{t("nav.reader")}</span>
-        </Link>
+        {/* Three tabs, for reading on your own: Home first, the Word at the
+            centre, under the thumb, and the Journal. The Menu lives in the
+            header, reachable without a place in the bar. In The Word it
+            tucks away as the reader reads down (see above). */}
         <Link
           href="/discover"
           className={isDiscover ? "active" : ""}
@@ -534,6 +530,10 @@ export default function Nav() {
         >
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
+        </Link>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
+          <span className="bn-icon"><Icon name="book" /></span>
+          <span>{t("nav.reader")}</span>
         </Link>
         <Link
           href="/menu/journal"
