@@ -24,6 +24,23 @@ export const WEIGHT_DEFAULT = 2;
 
 const PT_KEY = "communion.textPt";
 const WEIGHT_KEY = "communion.textWeight";
+const FACE_KEY = "communion.textFace";
+
+/**
+ * The typefaces Scripture can be set in. The first is the app's own book face
+ * (--serif), drawn from the fonts the device already has, and stays the
+ * default; the other five are web fonts, loaded only when somebody picks or
+ * previews one. See lib/typefaces for the fonts themselves.
+ */
+export const FACES = [
+  "default",
+  "garamond",
+  "literata",
+  "lora",
+  "merriweather",
+  "atkinson",
+] as const;
+export type Face = (typeof FACES)[number];
 
 /** The saved size in points, or the default. */
 export function readTextPt(): number {
@@ -55,6 +72,15 @@ export function readTextWeight(): number {
 
 export function writeTextWeight(level: number): void {
   writeLocal(WEIGHT_KEY, String(Math.min(WEIGHT_MAX, Math.max(0, Math.round(level)))));
+}
+
+export function readTextFace(): Face {
+  const saved = readLocal(FACE_KEY);
+  return (FACES as readonly string[]).includes(saved ?? "") ? (saved as Face) : "default";
+}
+
+export function writeTextFace(face: Face): void {
+  writeLocal(FACE_KEY, face);
 }
 
 /**

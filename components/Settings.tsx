@@ -20,14 +20,19 @@ import { writeLocal } from "@/lib/storage";
 import { useDocumentTheme, type Theme } from "@/lib/theme";
 import {
   PT_DEFAULT,
+  readTextFace,
   readTextPt,
   readTextWeight,
   strokeOf,
   WEIGHT_DEFAULT,
+  writeTextFace,
   writeTextPt,
   writeTextWeight,
+  type Face,
 } from "@/lib/readingText";
+import { faceStack } from "@/lib/typefaces";
 import ReadingSliders from "@/components/ReadingSliders";
+import TypefacePicker from "@/components/TypefacePicker";
 
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -85,11 +90,13 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
   // how Scripture is set in The Word; see lib/readingText
   const [pt, setPt] = useState(PT_DEFAULT);
   const [weight, setWeight] = useState(WEIGHT_DEFAULT);
+  const [face, setFace] = useState<Face>("default");
 
   useEffect(() => {
     setRedLetter(readRedLetter());
     setPt(readTextPt());
     setWeight(readTextWeight());
+    setFace(readTextFace());
     api<{ displayName: string }>("/api/profile")
       .then((res) => setDisplayName(res.displayName))
       .catch(() => {})
@@ -219,11 +226,22 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
       <div className="glass card reading-card">
         <p
           className="reading-preview"
-          style={{ fontSize: `${pt}pt`, WebkitTextStrokeWidth: strokeOf(weight) }}
+          style={{
+            fontSize: `${pt}pt`,
+            WebkitTextStrokeWidth: strokeOf(weight),
+            fontFamily: faceStack(face),
+          }}
         >
           {t("settings.previewVerse")}{" "}
           <span className="reading-preview-ref">{t("settings.previewRef")}</span>
         </p>
+        <TypefacePicker
+          face={face}
+          onFace={(next) => {
+            setFace(next);
+            writeTextFace(next);
+          }}
+        />
         <ReadingSliders
           pt={pt}
           weight={weight}

@@ -78,14 +78,17 @@ import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import { readLocal, writeLocal } from "@/lib/storage";
 import { intoParagraphs } from "@/lib/paragraphs";
+import { faceReady, faceStack } from "@/lib/typefaces";
 import {
   PT_DEFAULT,
   PT_MAX,
   PT_MIN,
   readTextPt,
+  readTextFace,
   readTextWeight,
   strokeOf,
   WEIGHT_DEFAULT,
+  type Face,
   writeTextPt,
   writeTextWeight,
 } from "@/lib/readingText";
@@ -260,6 +263,8 @@ export default function Reader({
   const [pt, setPt] = useState(PT_DEFAULT);
   /** how much heavier than regular the letters are set, from Settings */
   const [weight, setWeight] = useState(WEIGHT_DEFAULT);
+  /** the typeface it is set in, from Settings; switched to once it has loaded */
+  const [face, setFace] = useState<Face>("default");
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
   /** The verse held still for the length of a pinch — see the handler. */
@@ -532,6 +537,18 @@ export default function Reader({
       setPt(savedPt);
       ptRef.current = savedPt;
       setWeight(readTextWeight());
+      // A chosen typeface is a web font, and its file may not be here yet.
+      // Set in it straight away, the column would be laid out in the
+      // fallback and then again whenever the file arrived — a reflow under
+      // the reader at a moment nobody chose. So the page opens in the app's
+      // own face, and switches once, with the verse being read held in place.
+      const wantedFace = readTextFace();
+      if (wantedFace !== "default") {
+        void faceReady(wantedFace).then(() => {
+          holdVerse();
+          setFace(wantedFace);
+        });
+      }
       setFindMode(readLocal("communion.findMode") === "1");
     } catch {
       // corrupted storage — start fresh at the default passage
@@ -826,7 +843,7 @@ export default function Reader({
     // touchend; everything else pins once and is done.
     if (!pinchAnchor.current) holdRef.current = null;
     restore(held);
-  }, [study, studyRange, pt, heads, xrefs, strongsTokens, notes, context]);
+  }, [study, studyRange, pt, face, heads, xrefs, strongsTokens, notes, context]);
 
   // as chapter headings scroll past, remember which chapter is being read
   useEffect(() => {
@@ -2814,6 +2831,7 @@ export default function Reader({
             style={{
               fontSize: `${pt}pt`,
               WebkitTextStrokeWidth: strokeOf(weight),
+              fontFamily: faceStack(face),
             }}
           >
             {/* Prose sets its chapter number as the drop cap that opens it,

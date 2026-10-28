@@ -2095,7 +2095,8 @@ mark {
 .chap-head.book-title {
   display: block;
   text-align: center;
-  font-family: var(--serif);
+  /* the chapter's own face — the app's, or the one chosen in Settings */
+  font-family: inherit;
   font-size: 1.85rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -2134,7 +2135,7 @@ mark {
 /* the chapter number, set into the first two lines of what opens the chapter */
 .chap-drop {
   float: left;
-  font-family: var(--serif);
+  font-family: inherit;
   font-size: 3.1em;
   line-height: 0.86;
   padding: 0.04em 0.14em 0 0;
@@ -3726,6 +3727,59 @@ button.menu-tile {
 .slider-end-bold {
   font-weight: 800;
   -webkit-text-stroke-width: 0.06em;
+}
+
+/* The typeface picker: six tiles, each showing its face, three to a row so
+   it stays two rows on the narrowest phone. Sized so the longest name,
+   Merriweather, fits whole on a 320px screen. */
+.face-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.face-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 2px 7px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.face-opt.on {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.face-sample {
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.face-opt.on .face-sample {
+  color: var(--gold);
+}
+
+.face-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.66rem;
+}
+
+.face-about {
+  margin-top: 8px;
 }
 
 /* the app's inputs are boxes; a range is a track, and takes none of that */
