@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
-import { onScroll as onPageScroll, scrollToY, scrollY } from "@/lib/scroller";
+import {
+  onScroll as onPageScroll,
+  scrollsSideways,
+  scrollToY,
+  scrollY,
+} from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
@@ -73,19 +78,6 @@ function slideIn(el: HTMLElement | null, dir: number): void {
     () => el.classList.remove("page-swipe-next", "page-swipe-prev"),
     { once: true }
   );
-}
-
-/** Whether anything from here up scrolls sideways and so owns the gesture. */
-function scrollsSideways(from: EventTarget | null): boolean {
-  let el = from instanceof Element ? from : null;
-  while (el && el !== document.body) {
-    if (el.scrollWidth > el.clientWidth + 2) {
-      const overflow = getComputedStyle(el).overflowX;
-      if (overflow === "auto" || overflow === "scroll") return true;
-    }
-    el = el.parentElement;
-  }
-  return false;
 }
 
 export default function Nav() {

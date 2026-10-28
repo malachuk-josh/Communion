@@ -81,3 +81,20 @@ export function onScroll(fn: () => void): () => void {
   el.addEventListener("scroll", fn, { passive: true });
   return () => el.removeEventListener("scroll", fn);
 }
+
+/**
+ * Whether anything from here up scrolls sideways and so owns the gesture —
+ * a row of cards, a table, a strip of screens. The page's own gestures, the
+ * tab swipe and pull-to-refresh, leave a touch that starts in one alone.
+ */
+export function scrollsSideways(from: EventTarget | null): boolean {
+  let el = from instanceof Element ? from : null;
+  while (el && el !== document.body) {
+    if (el.scrollWidth > el.clientWidth + 2) {
+      const overflow = getComputedStyle(el).overflowX;
+      if (overflow === "auto" || overflow === "scroll") return true;
+    }
+    el = el.parentElement;
+  }
+  return false;
+}

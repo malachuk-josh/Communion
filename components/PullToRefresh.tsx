@@ -6,7 +6,7 @@
 // reloads the app. Purely additive — native scrolling is never blocked.
 
 import { useEffect, useRef, useState } from "react";
-import { scrollY } from "@/lib/scroller";
+import { scrollsSideways, scrollY } from "@/lib/scroller";
 
 const ARM_AT = 60; // scaled pull distance (~130px of finger travel)
 
@@ -50,10 +50,12 @@ export default function PullToRefresh() {
        * A sideways swipe is not a pull. The tour is a horizontal scroll-snap
        * strip, and no thumb travels perfectly level: the vertical drift in a
        * swipe across it was enough to arm the refresh and throw the page away
-       * between one screen of the tour and the next.
+       * between one screen of the tour and the next. The same goes for every
+       * row that scrolls sideways — the topic cards on Discover among them,
+       * where following that drift redrew the indicator on every frame of the
+       * swipe and made the row feel as if it dragged.
        */
-      const target = e.target;
-      if (target instanceof Element && target.closest(".tour-strip")) return;
+      if (scrollsSideways(e.target)) return;
       startY.current = e.touches[0].clientY;
     };
 

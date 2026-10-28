@@ -1401,13 +1401,17 @@ html.welcoming {
 }
 
 /* ---- topics & plans ---- */
-/* Verses for the moment: two rows, thumbed sideways, so the fifteen cards
+/* Verses for the moment: two rows, thumbed sideways, so the fourteen cards
    take two cards' height and the Bookshelf below is a short scroll away.
    Each column is a little under half the screen, so the third card peeks in
-   at the edge and says there are more. The tab swipe leaves it alone: it
-   scrolls sideways (see scrollsSideways in Nav.tsx). Run out to the screen's
-   edges past the page gutter, so the cards slide off the glass rather than
-   stop short of it. */
+   at the edge and says there are more. The page's own gestures leave it
+   alone because it scrolls sideways (scrollsSideways in lib/scroller). Run
+   out to the screen's edges past the page gutter, so the cards slide off the
+   glass rather than stop short of it.
+
+   No scroll snapping. It was here, and a snap point every card's width
+   pulled every flick onto a card's edge, cutting its glide short — the row
+   felt sticky. A free scroll with the platform's own momentum glides. */
 .topic-grid {
   display: grid;
   grid-auto-flow: column;
@@ -1416,8 +1420,6 @@ html.welcoming {
   gap: 10px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: 16px;
   margin-inline: -16px;
   padding: 2px 16px 6px;
   scrollbar-width: none;
@@ -1425,10 +1427,6 @@ html.welcoming {
 
 .topic-grid::-webkit-scrollbar {
   display: none;
-}
-
-.topic-grid .type-card {
-  scroll-snap-align: start;
 }
 
 /* on a wider screen there is room for all of them in a few columns more */
