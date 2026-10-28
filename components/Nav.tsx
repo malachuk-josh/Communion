@@ -26,7 +26,7 @@ import ThemeToggle from "@/components/ThemeToggle";
  * and the desktop row are written from the same order by hand — if they ever
  * disagree, a swipe would go somewhere the reader cannot see it went.
  */
-const TAB_ORDER = ["/discover", "/", "/menu/journal"] as const;
+const TAB_ORDER = ["/discover", "/menu/journal", "/"] as const;
 
 /*
  * What counts as a swipe across the tabs.
@@ -193,9 +193,11 @@ export default function Nav() {
    * bar — and through the tabs of a page that has them on the way. Home's
    * Discover, My wall and Settings, and the Journal's Bookmarks, Notes and
    * Plans, are stops in the same row as The Word, so a swipe from Settings
-   * goes on to the Journal, arriving on its first tab, and a swipe back from
-   * Bookmarks returns to Home on its last. Tapping the bar still opens a page
-   * on the tab it was left on; only a swipe arriving from the side chooses.
+   * goes on to the Journal, arriving on its first tab, a swipe on from Plans
+   * reaches The Word at the end, and a swipe back from Bookmarks returns to
+   * Home on its last. Tapping the Journal still opens it on the tab it was
+   * left on (Home's button always means Discover); only a swipe arriving from
+   * the side chooses.
    *
    * It asks for the movement to be mostly sideways above all — that is what
    * tells a swipe from a scroll that wandered — and then for enough distance
@@ -449,17 +451,17 @@ export default function Nav() {
               {t("nav.discover")}
             </Link>
             <Link
+              href="/menu/journal"
+              className={`nav-link${isJournal ? " active" : ""}`}
+            >
+              {t("nav.journal")}
+            </Link>
+            <Link
               href="/"
               className={`nav-link${isWord ? " active" : ""}`}
               onClick={wordClick}
             >
               {t("nav.reader")}
-            </Link>
-            <Link
-              href="/menu/journal"
-              className={`nav-link${isJournal ? " active" : ""}`}
-            >
-              {t("nav.journal")}
             </Link>
           </div>
           {showPassage && (
@@ -525,10 +527,10 @@ export default function Nav() {
         className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
-        {/* Three tabs, for reading on your own: Home first, the Word at the
-            centre, under the thumb, and the Journal. The Menu lives in the
-            header, reachable without a place in the bar. In The Word it
-            tucks away as the reader reads down (see above). */}
+        {/* Three tabs, for reading on your own: Home first, the Journal,
+            and the Word at the far right, at the end of the row. The Menu
+            lives in the header, reachable without a place in the bar. In The
+            Word it tucks away as the reader reads down (see above). */}
         <Link
           href="/discover"
           className={isDiscover ? "active" : ""}
@@ -538,16 +540,16 @@ export default function Nav() {
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
         </Link>
-        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
-          <span className="bn-icon"><Icon name="book" /></span>
-          <span>{t("nav.reader")}</span>
-        </Link>
         <Link
           href="/menu/journal"
           className={`bn-messages${isJournal ? " active" : ""}`}
         >
           <span className="bn-icon"><Icon name="scroll" /></span>
           <span>{t("nav.journal")}</span>
+        </Link>
+        <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
+          <span className="bn-icon"><Icon name="book" /></span>
+          <span>{t("nav.reader")}</span>
         </Link>
       </nav>
 
