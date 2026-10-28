@@ -1,8 +1,12 @@
 "use client";
 
-// The Bookshelf, in the Discover tab above the reading plans: a row of covers,
+// The Bookshelf, in the Discover tab above the reading plans: two rows of
+// covers that scroll sideways, like the verses for the moment above them,
 // each opening its book's own page. A book the reader has started says where
 // they are on its card, so the shelf is also the way back into it.
+//
+// The cards carry the title and not the blurb: two rows of them are a shelf
+// to choose from, and what a book is about is on its own page, a tap away.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -84,7 +88,6 @@ export default function Bookshelf() {
                 {lang !== book.lang && (
                   <span className="bk-lang">{t(`shelf.in.${book.lang}` as MessageKey)}</span>
                 )}
-                <span className="shelf-blurb">{book.blurb[lang === "es" ? "es" : "en"]}</span>
                 <span className="shelf-go">
                   {places[book.slug] ? (
                     <>

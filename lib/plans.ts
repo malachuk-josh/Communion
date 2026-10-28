@@ -477,6 +477,32 @@ const PILGRIM_TWO = [
   "The Land of Beulah and the River",
 ];
 
+const SIEGE = [
+  "The Fall of Mansoul",
+  "Mansoul Under Diabolus",
+  "Tidings at Court",
+  "The Four Captains",
+  "Winter Quarters",
+  "Emmanuel Comes",
+  "Mr. Won’t-bow",
+  "The Breaking of Ear-gate",
+  "Diabolus in Chains",
+  "The Pardon",
+  "Emmanuel Enters Mansoul",
+  "The Trial of the Diabolonians",
+  "The New Charter",
+  "Mr. Carnal-Security",
+  "Letters to the Pit",
+  "The Council in Hell",
+  "The Army of Doubters",
+  "Willbewill Plays the Man",
+  "Feel-gate Falls",
+  "Emmanuel Returns",
+  "The Bloodmen",
+  "Mr. Evil-Questioning",
+  "Hold Fast Till I Come",
+];
+
 /** A chapter a day through a Bookshelf book, from its chapters' titles. */
 const shelfDays = (shelf: string, titles: string[]): PlanDay[] =>
   titles.map((title, i) => ({
@@ -497,6 +523,14 @@ const pilgrimtwo16: Plan = {
   category: "bookshelf",
   name: "From This World to the Next, Part Two",
   days: shelfDays("from-this-world-part-two", PILGRIM_TWO),
+};
+
+const siege23: Plan = {
+  id: "siege23",
+  icon: "shield",
+  category: "bookshelf",
+  name: "The Siege of Mansoul",
+  days: shelfDays("siege-of-mansoul", SIEGE),
 };
 
 export const PLANS: Plan[] = [
@@ -530,6 +564,7 @@ export const PLANS: Plan[] = [
   henrybible365,
   pilgrim21,
   pilgrimtwo16,
+  siege23,
 ];
 
 export function getPlan(id: string): Plan | undefined {

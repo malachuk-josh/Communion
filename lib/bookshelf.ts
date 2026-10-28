@@ -58,6 +58,17 @@ export const SHELF: ShelfBook[] = [
     },
     plan: "pilgrimtwo16",
   },
+  {
+    slug: "siege-of-mansoul",
+    title: "The Siege of Mansoul",
+    author: "John Bunyan",
+    lang: "en",
+    blurb: {
+      en: "Bunyan’s Holy War, retold in modern English. The town of Mansoul, built by King Shaddai for his own delight, is taken by the giant Diabolus, besieged and won back by the King’s son Emmanuel, lost again through its own carelessness, and delivered at last. Scene for scene, nothing added or removed. Illustrated.",
+      es: "La guerra santa de Bunyan, contada de nuevo en inglés moderno. La ciudad de Mansoul, el alma del hombre, construida por el rey Shaddai para su propio deleite, es tomada por el gigante Diabolus, sitiada y reconquistada por Emanuel, el hijo del rey, perdida otra vez por su propio descuido y, al fin, liberada. Escena por escena, sin añadir ni quitar nada. Ilustrado.",
+    },
+    plan: "siege23",
+  },
 ];
 
 export function shelfBook(slug: string | null | undefined): ShelfBook | undefined {

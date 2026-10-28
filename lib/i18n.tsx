@@ -424,6 +424,10 @@ const dictionaries = {
       "From This World to the Next, Part Two",
     "plan.pilgrimtwo16.desc":
       "Christiana’s journey in modern English, a chapter a day for 16 days, from her call to the river’s crossing.",
+    "plan.siege23":
+      "The Siege of Mansoul",
+    "plan.siege23.desc":
+      "Bunyan’s Holy War in modern English, a chapter a day for 23 days, from the fall of Mansoul to its last deliverance.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
       "Read a book from the Bookshelf a chapter a day. Each day opens its chapter, and you can mark it read at the chapter’s end.",
@@ -1145,6 +1149,10 @@ const dictionaries = {
       "From This World to the Next, segunda parte",
     "plan.pilgrimtwo16.desc":
       "El viaje de Cristiana en inglés moderno, un capítulo al día durante 16 días, desde su llamado hasta el cruce del río. El libro está en inglés.",
+    "plan.siege23":
+      "The Siege of Mansoul",
+    "plan.siege23.desc":
+      "La guerra santa de Bunyan en inglés moderno, un capítulo al día durante 23 días, desde la caída de Mansoul hasta su liberación final. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
       "Lee un libro de la estantería, un capítulo al día. Cada día abre su capítulo, y al final del capítulo puedes marcarlo como leído.",

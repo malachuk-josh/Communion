@@ -101,6 +101,17 @@ for (const chunk of boxXml.split(/<page number="/).slice(1)) {
   }
 }
 
+/**
+ * Every word the book uses, to tell a drop cap that begins a word — "I" and
+ * "n my travels" — from one that is a word — "I" and "told you before".
+ * The layout cannot: both set the rest of the line in the same place.
+ */
+const vocabulary = new Set(
+  pages.flatMap((p) =>
+    p.lines.flatMap((l) => l.html.replace(/<[^>]+>/g, "").toLowerCase().match(/[a-z]+/g) ?? [])
+  )
+);
+
 function mostCommon(values) {
   const counts = new Map();
   for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
@@ -177,7 +188,13 @@ for (const page of pages) {
       .filter((l) => l !== drop && l.left > drop.left + 20 && Math.abs(l.top - drop.top) < 30)
       .sort((a, b) => a.top - b.top)[0];
     if (first) {
-      first.html = drop.html.trim() + first.html.trim();
+      const letter = drop.html.trim();
+      const rest = first.html.trim();
+      const word = (letter + (rest.match(/^[A-Za-z]+/)?.[0] ?? "")).toLowerCase();
+      // A, I and O are words of their own; the rest of the line joins on to
+      // them only where that makes a word the book uses
+      const apart = /^[AIO]$/.test(letter) && !vocabulary.has(word);
+      first.html = letter + (apart ? " " : "") + rest;
       first.drop = true;
       // the lines set in beside the letter are ragged, not justified, so
       // their length says nothing; they always run on into the next
@@ -188,10 +205,16 @@ for (const page of pages) {
     page.lines.splice(page.lines.indexOf(drop), 1);
   }
 
-  // the appendix's table is laid out in columns, and read as one
+  // the appendix's table is laid out in columns, and read as one — on its
+  // own page, and on any page after it that carries on with no title of its
+  // own
   if (page.lines.some((l) => isTitle(l) && /^Appendix/.test(l.html))) {
     readAppendix(page);
     previous = null;
+    continue;
+  }
+  if (part?.id === "appendix" && !page.lines.some(isTitle)) {
+    readAppendix(page, true);
     continue;
   }
 
@@ -216,7 +239,7 @@ for (const page of pages) {
       }
       const n = pendingLabel ? Number(pendingLabel.replace(/\D/g, "")) : null;
       startPart({
-        id: n ? String(n).padStart(2, "0") : title === "The Conclusion" ? "conclusion" : "apology",
+        id: n ? String(n).padStart(2, "0") : title === "The Conclusion" ? "conclusion" : frontId(title),
         ...(pendingLabel ? { label: pendingLabel } : {}),
         title,
         ...(pic ? { picturePage: page.number } : {}),
@@ -257,9 +280,27 @@ for (const page of pages) {
   }
 }
 
-function readAppendix(page) {
-  const title = page.lines.find(isTitle).html.trim();
-  startPart({ id: "appendix", title });
+/**
+ * The id of a piece ahead of the chapters. The first is "apology", as
+ * Bunyan's Apology was in the first book, and the ids are in readers' saved
+ * places and links, so that stays; any more — The Siege of Mansoul has two
+ * poems before it begins — are named for their titles.
+ */
+function frontId(title) {
+  if (!parts.some((p) => p.id === "apology")) return "apology";
+  return title
+    .toLowerCase()
+    .replace(/<[^>]+>/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .replace(/^(a|an|the)-/, "");
+}
+
+function readAppendix(page, carriesOn = false) {
+  if (!carriesOn) {
+    const title = page.lines.find(isTitle).html.trim();
+    startPart({ id: "appendix", title });
+  }
   const body = page.lines.filter((l) => !isTitle(l));
   // the lead-in, at the prose margin, above the table
   const lead = body.filter((l) => l.left === PROSE_LEFT);
@@ -278,10 +319,19 @@ function readAppendix(page) {
         .filter((l) => l.left === left && l.top >= top && l.top < end)
         .map((l) => l.html.trim())
         .join(" ")
+        // a name broken at one of its own hyphens closes up again
+        .replace(/(\w)- (?=\w)/g, "$1-")
         .replace(/<\/i> <i>/g, " ")
     );
   });
-  part.blocks.push({ kind: "table", head: rows[0], rows: rows.slice(1) });
+  const table = carriesOn && part.blocks.findLast((b) => b.kind === "table");
+  if (!table) {
+    part.blocks.push({ kind: "table", head: rows[0], rows: rows.slice(1) });
+    return;
+  }
+  // a table carried over a page repeats its header there; it is one table
+  const repeated = rows[0]?.join("|") === table.head.join("|");
+  table.rows.push(...(repeated ? rows.slice(1) : rows));
 }
 
 // ---- the characters ---------------------------------------------------------

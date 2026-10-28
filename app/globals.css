@@ -6033,17 +6033,45 @@ button.compare-pick:last-child {
   margin-top: 26px;
 }
 
+/* Two rows that scroll sideways, as the topic cards above do and for the
+   same reasons (see .topic-grid): a column is most of the screen, so the
+   next one peeks in at the edge, and the row runs out past the gutter to
+   the glass's edges. Books fill a column top to bottom, so the volumes of
+   one work sit one over the other. */
 .shelf-row {
   display: grid;
-  gap: 12px;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-columns: minmax(240px, 80%);
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  margin-inline: -16px;
+  padding: 2px 16px 6px;
+  scrollbar-width: none;
+}
+
+.shelf-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* side by side in the grid, not stacked: no card's gap above it */
+.shelf-row .shelf-book {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .shelf-row {
+    grid-auto-columns: minmax(260px, 46%);
+  }
 }
 
 .shelf-book {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  padding: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
   color: inherit;
   text-decoration: none;
 }
@@ -6051,7 +6079,7 @@ button.compare-pick:last-child {
 .shelf-cover img,
 .shelf-cover-blank {
   display: block;
-  width: 92px;
+  width: 64px;
   height: auto;
   aspect-ratio: 720 / 1029;
   border-radius: 4px;
@@ -6081,19 +6109,8 @@ button.compare-pick:last-child {
   color: var(--ink-dim);
 }
 
-.shelf-blurb {
-  margin-top: 4px;
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: var(--ink-dim);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .shelf-go {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 0.82rem;
   color: var(--gold);
 }
