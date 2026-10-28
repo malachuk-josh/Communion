@@ -414,11 +414,16 @@ export default function Nav() {
   const isDiscover = pathname.startsWith("/discover") || pathname.startsWith("/bookshelf");
   const isJournal = pathname.startsWith("/menu/journal");
 
-  // Home pressed while Home is already the page: back to its Discover tab,
-  // from My wall or Settings. From anywhere else Home opens on the tab the
-  // reader was last on, as it always has.
+  // The Home button always means the top of the Discover tab. From anywhere
+  // else it opens there, whichever tab Home was left on (the new screen starts
+  // at its top by itself); on Home it goes back to Discover from My wall or
+  // Settings, or up to the top of Discover if that is where the reader is.
+  // Only the button: a swipe arriving at Home still lands on the nearest tab.
+  // The links say scroll={false}: Next's own scroll on following a link to
+  // the page already open cut the glide short a little below the top, and
+  // a new screen is taken to its top by the effect above anyway.
   const homeClick = () => {
-    if (!isDiscover) return;
+    arriveOnTab("discover", "scripture");
     window.dispatchEvent(new CustomEvent(HOME_TAB_EVENT, { detail: "scripture" }));
   };
   const isMenu =
@@ -439,6 +444,7 @@ export default function Nav() {
               href="/discover"
               className={`nav-link${isDiscover ? " active" : ""}`}
               onClick={homeClick}
+              scroll={false}
             >
               {t("nav.discover")}
             </Link>
@@ -527,6 +533,7 @@ export default function Nav() {
           href="/discover"
           className={isDiscover ? "active" : ""}
           onClick={homeClick}
+          scroll={false}
         >
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>

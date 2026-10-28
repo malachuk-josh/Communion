@@ -101,12 +101,16 @@ export default function Discover() {
   // The menu, or the Home button, asking for a tab while Home is already the
   // page (lib/menuItems, components/Nav). A tab arrived at this way opens at
   // its top: the page below the tab row is a different page now, and staying
-  // scrolled to where My wall was would land mid-way down it.
+  // scrolled to where My wall was would land mid-way down it. Asked for the
+  // tab already up, it glides back to the top, as a phone's own tabs do.
   useEffect(() => {
     const onAsk = (e: Event) => {
       const wanted = (e as CustomEvent<string>).detail;
       if (!(DISCOVER_TABS as readonly string[]).includes(wanted)) return;
-      if (wanted === tabRef.current) return;
+      if (wanted === tabRef.current) {
+        scrollToY(0, "smooth");
+        return;
+      }
       setTab(wanted as (typeof DISCOVER_TABS)[number]);
       scrollToY(0);
     };
