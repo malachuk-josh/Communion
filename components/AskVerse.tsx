@@ -11,9 +11,9 @@
 //
 // The same box sits under the Commentary pop-up, with a row of scholars to
 // put the question to instead: Matthew Henry, Spurgeon, Calvin and the rest
-// (lib/voices). Every answer there is marked as AI in his style, not his
-// words, and where the app has what he actually wrote on the passage, that
-// goes with the question for the answer to be drawn from.
+// (lib/voices). Every answer there is bylined with his name and "AI", and
+// where the app has what he actually wrote on the passage, that goes with the
+// question for the answer to be drawn from.
 //
 // Nothing is kept on the server. The conversation lives here, in memory, one
 // per verse and per voice, so closing the pop-up by accident and opening it
@@ -426,13 +426,6 @@ function Conversation({
                       {x.a}
                     </p>
                   )
-                )}
-                {voice && x.a && (
-                  <p className="ask-style">
-                    {t(source ? "ask.voiceGrounded" : "ask.voiceKnown", {
-                      name,
-                    })}
-                  </p>
                 )}
                 {x.note && (
                   <p

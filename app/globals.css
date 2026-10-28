@@ -3760,16 +3760,9 @@ button.compare-pick:last-child {
   font-size: 0.78rem;
 }
 
-/* who is speaking, above a scholar's answer, and that it is not him, under */
+/* who is speaking, above a scholar's answer: his name, and that it is AI */
 .ask-by {
   margin: 12px 0 -4px;
-}
-
-.ask-style {
-  margin-top: 6px;
-  font-size: 0.74rem;
-  font-style: italic;
-  color: var(--ink-faint);
 }
 
 .ask-thread {
