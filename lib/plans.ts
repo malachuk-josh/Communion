@@ -503,6 +503,21 @@ const SIEGE = [
   "Hold Fast Till I Come",
 ];
 
+const FALL = [
+  "Book I",
+  "Book II",
+  "Book III",
+  "Book IV",
+  "Book V",
+  "Book VI",
+  "Book VII",
+  "Book VIII",
+  "Book IX",
+  "Book X",
+  "Book XI",
+  "Book XII",
+];
+
 /** A chapter a day through a Bookshelf book, from its chapters' titles. */
 const shelfDays = (shelf: string, titles: string[]): PlanDay[] =>
   titles.map((title, i) => ({
@@ -531,6 +546,15 @@ const siege23: Plan = {
   category: "bookshelf",
   name: "The Siege of Mansoul",
   days: shelfDays("siege-of-mansoul", SIEGE),
+};
+
+/** The Fall goes a Book a day: Milton's own divisions, and each one whole. */
+const fall12: Plan = {
+  id: "fall12",
+  icon: "flower",
+  category: "bookshelf",
+  name: "The Fall",
+  days: shelfDays("the-fall", FALL),
 };
 
 export const PLANS: Plan[] = [
@@ -565,6 +589,7 @@ export const PLANS: Plan[] = [
   pilgrim21,
   pilgrimtwo16,
   siege23,
+  fall12,
 ];
 
 export function getPlan(id: string): Plan | undefined {

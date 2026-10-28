@@ -428,9 +428,13 @@ const dictionaries = {
       "The Siege of Mansoul",
     "plan.siege23.desc":
       "Bunyan’s Holy War in modern English, a chapter a day for 23 days, from the fall of Mansoul to its last deliverance.",
+    "plan.fall12":
+      "The Fall",
+    "plan.fall12.desc":
+      "Paradise Lost in modern English verse, a Book a day for 12 days, from the fall of the rebel angels to the gates of Eden.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
-      "Read a book from the Bookshelf a chapter a day. Each day opens its chapter, and you can mark it read at the chapter’s end.",
+      "Read a book from the Bookshelf a little each day. Each day opens its reading, and you can mark it read at the end.",
     "shelf.title": "Bookshelf",
     "shelf.lead": "Books to read beside Scripture.",
     "shelf.open": "Open the book",
@@ -441,6 +445,7 @@ const dictionaries = {
     "shelf.minutes": "{n} min",
     "shelf.coverOf": "Cover of {title}",
     "shelf.withPlan": "A chapter a day · {n} days",
+    "shelf.withPlanBooks": "A Book a day · {n} days",
     "shelf.contents": "Contents",
     "shelf.goesOn": "The story goes on",
     "shelf.followedBy": "Followed by {title}",
@@ -1153,9 +1158,13 @@ const dictionaries = {
       "The Siege of Mansoul",
     "plan.siege23.desc":
       "La guerra santa de Bunyan en inglés moderno, un capítulo al día durante 23 días, desde la caída de Mansoul hasta su liberación final. El libro está en inglés.",
+    "plan.fall12":
+      "The Fall",
+    "plan.fall12.desc":
+      "El paraíso perdido en verso inglés moderno, un libro al día durante 12 días, desde la caída de los ángeles rebeldes hasta las puertas del Edén. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
-      "Lee un libro de la estantería, un capítulo al día. Cada día abre su capítulo, y al final del capítulo puedes marcarlo como leído.",
+      "Lee un libro de la estantería poco a poco, cada día. Cada día abre su lectura, y al final puedes marcarla como leída.",
     "shelf.title": "Estantería",
     "shelf.lead": "Libros para leer junto a las Escrituras.",
     "shelf.open": "Abrir el libro",
@@ -1166,6 +1175,7 @@ const dictionaries = {
     "shelf.minutes": "{n} min",
     "shelf.coverOf": "Portada de {title}",
     "shelf.withPlan": "Un capítulo al día · {n} días",
+    "shelf.withPlanBooks": "Un libro al día · {n} días",
     "shelf.contents": "Contenido",
     "shelf.goesOn": "La historia sigue",
     "shelf.followedBy": "Le sigue {title}",

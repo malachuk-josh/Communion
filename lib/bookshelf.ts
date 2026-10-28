@@ -28,6 +28,8 @@ export interface ShelfBook {
   blurb: { en: string; es: string };
   /** its chapter-a-day plan, in lib/plans */
   plan?: string;
+  /** what a day of that plan reads, where it is a Book and not a chapter */
+  unit?: "book";
   /** the book that carries on from this one, offered at its end */
   sequel?: string;
 }
@@ -69,6 +71,19 @@ export const SHELF: ShelfBook[] = [
     },
     plan: "siege23",
   },
+  {
+    slug: "the-fall",
+    title: "The Fall",
+    subtitle: "Paradise Lost",
+    author: "John Milton",
+    lang: "en",
+    blurb: {
+      en: "Paradise Lost, rendered in modern English verse: Milton’s epic line for line, still in unrhymed blank verse, in his twelve Books, each with his own Argument and brief notes on what a reader today is least likely to know. Nothing added and nothing cut. Illustrated with engravings.",
+      es: "El paraíso perdido, vertido en verso inglés moderno: la épica de Milton verso a verso, todavía en verso blanco sin rima, en sus doce libros, cada uno con su propio argumento y breves notas sobre lo que un lector de hoy menos conoce. Sin añadir ni quitar nada. Ilustrado con grabados.",
+    },
+    plan: "fall12",
+    unit: "book",
+  },
 ];
 
 export function shelfBook(slug: string | null | undefined): ShelfBook | undefined {
@@ -104,11 +119,17 @@ export interface BookIndex {
 /**
  * One block of a part. Inline text carries <i> and <b> and nothing else, and
  * Bible references stay in the text in their brackets, as printed.
+ *
+ * A poem in Books (The Fall) adds three: its engravings where they stand in
+ * the verse (`img`), the poet's prose Argument at a Book's head and the notes
+ * at its end (a paragraph's `style`), and the notes' own title (`section`).
  */
 export type Block =
-  | { p: string; drop?: boolean }
+  | { p: string; drop?: boolean; style?: "argument" | "note" }
   | { v: string[][] }
   | { h: string }
+  | { img: BookImage }
+  | { section: string }
   | { table: { head: string[]; rows: string[][] } };
 
 export interface BookPart {
@@ -264,11 +285,12 @@ export function readRefs(inside: string): Array<BookRef | string> {
   return inside.split(/;\s*/).map((raw) => {
     const piece = raw.trim();
     // book, chapter, then a verse, the end of a range and further verses — any
-    // of them missing. "Jude 14-15" is a range with no colon at all.
+    // of them missing. "Jude 14-15" is a range with no colon at all; the
+    // further verses may be a range of their own ("Ps. 2:2, 6–8").
     const named = piece.match(
-      /^((?:[1-3]\s)?[A-Za-z][A-Za-z. ]*?)\.?\s+(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+)*)$/
+      /^((?:[1-3]\s)?[A-Za-z][A-Za-z. ]*?)\.?\s+(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+(?:[-–]\d+)?)*)$/
     );
-    const bare = named ? null : piece.match(/^(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+)*)$/);
+    const bare = named ? null : piece.match(/^(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+(?:[-–]\d+)?)*)$/);
     if (!named && !(bare && lastBook)) return piece;
     const name = named ? named[1].trim().replace(/\.$/, "") : lastBook;
     const [c, v, ve, list] = named ? named.slice(2) : bare!.slice(1);
@@ -290,7 +312,10 @@ export function readRefs(inside: string): Array<BookRef | string> {
     const first = v ? Number(v) : undefined;
     // a range of whole chapters ("Matt. 5-7") opens at its first chapter
     const last = v && ve ? Number(ve) : undefined;
-    const more = list ? (list.match(/\d+/g) ?? []).map(Number) : [];
+    const more: number[] = [];
+    for (const [, from, to] of list ? list.matchAll(/(\d+)(?:[-–](\d+))?/g) : []) {
+      for (let n = Number(from); n <= Number(to ?? from); n++) more.push(n);
+    }
     return {
       text: piece,
       b: found.bookNr,

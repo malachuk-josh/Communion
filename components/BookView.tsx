@@ -116,9 +116,12 @@ function BookHome({ book }: { book: ShelfBook }) {
   const current = contents.find((c) => c.id === place?.part);
   const sequel = shelfBook(book.sequel);
   const prequel = SHELF.find((b) => b.sequel === book.slug);
-  // what comes before the first chapter, the chapters, and what follows them
-  const firstCh = contents.findIndex((c) => c.label);
-  const lastCh = contents.length - 1 - [...contents].reverse().findIndex((c) => c.label);
+  // what comes before the first chapter, the chapters, and what follows them;
+  // a chapter is a numbered part, whether it is called one ("Chapter 3") or
+  // only numbered (The Fall's "Book III")
+  const isChapter = (c: (typeof contents)[number]) => !!c.label || /^\d+$/.test(c.id);
+  const firstCh = contents.findIndex(isChapter);
+  const lastCh = contents.length - 1 - [...contents].reverse().findIndex(isChapter);
   const front = firstCh > 0 ? contents.slice(0, firstCh) : [];
   const chapters = firstCh >= 0 ? contents.slice(firstCh, lastCh + 1) : contents;
   const back = firstCh >= 0 ? contents.slice(lastCh + 1) : [];
@@ -177,7 +180,9 @@ function BookHome({ book }: { book: ShelfBook }) {
             )}
             {book.plan && (
               <Link className="btn" href={`/discover?plan=${book.plan}`}>
-                <Icon name="plan" /> {t("shelf.withPlan", { n: String(getPlan(book.plan)?.days.length ?? "") })}
+                <Icon name="plan" /> {t(book.unit === "book" ? "shelf.withPlanBooks" : "shelf.withPlan", {
+                  n: String(getPlan(book.plan)?.days.length ?? ""),
+                })}
               </Link>
             )}
           </div>
@@ -394,7 +399,13 @@ function PartView({
 
           <div className="bk-text">
             {part.blocks.map((b, i) => (
-              <BlockView key={i} block={b} onRef={setVerse} />
+              <BlockView
+                key={i}
+                block={b}
+                slug={book.slug}
+                onRef={setVerse}
+                onPicture={setViewing}
+              />
             ))}
           </div>
 
@@ -462,7 +473,18 @@ function Rule() {
 
 // ---- the text ---------------------------------------------------------------------
 
-function BlockView({ block, onRef }: { block: Block; onRef: (r: BookRef) => void }) {
+function BlockView({
+  block,
+  slug,
+  onRef,
+  onPicture,
+}: {
+  block: Block;
+  slug: string;
+  onRef: (r: BookRef) => void;
+  onPicture: (img: BookImage) => void;
+}) {
+  const { t } = useI18n();
   if ("p" in block) {
     if (block.drop) {
       // the first letter, set large in its frame, and the rest of the word
@@ -478,10 +500,35 @@ function BlockView({ block, onRef }: { block: Block; onRef: (r: BookRef) => void
       }
     }
     return (
-      <p className="bk-p">
+      <p className={`bk-p${block.style ? ` bk-${block.style}` : ""}`}>
         <Inline html={block.p} onRef={onRef} />
       </p>
     );
+  }
+  if ("img" in block) {
+    // an engraving where it stands in the verse, opened full size as a
+    // chapter's picture is
+    return (
+      <figure className="bk-plate">
+        <button
+          type="button"
+          className="bk-figure-btn"
+          onClick={() => onPicture(block.img)}
+          aria-label={t("shelf.viewPicture")}
+        >
+          <img
+            src={bookUrl(slug, block.img.src)}
+            width={block.img.w}
+            height={block.img.h}
+            alt=""
+            loading="lazy"
+          />
+        </button>
+      </figure>
+    );
+  }
+  if ("section" in block) {
+    return <h2 className="bk-section">{block.section}</h2>;
   }
   if ("v" in block) {
     return (

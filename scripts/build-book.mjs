@@ -1,7 +1,6 @@
 // Turns a book's typeset PDF into what the Bookshelf reads: one JSON file per
-// part (the note, the Apology, each chapter, the Conclusion, the appendix),
-// a book.json with the contents, and the illustrations at a size a phone
-// wants.
+// part (the front matter, each chapter or Book, the back matter), a book.json
+// with the contents, and the illustrations at a size a phone wants.
 //
 //   node scripts/build-book.mjs <book.pdf> [slug]
 //
@@ -11,28 +10,23 @@
 //
 // The PDF is the source rather than the Google Doc it began as because the
 // PDF is the edition: its chapter breaks, its verse, its italics and where
-// each picture sits are all decided there. pdftohtml's XML gives every line
-// with its position, font and <i>/<b>, and the rest is reading the layout
-// back the way a person would:
+// each picture sits are all decided there. The layout is read back the way a
+// person would read it (scripts/book/layout.mjs), by one of two readers:
 //
-//   - A chapter starts at a small gold "Chapter N:" over a large title.
-//   - Prose is justified, so a paragraph's last line is the one that stops
-//     short of the column's right edge. Beside an illustration the column is
-//     narrower, and "full" is measured against that narrower edge.
-//   - Verse is set in from the left margin, a line at a time, and a larger
-//     gap between lines starts a new stanza.
-//   - The drop cap is a letter of its own, in a box; it is joined back onto
-//     the word it begins.
+//   book/read-prose.mjs  the Parchment Edition: prose chapters, each with a
+//                        drop cap and a painting, verse among them
+//   book/read-verse.mjs  the Engraved Edition: a poem in Books, each with its
+//                        Argument, engravings in the text, and notes
 //
-// Nothing is reworded. Straight quotes become curly ones, which is the one
-// change to the characters: the PDF's font drew them straight, and the
-// reader's font draws them properly.
+// and written out by book/write.mjs.
 
-import { execFileSync } from "child_process";
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "fs";
+import { mkdirSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import sharp from "sharp";
+import { readLayout } from "./book/layout.mjs";
+import { isProse, readProse } from "./book/read-prose.mjs";
+import { isVerse, readVerse } from "./book/read-verse.mjs";
+import { writeBook } from "./book/write.mjs";
 
 const [pdf, slug = "from-this-world"] = process.argv.slice(2);
 if (!pdf) {
@@ -44,392 +38,18 @@ const OUT = path.join(process.cwd(), "public", "books", slug);
 const WORK = path.join(tmpdir(), `book-${slug}-${process.pid}`);
 rmSync(WORK, { recursive: true, force: true });
 mkdirSync(WORK, { recursive: true });
+
+const layout = readLayout(pdf, WORK);
+const reader = isProse(layout.pages) ? readProse : isVerse(layout.pages) ? readVerse : null;
+if (!reader) {
+  console.error(`${pdf}: neither "Chapter N:" chapters nor "Book I" Books; which edition is this?`);
+  process.exit(1);
+}
+const { parts, bookPart } = reader(layout);
+
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-
-// ---- the layout, as positioned lines -------------------------------------
-
-execFileSync("pdftohtml", ["-xml", "-i", "-q", "-nodrm", pdf, path.join(WORK, "text")]);
-// a second pass with the images in, for nothing but where each picture sits
-execFileSync("pdftohtml", ["-xml", "-q", "-nodrm", pdf, path.join(WORK, "boxes")]);
-const xml = readFileSync(path.join(WORK, "text.xml"), "utf8");
-const boxXml = readFileSync(path.join(WORK, "boxes.xml"), "utf8");
-
-const fonts = {};
-for (const m of xml.matchAll(/<fontspec id="(\d+)" size="(\d+)" family="([^"]+)" color="([^"]+)"\/>/g)) {
-  fonts[m[1]] = { size: +m[2], family: m[3], color: m[4] };
-}
-
-const decode = (s) =>
-  s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
-
-/** Every page's lines, top to bottom, without the page number. */
-const pages = xml
-  .split(/<page number="/)
-  .slice(1)
-  .map((chunk) => {
-    const number = parseInt(chunk, 10);
-    const lines = [...chunk.matchAll(/<text top="(\d+)" left="(\d+)" width="(\d+)" height="(\d+)" font="(\d+)">(.*?)<\/text>/g)]
-      .map((m) => ({
-        top: +m[1],
-        left: +m[2],
-        right: +m[2] + +m[3],
-        font: fonts[m[5]],
-        html: decode(m[6]),
-      }))
-      // the folio, in the footer
-      .filter((l) => !(l.top > 1000 && /^\d+$/.test(l.html.trim())))
-      .sort((a, b) => a.top - b.top || a.left - b.left);
-    return { number, lines };
-  });
-
-/** The illustration on each page that has one: its box, in the same units. */
-const pictures = {};
-for (const chunk of boxXml.split(/<page number="/).slice(1)) {
-  const number = parseInt(chunk, 10);
-  for (const m of chunk.matchAll(/<image top="(\d+)" left="(\d+)" width="(\d+)" height="(\d+)"/g)) {
-    const [top, left, width, height] = m.slice(1).map(Number);
-    // the parchment behind every page fills it; the pictures sit inside
-    if (width >= 700) continue;
-    pictures[number] = { top, bottom: top + height, left };
-  }
-}
-
-/**
- * Every word the book uses, to tell a drop cap that begins a word — "I" and
- * "n my travels" — from one that is a word — "I" and "told you before".
- * The layout cannot: both set the rest of the line in the same place.
- */
-const vocabulary = new Set(
-  pages.flatMap((p) =>
-    p.lines.flatMap((l) => l.html.replace(/<[^>]+>/g, "").toLowerCase().match(/[a-z]+/g) ?? [])
-  )
-);
-
-function mostCommon(values) {
-  const counts = new Map();
-  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
-  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
-}
-
-const isTitle = (l) => /BaskOldFace/.test(l.font.family) && l.font.size >= 30 && l.font.size < 50;
-const isChapterLabel = (l) => /^Chapter \d+:$/.test(l.html.trim());
-const isDropCap = (l) => /BaskOldFace/.test(l.font.family) && l.font.size > 45 && l.html.trim().length === 1;
-
-// ---- reading it back -------------------------------------------------------
-
-const PROSE_LEFT = 65;
-const VERSE_LEFT = 87;
-const FULL_RIGHT = 692;
-
-const parts = [];
-let part = null;
-/** the paragraph or stanza being added to */
-let open = null;
-
-const startPart = (fields) => {
-  part = { ...fields, blocks: [] };
-  parts.push(part);
-  open = null;
-};
-
-const addLine = (html, kind, joinsPrevious, newStanza) => {
-  if (kind === "p") {
-    if (open && open.kind === "p" && joinsPrevious) {
-      open.text += " " + html;
-    } else {
-      open = { kind: "p", text: html };
-      part.blocks.push(open);
-    }
-  } else {
-    if (!(open && open.kind === "v")) {
-      open = { kind: "v", stanzas: [[]] };
-      part.blocks.push(open);
-    } else if (newStanza) {
-      open.stanzas.push([]);
-    }
-    open.stanzas[open.stanzas.length - 1].push(html);
-  }
-};
-
-let previous = null; // the last body line, on whichever page
-let bookPart = null; // "Part One", where the book is a part of a larger one
-let pendingLabel = null;
-
-for (const page of pages) {
-  if (page.number === 1) continue; // the cover, rendered whole below
-  const pic = pictures[page.number];
-  // beside the picture the column stops short of it; how far is measured, not
-  // assumed, from the widest line in that band
-  const band = pic
-    ? page.lines.filter((l) => l.top >= pic.top - 30 && l.top <= pic.bottom && l.right < pic.left)
-    : [];
-  // the right edge most of them reach — a justified line reaches it exactly
-  const bandRight = mostCommon(band.map((l) => l.right));
-  const inBand = (l) => band.includes(l);
-  // Justified lines reach the edge exactly, to the point: 2,222 of them are
-  // 627 wide and the nearest after that is 626. So the test is to within a
-  // point, and a last line that stops even a few short ends its paragraph.
-  const full = (l) =>
-    l.besideDrop || (inBand(l) ? l.right >= bandRight - 1 : l.right >= FULL_RIGHT - 1);
-
-  // The drop cap sits a little below the top of the line it starts, so in
-  // reading order it would come after it. It is joined to the first line
-  // beside it here, and that line opens the chapter's first paragraph.
-  const drop = page.lines.find(isDropCap);
-  if (drop) {
-    const first = page.lines
-      .filter((l) => l !== drop && l.left > drop.left + 20 && Math.abs(l.top - drop.top) < 30)
-      .sort((a, b) => a.top - b.top)[0];
-    if (first) {
-      const letter = drop.html.trim();
-      const rest = first.html.trim();
-      const word = (letter + (rest.match(/^[A-Za-z]+/)?.[0] ?? "")).toLowerCase();
-      // A, I and O are words of their own; the rest of the line joins on to
-      // them only where that makes a word the book uses
-      const apart = /^[AIO]$/.test(letter) && !vocabulary.has(word);
-      first.html = letter + (apart ? " " : "") + rest;
-      first.drop = true;
-      // the lines set in beside the letter are ragged, not justified, so
-      // their length says nothing; they always run on into the next
-      for (const l of page.lines) {
-        if (l.left === first.left && l.top >= first.top && l.top < drop.top + 60) l.besideDrop = true;
-      }
-    }
-    page.lines.splice(page.lines.indexOf(drop), 1);
-  }
-
-  // the appendix's table is laid out in columns, and read as one — on its
-  // own page, and on any page after it that carries on with no title of its
-  // own
-  if (page.lines.some((l) => isTitle(l) && /^Appendix/.test(l.html))) {
-    readAppendix(page);
-    previous = null;
-    continue;
-  }
-  if (part?.id === "appendix" && !page.lines.some(isTitle)) {
-    readAppendix(page, true);
-    continue;
-  }
-
-  for (const l of page.lines) {
-    if (isChapterLabel(l)) {
-      pendingLabel = l.html.trim().replace(/:$/, "");
-      continue;
-    }
-    if (isTitle(l)) {
-      const title = l.html.trim();
-      if (part && part.blocks.length === 0 && part.title && previous === null) {
-        part.title += " " + title; // a title long enough to wrap
-        continue;
-      }
-      // a part's own title page — "Part One", "Part Two" — heads the chapters
-      // in the contents rather than being a page of its own
-      if (/^Part \w+$/.test(title)) {
-        bookPart = title;
-        part = null;
-        previous = null;
-        continue;
-      }
-      const n = pendingLabel ? Number(pendingLabel.replace(/\D/g, "")) : null;
-      startPart({
-        id: n ? String(n).padStart(2, "0") : title === "The Conclusion" ? "conclusion" : frontId(title),
-        ...(pendingLabel ? { label: pendingLabel } : {}),
-        title,
-        ...(pic ? { picturePage: page.number } : {}),
-      });
-      pendingLabel = null;
-      previous = null;
-      continue;
-    }
-    if (!part) {
-      // the note on this edition, ahead of everything
-      startPart({ id: "note", title: "A Note on This Edition" });
-    }
-    let html = l.html.trim();
-    const verse = l.left >= VERSE_LEFT - 2 && l.left <= VERSE_LEFT + 4;
-    if (l.drop) {
-      addLine(html, "p", false);
-      part.blocks[part.blocks.length - 1].drop = true;
-      previous = { ...l, page: page.number, full: full(l), inBand: inBand(l), verse };
-      continue;
-    }
-    const samePage = previous && previous.page === page.number;
-    const gap = samePage ? l.top - previous.top : null;
-    if (verse) {
-      const newStanza = samePage ? gap > 28 : false;
-      addLine(html, "v", false, newStanza);
-    } else {
-      let joins = false;
-      if (previous && !previous.verse && previous.full) {
-        // a full line runs on — unless a paragraph's gap follows it on the
-        // same page, which is how a last line that happens to fill the measure
-        // shows itself. The drop under a picture is not that gap.
-        const underPicture = previous.inBand && !inBand(l);
-        joins = !samePage || underPicture || gap < 30;
-      }
-      addLine(html, "p", joins);
-    }
-    previous = { ...l, page: page.number, full: full(l), inBand: inBand(l), verse };
-  }
-}
-
-/**
- * The id of a piece ahead of the chapters. The first is "apology", as
- * Bunyan's Apology was in the first book, and the ids are in readers' saved
- * places and links, so that stays; any more — The Siege of Mansoul has two
- * poems before it begins — are named for their titles.
- */
-function frontId(title) {
-  if (!parts.some((p) => p.id === "apology")) return "apology";
-  return title
-    .toLowerCase()
-    .replace(/<[^>]+>/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .replace(/^(a|an|the)-/, "");
-}
-
-function readAppendix(page, carriesOn = false) {
-  if (!carriesOn) {
-    const title = page.lines.find(isTitle).html.trim();
-    startPart({ id: "appendix", title });
-  }
-  const body = page.lines.filter((l) => !isTitle(l));
-  // the lead-in, at the prose margin, above the table
-  const lead = body.filter((l) => l.left === PROSE_LEFT);
-  for (const l of lead) addLine(l.html.trim(), "p", part.blocks.length > 0);
-  const cells = body.filter((l) => l.left !== PROSE_LEFT);
-  const columns = [...new Set(cells.map((l) => l.left))].sort((a, b) => a - b);
-  // a row begins wherever the first column begins a new entry
-  const rowTops = cells
-    .filter((l) => l.left === columns[0])
-    .map((l) => l.top)
-    .filter((t, i, all) => i === 0 || t - all[i - 1] > 22);
-  const rows = rowTops.map((top, i) => {
-    const end = rowTops[i + 1] ?? Infinity;
-    return columns.map((left) =>
-      cells
-        .filter((l) => l.left === left && l.top >= top && l.top < end)
-        .map((l) => l.html.trim())
-        .join(" ")
-        // a name broken at one of its own hyphens closes up again
-        .replace(/(\w)- (?=\w)/g, "$1-")
-        .replace(/<\/i> <i>/g, " ")
-    );
-  });
-  const table = carriesOn && part.blocks.findLast((b) => b.kind === "table");
-  if (!table) {
-    part.blocks.push({ kind: "table", head: rows[0], rows: rows.slice(1) });
-    return;
-  }
-  // a table carried over a page repeats its header there; it is one table
-  const repeated = rows[0]?.join("|") === table.head.join("|");
-  table.rows.push(...(repeated ? rows.slice(1) : rows));
-}
-
-// ---- the characters ---------------------------------------------------------
-
-/** Straight quotes to curly, by what is either side of them. */
-function curl(s) {
-  return s
-    // speech broken off — "he is—" — closes after its dash
-    .replace(/([—–])"(?=\s|$|<)/g, "$1\u201D")
-    .replace(/(^|[\s([{—–-]|<[ib]>)"/g, "$1“")
-    .replace(/"/g, "”")
-    .replace(/(^|[\s([{—–-]|<[ib]>)'(?=(tis|twas|em|cause)\b)/gi, "$1’")
-    .replace(/(^|[\s([{—–-]|<[ib]>)'/g, "$1‘")
-    .replace(/'/g, "’");
-}
-
-const tidy = (s) => curl(s.replace(/<\/i> <i>/g, " ").replace(/<\/b> <b>/g, " ").replace(/\s+/g, " ").trim());
-
-const words = (s) => s.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
-
-// ---- writing it ------------------------------------------------------------
-
-execFileSync("pdfimages", ["-j", "-p", pdf, path.join(WORK, "img")]);
-const extracted = readdirSync(WORK).filter((f) => /^img-\d+-\d+\.(jpg|ppm|png)$/.test(f));
-
-async function picture(pageNumber, name) {
-  // the page's picture is its largest image that is not the parchment behind it
-  const candidates = await Promise.all(
-    extracted
-      .filter((f) => Number(f.split("-")[1]) === pageNumber)
-      .map(async (f) => ({ f, meta: await sharp(path.join(WORK, f)).metadata() }))
-  );
-  const pick = candidates
-    .filter(({ meta }) => !(meta.width === 1008 && meta.height === 1440))
-    .sort((a, b) => b.meta.width * b.meta.height - a.meta.width * a.meta.height)[0];
-  if (!pick) return null;
-  const file = `${name}.webp`;
-  const info = await sharp(path.join(WORK, pick.f))
-    .resize({ width: 800, withoutEnlargement: true })
-    .webp({ quality: 74 })
-    .toFile(path.join(OUT, file));
-  return { src: file, w: info.width, h: info.height };
-}
-
-const contents = [];
-for (const p of parts) {
-  const blocks = p.blocks.map((b) => {
-    if (b.kind === "p") {
-      const text = tidy(b.text);
-      // a line in bold capitals on its own — "OBJECTION 1.", "ANSWER.", the
-      // author's name under his verse — is a small heading, set as the PDF
-      // sets it: bold, at the margin
-      const head = text.match(/^<b>([^<]+)<\/b>$/);
-      if (head && head[1] === head[1].toUpperCase()) return { h: head[1] };
-      return { p: text, ...(b.drop ? { drop: true } : {}) };
-    }
-    if (b.kind === "v") return { v: b.stanzas.map((st) => st.map(tidy)) };
-    return { table: { head: b.head.map(tidy), rows: b.rows.map((r) => r.map(tidy)) } };
-  });
-  const image = p.picturePage ? await picture(p.picturePage, `ch${p.id}`) : null;
-  const out = {
-    id: p.id,
-    ...(p.label ? { label: p.label } : {}),
-    title: curl(p.title),
-    ...(image ? { image } : {}),
-    blocks,
-  };
-  writeFileSync(path.join(OUT, `${p.id}.json`), JSON.stringify(out));
-  const count = blocks.reduce(
-    (n, b) =>
-      n +
-      (b.p ? words(b.p) : b.v ? b.v.flat().reduce((m, line) => m + words(line), 0) : 0),
-    0
-  );
-  contents.push({ id: p.id, ...(p.label ? { label: p.label } : {}), title: curl(p.title), words: count });
-}
-
-// the cover is the whole first page — the painting with its lettering on it
-execFileSync("pdftoppm", ["-r", "150", "-png", "-f", "1", "-l", "1", "-singlefile", pdf, path.join(WORK, "cover")]);
-const cover = await sharp(path.join(WORK, "cover.png"))
-  .resize({ width: 720 })
-  .webp({ quality: 78 })
-  .toFile(path.join(OUT, "cover.webp"));
-
-const info = execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
-const meta = (key) => (info.match(new RegExp(`^${key}:\\s+(.*)$`, "m")) || [])[1]?.trim();
-
-writeFileSync(
-  path.join(OUT, "book.json"),
-  JSON.stringify({
-    slug,
-    title: meta("Title")?.replace(/ — .*$/, "") ?? slug,
-    author: meta("Author") ?? "",
-    ...(bookPart ? { part: bookPart } : {}),
-    cover: { src: "cover.webp", w: cover.width, h: cover.height },
-    contents,
-  })
-);
+const contents = await writeBook({ pdf, slug, out: OUT, work: WORK, parts, bookPart });
 
 rmSync(WORK, { recursive: true, force: true });
 

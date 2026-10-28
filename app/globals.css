@@ -6383,7 +6383,8 @@ button.compare-pick:last-child {
   cursor: zoom-in;
 }
 
-.bk-figure img {
+.bk-figure img,
+.bk-plate img {
   display: block;
   width: 100%;
   height: auto;
@@ -6465,6 +6466,51 @@ button.compare-pick:last-child {
   display: block;
   padding-left: 1.2em;
   text-indent: -1.2em;
+}
+
+/* An engraving in the verse of a poem in Books: the full measure, never
+   floated beside the lines, which are long enough already */
+.bk-plate {
+  clear: both;
+  margin: 1.3em 0 1.5em;
+}
+
+@media (min-width: 640px) {
+  .bk-plate {
+    max-width: 560px;
+    margin-inline: auto;
+  }
+}
+
+/* The poet's Argument at a Book's head: his prose summary, in italic and a
+   size down, as the edition sets it under the engraving. Ragged rather than
+   justified: italic justified to a phone's width opens up into gaps. */
+.bk-argument {
+  margin-bottom: 1.5em;
+  text-align: left;
+  font-size: 0.9em;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+/* "Notes on Book I", after the verse */
+.bk-section {
+  clear: both;
+  margin: 2.2em 0 0.9em;
+  font-family: var(--bk-title), var(--serif);
+  font-size: 1.3em;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* a note: its word or phrase in bold, the line it is on, then the note — a
+   size down, and ragged, since a narrow column of short entries justified
+   opens up into gaps */
+.bk-note {
+  margin-bottom: 0.7em;
+  font-size: 0.86em;
+  line-height: 1.5;
+  text-align: left;
 }
 
 /* "OBJECTION 1.", "ANSWER.", the author's name: bold capitals at the margin */
