@@ -32,9 +32,11 @@ export default function BookNav({
   onVerse: (bookNr: number, chapter: number, verse: number) => void;
 }) {
   const { lang, t } = useI18n();
-  const nt = bookNr > LAST_OT_BOOK;
-  // open where the reader already is
-  const [openTestaments, setOpenTestaments] = useState({ ot: !nt, nt });
+  // Both testaments start folded, every time the panel opens: two rows to
+  // choose between rather than a long list already scrolled. The book being
+  // read is still marked open inside its testament, so unfolding it lands
+  // there.
+  const [openTestaments, setOpenTestaments] = useState({ ot: false, nt: false });
   const [openBook, setOpenBook] = useState<number | null>(bookNr);
   const [openChapter, setOpenChapter] = useState<number | null>(null);
   /** verse counts per chapter, by book — filled in as books are opened */
