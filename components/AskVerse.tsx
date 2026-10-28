@@ -21,6 +21,7 @@
 // into the verse's note, by the reader's own hand.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/Icon";
 import { NOTE_MAX } from "@/lib/bible";
 import { guestId } from "@/lib/client";
@@ -191,6 +192,8 @@ function Conversation({
     )
   );
   const [draft, setDraft] = useState("");
+  /** the scholar's About pop-up: who he was, and how his answers are made */
+  const [aboutOpen, setAboutOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const lastRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -456,9 +459,69 @@ function Conversation({
           wherever the reader has got to. */}
       <div className="ask-box">
         {picker}
-        <p className="ask-title">
-          <Icon name="lamp" /> {title}
-        </p>
+        <div className="ask-title-row">
+          <p className="ask-title">
+            <Icon name="lamp" /> {title}
+          </p>
+          {voice && (
+            <button
+              type="button"
+              className="xref-chip ask-about-btn"
+              onClick={() => setAboutOpen(true)}
+              aria-haspopup="dialog"
+            >
+              {t("ask.about")}
+            </button>
+          )}
+        </div>
+        {/* Over the commentary rather than inside it. Sent to the end of the
+            page because the pop-up this sits in is glass, and a backdrop
+            filter makes an element the frame for anything fixed inside it — an
+            overlay drawn here would be the size of the commentary, not the
+            screen. */}
+        {aboutOpen &&
+          voice &&
+          createPortal(
+            <div
+              className="modal-overlay about-overlay"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAboutOpen(false);
+              }}
+            >
+              <div
+                className="glass modal about-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="about-voice-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mh-head">
+                  <h2 id="about-voice-title">{name}</h2>
+                  <button
+                    type="button"
+                    className="lex-close"
+                    onClick={() => setAboutOpen(false)}
+                    aria-label={t("common.close")}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="about-years">{voiceOf(voice).years}</p>
+                {/* written by hand in lib/voices, not generated */}
+                <p className="about-bio">{voiceOf(voice).bio[lang]}</p>
+                <h3 className="about-how-title">{t("ask.aboutHow")}</h3>
+                {/* which of the two depends on whether his own words on this
+                    passage went with the question — the same test as the
+                    starters' "What did you mean here?" */}
+                <p className="about-how">
+                  {t(source ? "ask.howGrounded" : "ask.howKnown", { name })}{" "}
+                  {t("ask.howPrivate")}
+                </p>
+              </div>
+            </div>,
+            document.body
+          )}
         {status.ready === false ? (
           <p className="cal-hint">{t("ask.notReady")}</p>
         ) : outOfQuestions ? (

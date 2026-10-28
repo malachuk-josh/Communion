@@ -3946,6 +3946,60 @@ button.compare-pick:last-child {
   margin-bottom: 8px;
 }
 
+/* the box's title, with the scholar's About pill at the right of it */
+.ask-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ask-title-row .ask-title {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.ask-about-btn {
+  flex: none;
+}
+
+/* the About pop-up, over the commentary it was opened from */
+.about-overlay {
+  z-index: 80;
+}
+
+.about-modal {
+  max-width: 30rem;
+}
+
+.about-years {
+  margin: -8px 0 12px;
+  font-size: 0.82rem;
+  color: var(--gold);
+}
+
+.about-bio {
+  font-family: var(--serif);
+  line-height: 1.6;
+}
+
+.about-how-title {
+  margin: 20px 0 6px;
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.about-how {
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
 .ask-starters {
   display: flex;
   flex-wrap: wrap;
