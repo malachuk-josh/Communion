@@ -56,12 +56,16 @@ const PATHS = {
     "M9.5 10.5h5V21h-5z",
     "M9.5 14h5",
   ],
-  // the Parchment theme: a leaf of old paper, its edges gone wavy, a line or
-  // two written on it — deeper waves and fewer lines than the newspaper that
-  // stands for Grey beside it
+  // the Parchment theme: an open scroll on its two rollers, handles showing
+  // above and below, a line or two written between. Not `scroll` above,
+  // which is a page with a curled edge and stands for reading plans; this
+  // one is the book of the ancient world, and the theme's own.
   parchment: [
-    "M5.5 5c2.2-1.6 4.3 1.6 6.5 0s4.3-1.6 6.5 0v14c-2.2 1.6-4.3-1.6-6.5 0s-4.3 1.6-6.5 0z",
-    "M8.5 10h7M8.5 13.5h5",
+    "M4.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
+    "M19.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
+    "M4.5 2.8v1.7M4.5 19.5v1.7M19.5 2.8v1.7M19.5 19.5v1.7",
+    "M6 6.5h12M6 17.5h12",
+    "M9 10.5h6M9 13.5h4.5",
   ],
   // a map pin: the Context pop-up, which is where it happened. Not a folded
   // map, which at pill size is three upright strips — the same shape as the
