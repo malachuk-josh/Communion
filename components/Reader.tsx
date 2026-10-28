@@ -3790,7 +3790,10 @@ export default function Reader({
         (henryFor(henryOn[0], henryOn[1]) ||
           spurgeonFor(henryOn[0], henryOn[1])) && (
         <div className="modal-overlay" onClick={() => setHenryOn(null)}>
-          <div className="glass modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`glass modal${askStatus.allowed ? " asking" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             {(() => {
               const sec = henryFor(henryOn[0], henryOn[1]);
               const spur = spurgeonFor(henryOn[0], henryOn[1]);
@@ -3801,26 +3804,8 @@ export default function Reader({
                   : shown.from === shown.to
                     ? `${henryOn[0]}:${shown.from}`
                     : `${henryOn[0]}:${shown.from}-${shown.to}`;
-              return (
+              const commentary = (
                 <>
-                  {/* The close sits in the heading, not under the text.
-                      This panel is a long read that scrolls inside itself, so
-                      a button at the foot is a button you have to reach the
-                      end of Henry to find. */}
-                  <div className="mh-head">
-                    <h2>
-                      <Icon name="quote" />{" "}
-                      {t("reader.commentaryOn", { ref: `${bookName} ${span}` })}
-                    </h2>
-                    <button
-                      type="button"
-                      className="lex-close"
-                      onClick={() => setHenryOn(null)}
-                      aria-label={t("common.close")}
-                    >
-                      ✕
-                    </button>
-                  </div>
                   <div className="mh-body">
                     {/* Henry first, then Spurgeon. One panel rather than two
                         chips: in the Psalms both have something to say about
@@ -3867,6 +3852,66 @@ export default function Reader({
                   {/* Name only whoever is actually on the screen. */}
                   {sec && <p className="mh-who">{t("reader.commentaryWho")}</p>}
                   {spur && <p className="mh-who">{t("reader.spurgeonWho")}</p>}
+                </>
+              );
+              return (
+                <>
+                  {/* The close sits in the heading, not under the text.
+                      This panel is a long read that scrolls inside itself, so
+                      a button at the foot is a button you have to reach the
+                      end of Henry to find. */}
+                  <div className="mh-head">
+                    <h2>
+                      <Icon name="quote" />{" "}
+                      {t("reader.commentaryOn", { ref: `${bookName} ${span}` })}
+                    </h2>
+                    <button
+                      type="button"
+                      className="lex-close"
+                      onClick={() => setHenryOn(null)}
+                      aria-label={t("common.close")}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {askStatus.allowed ? (
+                    /* The scholars can be asked, under what two of them
+                       actually wrote. Henry's words go with a question put to
+                       Henry, and Spurgeon's with one put to Spurgeon; the
+                       others answer from what is known of them. */
+                    <AskVerse
+                      key={`${bookNr}:${henryOn[0]}:${henryOn[1]}`}
+                      bookNr={bookNr}
+                      ch={henryOn[0]}
+                      v={henryOn[1]}
+                      translation={translation}
+                      texts={(() => {
+                        const line = chDataOf(henryOn[0])?.verses.find(
+                          (x) => x.verse === henryOn[1]
+                        );
+                        return line ? { [translation]: line.text } : {};
+                      })()}
+                      status={askStatus}
+                      onStatus={setAskStatus}
+                      note={notes[`${henryOn[0]}:${henryOn[1]}`]}
+                      onSaveNote={(text) =>
+                        commitNote(`${henryOn[0]}:${henryOn[1]}`, text)
+                      }
+                      scholars={{
+                        first: sec ? "henry" : "spurgeon",
+                        sources: {
+                          henry: sec
+                            ? [sec.title, sec.text].filter(Boolean).join("\n\n")
+                            : undefined,
+                          spurgeon: spur?.exposition?.text,
+                        },
+                      }}
+                    >
+                      {commentary}
+                    </AskVerse>
+                  ) : (
+                    commentary
+                  )}
                 </>
               );
             })()}

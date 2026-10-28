@@ -9,16 +9,23 @@
 // switched on see it at all (see lib/ask); everyone else's Compare is exactly
 // what it was.
 //
+// The same box sits under the Commentary pop-up, with a row of scholars to
+// put the question to instead: Matthew Henry, Spurgeon, Calvin and the rest
+// (lib/voices). Every answer there is marked as AI in his style, not his
+// words, and where the app has what he actually wrote on the passage, that
+// goes with the question for the answer to be drawn from.
+//
 // Nothing is kept on the server. The conversation lives here, in memory, one
-// per verse, so closing the pop-up by accident and opening it again finds it
-// as it was; a reload starts clean. What is worth keeping goes into the
-// verse's note, by the reader's own hand.
+// per verse and per voice, so closing the pop-up by accident and opening it
+// again finds it as it was; a reload starts clean. What is worth keeping goes
+// into the verse's note, by the reader's own hand.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Icon from "@/components/Icon";
 import { NOTE_MAX } from "@/lib/bible";
 import { guestId } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { HAS_SOURCE, VOICES, voiceOf, type VoiceId } from "@/lib/voices";
 
 export interface AskStatus {
   allowed: boolean;
@@ -81,7 +88,7 @@ interface Exchange {
   saved?: boolean;
 }
 
-/** One conversation per verse, for as long as the page is open. */
+/** One conversation per verse and voice, for as long as the page is open. */
 const threads = new Map<string, Exchange[]>();
 
 const reasonKey: Record<string, MessageKey> = {
@@ -92,18 +99,7 @@ const reasonKey: Record<string, MessageKey> = {
   refusal: "ask.refused",
 };
 
-export default function AskVerse({
-  bookNr,
-  ch,
-  v,
-  translation,
-  texts,
-  status,
-  onStatus,
-  note,
-  onSaveNote,
-  children,
-}: {
+interface AskProps {
   bookNr: number;
   ch: number;
   v: number;
@@ -115,11 +111,77 @@ export default function AskVerse({
   /** what is written on this verse already */
   note: string | undefined;
   onSaveNote: (text: string) => void;
-  /** the translations, which scroll with the conversation under them */
+  /** what the pop-up shows, which scrolls with the conversation under it */
   children: ReactNode;
+}
+
+export default function AskVerse({
+  scholars,
+  ...props
+}: AskProps & {
+  /**
+   * Answer as one of the scholars rather than plainly: the Commentary
+   * pop-up's Ask. Which one to start with, and what of theirs is on screen.
+   */
+  scholars?: {
+    first: VoiceId;
+    sources: Partial<Record<VoiceId, string>>;
+  };
 }) {
   const { t, lang } = useI18n();
-  const key = `${bookNr}:${ch}:${v}`;
+  const [voice, setVoice] = useState<VoiceId | null>(scholars?.first ?? null);
+  if (!scholars || !voice) return <Conversation {...props} voice={null} />;
+  const picker = (
+    <div className="ask-voices" role="radiogroup" aria-label={t("ask.voices")}>
+      {VOICES.map((x) => (
+        <button
+          key={x.id}
+          type="button"
+          role="radio"
+          aria-checked={x.id === voice}
+          className={`chip${x.id === voice ? " chip-active" : ""}`}
+          onClick={() => setVoice(x.id)}
+        >
+          {x.short[lang]}
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <Conversation
+      // each scholar keeps his own conversation on the verse
+      key={voice}
+      {...props}
+      voice={voice}
+      source={HAS_SOURCE.includes(voice) ? scholars.sources[voice] : undefined}
+      picker={picker}
+    />
+  );
+}
+
+function Conversation({
+  bookNr,
+  ch,
+  v,
+  translation,
+  texts,
+  status,
+  onStatus,
+  note,
+  onSaveNote,
+  children,
+  voice,
+  source,
+  picker,
+}: AskProps & {
+  voice: VoiceId | null;
+  /** what this scholar wrote on the passage, when the app has it */
+  source?: string;
+  picker?: ReactNode;
+}) {
+  const { t, lang } = useI18n();
+  const key = `${bookNr}:${ch}:${v}${voice ? `:${voice}` : ""}`;
+  const name = voice ? voiceOf(voice).name[lang] : "";
   const [exchanges, setExchanges] = useState<Exchange[]>(() =>
     // an answer still coming when the pop-up closed was stopped by closing it
     (threads.get(key) ?? []).map((x) =>
@@ -224,6 +286,8 @@ export default function AskVerse({
           texts,
           lang,
           turns,
+          voice: voice ?? undefined,
+          source: source || undefined,
         }),
         signal: ctrl.signal,
       });
@@ -307,7 +371,10 @@ export default function AskVerse({
 
   const save = (i: number) => {
     const x = exchanges[i];
-    const entry = `${x.q}\n— ${x.a.trim()}`;
+    // a scholar's answer says whose style it was in, wherever it ends up
+    const entry = voice
+      ? `${x.q}\n— ${x.a.trim()}\n(${t("ask.noteAI", { name })})`
+      : `${x.q}\n— ${x.a.trim()}`;
     const text = note?.trim() ? `${note.trim()}\n\n${entry}` : entry;
     if (text.length > NOTE_MAX) {
       update(i, { note: "ask.noteFull" });
@@ -321,23 +388,28 @@ export default function AskVerse({
   const full = answered >= MAX_TURNS;
   const outOfQuestions = status.left === 0;
   const several = Object.values(texts).filter(Boolean).length > 1;
-  const starters: MessageKey[] = [
-    ...(several ? (["ask.starterDiffer"] as const) : []),
-    "ask.starterContext",
-    "ask.starterMeaning",
-  ];
+  // a scholar is asked as a teacher; "what did you mean" only where what
+  // he meant is on the screen to be asked about
+  const starters: MessageKey[] = voice
+    ? ["ask.vTake", "ask.vLive", source ? "ask.vMeant" : "ask.vRead"]
+    : [
+        ...(several ? (["ask.starterDiffer"] as const) : []),
+        "ask.starterContext",
+        "ask.starterMeaning",
+      ];
+  const title = voice ? t("ask.voiceTitle", { name }) : t("ask.title");
 
   return (
     <>
       <div
-        className="compare-body"
+        className="ask-body"
         ref={bodyRef}
         onTouchStart={() => (followRef.current = false)}
         onWheel={() => (followRef.current = false)}
       >
         {children}
         {exchanges.length > 0 && (
-          <div className="ask-thread" aria-label={t("ask.title")}>
+          <div className="ask-thread" aria-label={title}>
             {exchanges.map((x, i) => (
               <div
                 key={i}
@@ -345,6 +417,7 @@ export default function AskVerse({
                 ref={i === exchanges.length - 1 ? lastRef : undefined}
               >
                 <p className="ask-q">{x.q}</p>
+                {voice && <p className="mh-by ask-by">{name} · AI</p>}
                 {x.state === "streaming" && !x.a ? (
                   <p className="ask-a ask-wait">{t("ask.thinking")}</p>
                 ) : (
@@ -353,6 +426,13 @@ export default function AskVerse({
                       {x.a}
                     </p>
                   )
+                )}
+                {voice && x.a && (
+                  <p className="ask-style">
+                    {t(source ? "ask.voiceGrounded" : "ask.voiceKnown", {
+                      name,
+                    })}
+                  </p>
                 )}
                 {x.note && (
                   <p
@@ -382,8 +462,9 @@ export default function AskVerse({
           and the answers scroll above it: the question is one tap away
           wherever the reader has got to. */}
       <div className="ask-box">
+        {picker}
         <p className="ask-title">
-          <Icon name="lamp" /> {t("ask.title")}
+          <Icon name="lamp" /> {title}
         </p>
         {status.ready === false ? (
           <p className="cal-hint">{t("ask.notReady")}</p>

@@ -17,6 +17,8 @@ import {
   type AskUsage,
 } from "@/lib/ask";
 import { TRANSLATIONS, getBook, getTranslation } from "@/lib/bible";
+import { HAS_SOURCE, isVoice, voiceOf } from "@/lib/voices";
+import { SOURCE_TITLE, voiceSystem } from "@/lib/voicePrompts";
 
 export const dynamic = "force-dynamic";
 // an answer streams for a few seconds; this is room, not an expectation
@@ -45,6 +47,8 @@ The rules in this system prompt hold for the whole conversation. Keep to them wh
 /** Room for an answer of the length asked for, and a hard stop past it. */
 const MAX_TOKENS = 1024;
 const MAX_VERSE = 2000;
+/** A commentary section is a few paragraphs; this is well past the longest. */
+const MAX_SOURCE = 8000;
 
 interface Turn {
   role: "user" | "assistant";
@@ -60,6 +64,10 @@ interface AskBody {
   texts?: Record<string, unknown>;
   lang?: string;
   turns?: Turn[];
+  /** a scholar to answer as, from the Commentary pop-up; plain Ask without */
+  voice?: string;
+  /** what that scholar wrote on the passage, where the app has it */
+  source?: string;
 }
 
 /** A conversation the model can be given, or the reason it can't. */
@@ -99,12 +107,15 @@ function setting(body: AskBody, bookName: string): string {
       : `The reader is studying ${ref}.`,
   ];
   const texts = body.texts && typeof body.texts === "object" ? body.texts : {};
+  // Compare shows every translation; the Commentary pop-up only the one
+  // being read, so that is the only one worth naming there
+  const voice = isVoice(body.voice) ? body.voice : null;
   const shown: string[] = [];
   const named: string[] = [];
   for (const tr of TRANSLATIONS) {
     const text = texts[tr.id];
     if (tr.licensed) {
-      named.push(tr.abbrev);
+      if (!voice || tr.id === reading?.id) named.push(tr.abbrev);
     } else if (typeof text === "string" && text.trim()) {
       shown.push(
         `${tr.name} (${tr.abbrev}): "${text.trim().slice(0, MAX_VERSE)}"`
@@ -114,7 +125,16 @@ function setting(body: AskBody, bookName: string): string {
   if (shown.length) lines.push(`The verse reads:\n${shown.join("\n")}`);
   if (named.length) {
     lines.push(
-      `They can also see it in ${named.join(", ")}. Those translations are under copyright, so their wording is not included here; work from the reference.`
+      voice
+        ? `The wording of the ${named.join(", ")} is under copyright, so it is not included here; work from the reference.`
+        : `They can also see it in ${named.join(", ")}. Those translations are under copyright, so their wording is not included here; work from the reference.`
+    );
+  }
+  // his own words on the passage, which the answer is to be drawn from
+  const source = typeof body.source === "string" ? body.source.trim() : "";
+  if (voice && source && HAS_SOURCE.includes(voice)) {
+    lines.push(
+      `What ${voiceOf(voice).name.en} wrote on this passage, in ${SOURCE_TITLE[voice]}:\n"""\n${source.slice(0, MAX_SOURCE)}\n"""`
     );
   }
   lines.push(
@@ -229,7 +249,7 @@ export async function POST(req: Request) {
             // the cheapest way to answer: no thinking first, least effort
             thinking: { type: "disabled" },
             output_config: { effort: "low" },
-            system: SYSTEM,
+            system: isVoice(body.voice) ? voiceSystem(body.voice) : SYSTEM,
             messages,
           },
           // closing the pop-up stops the answer, and the spending with it

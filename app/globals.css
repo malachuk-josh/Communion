@@ -3714,28 +3714,62 @@ button.compare-pick:last-child {
   color: var(--gold);
 }
 
-/* ---- Ask, under the translations ----
+/* ---- Ask, under the translations or the commentary ----
    With Ask the pop-up is a column: the heading holds still at the top, the
-   question box at the foot, and between them the translations and the
-   conversation scroll as one. The list loses its own scroll — two scrollers,
-   one inside the other, is a trap for a thumb. */
-.compare-modal.asking {
+   question box at the foot, and between them what the pop-up shows and the
+   conversation scroll as one. Whatever scrolled on its own loses its scroll —
+   two scrollers, one inside the other, is a trap for a thumb. */
+.modal.asking {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding-bottom: 14px;
 }
 
-.compare-modal.asking .compare-body {
+.modal.asking .ask-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.compare-modal.asking .compare-list {
+.modal.asking .compare-list,
+.modal.asking .mh-body {
   max-height: none;
   overflow: visible;
+}
+
+/* the scholars, in one row that slides sideways rather than three that
+   push the question box up the screen */
+.ask-voices {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -24px 8px;
+  padding: 0 24px 2px;
+}
+
+.ask-voices::-webkit-scrollbar {
+  display: none;
+}
+
+.ask-voices .chip {
+  flex: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+/* who is speaking, above a scholar's answer, and that it is not him, under */
+.ask-by {
+  margin: 12px 0 -4px;
+}
+
+.ask-style {
+  margin-top: 6px;
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--ink-faint);
 }
 
 .ask-thread {
