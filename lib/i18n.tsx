@@ -270,6 +270,22 @@ const dictionaries = {
     "about.study8":
       "Journal — the verse's page in your journal. Keep it with the bookmark, alone or with the verses after it, write a note underneath, file it in a collection, or hang it on your wall.",
     "about.studyUnderlines": "About the underlines: only the King James is tagged word by word. In every other translation a word is underlined when it can be matched to the Berean Standard Bible, which carries an original behind each of its own words — solid where the Berean uses that word for that original in this very verse, dotted where the match comes from its wording elsewhere and is likely rather than certain. Roughly a quarter of the words on a page carry an underline at all; checked against the King James, nine in ten of those are right, the solid ones more often than the dotted. A word with nothing behind it is left plain and cannot be tapped, because a guess would look exactly like a finding. The Reina Valera has no underlines: the evidence is in English, so its verses use Original text instead.",
+    "about.aiTitle":
+      "The AI in Communion",
+    "about.aiIntro":
+      "Some readers can also put questions to Claude, an AI made by Anthropic. It is turned on one reader at a time, and each has a number of questions a day, shared between the three places it appears:",
+    "about.ai1":
+      "Ask about a verse — in study mode, Compare carries a lamp, and under the translations is room to ask about the verse: what it means, its setting, why the translations differ.",
+    "about.ai2":
+      "Ask the scholars — in Commentary, choose one of seven teachers of the church, from Augustine to Spurgeon, and ask him about the passage. The answers are Claude writing in his manner, never his own words. Where the app has his commentary on the passage — Henry on every book, Spurgeon on the Psalms — the answer is drawn from it; the others answer from what Claude learned of them. The About pill beside each name says who he was.",
+    "about.ai3":
+      "Find verses by describing them — in the search in The Word’s side panel, switch to Ask Claude and describe what you are looking for, like “when I can’t sleep for worrying”. Claude names the passages; the words you see are the app’s own, in the translation you are reading.",
+    "about.aiHow":
+      "Each answer is written fresh. With a question about a verse, Claude is given the question, the conversation so far and the verse’s reference — and its wording too, for translations in the public domain such as the King James — with instructions to stay with the passage, ground what it says in Scripture, keep it short, say so when something is uncertain, and never invent a quotation or a source. The wording of licensed translations such as the ESV and NIV is never sent.",
+    "about.aiLimits":
+      "Claude can be wrong, and sounds just as sure when it is. Weigh what it says against Scripture, as the Bereans did, and treat it as a companion in study rather than an authority — never as a stand-in for a pastor, or for help when you need it.",
+    "about.aiPrivacy":
+      "Your questions are sent to Anthropic to be answered. Communion keeps none of them: a conversation lives on your device only for as long as the app is open, unless you save an answer to the verse’s note. All the app writes down is how many questions you asked, and what they cost to answer.",
     "about.footer": "Built so that two or three — anywhere on earth — can gather in His name.",
     "discover.title": "Discover",
     "discover.tabScripture": "Scripture",
@@ -441,10 +457,6 @@ const dictionaries = {
     "ask.vRead": "How do you read this verse?",
     "ask.noteAI": "AI, in the style of {name}",
     "ask.about": "About",
-    "ask.aboutHow": "How these answers are made",
-    "ask.howGrounded": "When you ask, Claude, an AI made by Anthropic, is given a short description of how {name} wrote and what he believed, along with his own commentary on this passage, the one you see here. It writes a new answer in his manner, drawing on that commentary. The words are Claude's, not his, and may contain mistakes.",
-    "ask.howKnown": "When you ask, Claude, an AI made by Anthropic, is given a short description of how {name} wrote and what he believed. His own writing on this passage is not in the app, so Claude answers from what it learned about him in training, and may stray from what he actually taught. The words are Claude's, not his.",
-    "ask.howPrivate": "Communion does not keep your questions.",
     "reader.savedToNote": "Saved to your verse note",
     "gram.noun": "noun",
     "gram.properNoun": "proper noun",
@@ -854,6 +866,22 @@ const dictionaries = {
     "about.study8":
       "Diario: la página del versículo en tu diario. Guárdalo con el marcador, solo o con los versículos que siguen, escribe una nota debajo, archívalo en una colección o cuélgalo en tu pared.",
     "about.studyUnderlines": "Sobre los subrayados: solo la King James está etiquetada palabra por palabra. En las demás traducciones una palabra se subraya cuando puede emparejarse con la Berean Standard Bible, que lleva un original detrás de cada una de sus palabras — sólido cuando la Berean usa esa palabra para ese original en este mismo versículo, punteado cuando el emparejamiento viene de cómo lo dice en otro lugar y es probable, no seguro. Cerca de una cuarta parte de las palabras de la página lleva subrayado; comprobado contra la King James, nueve de cada diez aciertan, las sólidas más que las punteadas. Una palabra sin nada detrás se queda lisa y no se puede tocar, porque una suposición se vería igual que un hallazgo. La Reina Valera no lleva subrayados: la evidencia está en inglés, así que sus versículos usan Texto original.",
+    "about.aiTitle":
+      "La IA en Communion",
+    "about.aiIntro":
+      "Algunos lectores también pueden hacer preguntas a Claude, una IA creada por Anthropic. Se activa lector por lector, y cada uno tiene cierto número de preguntas al día, compartidas entre los tres lugares donde aparece:",
+    "about.ai1":
+      "Preguntar sobre un versículo — en el modo estudio, Comparar lleva una lámpara, y debajo de las traducciones hay lugar para preguntar sobre el versículo: qué significa, su contexto, por qué difieren las traducciones.",
+    "about.ai2":
+      "Preguntar a los eruditos — en Comentario, elige a uno de siete maestros de la iglesia, de Agustín a Spurgeon, y pregúntale sobre el pasaje. Las respuestas son de Claude, escritas a su manera, nunca palabras suyas. Cuando la app tiene su comentario del pasaje —Henry en todos los libros, Spurgeon en los Salmos—, la respuesta parte de él; los demás responden con lo que Claude aprendió de ellos. El botón Acerca de junto a cada nombre cuenta quién fue.",
+    "about.ai3":
+      "Encontrar versículos describiéndolos — en la búsqueda del panel lateral de La Palabra, cambia a Preguntar a Claude y describe lo que buscas, como «cuando la preocupación no me deja dormir». Claude indica los pasajes; las palabras que ves son las de la app, en la traducción que estás leyendo.",
+    "about.aiHow":
+      "Cada respuesta se escribe de nuevo. Con una pregunta sobre un versículo, Claude recibe la pregunta, la conversación hasta ese momento y la referencia del versículo —y también su texto, en las traducciones de dominio público como la King James o la Reina Valera 1909—, con instrucciones de ceñirse al pasaje, fundar en la Escritura lo que dice, ser breve, decirlo cuando algo es incierto y no inventar nunca una cita ni una fuente. El texto de las traducciones con licencia, como la ESV y la NIV, nunca se envía.",
+    "about.aiLimits":
+      "Claude puede equivocarse, y suena igual de seguro cuando lo hace. Examina lo que dice a la luz de la Escritura, como los de Berea, y tómalo como un compañero de estudio, no como una autoridad; nunca como sustituto de un pastor, ni de la ayuda que necesites.",
+    "about.aiPrivacy":
+      "Tus preguntas se envían a Anthropic para que sean respondidas. Communion no guarda ninguna: la conversación vive en tu dispositivo solo mientras la app está abierta, salvo que guardes una respuesta en la nota del versículo. Lo único que la app anota es cuántas preguntas hiciste y lo que costó responderlas.",
     "about.footer": "Creada para que dos o tres — en cualquier lugar del mundo — se congreguen en Su nombre.",
     "discover.title": "Descubre",
     "discover.tabScripture": "Escritura",
@@ -1025,10 +1053,6 @@ const dictionaries = {
     "ask.vRead": "¿Cómo lees este versículo?",
     "ask.noteAI": "IA, al estilo de {name}",
     "ask.about": "Acerca de",
-    "ask.aboutHow": "Cómo se escriben estas respuestas",
-    "ask.howGrounded": "Cuando preguntas, Claude, una IA creada por Anthropic, recibe una breve descripción de cómo escribía {name} y de lo que creía, junto con su propio comentario de este pasaje, el que ves aquí. Escribe una respuesta nueva a su manera, a partir de ese comentario. Las palabras son de Claude, no suyas, y pueden contener errores.",
-    "ask.howKnown": "Cuando preguntas, Claude, una IA creada por Anthropic, recibe una breve descripción de cómo escribía {name} y de lo que creía. Sus propios escritos sobre este pasaje no están en la app, así que Claude responde con lo que aprendió sobre él en su entrenamiento, y puede apartarse de lo que realmente enseñó. Las palabras son de Claude, no suyas.",
-    "ask.howPrivate": "Communion no guarda tus preguntas.",
     "reader.savedToNote": "Guardado en tu nota del versículo",
     "gram.noun": "sustantivo",
     "gram.properNoun": "nombre propio",

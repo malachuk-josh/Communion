@@ -508,16 +508,14 @@ function Conversation({
                   </button>
                 </div>
                 <p className="about-years">{voiceOf(voice).years}</p>
-                {/* written by hand in lib/voices, not generated */}
-                <p className="about-bio">{voiceOf(voice).bio[lang]}</p>
-                <h3 className="about-how-title">{t("ask.aboutHow")}</h3>
-                {/* which of the two depends on whether his own words on this
-                    passage went with the question — the same test as the
-                    starters' "What did you mean here?" */}
-                <p className="about-how">
-                  {t(source ? "ask.howGrounded" : "ask.howKnown", { name })}{" "}
-                  {t("ask.howPrivate")}
-                </p>
+                {/* written by hand in lib/voices, not generated. Only who he
+                    was: how the answers are made is the same for all seven,
+                    and is told once, on the About page */}
+                {voiceOf(voice).bio[lang].map((para) => (
+                  <p key={para.slice(0, 24)} className="about-bio">
+                    {para}
+                  </p>
+                ))}
               </div>
             </div>,
             document.body

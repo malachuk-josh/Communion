@@ -3999,24 +3999,13 @@ button.compare-pick:last-child {
 }
 
 .about-bio {
+  margin: 0;
   font-family: var(--serif);
   line-height: 1.6;
 }
 
-.about-how-title {
-  margin: 20px 0 6px;
-  font-family: var(--sans);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-.about-how {
-  font-size: 0.86rem;
-  line-height: 1.55;
-  color: var(--ink-dim);
+.about-bio + .about-bio {
+  margin-top: 0.75em;
 }
 
 .ask-starters {

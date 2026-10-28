@@ -41,6 +41,20 @@ export default function AboutCommunion() {
         </ul>
         <p className="about-fineprint">{t("about.studyUnderlines")}</p>
 
+        {/* The AI, told once for all three places it appears, and for
+            everyone: those without it should know what it is too, and what
+            would happen to a question if they had it. */}
+        <h3>{t("about.aiTitle")}</h3>
+        <p>{t("about.aiIntro")}</p>
+        <ul className="about-list">
+          {[1, 2, 3].map((n) => (
+            <li key={n}>{t(`about.ai${n}` as MessageKey)}</li>
+          ))}
+        </ul>
+        <p>{t("about.aiHow")}</p>
+        <p>{t("about.aiLimits")}</p>
+        <p>{t("about.aiPrivacy")}</p>
+
         <p className="notice">{t("about.footer")}</p>
       </div>
     </div>
