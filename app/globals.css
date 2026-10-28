@@ -1645,19 +1645,6 @@ mark {
   padding: 0 2px;
 }
 
-.zoom-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.zoom-value {
-  font-size: 0.82rem;
-  color: var(--ink-dim);
-  min-width: 42px;
-  text-align: center;
-}
-
 .verse-highlight {
   background: var(--gold-soft);
   border-radius: 4px;
@@ -2242,12 +2229,6 @@ mark {
   pointer-events: none;
 }
 
-/* touch screens size text by pinching instead (Reader.tsx) */
-@media (pointer: coarse) {
-  .zoom-size-field {
-    display: none;
-  }
-}
 
 /* ---- study mode ---- */
 .switch {

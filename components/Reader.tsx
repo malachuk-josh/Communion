@@ -72,6 +72,7 @@ import {
 } from "@/lib/sync";
 import AskVerse, { useAskStatus } from "@/components/AskVerse";
 import Concordance from "@/components/Concordance";
+import ReadingSliders from "@/components/ReadingSliders";
 import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -84,6 +85,7 @@ import {
   readTextWeight,
   strokeOf,
   writeTextPt,
+  writeTextWeight,
 } from "@/lib/readingText";
 
 const DEFAULT_BOOK = 40; // Matthew — the app opens on its founding verse
@@ -2250,15 +2252,94 @@ export default function Reader({
     }
   };
 
-  const zoom = (delta: number) => {
-    const next = pt + delta;
-    if (next < PT_MIN || next > PT_MAX) return;
+  const resize = (next: number) => {
+    if (next === pt || next < PT_MIN || next > PT_MAX) return;
     // same reflow as a pinch, same need to hold the reader's place
     holdVerse();
     setPt(next);
     ptRef.current = next;
     writeTextPt(next);
   };
+
+  /*
+   * Double-tap the page to open the navigator.
+   *
+   * Anywhere on the open page — the text, the margins, the space between
+   * chapters — but never on something that already answers a tap: a button,
+   * a link, a pill, a word in study mode, a note, or anything in a pop-up.
+   * Two taps, each one a touch that went down and came up in place, close
+   * together in time and on the screen. A scroll is not a tap, and a pinch is
+   * two fingers, so neither can start one. The page is pan-only (touch-action
+   * on <html>), so a double tap was never a zoom and nothing is taken from it.
+   *
+   * On the whole document while The Word is open, not just the column, so
+   * the margins count too; the header and the bottom bar are left out, being
+   * made of things to press. A mouse double-click does the same.
+   */
+  useEffect(() => {
+    const QUIET =
+      "button, a, input, textarea, select, label, [role='button'], [role='dialog'], .nav, .bottom-nav, .modal-overlay, .lex-sheet, .side-panel, .panel-scrim, .verse-note, .note-edit";
+    const answersTaps = (target: EventTarget | null) =>
+      target instanceof Element && !!target.closest(QUIET);
+    let down: { x: number; y: number; t: number } | null = null;
+    let last: { x: number; y: number; t: number } | null = null;
+    let fingers = 0;
+    const onStart = (e: TouchEvent) => {
+      fingers = Math.max(fingers, e.touches.length);
+      const p = e.touches[0];
+      down =
+        e.touches.length === 1
+          ? { x: p.clientX, y: p.clientY, t: performance.now() }
+          : null;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length > 0) return; // a finger still on the glass
+      const wasPinch = fingers > 1;
+      fingers = 0;
+      const p = e.changedTouches[0];
+      const now = performance.now();
+      const tapped =
+        !wasPinch &&
+        !!down &&
+        Math.hypot(p.clientX - down.x, p.clientY - down.y) < 12 &&
+        now - down.t < 350 &&
+        !answersTaps(e.target);
+      down = null;
+      if (!tapped) {
+        last = null;
+        return;
+      }
+      if (
+        last &&
+        now - last.t < 350 &&
+        Math.hypot(p.clientX - last.x, p.clientY - last.y) < 40
+      ) {
+        last = null;
+        // No click after it. The browser turns a tap into a click a moment
+        // later, and by then the navigator's scrim is under the finger — so
+        // the second tap would open the panel and its click would close it.
+        e.preventDefault();
+        setPanelOpen(true);
+      } else {
+        last = { x: p.clientX, y: p.clientY, t: now };
+      }
+    };
+    const onDouble = (e: MouseEvent) => {
+      if (answersTaps(e.target)) return;
+      // a double-click selects the word under it; that was not the point
+      window.getSelection()?.removeAllRanges();
+      setPanelOpen(true);
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    // not passive: the double tap's touchend cancels the click that follows
+    document.addEventListener("touchend", onEnd, { passive: false });
+    document.addEventListener("dblclick", onDouble);
+    return () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchend", onEnd);
+      document.removeEventListener("dblclick", onDouble);
+    };
+  }, [setPanelOpen]);
 
   const runSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -4077,33 +4158,21 @@ export default function Reader({
                 }}
               />
 
+              {/* The same two sliders as Settings, here where the page
+                  behind them shows what they do. On every screen: a phone can
+                  also pinch, but a pinch is no way to set the weight. */}
               <div className="sp-pad sp-prefs">
-                {/* touch screens pinch the text instead — see the pinch effect */}
-                <div className="pref-row zoom-size-field">
-                  <span>{t("reader.textSize")}</span>
-                  <div className="zoom-group">
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      onClick={() => zoom(-1)}
-                      disabled={pt <= PT_MIN}
-                      aria-label={t("reader.smaller")}
-                    >
-                      A−
-                    </button>
-                    <span className="zoom-value">{pt} pt</span>
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      onClick={() => zoom(1)}
-                      disabled={pt >= PT_MAX}
-                      aria-label={t("reader.larger")}
-                    >
-                      A+
-                    </button>
-                  </div>
-                </div>
+                <ReadingSliders
+                  pt={pt}
+                  weight={weight}
+                  onPt={resize}
+                  onWeight={(next) => {
+                    setWeight(next);
+                    writeTextWeight(next);
+                  }}
+                />
                 <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
+                <p className="cal-hint">{t("reader.doubleTapHint")}</p>
               </div>
             </div>
           </div>

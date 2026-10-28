@@ -20,25 +20,13 @@ import { writeLocal } from "@/lib/storage";
 import { useDocumentTheme, type Theme } from "@/lib/theme";
 import {
   PT_DEFAULT,
-  PT_MAX,
-  PT_MIN,
-  WEIGHT_MAX,
   readTextPt,
   readTextWeight,
   strokeOf,
   writeTextPt,
   writeTextWeight,
 } from "@/lib/readingText";
-import type { MessageKey } from "@/lib/i18n";
-
-/** What each step of the boldness slider is called, from regular up. */
-const WEIGHT_NAMES: MessageKey[] = [
-  "settings.weight0",
-  "settings.weight1",
-  "settings.weight2",
-  "settings.weight3",
-  "settings.weight4",
-];
+import ReadingSliders from "@/components/ReadingSliders";
 
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -235,60 +223,18 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
           {t("settings.previewVerse")}{" "}
           <span className="reading-preview-ref">{t("settings.previewRef")}</span>
         </p>
-        <label className="slider-field">
-          <span className="slider-label">
-            {t("reader.textSize")}
-            <span className="slider-value">{pt} pt</span>
-          </span>
-          <span className="slider-row">
-            <span className="slider-end" aria-hidden>
-              A
-            </span>
-            <input
-              type="range"
-              min={PT_MIN}
-              max={PT_MAX}
-              step={1}
-              value={pt}
-              aria-valuetext={`${pt} pt`}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setPt(next);
-                writeTextPt(next);
-              }}
-            />
-            <span className="slider-end slider-end-big" aria-hidden>
-              A
-            </span>
-          </span>
-        </label>
-        <label className="slider-field">
-          <span className="slider-label">
-            {t("settings.boldness")}
-            <span className="slider-value">{t(WEIGHT_NAMES[weight])}</span>
-          </span>
-          <span className="slider-row">
-            <span className="slider-end" aria-hidden>
-              A
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={WEIGHT_MAX}
-              step={1}
-              value={weight}
-              aria-valuetext={t(WEIGHT_NAMES[weight])}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setWeight(next);
-                writeTextWeight(next);
-              }}
-            />
-            <span className="slider-end slider-end-bold" aria-hidden>
-              A
-            </span>
-          </span>
-        </label>
+        <ReadingSliders
+          pt={pt}
+          weight={weight}
+          onPt={(next) => {
+            setPt(next);
+            writeTextPt(next);
+          }}
+          onWeight={(next) => {
+            setWeight(next);
+            writeTextWeight(next);
+          }}
+        />
         <p className="cal-hint">{t("settings.readingHint")}</p>
       </div>
 
