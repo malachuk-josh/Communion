@@ -73,6 +73,7 @@ import {
 import AskVerse, { useAskStatus } from "@/components/AskVerse";
 import Concordance from "@/components/Concordance";
 import ReadingSliders from "@/components/ReadingSliders";
+import TypefacePicker from "@/components/TypefacePicker";
 import HangOnWall from "@/components/HangOnWall";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -90,6 +91,7 @@ import {
   WEIGHT_DEFAULT,
   type Face,
   writeTextPt,
+  writeTextFace,
   writeTextWeight,
 } from "@/lib/readingText";
 
@@ -265,6 +267,9 @@ export default function Reader({
   const [weight, setWeight] = useState(WEIGHT_DEFAULT);
   /** the typeface it is set in, from Settings; switched to once it has loaded */
   const [face, setFace] = useState<Face>("default");
+  /** the typeface last picked, shown chosen at once while its file arrives */
+  const [pickedFace, setPickedFace] = useState<Face>("default");
+  const pickedFaceRef = useRef<Face>("default");
   const ptRef = useRef(PT_DEFAULT);
   const pinchRef = useRef<{ d: number; pt: number } | null>(null);
   /** The verse held still for the length of a pinch — see the handler. */
@@ -543,8 +548,11 @@ export default function Reader({
       // the reader at a moment nobody chose. So the page opens in the app's
       // own face, and switches once, with the verse being read held in place.
       const wantedFace = readTextFace();
+      setPickedFace(wantedFace);
+      pickedFaceRef.current = wantedFace;
       if (wantedFace !== "default") {
         void faceReady(wantedFace).then(() => {
+          if (pickedFaceRef.current !== wantedFace) return;
           holdVerse();
           setFace(wantedFace);
         });
@@ -4284,6 +4292,26 @@ export default function Reader({
                   }}
                 />
                 <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
+              </div>
+
+              {/* The typeface too, at the foot of the panel, the same picker
+                  as Settings. The page switches the way it does on opening:
+                  once the face's file is here, with the verse being read held
+                  where it is. A quicker second pick wins over a slow first. */}
+              <div className="sp-pad sp-prefs">
+                <TypefacePicker
+                  face={pickedFace}
+                  onFace={(next) => {
+                    setPickedFace(next);
+                    pickedFaceRef.current = next;
+                    writeTextFace(next);
+                    void faceReady(next).then(() => {
+                      if (pickedFaceRef.current !== next) return;
+                      holdVerse();
+                      setFace(next);
+                    });
+                  }}
+                />
               </div>
             </div>
           </div>
