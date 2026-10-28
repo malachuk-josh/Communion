@@ -229,8 +229,13 @@ export const keys = {
   userPrayers: (userId: string) => `user:${userId}:prayers`,
   /** Whom the owner has handed the dashboard to, beyond the owner. */
   trustedAdmins: "admin:trusted",
-  /** Whom the owner has let ask questions in study mode (lib/ask.ts). */
+  /**
+   * Whom the owner switched on for questions, at 25 a day, before there were
+   * tiers. Read as the 25 tier, and emptied as tiers are set (lib/ask.ts).
+   */
   askUsers: "ask:users",
+  /** Illumination tiers above the standard day: userId → "plus" | "unlimited". */
+  askTiers: "ask:tiers",
   /** One UTC day of questions: counts and tokens, per person and in all. */
   askDay: (day: string) => `ask:day:${day}`,
   /** Every time one account was stood in by another, and by whom. */

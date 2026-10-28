@@ -6,12 +6,12 @@ import {
   MAX_ANSWER,
   MAX_QUESTION,
   MAX_TURNS,
-  PER_PERSON,
   askConfigured,
-  canAsk,
   giveBack,
   nextReset,
   questionsLeft,
+  tierLimit,
+  tierOf,
   recordUsage,
   takeQuestion,
   type AskUsage,
@@ -145,17 +145,24 @@ function setting(body: AskBody, bookName: string): string {
   return lines.join("\n\n");
 }
 
-/** Whether this reader has the chat, and how much of today is left. */
+/**
+ * Whether this reader has Illumination, and how much of today is left. For
+ * an unlimited reader there is no `left` and no `perPerson`.
+ */
 export async function GET(req: Request) {
   const userId = await getUserId(req);
-  if (!(await canAsk(userId))) {
+  const tier = await tierOf(userId);
+  if (!tier) {
     return NextResponse.json({ allowed: false });
   }
+  const { left, limit } = await questionsLeft(userId!, tier);
+  const perPerson = tierLimit(tier);
   return NextResponse.json({
     allowed: true,
     ready: askConfigured(),
-    ...(await questionsLeft(userId!)),
-    perPerson: PER_PERSON,
+    ...(left === null ? {} : { left }),
+    limit,
+    ...(perPerson === null ? {} : { perPerson }),
     resetsAt: nextReset(),
   });
 }
@@ -174,7 +181,8 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!(await canAsk(userId))) {
+  const tier = await tierOf(userId);
+  if (!tier) {
     return NextResponse.json({ error: "not-allowed" }, { status: 403 });
   }
   if (!askConfigured()) {
@@ -200,7 +208,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad-question" }, { status: 400 });
   }
 
-  const taken = await takeQuestion(userId);
+  const taken = await takeQuestion(userId, tier);
   if (!taken.ok) {
     return NextResponse.json(
       {
@@ -275,12 +283,12 @@ export async function POST(req: Request) {
         }
         send({
           end: stop ?? "end_turn",
-          left: Math.max(0, taken.left),
+          ...(taken.left === null ? {} : { left: Math.max(0, taken.left) }),
         });
       } catch (err) {
         if (!wrote && !req.signal.aborted) {
           // nothing came of it, so it does not count against anyone
-          await giveBack(userId, taken.day).catch(() => {});
+          await giveBack(userId, taken).catch(() => {});
         }
         if (!req.signal.aborted) {
           const status =

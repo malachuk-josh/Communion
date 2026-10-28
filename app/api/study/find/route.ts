@@ -4,11 +4,11 @@ import { getUserId } from "@/lib/auth";
 import {
   ASK_MODEL,
   askConfigured,
-  canAsk,
   giveBack,
   nextReset,
   recordUsage,
   takeQuestion,
+  tierOf,
 } from "@/lib/ask";
 import { BOOKS } from "@/lib/bible";
 
@@ -113,12 +113,17 @@ function readFound(raw: unknown): { found: Found[]; note: string } {
   return { found: out, note: String(data?.note ?? "").trim().slice(0, 300) };
 }
 
+/** What is left today, for a limited reader; nothing for an unlimited one. */
+const leftOf = (taken: { left: number | null }) =>
+  taken.left === null ? {} : { left: taken.left };
+
 export async function POST(req: Request) {
   const userId = await getUserId(req);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!(await canAsk(userId))) {
+  const tier = await tierOf(userId);
+  if (!tier) {
     return NextResponse.json({ error: "not-allowed" }, { status: 403 });
   }
   if (!askConfigured()) {
@@ -133,7 +138,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad-question" }, { status: 400 });
   }
 
-  const taken = await takeQuestion(userId);
+  const taken = await takeQuestion(userId, tier);
   if (!taken.ok) {
     return NextResponse.json(
       {
@@ -176,7 +181,7 @@ export async function POST(req: Request) {
       cacheWrite: message.usage.cache_creation_input_tokens ?? 0,
     }).catch(() => {});
     if (message.stop_reason === "refusal") {
-      return NextResponse.json({ results: [], note: "", refused: true, left: taken.left });
+      return NextResponse.json({ results: [], note: "", refused: true, ...leftOf(taken) });
     }
     const text = message.content
       .map((block) => (block.type === "text" ? block.text : ""))
@@ -188,10 +193,10 @@ export async function POST(req: Request) {
       // cut short, or otherwise not the shape asked for: nothing to show
     }
     const { found, note } = readFound(parsed);
-    return NextResponse.json({ results: found, note, left: taken.left });
+    return NextResponse.json({ results: found, note, ...leftOf(taken) });
   } catch (err) {
     // nothing came of it, so it does not count against anyone
-    await giveBack(userId, taken.day).catch(() => {});
+    await giveBack(userId, taken).catch(() => {});
     const status = err instanceof Anthropic.APIError ? err.status : undefined;
     console.error("find: search failed", status, (err as Error)?.message);
     return NextResponse.json(

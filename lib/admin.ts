@@ -21,7 +21,7 @@
 import { nanoid } from "nanoid";
 import { db, keys } from "@/lib/db";
 import { impersonationEnabled } from "@/lib/impersonate";
-import { askIds, askSummary, type AskSummary } from "@/lib/ask";
+import { askSummary, askTiers, type AskSummary, type AskTier } from "@/lib/ask";
 
 const DEFAULT_OWNERS = ["user_3GNx7nrvGoTT4MowltjVNjsttb2"];
 
@@ -236,8 +236,11 @@ export interface AdminUser {
   trusted: boolean;
   /** switched off by the owner — signed in or not, they can do nothing */
   deactivated: boolean;
-  /** may ask questions in study mode; the owner's own row reads true */
-  ask: boolean;
+  /**
+   * Illumination: the tier, for an account — standard, plus or unlimited,
+   * the owner always unlimited — and null for a guest, who has none.
+   */
+  tier: AskTier | null;
 }
 
 export interface AdminSummary {
@@ -283,7 +286,8 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
   // read straight through: the dashboard is the one screen that must never
   // show a stale answer about who is switched off
   const deactivated = new Set(await kv.smembers(keys.deactivatedUsers));
-  const asking = new Set(await askIds());
+  const tiers = await askTiers();
+  const asking = Object.keys(tiers);
   const ask = await askSummary();
 
   /*
@@ -347,7 +351,11 @@ export async function buildSummary(viewerId: string): Promise<AdminSummary> {
         guest: !userId.startsWith("user_"),
         trusted: isOwner(userId) || trusted.has(userId),
         deactivated: !isOwner(userId) && deactivated.has(userId),
-        ask: isOwner(userId) || asking.has(userId),
+        tier: isOwner(userId)
+          ? "unlimited"
+          : userId.startsWith("user_")
+            ? (tiers[userId] ?? "standard")
+            : null,
         ...counts,
       };
     })

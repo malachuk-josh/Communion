@@ -21,8 +21,11 @@ interface AdminUser {
   guest: boolean;
   trusted: boolean;
   deactivated: boolean;
-  ask: boolean;
+  /** Illumination: null for a guest, who has none */
+  tier: Tier | null;
 }
+
+type Tier = "standard" | "plus" | "unlimited";
 
 interface Takeover {
   as: string;
@@ -44,7 +47,7 @@ interface Deactivation {
 interface AskSummary {
   configured: boolean;
   model: string;
-  perPerson: number;
+  tiers: { standard: number; plus: number };
   perApp: number;
   today: { questions: number; spend: number };
   month: { questions: number; spend: number };
@@ -77,6 +80,11 @@ const dollars = (n: number) =>
 
 const date = (ts?: number) =>
   ts ? new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+
+/** "10 a day", "25 a day" or "Unlimited". */
+function tierName(tier: Tier, tiers: { standard: number; plus: number }): string {
+  return tier === "unlimited" ? "Unlimited" : `${tiers[tier]} a day`;
+}
 
 export default function AdminDashboard() {
   const { t } = useI18n();
@@ -130,34 +138,38 @@ export default function AdminDashboard() {
   };
 
   /**
-   * Let someone ask questions in study mode, or stop them.
+   * Set someone's Illumination tier.
    *
-   * Its own switch rather than part of trust, because the two give different
+   * Its own control rather than part of trust, because the two give different
    * things: trust shows somebody the dashboard, and this spends the owner's
    * API credit. Wanting a friend to have the one is no reason to give them
-   * the other.
+   * the other. Only unlimited asks first — it is the one with no ceiling on
+   * what it can cost.
    */
-  const toggleAsk = async (u: AdminUser) => {
-    const next = !u.ask;
-    const warning = next
-      ? `Let ${u.displayName} ask questions in study mode?\n\n` +
-        `Answers come from your Anthropic API credit, up to ` +
-        `${data?.ask.perPerson ?? 25} questions a day for them, and ` +
-        `${data?.ask.perApp ?? 300} a day across everyone.`
-      : `Stop ${u.displayName} asking questions in study mode?`;
-    if (!window.confirm(warning)) return;
+  const setTier = async (u: AdminUser, next: Tier) => {
+    if (next === u.tier) return;
+    if (
+      next === "unlimited" &&
+      !window.confirm(
+        `Give ${u.displayName} unlimited Illumination?\n\n` +
+          `Answers come from your Anthropic API credit, with no daily limit ` +
+          `for them, and the app's daily ceiling does not stop them either.`
+      )
+    ) {
+      return;
+    }
     setBusyUser(u.userId);
     try {
       await api("/api/admin/ask", {
         method: "POST",
-        body: { userId: u.userId, ask: next },
+        body: { userId: u.userId, tier: next },
       });
       setData((prev) =>
         prev
           ? {
               ...prev,
               users: prev.users.map((x) =>
-                x.userId === u.userId ? { ...x, ask: next } : x
+                x.userId === u.userId ? { ...x, tier: next } : x
               ),
             }
           : prev
@@ -269,16 +281,16 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* What the study-mode questions are costing. An estimate from the
-          token counts at list price; Anthropic's console has the bill. */}
+      {/* What Illumination is costing. An estimate from the token counts at
+          list price; Anthropic's console has the bill. */}
       <div className="section-head">
-        <h2>Ask in study mode</h2>
+        <h2>Illumination</h2>
       </div>
       <div className="glass card admin-ask">
         {!data.ask.configured && (
           <p className="admin-ask-warn">
             <Icon name="lock" /> No ANTHROPIC_API_KEY is set on this
-            deployment, so nobody can ask yet. Add it in Vercel → Settings →
+            deployment, so Illumination is off for everyone. Add it in Vercel → Settings →
             Environment Variables, then redeploy.
           </p>
         )}
@@ -301,8 +313,12 @@ export default function AdminDashboard() {
           </div>
         </div>
         <p className="admin-sub">
-          {data.ask.perPerson} questions a person a day, {data.ask.perApp} in
-          all; the day turns at midnight UTC. Model: {data.ask.model}.
+          Every signed-in account has {data.ask.tiers.standard} a day; set
+          anyone to {data.ask.tiers.plus} a day or unlimited in the table
+          below. The {data.ask.tiers.standard} and {data.ask.tiers.plus} tiers
+          share a ceiling of {data.ask.perApp.toLocaleString()} a day, which
+          unlimited readers neither use nor are stopped by. The day turns at
+          midnight UTC. Model: {data.ask.model}.
         </p>
       </div>
 
@@ -321,7 +337,7 @@ export default function AdminDashboard() {
               <th>Joined</th>
               <th>Last seen</th>
               <th>Trusted</th>
-              <th>Ask</th>
+              <th>Illumination</th>
               {data.viewerIsOwner && <th />}
             </tr>
           </thead>
@@ -365,23 +381,25 @@ export default function AdminDashboard() {
                     )}
                   </td>
                   <td>
-                    {/* the owner's own is always on, and shows as such;
-                        accounts only, as the server insists */}
-                    {data.viewerIsOwner && !isMe && !u.guest ? (
-                      <button
-                        type="button"
-                        className={`trust-toggle${u.ask ? " on" : ""}`}
-                        role="switch"
-                        aria-checked={u.ask}
-                        aria-label={`Ask in study mode for ${u.displayName}`}
+                    {/* the owner's own is always unlimited, and shows as
+                        such; accounts only, as the server insists */}
+                    {data.viewerIsOwner && !isMe && u.tier ? (
+                      <select
+                        className="admin-tier"
+                        value={u.tier}
+                        aria-label={`Illumination for ${u.displayName}`}
                         disabled={busyUser === u.userId}
-                        onClick={() => toggleAsk(u)}
+                        onChange={(e) => setTier(u, e.target.value as Tier)}
                       >
-                        <span className="trust-knob" />
-                      </button>
+                        <option value="standard">{data.ask.tiers.standard} a day</option>
+                        <option value="plus">{data.ask.tiers.plus} a day</option>
+                        <option value="unlimited">Unlimited</option>
+                      </select>
                     ) : (
                       <span className="admin-sub">
-                        {u.ask ? (isMe ? "you" : "yes") : "—"}
+                        {u.tier
+                          ? `${tierName(u.tier, data.ask.tiers)}${isMe ? " (you)" : ""}`
+                          : "—"}
                       </span>
                     )}
                     {data.ask.people[u.userId] && (

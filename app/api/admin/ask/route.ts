@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 import { getRealUserId } from "@/lib/auth";
 import { isOwner, sameOrigin } from "@/lib/admin";
-import { askIds, setAsk } from "@/lib/ask";
+import { askTiers, setTier, type AskTier } from "@/lib/ask";
 import { db, keys } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+const TIERS: AskTier[] = ["standard", "plus", "unlimited"];
+
 /**
- * Let someone ask questions in study mode, or stop them.
+ * Set someone's Illumination tier: the standard day every account has, more,
+ * or no limit.
  *
  * The owner alone: every answer is paid for from the owner's API credit, so
- * who may spend it is the owner's decision every time, and not one a trusted
- * admin can make for them. The real session, as with trust, so standing in an
- * account does not take the switch away.
+ * who may spend how much of it is the owner's decision every time, and not
+ * one a trusted admin can make for them. The real session, as with trust, so
+ * standing in an account does not take the decision away.
  */
 export async function POST(req: Request) {
   const me = await getRealUserId(req);
@@ -22,15 +25,19 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => null)) as {
     userId?: string;
-    ask?: boolean;
+    tier?: string;
   } | null;
   const userId = body?.userId?.trim();
   if (!userId || !/^[\w-]{3,80}$/.test(userId)) {
     return NextResponse.json({ error: "Which account?" }, { status: 400 });
   }
+  const tier = TIERS.find((t) => t === body?.tier);
+  if (!tier) {
+    return NextResponse.json({ error: "Which tier?" }, { status: 400 });
+  }
   if (isOwner(userId)) {
     return NextResponse.json(
-      { error: "Owners always have it." },
+      { error: "Owners are always unlimited." },
       { status: 400 }
     );
   }
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
   // and an allowance handed to a browser goes to whoever holds it next
   if (!userId.startsWith("user_")) {
     return NextResponse.json(
-      { error: "Only a signed-in account can be given this." },
+      { error: "Only a signed-in account has a tier." },
       { status: 400 }
     );
   }
@@ -46,9 +53,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No such account." }, { status: 404 });
   }
 
-  await setAsk(userId, body?.ask === true);
+  await setTier(userId, tier);
   return NextResponse.json({
     ok: true,
-    ask: (await askIds()).includes(userId),
+    tier: (await askTiers())[userId] ?? "standard",
   });
 }

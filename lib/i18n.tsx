@@ -299,7 +299,7 @@ const dictionaries = {
     "about.aiTitle":
       "The AI in Communion",
     "about.aiIntro":
-      "Some readers can also put questions to Claude, an AI made by Anthropic. It is turned on one reader at a time, and each has a number of questions a day, shared between the three places it appears:",
+      "Signed in, you can also put questions to Claude, an AI made by Anthropic. Every account has 10 questions a day, shared between the three places it appears, and they come back at midnight UTC:",
     "about.ai1":
       "Ask about a verse — in study mode, Compare carries a lamp, and under the translations is room to ask about the verse: what it means, its setting, why the translations differ.",
     "about.ai2":
@@ -550,7 +550,7 @@ const dictionaries = {
     "ask.busy": "Claude is busy right now. Try again in a moment.",
     "ask.failed": "That didn't go through. Try again.",
     "ask.offline": "You're offline. Ask needs a connection.",
-    "ask.notReady": "Ask isn't switched on yet.",
+    "ask.notReady": "Illumination isn't switched on yet.",
     "ask.personLimit": "You've asked today's {n} questions. More at {time}.",
     "ask.appLimit": "Ask has reached its limit for today. More at {time}.",
     "ask.full": "That's ten questions on this verse.",
@@ -1019,7 +1019,7 @@ const dictionaries = {
     "about.aiTitle":
       "La IA en Communion",
     "about.aiIntro":
-      "Algunos lectores también pueden hacer preguntas a Claude, una IA creada por Anthropic. Se activa lector por lector, y cada uno tiene cierto número de preguntas al día, compartidas entre los tres lugares donde aparece:",
+      "Con tu cuenta, también puedes hacer preguntas a Claude, una IA creada por Anthropic. Cada cuenta tiene 10 preguntas al día, compartidas entre los tres lugares donde aparece, y se renuevan a medianoche UTC:",
     "about.ai1":
       "Preguntar sobre un versículo — en el modo estudio, Comparar lleva una lámpara, y debajo de las traducciones hay lugar para preguntar sobre el versículo: qué significa, su contexto, por qué difieren las traducciones.",
     "about.ai2":
@@ -1270,7 +1270,7 @@ const dictionaries = {
     "ask.busy": "Claude está ocupado ahora mismo. Inténtalo de nuevo en un momento.",
     "ask.failed": "No se pudo enviar. Inténtalo de nuevo.",
     "ask.offline": "Estás sin conexión. Preguntar necesita conexión.",
-    "ask.notReady": "Preguntar aún no está activado.",
+    "ask.notReady": "La iluminación aún no está activada.",
     "ask.personLimit": "Ya hiciste las {n} preguntas de hoy. Más a las {time}.",
     "ask.appLimit": "Preguntar llegó a su límite de hoy. Más a las {time}.",
     "ask.full": "Son diez preguntas sobre este versículo.",

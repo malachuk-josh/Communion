@@ -6690,3 +6690,13 @@ button.compare-pick:last-child {
   font-size: 0.86rem;
   color: var(--gold);
 }
+
+/* Illumination's tier, in the dashboard's table: small, so the row stays one
+   line, and gold when it is more than the standard day */
+.admin-tier {
+  width: auto;
+  min-width: 7.5em;
+  padding: 4px 26px 4px 9px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+}
