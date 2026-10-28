@@ -1803,7 +1803,7 @@ mark {
   border-bottom: 1px solid var(--glass-border);
 }
 
-/* the round buttons in the navigator's header: search, and the menu */
+/* the round buttons in the navigator's header: the theme, and the menu */
 .sp-icon-btn {
   display: inline-flex;
   text-decoration: none;
@@ -1818,12 +1818,6 @@ mark {
   color: var(--ink-dim);
   cursor: pointer;
   font-size: 0.95rem;
-}
-
-.sp-icon-btn.on {
-  color: var(--gold);
-  border-color: var(--gold-soft);
-  background: var(--gold-soft);
 }
 
 .sp-where {

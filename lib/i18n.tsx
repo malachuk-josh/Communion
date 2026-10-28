@@ -254,7 +254,7 @@ const dictionaries = {
     "about.tourPathLabel": "Find it",
     "about.tourScholarsPath": "The Word › tap ✦ › Commentary, under any verse › pick a scholar",
     "about.tourAskVersePath": "The Word › tap ✦ › Compare, under any verse › Ask about this verse",
-    "about.tourAiSearchPath": "The Word › tap ✦ › the tab on the right edge › Search › Illuminated Search",
+    "about.tourAiSearchPath": "The Word › tap ✦ › the tab on the right edge › Illuminated Search, at the top",
     "about.tourMaps": "Maps in context",
     "about.tourMapsDesc":
       "Where the chapter happened, and the places it names — tap one to find its verse.",
@@ -974,7 +974,7 @@ const dictionaries = {
     "about.tourPathLabel": "Dónde",
     "about.tourScholarsPath": "La Palabra › toca ✦ › Comentario, bajo cualquier versículo › elige un erudito",
     "about.tourAskVersePath": "La Palabra › toca ✦ › Comparar, bajo cualquier versículo › Pregunta sobre este versículo",
-    "about.tourAiSearchPath": "La Palabra › toca ✦ › la pestaña del borde derecho › Buscar › Búsqueda iluminada",
+    "about.tourAiSearchPath": "La Palabra › toca ✦ › la pestaña del borde derecho › Búsqueda iluminada, arriba del todo",
     "about.tourMaps": "Mapas en contexto",
     "about.tourMapsDesc":
       "Dónde sucedió el capítulo y los lugares que nombra: toca uno para ir a su versículo.",

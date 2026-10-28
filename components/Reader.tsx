@@ -275,8 +275,6 @@ export default function Reader({
   /** The verse held still for the length of a pinch — see the handler. */
   const pinchAnchor = useRef<{ sel: string; top: number } | null>(null);
   const [pinchShow, setPinchShow] = useState<number | null>(null);
-  /** the navigator's search field, folded away behind an icon until asked for */
-  const [searchOpen, setSearchOpen] = useState(false);
   const [xrefs, setXrefs] = useState<Record<string, number[][]> | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -2470,7 +2468,6 @@ export default function Reader({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t(describing ? "find.placeholder" : "search.placeholder")}
           maxLength={describing ? 300 : 60}
-          autoFocus={fromSheet}
           enterKeyHint="search"
         />
         {/* In the navigator the button is its icon alone: the panel is
@@ -4182,16 +4179,6 @@ export default function Reader({
               <span className="sp-where">
                 <Icon name="book" /> {bookName} {viewChapter}
               </span>
-              <button
-                type="button"
-                className={`sp-icon-btn${searchOpen ? " on" : ""}`}
-                onClick={() => setSearchOpen((open) => !open)}
-                aria-expanded={searchOpen}
-                aria-label={t("search.button")}
-                title={t("search.button")}
-              >
-                <Icon name="search" />
-              </button>
               {/* Dark, grey, light. It is on every other tab's header and was
                   on none of this one's, because The Word's header is kept for
                   the passage and study mode — but the reader who wants it is
@@ -4210,9 +4197,13 @@ export default function Reader({
             </div>
 
             {/* pinned: search, translation and bookmarks stay put while the
-                book list scrolls under them */}
+                book list scrolls under them. The search is always out, at the
+                top: it used to fold away behind an icon in the row above, and
+                the way to find a passage should not need finding itself. It
+                does not take the focus when the panel opens, though: that
+                would raise the keyboard over the books every time. */}
             <div className="sp-fixed">
-              {searchOpen && <div className="sp-pad">{searchBar(true)}</div>}
+              <div className="sp-pad">{searchBar(true)}</div>
               <div className="sp-pad sp-top">
                 <select
                   className="sp-trans"
