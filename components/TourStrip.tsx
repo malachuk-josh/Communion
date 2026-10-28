@@ -29,13 +29,13 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 const SLIDES: Array<{ img: string; w: number; h: number; key: string; path?: true }> = [
   { img: "reader", w: 720, h: 992, key: "tourReader" },
   { img: "study", w: 720, h: 976, key: "tourStudy" },
-  { img: "lexicon", w: 720, h: 1184, key: "tourLexicon" },
-  { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
-  { img: "commentary", w: 720, h: 1024, key: "tourCommentary" },
-  // the AI, in the three places it appears
+  // the AI first, in the three places it appears, straight after study mode
   { img: "scholars", w: 720, h: 1096, key: "tourScholars", path: true },
   { img: "askverse", w: 720, h: 1096, key: "tourAskVerse", path: true },
   { img: "aisearch", w: 720, h: 1120, key: "tourAiSearch", path: true },
+  { img: "lexicon", w: 720, h: 1184, key: "tourLexicon" },
+  { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
+  { img: "commentary", w: 720, h: 1024, key: "tourCommentary" },
   { img: "maps", w: 720, h: 1042, key: "tourMaps" },
   { img: "redletters", w: 720, h: 1066, key: "tourRed" },
   { img: "devotional", w: 720, h: 1020, key: "tourDevotional" },
