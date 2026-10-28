@@ -2277,11 +2277,11 @@ mark {
   z-index: 71;
 }
 
-/* the grip above and below the icon: three short lines, a little quieter
-   than the icon so the icon still says what the tab is */
+/* the grip above and below the icon: three short upright lines, a little
+   quieter than the icon so the icon still says what the tab is */
 .panel-tab .pt-grip {
-  width: 10px;
-  height: 8px;
+  width: 8px;
+  height: 10px;
   flex: none;
   fill: none;
   stroke: currentColor;
