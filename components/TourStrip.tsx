@@ -25,7 +25,7 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 const SLIDES: Array<{ img: string; w: number; h: number; key: string }> = [
   { img: "reader", w: 720, h: 992, key: "tourReader" },
   { img: "study", w: 720, h: 976, key: "tourStudy" },
-  { img: "lexicon", w: 720, h: 772, key: "tourLexicon" },
+  { img: "lexicon", w: 720, h: 1184, key: "tourLexicon" },
   { img: "concordance", w: 720, h: 1122, key: "tourConcordance" },
   { img: "commentary", w: 720, h: 1024, key: "tourCommentary" },
   // the AI, in the three places it appears
