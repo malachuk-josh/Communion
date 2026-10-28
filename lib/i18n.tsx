@@ -19,8 +19,8 @@ const dictionaries = {
     "settings.redLetterHint":
       "The way most printed Bibles set them. Available in the King James, which is the only text here marked speech by speech; other translations read in one colour.",
     "settings.theme": "Theme",
-    "settings.themeLight": "Light",
-    "settings.themeDark": "Dark",
+    "settings.themeLight": "Parchment",
+    "settings.themeDark": "Illuminated",
     "nav.menu": "Menu",
     "nav.journal": "Journal",
     "menu.title": "Menu",
@@ -578,8 +578,8 @@ const dictionaries = {
     "settings.redLetterHint":
       "Como las presentan casi todas las Biblias impresas. Disponible en la King James, el único texto aquí marcado discurso por discurso; las demás traducciones se leen en un solo color.",
     "settings.theme": "Tema",
-    "settings.themeLight": "Claro",
-    "settings.themeDark": "Oscuro",
+    "settings.themeLight": "Pergamino",
+    "settings.themeDark": "Iluminado",
     "nav.menu": "Menú",
     "nav.journal": "Diario",
     "menu.title": "Menú",

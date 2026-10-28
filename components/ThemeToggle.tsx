@@ -1,6 +1,8 @@
 "use client";
 
-// One button, three themes, cycling dark → grey → light → dark.
+// One button, three themes, cycling dark → grey → light → dark — which the
+// reader knows as Illuminated, Grey and Parchment. The ids stay as they were,
+// so everybody's saved choice still means what it did.
 //
 // The icon shows what comes NEXT rather than what is on: a control that
 // pictures the state you are already looking at tells you nothing you cannot
@@ -13,10 +15,8 @@
 // the navigator, which is where somebody reading at night goes looking anyway.
 
 import Icon from "@/components/Icon";
-import { useEffect, useState } from "react";
 import { writeLocal } from "@/lib/storage";
-
-type Theme = "dark" | "light" | "grey";
+import { useDocumentTheme, type Theme } from "@/lib/theme";
 
 const NEXT: Record<Theme, Theme> = {
   dark: "grey",
@@ -32,8 +32,8 @@ const BAR: Record<Theme, string> = {
 
 const LABEL: Record<Theme, string> = {
   grey: "Switch to grey scale",
-  light: "Switch to light mode",
-  dark: "Switch to dark mode",
+  light: "Switch to Parchment",
+  dark: "Switch to Illuminated",
 };
 
 export default function ThemeToggle({
@@ -41,18 +41,12 @@ export default function ThemeToggle({
 }: {
   className?: string;
 }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-
   // the inline bootstrap script in the layout applies the saved theme before
-  // paint; here we just sync React state with what it decided
-  useEffect(() => {
-    const current = document.documentElement.dataset.theme;
-    setTheme(current === "light" || current === "grey" ? current : "dark");
-  }, []);
+  // paint; this follows it, and whatever Settings does to it afterwards
+  const theme = useDocumentTheme();
 
   const cycle = () => {
     const next = NEXT[theme];
-    setTheme(next);
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
     writeLocal("communion.theme", next);
@@ -69,7 +63,9 @@ export default function ThemeToggle({
       aria-label={LABEL[NEXT[theme]]}
       title={LABEL[NEXT[theme]]}
     >
-      <Icon name={theme === "dark" ? "news" : theme === "grey" ? "sun" : "moon"} />
+      <Icon
+        name={theme === "dark" ? "news" : theme === "grey" ? "parchment" : "candle"}
+      />
     </button>
   );
 }

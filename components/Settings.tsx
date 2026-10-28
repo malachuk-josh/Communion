@@ -17,6 +17,7 @@ import ReminderSettings from "@/components/ReminderSettings";
 import DeleteAccount from "@/components/DeleteAccount";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import { writeLocal } from "@/lib/storage";
+import { useDocumentTheme, type Theme } from "@/lib/theme";
 
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -56,7 +57,8 @@ function ClerkAccount() {
 
 export default function Settings() {
   const { lang, setLang, t } = useI18n();
-  const [theme, setTheme] = useState<"dark" | "light" | "grey">("dark");
+  // follows the header's theme button too, so the right one is always marked
+  const theme = useDocumentTheme();
   // your name, which used to live on its own Profile screen
   const [displayName, setDisplayName] = useState("");
   const [nameLoaded, setNameLoaded] = useState(false);
@@ -67,8 +69,6 @@ export default function Settings() {
   const [redLetter, setRedLetter] = useState(false);
 
   useEffect(() => {
-    const current = document.documentElement.dataset.theme;
-    setTheme(current === "light" || current === "grey" ? current : "dark");
     setRedLetter(readRedLetter());
     api<{ displayName: string }>("/api/profile")
       .then((res) => setDisplayName(res.displayName))
@@ -108,8 +108,7 @@ export default function Settings() {
     }
   };
 
-  const applyTheme = (next: "dark" | "light" | "grey") => {
-    setTheme(next);
+  const applyTheme = (next: Theme) => {
     if (next === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = next;
     writeLocal("communion.theme", next);
@@ -162,7 +161,7 @@ export default function Settings() {
               className={theme === "dark" ? "active" : ""}
               onClick={() => applyTheme("dark")}
             >
-              <Icon name="moon" /> {t("settings.themeDark")}
+              <Icon name="candle" /> {t("settings.themeDark")}
             </button>
             <button
               className={theme === "grey" ? "active" : ""}
@@ -174,7 +173,7 @@ export default function Settings() {
               className={theme === "light" ? "active" : ""}
               onClick={() => applyTheme("light")}
             >
-              <Icon name="sun" /> {t("settings.themeLight")}
+              <Icon name="parchment" /> {t("settings.themeLight")}
             </button>
           </div>
         </div>

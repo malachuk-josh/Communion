@@ -50,10 +50,18 @@ const PATHS = {
     "M3.5 20l2.2-3.2C10 16.5 13.6 14 15.7 10.4 16.9 8.3 17.6 6 20.5 4c0 3-.4 4.6-1.3 6.6-2.2 4.9-6.6 8-11.4 8.2z",
     "M8.5 13.6c2 1.1 4.2 1.2 6.2.3",
   ],
+  // the Illuminated theme: light shining in the darkness
   candle: [
     "M12 3.2c1.4 1.9 2 3 2 4a2 2 0 0 1-4 0c0-1 .6-2.1 2-4z",
     "M9.5 10.5h5V21h-5z",
     "M9.5 14h5",
+  ],
+  // the Parchment theme: a leaf of old paper, its edges gone wavy, a line or
+  // two written on it — deeper waves and fewer lines than the newspaper that
+  // stands for Grey beside it
+  parchment: [
+    "M5.5 5c2.2-1.6 4.3 1.6 6.5 0s4.3-1.6 6.5 0v14c-2.2 1.6-4.3-1.6-6.5 0s-4.3 1.6-6.5 0z",
+    "M8.5 10h7M8.5 13.5h5",
   ],
   // a map pin: the Context pop-up, which is where it happened. Not a folded
   // map, which at pill size is three upright strips — the same shape as the
