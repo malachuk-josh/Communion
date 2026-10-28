@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
-import { scrollToY } from "@/lib/scroller";
+import { onScroll as onPageScroll, scrollToY, scrollY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
@@ -99,8 +99,46 @@ export default function Nav() {
   const [askSignIn, setAskSignIn] = useState(false);
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
+  const [navHidden, setNavHidden] = useState(false);
   /** which way the last swipe went, read once by the animation after it lands */
   const swipeDir = useRef<number | null>(null);
+
+  /**
+   * In The Word, reading down tucks the bottom bar away, so nothing but the
+   * text and the chapter arrows is at the foot of the page; a brisk upward
+   * flick, or nearing the top, brings it back. A slow upward drift keeps it
+   * hidden — that is still reading, not reaching.
+   *
+   * This is the gesture that was here before, restored a second time. It was
+   * taken out when the bar went down to three tabs, on the reasoning that a
+   * bar that narrow could share the bottom edge with the chapter arrows and
+   * stay put. It could, but a bar that never leaves is one more thing in view
+   * on the one screen meant to be nothing but the text.
+   *
+   * The bar starts visible, so a reader who never flicks still learns it is
+   * there. The arrows need nothing from this: they sit in the corners either
+   * side of the bar, already where they would drop to with it gone.
+   */
+  useEffect(() => {
+    if (pathname !== "/") {
+      setNavHidden(false);
+      return;
+    }
+    let lastY = scrollY();
+    let lastT = performance.now();
+    const onScroll = () => {
+      const y = scrollY();
+      const now = performance.now();
+      const dy = y - lastY;
+      const speed = -dy / Math.max(1, now - lastT); // px/ms, upward
+      if (y < 130) setNavHidden(false);
+      else if (dy > 4) setNavHidden(true);
+      else if (dy < 0 && (speed > 0.9 || -dy > 110)) setNavHidden(false);
+      lastY = y;
+      lastT = now;
+    };
+    return onPageScroll(onScroll);
+  }, [pathname]);
 
   /*
    * A new screen starts at the top of itself.
@@ -478,19 +516,13 @@ export default function Nav() {
       </nav>
 
       <nav
-        className="bottom-nav glass"
+        className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
         aria-label="Primary"
       >
         {/* Three tabs, for reading on your own: the Word first, because
             reading is what the app is for, then Home and the Journal. The
             Menu lives in the header, reachable without a place in the bar.
-
-            It stays put in The Word as it does everywhere else. It used to
-            tuck away as the reader read down, which bought a strip of page
-            while the bar held six tabs. With three it is narrow enough to
-            share the bottom edge with the chapter arrows, one in each corner,
-            and a bar that is always where it was is one nobody has to know
-            how to call back. */}
+            In The Word it tucks away as the reader reads down (see above). */}
         <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
           <span className="bn-icon"><Icon name="book" /></span>
           <span>{t("nav.reader")}</span>
