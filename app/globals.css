@@ -1401,10 +1401,41 @@ html.welcoming {
 }
 
 /* ---- topics & plans ---- */
+/* Verses for the moment: two rows, thumbed sideways, so the fifteen cards
+   take two cards' height and the Bookshelf below is a short scroll away.
+   Each column is a little under half the screen, so the third card peeks in
+   at the edge and says there are more. The tab swipe leaves it alone: it
+   scrolls sideways (see scrollsSideways in Nav.tsx). Run out to the screen's
+   edges past the page gutter, so the cards slide off the glass rather than
+   stop short of it. */
 .topic-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-columns: minmax(140px, 42%);
   gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 16px;
+  margin-inline: -16px;
+  padding: 2px 16px 6px;
+  scrollbar-width: none;
+}
+
+.topic-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.topic-grid .type-card {
+  scroll-snap-align: start;
+}
+
+/* on a wider screen there is room for all of them in a few columns more */
+@media (min-width: 640px) {
+  .topic-grid {
+    grid-auto-columns: minmax(150px, 22%);
+  }
 }
 
 .topic-list {
