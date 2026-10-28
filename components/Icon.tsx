@@ -57,17 +57,20 @@ const PATHS = {
     "M9.5 14h5",
   ],
   // the Parchment theme: an open scroll on its two rollers, handles showing
-  // above and below, a line or two written between, and the sheet's edges
-  // gone wavy the way the old leaf-of-paper icon had them. Not `scroll`
-  // above, which is a page with a curled edge and stands for reading plans;
-  // this one is the book of the ancient world, and the theme's own.
+  // above and below, three lines written between, and the sheet's edges
+  // gone wavy the way the old leaf-of-paper icon had them. Drawn to the full
+  // height of the box, handle tip to handle tip, and a little narrower than
+  // it is tall — at the width of the box it read as squashed beside the
+  // candle and the newspaper. Not `scroll` above, which is a page with a
+  // curled edge and stands for reading plans; this one is the book of the
+  // ancient world, and the theme's own.
   parchment: [
-    "M4.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
-    "M19.5 4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 1.5-1.5z",
-    "M4.5 2.8v1.7M4.5 19.5v1.7M19.5 2.8v1.7M19.5 19.5v1.7",
-    "M6 6.8c2-1.6 4 1.6 6 0s4-1.6 6 0",
-    "M6 17.2c2-1.6 4 1.6 6 0s4-1.6 6 0",
-    "M9 10.5h6M9 13.5h4.5",
+    "M5 3.2a1.5 1.5 0 0 1 1.5 1.5v14.6a1.5 1.5 0 0 1-3 0V4.7a1.5 1.5 0 0 1 1.5-1.5z",
+    "M19 3.2a1.5 1.5 0 0 1 1.5 1.5v14.6a1.5 1.5 0 0 1-3 0V4.7a1.5 1.5 0 0 1 1.5-1.5z",
+    "M5 1.2v2M5 20.8v2M19 1.2v2M19 20.8v2",
+    "M6.5 5.4c1.8-1.5 3.7 1.5 5.5 0s3.7-1.5 5.5 0",
+    "M6.5 18.6c1.8-1.5 3.7 1.5 5.5 0s3.7-1.5 5.5 0",
+    "M9 9.5h6M9 12h6M9 14.5h4",
   ],
   // a map pin: the Context pop-up, which is where it happened. Not a folded
   // map, which at pill size is three upright strips — the same shape as the
