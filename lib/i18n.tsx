@@ -26,10 +26,10 @@ const dictionaries = {
       "Literata — drawn for reading books on screens, first for Google Play Books.",
     "settings.face.kurale":
       "Kurale — flared, brush-drawn letters in the manner of Papyrus, as if written on a scroll.",
-    "settings.face.merriweather":
-      "Merriweather — sturdy and open, made to read comfortably on small screens.",
-    "settings.face.atkinson":
-      "Atkinson Hyperlegible — a sans-serif from the Braille Institute, drawn so that letters are hard to mistake for one another.",
+    "settings.face.fondamento":
+      "Fondamento — broad-nib pen calligraphy, like a scribe’s hand.",
+    "settings.face.medieval":
+      "MedievalSharp — hand-carved medieval letters, rugged as a woodcut.",
     "settings.boldness": "Boldness",
     "settings.weight0": "Regular",
     "settings.weight1": "Medium",
@@ -689,10 +689,10 @@ const dictionaries = {
       "Literata: diseñada para leer libros en pantalla, primero para Google Play Libros.",
     "settings.face.kurale":
       "Kurale: letras abiertas, trazadas a pincel al modo de Papyrus, como escritas en un rollo.",
-    "settings.face.merriweather":
-      "Merriweather: robusta y abierta, hecha para leerse con comodidad en pantallas pequeñas.",
-    "settings.face.atkinson":
-      "Atkinson Hyperlegible: una sans serif del Braille Institute, dibujada para que las letras no se confundan entre sí.",
+    "settings.face.fondamento":
+      "Fondamento: caligrafía de pluma ancha, como la mano de un escriba.",
+    "settings.face.medieval":
+      "MedievalSharp: letras medievales talladas a mano, rústicas como un grabado en madera.",
     "settings.boldness": "Grosor",
     "settings.weight0": "Normal",
     "settings.weight1": "Medio",

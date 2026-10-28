@@ -2,9 +2,13 @@
 //
 // Five, beside the app's own book face, and each chosen to be unlike the
 // others: an old-style face from the history of printed books, one drawn for
-// reading books on screens, a hand-lettered one in the manner of Papyrus, a
-// sturdy one for small screens, and a sans-serif made for legibility. All are
-// under the SIL Open Font License.
+// reading books on screens, and three hand-made ones for the Parchment theme —
+// brushed letters in the manner of Papyrus, a broad-nib calligraphic hand, and
+// hand-carved medieval letters. All are under the SIL Open Font License.
+//
+// The last two were picked from screenshots of The Word on Parchment, over
+// IM Fell English and Uncial Antiqua, and took the places of Merriweather and
+// Atkinson Hyperlegible.
 //
 // Papyrus itself was asked for and is not here because it cannot be: it is a
 // commercial Monotype face, and serving it from the app would need a paid web
@@ -22,19 +26,19 @@
 // heavier setting needs no heavier file, and nothing in the text is italic.
 
 import {
-  Atkinson_Hyperlegible,
   EB_Garamond,
+  Fondamento,
   Kurale,
   Literata,
-  Merriweather,
+  MedievalSharp,
 } from "next/font/google";
 import type { Face } from "@/lib/readingText";
 
 const garamond = EB_Garamond({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 const literata = Literata({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 const kurale = Kurale({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
-const merriweather = Merriweather({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
-const atkinson = Atkinson_Hyperlegible({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
+const fondamento = Fondamento({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
+const medieval = MedievalSharp({ weight: "400", subsets: ["latin"], display: "swap", preload: false });
 
 type WebFace = Exclude<Face, "default">;
 
@@ -42,8 +46,8 @@ const FAMILY: Record<WebFace, string> = {
   garamond: garamond.style.fontFamily,
   literata: literata.style.fontFamily,
   kurale: kurale.style.fontFamily,
-  merriweather: merriweather.style.fontFamily,
-  atkinson: atkinson.style.fontFamily,
+  fondamento: fondamento.style.fontFamily,
+  medieval: medieval.style.fontFamily,
 };
 
 /** What each is called on its tile: its published name, shortened where long. */
@@ -51,18 +55,18 @@ export const FACE_NAMES: Record<WebFace, string> = {
   garamond: "Garamond",
   literata: "Literata",
   kurale: "Kurale",
-  merriweather: "Merriweather",
-  atkinson: "Atkinson",
+  fondamento: "Fondamento",
+  medieval: "Medieval",
 };
 
 /**
  * The font-family for a face, or undefined for the app's own, which is what
  * the page already says. If the file cannot be had — offline, before it was
- * ever fetched — the text falls back to the app's own face of the same kind.
+ * ever fetched — the text falls back to the app's own book face.
  */
 export function faceStack(face: Face): string | undefined {
   if (face === "default") return undefined;
-  return `${FAMILY[face]}, ${face === "atkinson" ? "var(--sans)" : "var(--serif)"}`;
+  return `${FAMILY[face]}, var(--serif)`;
 }
 
 /**

@@ -3730,8 +3730,8 @@ button.menu-tile {
 }
 
 /* The typeface picker: six tiles, each showing its face, three to a row so
-   it stays two rows on the narrowest phone. Sized so the longest name,
-   Merriweather, fits whole on a 320px screen. */
+   it stays two rows on the narrowest phone. Sized so the longest names,
+   Fondamento and the Spanish "Por defecto", fit whole on a 320px screen. */
 .face-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

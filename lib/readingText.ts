@@ -37,8 +37,8 @@ export const FACES = [
   "garamond",
   "literata",
   "kurale",
-  "merriweather",
-  "atkinson",
+  "fondamento",
+  "medieval",
 ] as const;
 export type Face = (typeof FACES)[number];
 
