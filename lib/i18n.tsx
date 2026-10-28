@@ -303,8 +303,8 @@ const dictionaries = {
     "about.aiPrivacy":
       "Your questions are sent to Anthropic to be answered. Communion keeps none of them: a conversation lives on your device only for as long as the app is open, unless you save an answer to the verse’s note. All the app writes down is how many questions you asked, and what they cost to answer.",
     "about.footer": "Built so that two or three — anywhere on earth — can gather in His name.",
-    "discover.title": "Discover",
-    "discover.tabScripture": "Scripture",
+    "discover.title": "Home",
+    "discover.tabScripture": "Discover",
     "discover.subtitleScripture":
       "A verse for today, passages for whatever you're carrying, and a plan to keep you in the Word.",
     "discover.votd": "Verse of the Day",
@@ -969,8 +969,8 @@ const dictionaries = {
     "about.aiPrivacy":
       "Tus preguntas se envían a Anthropic para que sean respondidas. Communion no guarda ninguna: la conversación vive en tu dispositivo solo mientras la app está abierta, salvo que guardes una respuesta en la nota del versículo. Lo único que la app anota es cuántas preguntas hiciste y lo que costó responderlas.",
     "about.footer": "Creada para que dos o tres — en cualquier lugar del mundo — se congreguen en Su nombre.",
-    "discover.title": "Descubre",
-    "discover.tabScripture": "Escritura",
+    "discover.title": "Inicio",
+    "discover.tabScripture": "Descubrir",
     "discover.subtitleScripture":
       "Un versículo para hoy, pasajes para lo que llevas dentro y un plan para permanecer en la Palabra.",
     "discover.votd": "Versículo del Día",

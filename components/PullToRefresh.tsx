@@ -10,6 +10,13 @@ import { scrollY } from "@/lib/scroller";
 
 const ARM_AT = 60; // scaled pull distance (~130px of finger travel)
 
+/**
+ * Said just before the reload, for a page that wants to be left a particular
+ * way: Home goes back to its Discover tab rather than reopening on the one
+ * the reader had wandered to.
+ */
+export const PULL_REFRESH_EVENT = "communion:pull-refresh";
+
 export default function PullToRefresh() {
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,6 +80,7 @@ export default function PullToRefresh() {
       startY.current = null;
       if (pullRef.current >= ARM_AT) {
         setRefreshing(true);
+        window.dispatchEvent(new Event(PULL_REFRESH_EVENT));
         window.location.reload();
       } else {
         setPullBoth(0);

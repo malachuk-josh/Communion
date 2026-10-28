@@ -33,6 +33,8 @@ import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
 import Settings from "@/components/Settings";
 import { HOME_TAB_EVENT } from "@/lib/menuItems";
+import { PULL_REFRESH_EVENT } from "@/components/PullToRefresh";
+import { scrollToY } from "@/lib/scroller";
 import {
   isCustomPlanId,
   type CustomPlanRow,
@@ -56,6 +58,9 @@ const DISCOVER_TABS = ["scripture", "wall", "settings"] as const;
 export default function Discover() {
   const { t } = useI18n();
   const [tab, setTab] = useStickyTab("discover", "scripture", DISCOVER_TABS);
+  // what the listeners below compare against; they are registered once
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
   const account = useAccount();
   /*
    * The plan a reminder was about, if this page was opened by one.
@@ -92,16 +97,36 @@ export default function Discover() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // the menu asking for a tab while Home is already the page (lib/menuItems)
+  // The menu, or the Home button, asking for a tab while Home is already the
+  // page (lib/menuItems, components/Nav). A tab arrived at this way opens at
+  // its top: the page below the tab row is a different page now, and staying
+  // scrolled to where My wall was would land mid-way down it.
   useEffect(() => {
     const onAsk = (e: Event) => {
       const wanted = (e as CustomEvent<string>).detail;
-      if ((DISCOVER_TABS as readonly string[]).includes(wanted)) {
-        setTab(wanted as (typeof DISCOVER_TABS)[number]);
-      }
+      if (!(DISCOVER_TABS as readonly string[]).includes(wanted)) return;
+      if (wanted === tabRef.current) return;
+      setTab(wanted as (typeof DISCOVER_TABS)[number]);
+      scrollToY(0);
     };
     window.addEventListener(HOME_TAB_EVENT, onAsk);
     return () => window.removeEventListener(HOME_TAB_EVENT, onAsk);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A pull to refresh comes back to Discover, whichever tab it was pulled
+  // from. Remembered before the reload, so the page that loads opens there;
+  // and a ?tab= or #offline in the address goes too, or the reloaded page
+  // would follow it straight back to Settings.
+  useEffect(() => {
+    const onRefresh = () => {
+      setTab("scripture");
+      if (window.location.search || window.location.hash) {
+        window.history.replaceState(null, "", "/discover");
+      }
+    };
+    window.addEventListener(PULL_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(PULL_REFRESH_EVENT, onRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

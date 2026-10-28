@@ -10,6 +10,7 @@ import { scrollToY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
+import { HOME_TAB_EVENT } from "@/lib/menuItems";
 import { STUDY_AFTER_SIGN_IN, StudySignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -331,6 +332,14 @@ export default function Nav() {
   const isWord = pathname === "/";
   const isDiscover = pathname.startsWith("/discover");
   const isJournal = pathname.startsWith("/menu/journal");
+
+  // Home pressed while Home is already the page: back to its Discover tab,
+  // from My wall or Settings. From anywhere else Home opens on the tab the
+  // reader was last on, as it always has.
+  const homeClick = () => {
+    if (!isDiscover) return;
+    window.dispatchEvent(new CustomEvent(HOME_TAB_EVENT, { detail: "scripture" }));
+  };
   const isMenu =
     (!isJournal && pathname.startsWith("/menu")) ||
     pathname.startsWith("/settings");
@@ -355,6 +364,7 @@ export default function Nav() {
             <Link
               href="/discover"
               className={`nav-link${isDiscover ? " active" : ""}`}
+              onClick={homeClick}
             >
               {t("nav.discover")}
             </Link>
@@ -442,7 +452,11 @@ export default function Nav() {
           <span className="bn-icon"><Icon name="book" /></span>
           <span>{t("nav.reader")}</span>
         </Link>
-        <Link href="/discover" className={isDiscover ? "active" : ""}>
+        <Link
+          href="/discover"
+          className={isDiscover ? "active" : ""}
+          onClick={homeClick}
+        >
           <span className="bn-icon"><Icon name="globe" /></span>
           <span>{t("nav.discover")}</span>
         </Link>
