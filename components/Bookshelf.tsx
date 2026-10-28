@@ -79,6 +79,7 @@ export default function Bookshelf() {
               </span>
               <span className="shelf-info">
                 <span className="shelf-title">{book.title}</span>
+                {book.subtitle && <span className="shelf-sub">{book.subtitle}</span>}
                 <span className="shelf-author">{book.author}</span>
                 {lang !== book.lang && (
                   <span className="bk-lang">{t(`shelf.in.${book.lang}` as MessageKey)}</span>

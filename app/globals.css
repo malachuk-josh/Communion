@@ -6427,10 +6427,12 @@ button.compare-pick:last-child {
   text-indent: -1.2em;
 }
 
-.bk-sig {
-  margin: 0.6em 0 1em;
-  text-align: right;
-  letter-spacing: 0.1em;
+/* "OBJECTION 1.", "ANSWER.", the author's name: bold capitals at the margin */
+.bk-h {
+  margin: 0.9em 0 0.4em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
 }
 
 .bk-table-wrap {
@@ -6635,4 +6637,27 @@ button.compare-pick:last-child {
 :root[data-theme="grey"] .bk-drop {
   color: #f2f0ea;
   background: linear-gradient(180deg, #4b4c50, #2f3033);
+}
+
+/* which part of a work in two a book is, under its title */
+.shelf-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  color: var(--ink-dim);
+}
+
+.bk-book-sub {
+  margin: 0;
+  font-family: var(--bk-text), var(--serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--gold);
+}
+
+/* the other part of a work in two, from either one's own page */
+.bk-sibling {
+  margin-top: 10px;
+  font-size: 0.86rem;
+  color: var(--gold);
 }

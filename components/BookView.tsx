@@ -28,6 +28,7 @@ import {
   fetchBookPart,
   readPlace,
   readRefs,
+  SHELF,
   shelfBook,
   syncPlace,
   writePlace,
@@ -113,6 +114,8 @@ function BookHome({ book }: { book: ShelfBook }) {
 
   const contents = index?.contents ?? [];
   const current = contents.find((c) => c.id === place?.part);
+  const sequel = shelfBook(book.sequel);
+  const prequel = SHELF.find((b) => b.sequel === book.slug);
   // what comes before the first chapter, the chapters, and what follows them
   const firstCh = contents.findIndex((c) => c.label);
   const lastCh = contents.length - 1 - [...contents].reverse().findIndex((c) => c.label);
@@ -153,6 +156,7 @@ function BookHome({ book }: { book: ShelfBook }) {
         </div>
         <div className="bk-about">
           <h1 className="bk-book-title">{book.title}</h1>
+          {book.subtitle && <p className="bk-book-sub">{book.subtitle}</p>}
           <p className="bk-book-author">{book.author}</p>
           {lang !== book.lang && (
             <p className="bk-lang">{t(`shelf.in.${book.lang}` as MessageKey)}</p>
@@ -178,6 +182,17 @@ function BookHome({ book }: { book: ShelfBook }) {
             )}
           </div>
           <SaveOffline slug={book.slug} />
+          {/* the other part of a work in two, either way round */}
+          {sequel && (
+            <Link className="bk-sibling" href={bookHref(sequel.slug)}>
+              {t("shelf.followedBy", { title: sequel.subtitle ?? sequel.title })} →
+            </Link>
+          )}
+          {prequel && (
+            <Link className="bk-sibling" href={bookHref(prequel.slug)}>
+              ← {t("shelf.follows", { title: prequel.subtitle ?? prequel.title })}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -186,7 +201,7 @@ function BookHome({ book }: { book: ShelfBook }) {
         <section className="bk-toc" aria-label={t("shelf.contents")}>
           <h2>{t("shelf.contents")}</h2>
           <ul>{front.map(row)}</ul>
-          {chapters.length > 0 && <p className="bk-toc-part">{t("shelf.partOne")}</p>}
+          {index.part && chapters.length > 0 && <p className="bk-toc-part">{index.part}</p>}
           <ul>{chapters.map(row)}</ul>
           <ul>{back.map(row)}</ul>
         </section>
@@ -323,6 +338,7 @@ function PartView({
   }, [part, book.slug]);
 
   const contents = index?.contents ?? [];
+  const sequel = shelfBook(book.sequel);
   const at = contents.findIndex((c) => c.id === partId);
   const prev = at > 0 ? contents[at - 1] : null;
   const next = at >= 0 && at < contents.length - 1 ? contents[at + 1] : null;
@@ -339,7 +355,10 @@ function PartView({
             ← {t("shelf.contents")}
           </Link>
         )}
-        <span className="bk-bar-title">{book.title}</span>
+        <span className="bk-bar-title">
+          {book.title}
+          {book.subtitle ? ` · ${book.subtitle.replace(/:.*$/, "")}` : ""}
+        </span>
       </div>
 
       {failed && (
@@ -394,6 +413,12 @@ function PartView({
               <Link className="bk-turn-link bk-turn-next" href={bookHref(book.slug, next.id)}>
                 <span className="bk-turn-dir">{t("shelf.next")} →</span>
                 <span className="bk-turn-name">{entryName(next, t)}</span>
+              </Link>
+            ) : sequel ? (
+              // the last page of a book with a second part opens that part
+              <Link className="bk-turn-link bk-turn-next" href={bookHref(sequel.slug)}>
+                <span className="bk-turn-dir">{t("shelf.goesOn")} →</span>
+                <span className="bk-turn-name">{sequel.subtitle ?? sequel.title}</span>
               </Link>
             ) : (
               <Link className="bk-turn-link bk-turn-next" href={bookHref(book.slug)}>
@@ -473,8 +498,8 @@ function BlockView({ block, onRef }: { block: Block; onRef: (r: BookRef) => void
       </div>
     );
   }
-  if ("sig" in block) {
-    return <p className="bk-sig">{block.sig}</p>;
+  if ("h" in block) {
+    return <p className="bk-h">{block.h}</p>;
   }
   return (
     <div className="bk-table-wrap">

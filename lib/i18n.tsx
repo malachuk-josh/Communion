@@ -419,6 +419,10 @@ const dictionaries = {
       "From This World to the Next",
     "plan.pilgrim21.desc":
       "The Pilgrim’s Progress in modern English, a chapter a day for 21 days, from the City of Destruction to the Celestial City.",
+    "plan.pilgrimtwo16":
+      "From This World to the Next, Part Two",
+    "plan.pilgrimtwo16.desc":
+      "Christiana’s journey in modern English, a chapter a day for 16 days, from her call to the river’s crossing.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
       "Read a book from the Bookshelf a chapter a day. Each day opens its chapter, and you can mark it read at the chapter’s end.",
@@ -433,7 +437,9 @@ const dictionaries = {
     "shelf.coverOf": "Cover of {title}",
     "shelf.withPlan": "A chapter a day · {n} days",
     "shelf.contents": "Contents",
-    "shelf.partOne": "Part One",
+    "shelf.goesOn": "The story goes on",
+    "shelf.followedBy": "Followed by {title}",
+    "shelf.follows": "Follows {title}",
     "shelf.in.en": "In English",
     "shelf.in.es": "In Spanish",
     "shelf.saveOffline": "Save for offline · {mb} MB",
@@ -1133,6 +1139,10 @@ const dictionaries = {
       "From This World to the Next",
     "plan.pilgrim21.desc":
       "El progreso del peregrino en inglés moderno, un capítulo al día durante 21 días, de la Ciudad de Destrucción a la Ciudad Celestial. El libro está en inglés.",
+    "plan.pilgrimtwo16":
+      "From This World to the Next, segunda parte",
+    "plan.pilgrimtwo16.desc":
+      "El viaje de Cristiana en inglés moderno, un capítulo al día durante 16 días, desde su llamado hasta el cruce del río. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
       "Lee un libro de la estantería, un capítulo al día. Cada día abre su capítulo, y al final del capítulo puedes marcarlo como leído.",
@@ -1147,7 +1157,9 @@ const dictionaries = {
     "shelf.coverOf": "Portada de {title}",
     "shelf.withPlan": "Un capítulo al día · {n} días",
     "shelf.contents": "Contenido",
-    "shelf.partOne": "Primera parte",
+    "shelf.goesOn": "La historia sigue",
+    "shelf.followedBy": "Le sigue {title}",
+    "shelf.follows": "Sigue a {title}",
     "shelf.in.en": "En inglés",
     "shelf.in.es": "En español",
     "shelf.saveOffline": "Guardar sin conexión · {mb} MB",

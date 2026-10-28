@@ -458,16 +458,45 @@ const PILGRIM = [
   "The Celestial City",
 ];
 
+const PILGRIM_TWO = [
+  "Christiana’s Call",
+  "The Wicket Gate",
+  "The Interpreter’s House",
+  "The Hill Difficulty and Giant Grim",
+  "The Palace Beautiful",
+  "The Valley of Humiliation",
+  "The Valley of the Shadow of Death",
+  "Mr. Honest",
+  "Gaius’s Inn",
+  "Giant Slay-good and Mr. Feeble-mind",
+  "Vanity Fair",
+  "Doubting Castle Destroyed",
+  "The Delectable Mountains",
+  "Mr. Valiant-for-truth",
+  "The Enchanted Ground",
+  "The Land of Beulah and the River",
+];
+
+/** A chapter a day through a Bookshelf book, from its chapters' titles. */
+const shelfDays = (shelf: string, titles: string[]): PlanDay[] =>
+  titles.map((title, i) => ({
+    readings: [{ b: 0, c: 0, shelf, part: String(i + 1).padStart(2, "0"), title }],
+  }));
+
 const pilgrim21: Plan = {
   id: "pilgrim21",
   icon: "mountain",
   category: "bookshelf",
   name: "From This World to the Next",
-  days: PILGRIM.map((title, i) => ({
-    readings: [
-      { b: 0, c: 0, shelf: "from-this-world", part: String(i + 1).padStart(2, "0"), title },
-    ],
-  })),
+  days: shelfDays("from-this-world", PILGRIM),
+};
+
+const pilgrimtwo16: Plan = {
+  id: "pilgrimtwo16",
+  icon: "mountain",
+  category: "bookshelf",
+  name: "From This World to the Next, Part Two",
+  days: shelfDays("from-this-world-part-two", PILGRIM_TWO),
 };
 
 export const PLANS: Plan[] = [
@@ -500,6 +529,7 @@ export const PLANS: Plan[] = [
   henrynt260,
   henrybible365,
   pilgrim21,
+  pilgrimtwo16,
 ];
 
 export function getPlan(id: string): Plan | undefined {

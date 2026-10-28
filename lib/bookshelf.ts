@@ -20,18 +20,23 @@ import { readLocal, writeLocal } from "@/lib/storage";
 export interface ShelfBook {
   slug: string;
   title: string;
+  /** which volume of a work in more than one, as its cover names it */
+  subtitle?: string;
   author: string;
   /** the language the book is written in; the shelf says so when it differs */
   lang: "en" | "es";
   blurb: { en: string; es: string };
   /** its chapter-a-day plan, in lib/plans */
   plan?: string;
+  /** the book that carries on from this one, offered at its end */
+  sequel?: string;
 }
 
 export const SHELF: ShelfBook[] = [
   {
     slug: "from-this-world",
     title: "From This World to the Next",
+    subtitle: "Part One",
     author: "John Bunyan",
     lang: "en",
     blurb: {
@@ -39,6 +44,19 @@ export const SHELF: ShelfBook[] = [
       es: "El progreso del peregrino, contado de nuevo en inglés moderno: la historia de Bunyan escena por escena, sin añadir ni quitar nada. Sus versos siguen siendo versos rimados y sus referencias bíblicas están donde él las puso. Ilustrado.",
     },
     plan: "pilgrim21",
+    sequel: "from-this-world-part-two",
+  },
+  {
+    slug: "from-this-world-part-two",
+    title: "From This World to the Next",
+    subtitle: "Part Two: Christiana’s Journey",
+    author: "John Bunyan",
+    lang: "en",
+    blurb: {
+      en: "The second part of The Pilgrim’s Progress in modern English. Six years after Christian’s journey, his wife Christiana, their four sons and their neighbor Mercy set out on the same road, with Mr. Great-heart as their guide. Scene for scene, nothing added or removed. Illustrated.",
+      es: "La segunda parte de El progreso del peregrino en inglés moderno. Seis años después del viaje de Cristiano, su esposa Cristiana, sus cuatro hijos y su vecina Misericordia emprenden el mismo camino, con el señor Gran-corazón como guía. Escena por escena, sin añadir ni quitar nada. Ilustrado.",
+    },
+    plan: "pilgrimtwo16",
   },
 ];
 
@@ -66,6 +84,8 @@ export interface BookIndex {
   slug: string;
   title: string;
   author: string;
+  /** "Part One": the heading over the chapters, from the book's own title page */
+  part?: string;
   cover: BookImage;
   contents: ContentsEntry[];
 }
@@ -77,7 +97,7 @@ export interface BookIndex {
 export type Block =
   | { p: string; drop?: boolean }
   | { v: string[][] }
-  | { sig: string }
+  | { h: string }
   | { table: { head: string[]; rows: string[][] } };
 
 export interface BookPart {
@@ -232,10 +252,12 @@ export function readRefs(inside: string): Array<BookRef | string> {
   let lastBook = "";
   return inside.split(/;\s*/).map((raw) => {
     const piece = raw.trim();
+    // book, chapter, then a verse, the end of a range and further verses — any
+    // of them missing. "Jude 14-15" is a range with no colon at all.
     const named = piece.match(
-      /^((?:[1-3]\s)?[A-Za-z][A-Za-z. ]*?)\.?\s+(\d+)(?::(\d+)(?:[-–](\d+))?((?:,\s*\d+)*))?$/
+      /^((?:[1-3]\s)?[A-Za-z][A-Za-z. ]*?)\.?\s+(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+)*)$/
     );
-    const bare = named ? null : piece.match(/^(\d+)(?::(\d+)(?:[-–](\d+))?((?:,\s*\d+)*))?$/);
+    const bare = named ? null : piece.match(/^(\d+)(?::(\d+))?(?:[-–](\d+))?((?:,\s*\d+)*)$/);
     if (!named && !(bare && lastBook)) return piece;
     const name = named ? named[1].trim().replace(/\.$/, "") : lastBook;
     const [c, v, ve, list] = named ? named.slice(2) : bare!.slice(1);
@@ -243,12 +265,20 @@ export function readRefs(inside: string): Array<BookRef | string> {
     const key = name.toLowerCase().replace(/\./g, "").trim();
     const found = parsePassage(`${BUNYAN[key] ?? name} ${numbersFor(key, c, v)}`);
     if (!found) return piece;
-    // "Jude 14": a one-chapter book's number is its verse
+    // "Jude 14", "3 John 5-6": a one-chapter book's numbers are its verses
     if (ONE_CHAPTER.has(found.bookNr) && !v) {
-      return { text: piece, b: found.bookNr, c: 1, v: Number(c) };
+      const end = ve ? Number(ve) : 0;
+      return {
+        text: piece,
+        b: found.bookNr,
+        c: 1,
+        v: Number(c),
+        ...(end > Number(c) ? { ve: end } : {}),
+      };
     }
     const first = v ? Number(v) : undefined;
-    const last = ve ? Number(ve) : undefined;
+    // a range of whole chapters ("Matt. 5-7") opens at its first chapter
+    const last = v && ve ? Number(ve) : undefined;
     const more = list ? (list.match(/\d+/g) ?? []).map(Number) : [];
     return {
       text: piece,

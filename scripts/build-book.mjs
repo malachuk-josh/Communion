@@ -148,6 +148,7 @@ const addLine = (html, kind, joinsPrevious, newStanza) => {
 };
 
 let previous = null; // the last body line, on whichever page
+let bookPart = null; // "Part One", where the book is a part of a larger one
 let pendingLabel = null;
 
 for (const page of pages) {
@@ -205,7 +206,10 @@ for (const page of pages) {
         part.title += " " + title; // a title long enough to wrap
         continue;
       }
-      if (title === "Part One") {
+      // a part's own title page — "Part One", "Part Two" — heads the chapters
+      // in the contents rather than being a page of its own
+      if (/^Part \w+$/.test(title)) {
+        bookPart = title;
         part = null;
         previous = null;
         continue;
@@ -327,10 +331,11 @@ for (const p of parts) {
   const blocks = p.blocks.map((b) => {
     if (b.kind === "p") {
       const text = tidy(b.text);
-      // a line in bold capitals on its own — the author's name under his
-      // Apology — is a signature, set to the right
-      const sig = text.match(/^<b>([^<]+)<\/b>$/);
-      if (sig && sig[1] === sig[1].toUpperCase()) return { sig: sig[1] };
+      // a line in bold capitals on its own — "OBJECTION 1.", "ANSWER.", the
+      // author's name under his verse — is a small heading, set as the PDF
+      // sets it: bold, at the margin
+      const head = text.match(/^<b>([^<]+)<\/b>$/);
+      if (head && head[1] === head[1].toUpperCase()) return { h: head[1] };
       return { p: text, ...(b.drop ? { drop: true } : {}) };
     }
     if (b.kind === "v") return { v: b.stanzas.map((st) => st.map(tidy)) };
@@ -370,6 +375,7 @@ writeFileSync(
     slug,
     title: meta("Title")?.replace(/ — .*$/, "") ?? slug,
     author: meta("Author") ?? "",
+    ...(bookPart ? { part: bookPart } : {}),
     cover: { src: "cover.webp", w: cover.width, h: cover.height },
     contents,
   })
