@@ -2230,7 +2230,7 @@ mark {
   color: var(--ink);
   z-index: 39;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
 /* painted like the bar they sit beside — its colour and sheen, and no blur —
@@ -2261,15 +2261,24 @@ mark {
   cursor: default;
 }
 
+/* reading down The Word takes the arrows away with the bar (see Nav.tsx),
+   down and out by the same slide, so the foot of the page is only text */
+html.navhide .chap-arrow {
+  transform: translate3d(0, 140px, 0);
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* The tab on the right edge of The Word that opens and closes the reading
-   controls. Halfway up, clear of the header and the bottom row, and narrow:
+   controls. Centred 65% of the way down the screen, nearer the thumb than
+   halfway and still well clear of the bottom row; and narrow:
    at 24px it overlaps the 16px margin by a sliver, so a line passing behind
    it loses at most the edge of a letter. Under the pop-ups (50 and up) while
    the panel is shut; over the panel and its shade (69, 70) while it is open,
    so it can close what it opened. Painted like the chapter arrows. */
 .panel-tab {
   position: fixed;
-  top: 50%;
+  top: 65%;
   right: env(safe-area-inset-right, 0px);
   transform: translateY(-50%);
   z-index: 45;

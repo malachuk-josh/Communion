@@ -116,8 +116,9 @@ export default function Nav() {
    * on the one screen meant to be nothing but the text.
    *
    * The bar starts visible, so a reader who never flicks still learns it is
-   * there. The arrows need nothing from this: they sit in the corners either
-   * side of the bar, already where they would drop to with it gone.
+   * there. The chapter arrows either side of it go and come back with it
+   * (html.navhide, below), so a page read down is the text and nothing else
+   * but the edge tab.
    */
   useEffect(() => {
     if (pathname !== "/") {
@@ -139,6 +140,11 @@ export default function Nav() {
     };
     return onPageScroll(onScroll);
   }, [pathname]);
+
+  // the reader's chapter arrows leave and return with the bar
+  useEffect(() => {
+    document.documentElement.classList.toggle("navhide", navHidden);
+  }, [navHidden]);
 
   /*
    * A new screen starts at the top of itself.
