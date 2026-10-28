@@ -1240,6 +1240,17 @@ html.welcoming {
   margin-top: 2px;
 }
 
+/* the taps that lead to a feature, under its description */
+.tour-slide .tour-path {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--gold);
+}
+
+.tour-slide .tour-path b {
+  font-weight: 600;
+}
+
 /* Each slide was captured once per theme, and the theme picks which capture
    is real. The default (no data-theme, or an explicit dark) is the dark set;
    light and grey swap in their own. Hidden images never download — lazy

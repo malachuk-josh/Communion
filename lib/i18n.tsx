@@ -250,6 +250,10 @@ const dictionaries = {
     "about.tourAskVerseDesc": "From Compare, ask Claude what a verse means, its setting, or why the translations differ.",
     "about.tourAiSearch": "Illuminated Search",
     "about.tourAiSearchDesc": "Describe what you are looking for, and Claude finds the passages, in your own translation.",
+    "about.tourPathLabel": "Find it",
+    "about.tourScholarsPath": "The Word › tap ✦ › Commentary, under any verse › pick a scholar",
+    "about.tourAskVersePath": "The Word › tap ✦ › Compare, under any verse › Ask about this verse",
+    "about.tourAiSearchPath": "The Word › tap ✦ › the tab on the right edge › Search › Illuminated Search",
     "about.tourMaps": "Maps in context",
     "about.tourMapsDesc":
       "Where the chapter happened, and the places it names — tap one to find its verse.",
@@ -301,7 +305,7 @@ const dictionaries = {
     "about.ai2":
       "Ask the scholars — in Commentary, choose one of seven teachers of the church, from Augustine to Spurgeon, and ask him about the passage. The answers are Claude writing in his manner, never his own words. Where the app has his commentary on the passage — Henry on every book, Spurgeon on the Psalms — the answer is drawn from it; the others answer from what Claude learned of them. The About pill beside each name says who he was.",
     "about.ai3":
-      "Find verses by describing them — in the search in The Word’s side panel, switch to Illuminated Search and describe what you are looking for, like “when I can’t sleep for worrying”. Claude names the passages; the words you see are the app’s own, in the translation you are reading.",
+      "Find verses by describing them — in study mode, in the search in The Word’s side panel, switch to Illuminated Search and describe what you are looking for, like “when I can’t sleep for worrying”. Claude names the passages; the words you see are the app’s own, in the translation you are reading.",
     "about.aiHow":
       "Each answer is written fresh. With a question about a verse, Claude is given the question, the conversation so far and the verse’s reference — and its wording too, for translations in the public domain such as the King James — with instructions to stay with the passage, ground what it says in Scripture, keep it short, say so when something is uncertain, and never invent a quotation or a source. The wording of licensed translations such as the ESV and NIV is never sent.",
     "about.aiLimits":
@@ -922,6 +926,10 @@ const dictionaries = {
     "about.tourAskVerseDesc": "Desde Comparar, pregúntale a Claude qué significa un versículo, su contexto o por qué difieren las traducciones.",
     "about.tourAiSearch": "Búsqueda iluminada",
     "about.tourAiSearchDesc": "Describe lo que buscas y Claude encuentra los pasajes, en tu propia traducción.",
+    "about.tourPathLabel": "Dónde",
+    "about.tourScholarsPath": "La Palabra › toca ✦ › Comentario, bajo cualquier versículo › elige un erudito",
+    "about.tourAskVersePath": "La Palabra › toca ✦ › Comparar, bajo cualquier versículo › Pregunta sobre este versículo",
+    "about.tourAiSearchPath": "La Palabra › toca ✦ › la pestaña del borde derecho › Buscar › Búsqueda iluminada",
     "about.tourMaps": "Mapas en contexto",
     "about.tourMapsDesc":
       "Dónde sucedió el capítulo y los lugares que nombra: toca uno para ir a su versículo.",
@@ -974,7 +982,7 @@ const dictionaries = {
     "about.ai2":
       "Preguntar a los eruditos — en Comentario, elige a uno de siete maestros de la iglesia, de Agustín a Spurgeon, y pregúntale sobre el pasaje. Las respuestas son de Claude, escritas a su manera, nunca palabras suyas. Cuando la app tiene su comentario del pasaje —Henry en todos los libros, Spurgeon en los Salmos—, la respuesta parte de él; los demás responden con lo que Claude aprendió de ellos. El botón Acerca de junto a cada nombre cuenta quién fue.",
     "about.ai3":
-      "Encontrar versículos describiéndolos — en la búsqueda del panel lateral de La Palabra, cambia a Búsqueda iluminada y describe lo que buscas, como «cuando la preocupación no me deja dormir». Claude indica los pasajes; las palabras que ves son las de la app, en la traducción que estás leyendo.",
+      "Encontrar versículos describiéndolos — en el modo estudio, en la búsqueda del panel lateral de La Palabra, cambia a Búsqueda iluminada y describe lo que buscas, como «cuando la preocupación no me deja dormir». Claude indica los pasajes; las palabras que ves son las de la app, en la traducción que estás leyendo.",
     "about.aiHow":
       "Cada respuesta se escribe de nuevo. Con una pregunta sobre un versículo, Claude recibe la pregunta, la conversación hasta ese momento y la referencia del versículo —y también su texto, en las traducciones de dominio público como la King James o la Reina Valera 1909—, con instrucciones de ceñirse al pasaje, fundar en la Escritura lo que dice, ser breve, decirlo cuando algo es incierto y no inventar nunca una cita ni una fuente. El texto de las traducciones con licencia, como la ESV y la NIV, nunca se envía.",
     "about.aiLimits":
