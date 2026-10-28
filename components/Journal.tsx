@@ -47,10 +47,10 @@ import {
   type BmEntry,
 } from "@/lib/sync";
 import { readLocal, writeLocal } from "@/lib/storage";
+import { JOURNAL_TABS } from "@/lib/menuItems";
 
-type Tab = "bookmarks" | "notes" | "plans";
-/** The toggles, in the order the row shows them. */
-const JOURNAL_TABS: readonly Tab[] = ["bookmarks", "notes", "plans"];
+/** The toggles, in the order the row shows them — see lib/menuItems. */
+type Tab = (typeof JOURNAL_TABS)[number];
 
 interface NoteRow {
   b: number;
@@ -1017,6 +1017,9 @@ export default function Journal() {
         ))}
       </div>
 
+      {/* everything under the tab row, which is what moves when a swipe
+          changes the tab (components/Nav) */}
+      <div className="tab-pane">
       {tab === "notes" &&
         (noteBooks.length === 0 ? (
           <Empty message={t("journal.noNotes")} href="/" cta={t("journal.openWord")} />
@@ -1452,6 +1455,7 @@ export default function Journal() {
             </Link>
           </>
         ))}
+      </div>
     </div>
   );
 }

@@ -10,7 +10,8 @@ import { scrollToY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
-import { HOME_TAB_EVENT } from "@/lib/menuItems";
+import { HOME_TAB_EVENT, TABS_AT } from "@/lib/menuItems";
+import { arriveOnTab, screenTabs } from "@/lib/stickyTab";
 import { STUDY_AFTER_SIGN_IN, StudySignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -54,6 +55,25 @@ const SWIPE_QUICK = 0.3;
  * wider: every pixel here is a pixel where swiping does nothing.
  */
 const SWIPE_EDGE = 22;
+
+/**
+ * Slide something in from the side a swipe came from: the whole page when the
+ * swipe changed screens, or just what is under the tab row when it changed
+ * tabs. Restarted by hand, because two swipes the same way in a row set the
+ * same class and a CSS animation will not replay for that.
+ */
+function slideIn(el: HTMLElement | null, dir: number): void {
+  if (!el) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  el.classList.remove("page-swipe-next", "page-swipe-prev");
+  void el.offsetWidth; // reflow, so the animation runs again
+  el.classList.add(dir > 0 ? "page-swipe-next" : "page-swipe-prev");
+  el.addEventListener(
+    "animationend",
+    () => el.classList.remove("page-swipe-next", "page-swipe-prev"),
+    { once: true }
+  );
+}
 
 /** Whether anything from here up scrolls sideways and so owns the gesture. */
 function scrollsSideways(from: EventTarget | null): boolean {
@@ -123,37 +143,32 @@ export default function Nav() {
    *
    * Without it a swipe is a flick followed by a still page that changes — the
    * eye reads the gap as the app hesitating even when it is a tenth of a
-   * second. The animation is restarted by hand rather than left to a class
-   * change, because two swipes the same way in a row set the same class and a
-   * CSS animation will not replay for that.
+   * second.
    */
   useEffect(() => {
     const dir = swipeDir.current;
     swipeDir.current = null;
-    if (!dir) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const page = document.querySelector<HTMLElement>(".page");
-    if (!page) return;
-    page.classList.remove("page-swipe-next", "page-swipe-prev");
-    void page.offsetWidth; // reflow, so the animation runs again
-    page.classList.add(dir > 0 ? "page-swipe-next" : "page-swipe-prev");
-    const done = () => {
-      page.classList.remove("page-swipe-next", "page-swipe-prev");
-    };
-    page.addEventListener("animationend", done, { once: true });
-    return () => page.removeEventListener("animationend", done);
+    if (dir) slideIn(document.querySelector<HTMLElement>(".page"), dir);
   }, [pathname]);
 
   /**
-   * Swipe across the page: a flick left or right moves a tab.
+   * Swipe across the page: a flick left or right moves one step along the
+   * bar — and through the tabs of a page that has them on the way. Home's
+   * Discover, My wall and Settings, and the Journal's Bookmarks, Notes and
+   * Plans, are stops in the same row as The Word, so a swipe from Settings
+   * goes on to the Journal, arriving on its first tab, and a swipe back from
+   * Bookmarks returns to Home on its last. Tapping the bar still opens a page
+   * on the tab it was left on; only a swipe arriving from the side chooses.
    *
    * It asks for the movement to be mostly sideways above all — that is what
    * tells a swipe from a scroll that wandered — and then for enough distance
    * and, on a short one, enough speed to rule out a fidget. The thresholds
    * are the SWIPE_ constants at the top of this file.
    *
-   * Four things are left alone entirely:
+   * Five things are left alone entirely:
    *  - two fingers, which is the reader's pinch
+   *  - anything begun on a control that takes a sideways drag of its own —
+   *    the sliders in Settings, a text field — where the drag is the input
    *  - gestures beginning at the screen edges, which iOS owns for back and
    *    forward, and which would otherwise race the browser's own animation
    *  - anything begun inside something that scrolls sideways — a table, a row
@@ -181,6 +196,8 @@ export default function Nav() {
         touch.clientX < SWIPE_EDGE ||
         touch.clientX > window.innerWidth - SWIPE_EDGE ||
         scrollsSideways(e.target) ||
+        (e.target instanceof Element &&
+          !!e.target.closest("input, textarea, select, [contenteditable]")) ||
         // `.welcome` belongs on this list and was missing from it. It is the
         // front door — a full-screen overlay shown before the app — and a
         // swipe across it changed the tab underneath, so a first-time reader
@@ -211,10 +228,29 @@ export default function Nav() {
       // A long drag may take its time; a short one has to be a flick, or a
       // thumb resettling sideways would turn the page.
       if (speed < SWIPE_QUICK && Math.abs(dx) < SWIPE_LONG_DX) return;
-      const next = at + (dx < 0 ? 1 : -1);
+      const dir = dx < 0 ? 1 : -1;
+      // Through this page's own tabs first, staying on the page; the swipe
+      // starts the new tab at its top, as arriving on a new page does.
+      const here = screenTabs();
+      if (here && TABS_AT[pathname]?.page === here.page) {
+        const to = here.tabs.indexOf(here.tab) + dir;
+        if (to >= 0 && to < here.tabs.length) {
+          here.choose(here.tabs[to]);
+          scrollToY(0);
+          slideIn(document.querySelector<HTMLElement>(".page .tab-pane"), dir);
+          return;
+        }
+      }
+      // Off the end of them: the next page, on its tab nearest this one
+      const next = at + dir;
       if (next < 0 || next >= TAB_ORDER.length) return;
-      swipeDir.current = dx < 0 ? 1 : -1;
-      router.push(TAB_ORDER[next]);
+      const href = TAB_ORDER[next];
+      const there = TABS_AT[href];
+      if (there) {
+        arriveOnTab(there.page, dir > 0 ? there.tabs[0] : there.tabs[there.tabs.length - 1]);
+      }
+      swipeDir.current = dir;
+      router.push(href);
     };
 
     // Halfway through a gesture that is already going one way, ask for the
@@ -227,7 +263,14 @@ export default function Nav() {
       // below the distance that could still become a swipe, so the page is
       // usually already here by the time the finger lifts
       if (Math.abs(dx) < SWIPE_MIN_DX - 16) return;
-      const next = at + (dx < 0 ? 1 : -1);
+      const dir = dx < 0 ? 1 : -1;
+      // a swipe that will only change the tab needs no page fetched
+      const here = screenTabs();
+      if (here && TABS_AT[pathname]?.page === here.page) {
+        const to = here.tabs.indexOf(here.tab) + dir;
+        if (to >= 0 && to < here.tabs.length) return;
+      }
+      const next = at + dir;
       if (next < 0 || next >= TAB_ORDER.length) return;
       router.prefetch(TAB_ORDER[next]);
     };

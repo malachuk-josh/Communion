@@ -18,6 +18,20 @@ export interface MenuItem {
   key: string;
 }
 
+/** Home's tabs and the Journal's, in the order their rows show them. */
+export const HOME_TABS = ["scripture", "wall", "settings"] as const;
+export const JOURNAL_TABS = ["bookmarks", "notes", "plans"] as const;
+
+/**
+ * The screens on the bar that have tabs of their own, by path, and the name
+ * each keeps its tab under (lib/stickyTab). The swipe across the app reads
+ * this to know where it lands when it arrives on one of them.
+ */
+export const TABS_AT: Record<string, { page: string; tabs: readonly string[] }> = {
+  "/discover": { page: "discover", tabs: HOME_TABS },
+  "/menu/journal": { page: "journal", tabs: JOURNAL_TABS },
+};
+
 export const MENU_ITEMS: MenuItem[] = [
   // Settings lives in Home now; the menu still knows the way there
   { href: "/discover?tab=settings", icon: "gear", key: "settings" },

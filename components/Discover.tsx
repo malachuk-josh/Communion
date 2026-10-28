@@ -32,7 +32,7 @@ import { WallSignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
 import Settings from "@/components/Settings";
-import { HOME_TAB_EVENT } from "@/lib/menuItems";
+import { HOME_TAB_EVENT, HOME_TABS } from "@/lib/menuItems";
 import { PULL_REFRESH_EVENT } from "@/components/PullToRefresh";
 import { scrollToY } from "@/lib/scroller";
 import {
@@ -48,12 +48,13 @@ function refLabel(ref: VerseRef, lang: Lang): string {
 }
 
 /**
- * The toggles, in the order the row shows them. Settings came in third when it
- * left the menu. A tab that used to be here, Gatherings, went with the
- * Gatherings themselves; a reader whose saved tab was that one lands on
- * Scripture, because useStickyTab only restores a tab still listed here.
+ * The toggles, in the order the row shows them (lib/menuItems, where the swipe
+ * across the app reads them too). Settings came in third when it left the
+ * menu. A tab that used to be here, Gatherings, went with the Gatherings
+ * themselves; a reader whose saved tab was that one lands on Discover, because
+ * useStickyTab only restores a tab still listed here.
  */
-const DISCOVER_TABS = ["scripture", "wall", "settings"] as const;
+const DISCOVER_TABS = HOME_TABS;
 
 export default function Discover() {
   const { t } = useI18n();
@@ -157,6 +158,9 @@ export default function Discover() {
           <Icon name="gear" /> {t("settings.title")}
         </button>
       </div>
+      {/* everything under the tab row, which is what moves when a swipe
+          changes the tab (components/Nav) */}
+      <div className="tab-pane">
       <p className="subtitle">
         {tab === "scripture"
           ? t("discover.subtitleScripture")
@@ -188,6 +192,7 @@ export default function Discover() {
           <PlansSection open={openPlan} />
         </>
       )}
+      </div>
     </div>
   );
 }

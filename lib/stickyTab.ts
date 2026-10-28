@@ -13,8 +13,40 @@
 // theme and the reading position — which are already remembered across
 // sessions for the same reason. It is where you were, not what you own.
 
-import { useCallback, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { readLocal, writeLocal } from "@/lib/storage";
+
+/**
+ * The tabs of the screen being looked at, for the swipe across the app.
+ *
+ * The swipe (components/Nav) moves through a page's own tabs before it moves
+ * on to the next page, so it has to know which tabs this page has, which one
+ * is up, and how to change it. A page with tabs says so by being mounted.
+ */
+export interface ScreenTabs {
+  page: string;
+  tabs: readonly string[];
+  tab: string;
+  choose: (next: string) => void;
+}
+
+let onScreen: ScreenTabs | null = null;
+
+export function screenTabs(): ScreenTabs | null {
+  return onScreen;
+}
+
+/**
+ * Have a page open on a given tab the next time it mounts — where a swipe
+ * arriving at it from the side should land, whatever it last remembered.
+ */
+export function arriveOnTab(page: string, tab: string): void {
+  try {
+    writeLocal(`communion.tab.${page}`, tab);
+  } catch {
+    // it opens on whatever it remembers instead
+  }
+}
 
 /**
  * A tab that survives a refresh.
@@ -64,6 +96,24 @@ export function useStickyTab<T extends string>(
     },
     [key]
   );
+
+  // what the swipe sees: this page, its tabs and the one that is up
+  const validRef = useRef(valid);
+  validRef.current = valid;
+  useEffect(() => {
+    const entry: ScreenTabs = {
+      page,
+      tabs: validRef.current,
+      tab,
+      choose: (next) => {
+        if ((validRef.current as readonly string[]).includes(next)) choose(next as T);
+      },
+    };
+    onScreen = entry;
+    return () => {
+      if (onScreen === entry) onScreen = null;
+    };
+  }, [page, tab, choose]);
 
   return [tab, choose];
 }
