@@ -243,13 +243,14 @@ const dictionaries = {
     "about.tourCommentary": "Commentary",
     "about.tourCommentaryDesc":
       "Matthew Henry on every chapter, and Spurgeon’s Treasury of David on the Psalms.",
-    "about.tourScholars": "Ask the scholars",
+    "about.tourIllumination": "Illumination · AI",
+    "about.tourScholars": "Sit with the scholars",
     "about.tourScholarsDesc":
-      "Choose Augustine, Luther, Spurgeon or four more, and ask about the passage. Claude answers in his manner.",
-    "about.tourAskVerse": "Ask about a verse",
-    "about.tourAskVerseDesc": "From Compare, ask Claude what a verse means, its setting, or why the translations differ.",
+      "Bring your question to Augustine, Luther, Spurgeon and four more great teachers of the church, and hear the passage opened in their manner.",
+    "about.tourAskVerse": "Ask anything about a verse",
+    "about.tourAskVerseDesc": "What does it mean? What was happening when it was written? Why do the translations differ? Ask, and the answer comes right beside the text.",
     "about.tourAiSearch": "Illuminated Search",
-    "about.tourAiSearchDesc": "Describe what you are looking for, and Claude finds the passages, in your own translation.",
+    "about.tourAiSearchDesc": "Search by what’s on your heart, not only the words you remember. Describe it — “when I can’t sleep for worry” — and the passages that speak to it come to you, in your own translation.",
     "about.tourPathLabel": "Find it",
     "about.tourScholarsPath": "The Word › tap ✦ › Commentary, under any verse › pick a scholar",
     "about.tourAskVersePath": "The Word › tap ✦ › Compare, under any verse › Ask about this verse",
@@ -297,9 +298,9 @@ const dictionaries = {
       "Journal — the verse's page in your journal. Keep it with the bookmark, alone or with the verses after it, write a note underneath, file it in a collection, or hang it on your wall.",
     "about.studyUnderlines": "About the underlines: only the King James is tagged word by word. In every other translation a word is underlined when it can be matched to the Berean Standard Bible, which carries an original behind each of its own words — solid where the Berean uses that word for that original in this very verse, dotted where the match comes from its wording elsewhere and is likely rather than certain. Roughly a quarter of the words on a page carry an underline at all; checked against the King James, nine in ten of those are right, the solid ones more often than the dotted. A word with nothing behind it is left plain and cannot be tapped, because a guess would look exactly like a finding. The Reina Valera has no underlines: the evidence is in English, so its verses use Original text instead.",
     "about.aiTitle":
-      "The AI in Communion",
+      "Illumination",
     "about.aiIntro":
-      "Signed in, you can also put questions to Claude, an AI made by Anthropic. Every account has 10 questions a day, shared between the three places it appears, and they come back at midnight UTC:",
+      "Illumination is Communion’s AI study companion, powered by Claude, an AI made by Anthropic. Every signed-in account has 10 questions a day, shared between the three places it appears, and they come back at midnight UTC:",
     "about.ai1":
       "Ask about a verse — in study mode, Compare carries a lamp, and under the translations is room to ask about the verse: what it means, its setting, why the translations differ.",
     "about.ai2":
@@ -962,13 +963,14 @@ const dictionaries = {
     "about.tourCommentary": "Comentario",
     "about.tourCommentaryDesc":
       "Matthew Henry en cada capítulo, y el Tesoro de David de Spurgeon en los Salmos.",
-    "about.tourScholars": "Pregunta a los eruditos",
+    "about.tourIllumination": "Iluminación · IA",
+    "about.tourScholars": "Siéntate con los eruditos",
     "about.tourScholarsDesc":
-      "Elige a Agustín, Lutero, Spurgeon u otros cuatro, y pregunta sobre el pasaje. Claude responde a su manera.",
-    "about.tourAskVerse": "Pregunta sobre un versículo",
-    "about.tourAskVerseDesc": "Desde Comparar, pregúntale a Claude qué significa un versículo, su contexto o por qué difieren las traducciones.",
+      "Lleva tu pregunta a Agustín, Lutero, Spurgeon y otros cuatro grandes maestros de la iglesia, y escucha el pasaje explicado a su manera.",
+    "about.tourAskVerse": "Pregunta lo que quieras sobre un versículo",
+    "about.tourAskVerseDesc": "¿Qué significa? ¿Qué pasaba cuando se escribió? ¿Por qué difieren las traducciones? Pregunta, y la respuesta llega junto al texto.",
     "about.tourAiSearch": "Búsqueda iluminada",
-    "about.tourAiSearchDesc": "Describe lo que buscas y Claude encuentra los pasajes, en tu propia traducción.",
+    "about.tourAiSearchDesc": "Busca por lo que llevas en el corazón, no solo por las palabras que recuerdas. Descríbelo —«cuando la preocupación no me deja dormir»— y los pasajes que le hablan llegan a ti, en tu propia traducción.",
     "about.tourPathLabel": "Dónde",
     "about.tourScholarsPath": "La Palabra › toca ✦ › Comentario, bajo cualquier versículo › elige un erudito",
     "about.tourAskVersePath": "La Palabra › toca ✦ › Comparar, bajo cualquier versículo › Pregunta sobre este versículo",
@@ -1017,9 +1019,9 @@ const dictionaries = {
       "Diario: la página del versículo en tu diario. Guárdalo con el marcador, solo o con los versículos que siguen, escribe una nota debajo, archívalo en una colección o cuélgalo en tu pared.",
     "about.studyUnderlines": "Sobre los subrayados: solo la King James está etiquetada palabra por palabra. En las demás traducciones una palabra se subraya cuando puede emparejarse con la Berean Standard Bible, que lleva un original detrás de cada una de sus palabras — sólido cuando la Berean usa esa palabra para ese original en este mismo versículo, punteado cuando el emparejamiento viene de cómo lo dice en otro lugar y es probable, no seguro. Cerca de una cuarta parte de las palabras de la página lleva subrayado; comprobado contra la King James, nueve de cada diez aciertan, las sólidas más que las punteadas. Una palabra sin nada detrás se queda lisa y no se puede tocar, porque una suposición se vería igual que un hallazgo. La Reina Valera no lleva subrayados: la evidencia está en inglés, así que sus versículos usan Texto original.",
     "about.aiTitle":
-      "La IA en Communion",
+      "Iluminación",
     "about.aiIntro":
-      "Con tu cuenta, también puedes hacer preguntas a Claude, una IA creada por Anthropic. Cada cuenta tiene 10 preguntas al día, compartidas entre los tres lugares donde aparece, y se renuevan a medianoche UTC:",
+      "Iluminación es el compañero de estudio con IA de Communion, impulsado por Claude, una IA creada por Anthropic. Cada cuenta con sesión iniciada tiene 10 preguntas al día, compartidas entre los tres lugares donde aparece, y se renuevan a medianoche UTC:",
     "about.ai1":
       "Preguntar sobre un versículo — en el modo estudio, Comparar lleva una lámpara, y debajo de las traducciones hay lugar para preguntar sobre el versículo: qué significa, su contexto, por qué difieren las traducciones.",
     "about.ai2":

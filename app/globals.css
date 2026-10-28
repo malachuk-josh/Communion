@@ -6700,3 +6700,16 @@ button.compare-pick:last-child {
   font-size: 0.82rem;
   border-radius: 8px;
 }
+
+/* "✦ Illumination · AI" over the titles of the demo's three AI screens */
+.tour-slide .tour-feature {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}

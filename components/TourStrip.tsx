@@ -19,12 +19,15 @@
 // pictures around for it. Every image states its aspect ratio inline so the
 // shelf is laid out before a single byte arrives, and never reflows.
 
+import Icon from "@/components/Icon";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 
 /**
  * Every slide: the file stem under /tour, its pixel size, its i18n stem, and
  * whether it carries a "Find it" line — the taps that lead to it, for the
- * features that are a few taps deep.
+ * features that are a few taps deep. Those three are the AI, and they also
+ * carry its name, Illumination, over their titles, so the demo presents them
+ * as one feature in three places rather than three unrelated tricks.
  */
 const SLIDES: Array<{ img: string; w: number; h: number; key: string; path?: true }> = [
   { img: "reader", w: 720, h: 992, key: "tourReader" },
@@ -68,6 +71,11 @@ export default function TourStrip() {
             />
           ))}
           <figcaption>
+            {path && (
+              <em className="tour-feature">
+                <Icon name="sparkle" /> {t("about.tourIllumination")}
+              </em>
+            )}
             <strong>{t(`about.${key}` as MessageKey)}</strong>
             <span>{t(`about.${key}Desc` as MessageKey)}</span>
             {path && (
