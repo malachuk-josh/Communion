@@ -12,8 +12,8 @@ export default function AboutCommunion() {
       <h1 className="page-title">{t("settings.about")}</h1>
       <div className="glass card about-card">
         <blockquote className="founding-verse">
-          {t("verse.matthew")}
-          <cite>{t("verse.matthewRef")}</cite>
+          {t("verse.founding")}
+          <cite>{t("verse.foundingRef")}</cite>
         </blockquote>
         <p>{t("about.p1")}</p>
         <p>{t("about.p2")}</p>

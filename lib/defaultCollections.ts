@@ -51,11 +51,11 @@ export const GOSPEL_TRACK: SeedVerse[] = [
 
 export const COMMUNION_VERSES: SeedVerse[] = [
   {
-    b: 40,
-    c: 18,
-    v: 20,
-    label: "Where 2 or 3 are gathered",
-    labelEs: "Donde dos o tres se reúnen",
+    b: 43,
+    c: 1,
+    v: 1,
+    label: "In the beginning was the Word",
+    labelEs: "En el principio era el Verbo",
   },
   {
     // kept as the run it is: verse 14 asks and verse 15 answers, and the

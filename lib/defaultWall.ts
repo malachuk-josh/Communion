@@ -10,8 +10,8 @@ import { WALL_MAX, type WallEntry } from "@/lib/wall";
  * feature in the time it takes to read them — and understands it as something
  * to add to rather than something to set up.
  *
- * These four, and not four at random. Matthew 18:20 is the verse this app is
- * named for and built on. Galatians 6:10 is what the reading is supposed to
+ * These four, and not four at random. John 1:1 is the verse this app is built
+ * on: the Word it is for reading is the One it speaks of. Galatians 6:10 is what the reading is supposed to
  * turn into, as we have opportunity. John 3:16 is the one verse anybody
  * arriving already knows, which makes it the one that says "yes, this is that
  * book". And Philippians 3:13-14 is kept as the run it is, because the
@@ -27,7 +27,7 @@ interface SeedVerse {
 }
 
 export const WALL_VERSES: SeedVerse[] = [
-  { b: 40, c: 18, v: 20 }, // Matthew — where two or three are gathered
+  { b: 43, c: 1, v: 1 }, // John — in the beginning was the Word
   { b: 48, c: 6, v: 10 }, // Galatians — as we have therefore opportunity
   { b: 43, c: 3, v: 16 }, // John — for God so loved the world
   { b: 50, c: 3, v: 13, end: 14 }, // Philippians — I press toward the mark

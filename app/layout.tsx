@@ -15,18 +15,18 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://communion-mu.vercel.app"),
-  title: "Communion — Read the Word. Gather in His name.",
+  title: "Communion — Read the Word. Study the Word.",
   description:
-    "A Bible app for reading and studying the Word: Scripture in multiple translations and languages, the Hebrew and Greek behind it, a journal and reading plans. Matthew 18:20.",
+    "A Bible app for reading and studying the Word: Scripture in multiple translations and languages, the Hebrew and Greek behind it, a journal and reading plans. John 1:1.",
   openGraph: {
     title: "Communion",
-    description: "Read the Word. Gather in His name.",
+    description: "Read the Word. Study the Word.",
     images: ["/og.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Communion",
-    description: "Read the Word. Gather in His name.",
+    description: "Read the Word. Study the Word.",
     images: ["/og.png"],
   },
   appleWebApp: {

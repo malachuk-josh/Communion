@@ -1,26 +1,31 @@
 # Communion
 
-> *"For where two or three are gathered together in my name, there am I in the midst of them."* — Matthew 18:20 (KJV)
+> *"In the beginning was the Word, and the Word was with God, and the Word was God."* — John 1:1 (KJV)
 
-**Communion** is a Bible app with a social heart: read Scripture in multiple translations and languages, then gather with other believers in **Churches** — small groups that schedule and share co-worship sessions together.
+**Communion** is a Bible app for reading and studying the Word on your own: Scripture set like a book, the Hebrew and Greek a tap away, and a journal that keeps what you find.
 
 ## Core Features
 
-### 📖 Bible Reader
+### 📖 The Word
 - Multiple translations, defaulting to the **King James Version (KJV)**
 - Public-domain-first translation set (KJV; Reina-Valera 1909 for Spanish)
-- Full UI language toggle — **English and Spanish** at launch
-- Mobile and desktop responsive, glassmorphism ("sleek glass polish") UI
+- Full UI language toggle — **English and Spanish**
+- Text size, boldness and typeface, and three themes: Illuminated, Parchment and grey
 
-### ⛪ Churches (Social)
-- Any user can found a Church — a small group of believers gathered in His name (Matthew 18:20 is displayed at Church creation and on every Church home page)
-- Invite others by **email** or by sharing an invite link to **Facebook Messenger**
-- Invite links are tokenized, expiring, and single-church scoped
+### 🔎 Study mode
+- The Hebrew and Greek behind each word, with Strong's, Brown-Driver-Briggs and Abbott-Smith
+- A concordance, cross-references, maps in context, and translations compared verse by verse
+- Matthew Henry on every chapter, and Spurgeon's Treasury of David on the Psalms
 
-### 📅 Co-Worship Calendar
-- Each Church has a shared calendar for scheduling worship sessions together
-- **Pre-built session types**: Bible Study, Prayer, Communion, Praise & Worship
-- RSVP and reminders for members
+### ✨ AI (Claude, by Anthropic), turned on per reader
+- Ask about a verse, from Compare
+- Ask the scholars, from Commentary: seven teachers of the church, answered in their manner
+- Illuminated Search: find verses by describing them
+
+### 📓 Journal and Home
+- Bookmarks, notes and collections; reading plans with reminders, including plans through the commentaries
+- A wall of verses and a private prayer list
+- Offline downloads of Scripture and the study tools
 
 ## Tech Stack (target)
 

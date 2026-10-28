@@ -7,7 +7,7 @@ export type Lang = "en" | "es";
 
 const dictionaries = {
   en: {
-    "app.tagline": "Read the Word. Gather in His name.",
+    "app.tagline": "Read the Word. Study the Word.",
     "nav.reader": "The Word",
     "nav.discover": "Home",
     "settings.title": "Settings",
@@ -225,13 +225,13 @@ const dictionaries = {
       "Read the Word in multiple translations (King James by default, Reina Valera 1909 in Spanish), search it, resize it, and follow it wherever a passage link takes you. Then stay with it: open a word to its original, keep a verse with a note, and walk a plan a day at a time.",
     "tour.share": "Share this demo",
     "tour.shareText":
-      "Take a look at Communion — the whole Bible with real study tools: the Hebrew and Greek, commentary and maps.",
+      "Take a look at Communion — the whole Bible with real study tools: the Hebrew and Greek, commentary and maps, and questions answered by Claude.",
     "welcome.title": "Welcome to Communion",
     "welcome.lede":
       "A Bible app for reading and studying the Word. Here is what it can do — have a look, then step in.",
     "welcome.begin": "Begin reading",
     "welcome.more": "The full story, on the About page →",
-    "about.tourTitle": "A tour, in ten screens",
+    "about.tourTitle": "A tour, in thirteen screens",
     "about.tourHint": "Every screen here is the app itself, not a mockup.",
     "about.tourReader": "The Word",
     "about.tourReaderDesc": "Scripture set like a book, reading on from chapter into chapter.",
@@ -244,6 +244,13 @@ const dictionaries = {
     "about.tourCommentary": "Commentary",
     "about.tourCommentaryDesc":
       "Matthew Henry on every chapter, and Spurgeon’s Treasury of David on the Psalms.",
+    "about.tourScholars": "Ask the scholars",
+    "about.tourScholarsDesc":
+      "Choose Augustine, Luther, Spurgeon or four more, and ask about the passage. Claude answers in his manner.",
+    "about.tourAskVerse": "Ask about a verse",
+    "about.tourAskVerseDesc": "From Compare, ask Claude what a verse means, its setting, or why the translations differ.",
+    "about.tourAiSearch": "Illuminated Search",
+    "about.tourAiSearchDesc": "Describe what you are looking for, and Claude finds the passages, in your own translation.",
     "about.tourMaps": "Maps in context",
     "about.tourMapsDesc":
       "Where the chapter happened, and the places it names — tap one to find its verse.",
@@ -302,7 +309,7 @@ const dictionaries = {
       "Claude can be wrong, and sounds just as sure when it is. Weigh what it says against Scripture, as the Bereans did, and treat it as a companion in study rather than an authority — never as a stand-in for a pastor, or for help when you need it.",
     "about.aiPrivacy":
       "Your questions are sent to Anthropic to be answered. Communion keeps none of them: a conversation lives on your device only for as long as the app is open, unless you save an answer to the verse’s note. All the app writes down is how many questions you asked, and what they cost to answer.",
-    "about.footer": "Built so that two or three — anywhere on earth — can gather in His name.",
+    "about.footer": "Built for time alone with the Word — to read it slowly, and to know the One it speaks of.",
     "discover.title": "Home",
     "discover.tabScripture": "Discover",
     "discover.subtitleScripture":
@@ -611,8 +618,8 @@ const dictionaries = {
     "search.close": "Close results",
     "search.searchedIn":
       "Searched the {name} — this translation is read a chapter at a time and cannot be searched whole.",
-    "verse.matthew": "For where two or three are gathered together in my name, there am I in the midst of them.",
-    "verse.matthewRef": "Matthew 18:20",
+    "verse.founding": "In the beginning was the Word, and the Word was with God, and the Word was God.",
+    "verse.foundingRef": "John 1:1",
     "common.done": "Done",
     "common.close": "Close",
     "common.notNow": "Not now",
@@ -671,7 +678,7 @@ const dictionaries = {
       "Matthew Henry and Spurgeon wrote in English, and their commentary is shown as they wrote it.",
   },
   es: {
-    "app.tagline": "Lee la Palabra. Congrégate en Su nombre.",
+    "app.tagline": "Lee la Palabra. Estudia la Palabra.",
     "nav.reader": "La Palabra",
     "nav.discover": "Inicio",
     "settings.title": "Ajustes",
@@ -891,13 +898,13 @@ const dictionaries = {
       "Lee la Palabra en varias traducciones (King James por defecto, Reina Valera 1909 en español), búscala, ajusta su tamaño y síguela adonde te lleve cada pasaje. Luego quédate en ella: abre una palabra hasta su original, guarda un versículo con una nota y recorre un plan día a día.",
     "tour.share": "Comparte esta demo",
     "tour.shareText":
-      "Mira Communion — la Biblia completa con herramientas de estudio de verdad: el hebreo y el griego, comentario y mapas.",
+      "Mira Communion — la Biblia completa con herramientas de estudio de verdad: el hebreo y el griego, comentario y mapas, y preguntas respondidas por Claude.",
     "welcome.title": "Bienvenido a Communion",
     "welcome.lede":
       "Una aplicación bíblica para leer y estudiar la Palabra. Esto es lo que puede hacer — míralo, y luego entra.",
     "welcome.begin": "Comenzar a leer",
     "welcome.more": "La historia completa, en Acerca de →",
-    "about.tourTitle": "Un recorrido en diez pantallas",
+    "about.tourTitle": "Un recorrido en trece pantallas",
     "about.tourHint": "Cada pantalla es la aplicación misma, no una maqueta.",
     "about.tourReader": "La Palabra",
     "about.tourReaderDesc": "La Escritura compuesta como un libro: la lectura sigue de capítulo en capítulo.",
@@ -910,6 +917,13 @@ const dictionaries = {
     "about.tourCommentary": "Comentario",
     "about.tourCommentaryDesc":
       "Matthew Henry en cada capítulo, y el Tesoro de David de Spurgeon en los Salmos.",
+    "about.tourScholars": "Pregunta a los eruditos",
+    "about.tourScholarsDesc":
+      "Elige a Agustín, Lutero, Spurgeon u otros cuatro, y pregunta sobre el pasaje. Claude responde a su manera.",
+    "about.tourAskVerse": "Pregunta sobre un versículo",
+    "about.tourAskVerseDesc": "Desde Comparar, pregúntale a Claude qué significa un versículo, su contexto o por qué difieren las traducciones.",
+    "about.tourAiSearch": "Búsqueda iluminada",
+    "about.tourAiSearchDesc": "Describe lo que buscas y Claude encuentra los pasajes, en tu propia traducción.",
     "about.tourMaps": "Mapas en contexto",
     "about.tourMapsDesc":
       "Dónde sucedió el capítulo y los lugares que nombra: toca uno para ir a su versículo.",
@@ -969,7 +983,7 @@ const dictionaries = {
       "Claude puede equivocarse, y suena igual de seguro cuando lo hace. Examina lo que dice a la luz de la Escritura, como los de Berea, y tómalo como un compañero de estudio, no como una autoridad; nunca como sustituto de un pastor, ni de la ayuda que necesites.",
     "about.aiPrivacy":
       "Tus preguntas se envían a Anthropic para que sean respondidas. Communion no guarda ninguna: la conversación vive en tu dispositivo solo mientras la app está abierta, salvo que guardes una respuesta en la nota del versículo. Lo único que la app anota es cuántas preguntas hiciste y lo que costó responderlas.",
-    "about.footer": "Creada para que dos o tres — en cualquier lugar del mundo — se congreguen en Su nombre.",
+    "about.footer": "Creada para el tiempo a solas con la Palabra: para leerla despacio y conocer a Aquel de quien habla.",
     "discover.title": "Inicio",
     "discover.tabScripture": "Descubrir",
     "discover.subtitleScripture":
@@ -1278,8 +1292,8 @@ const dictionaries = {
     "search.searchedIn":
       "Se buscó en la {name} — esta traducción se lee capítulo por capítulo y no puede buscarse entera.",
     "search.close": "Cerrar resultados",
-    "verse.matthew": "Porque donde están dos o tres congregados en mi nombre, allí estoy en medio de ellos.",
-    "verse.matthewRef": "Mateo 18:20",
+    "verse.founding": "En el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios.",
+    "verse.foundingRef": "Juan 1:1",
     "common.done": "Listo",
     "common.close": "Cerrar",
     "common.notNow": "Ahora no",
