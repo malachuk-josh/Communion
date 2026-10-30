@@ -1,13 +1,15 @@
 // What the readers found, written out for the Bookshelf, for
 // scripts/build-book.mjs: one JSON file per part, the pictures at a size a
-// phone wants, the cover, and book.json with the contents.
+// phone wants, the cover, and book.json with the contents. Where the
+// pictures and the cover come from — a PDF's pages, a document's image files
+// — is the source's business (pdfAssets in layout.mjs, readDoc in
+// read-doc.mjs); here a picture is whatever `pictureFile` finds for it.
 //
 // Nothing is reworded. Straight quotes become curly ones, which is the one
 // change to the characters: the PDF's font drew them straight, and the
 // reader's font draws them properly.
 
-import { execFileSync } from "child_process";
-import { readdirSync, writeFileSync } from "fs";
+import { writeFileSync } from "fs";
 import path from "path";
 import sharp from "sharp";
 
@@ -32,32 +34,25 @@ const words = (s) => s.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).leng
 // ---- writing it ------------------------------------------------------------
 
 /**
- * `parts` as the readers build them: an id, a title, perhaps a label and the
- * page of the picture that heads it, and blocks of kind "p" (with `drop` or a
- * `style`), "v" (stanzas of lines), "table", "img" (a picture in the text, by
- * its page) and "section" (a heading inside the part, such as its notes').
+ * `parts` as the readers build them: an id, a title, perhaps a label or a
+ * group (the canticle a canto is in) and the picture that heads it, with its
+ * description; and blocks of kind "p" (with `drop` or a `style`), "v"
+ * (stanzas of lines), "table", "img" (a picture in the text) and "section" (a
+ * heading inside the part, such as its notes').
+ *
+ * A picture is named by `ref` — a page, a file — and `pictureFile` says where
+ * its image is. `coverFile` is the cover, already the whole of it.
  */
-export async function writeBook({ pdf, slug, out, work, parts, bookPart }) {
-  execFileSync("pdfimages", ["-j", "-p", pdf, path.join(work, "img")]);
-  const extracted = readdirSync(work).filter((f) => /^img-\d+-\d+\.(jpg|ppm|png)$/.test(f));
-
-  async function picture(pageNumber, name) {
-    // the page's picture is its largest image that is not the parchment behind it
-    const candidates = await Promise.all(
-      extracted
-        .filter((f) => Number(f.split("-")[1]) === pageNumber)
-        .map(async (f) => ({ f, meta: await sharp(path.join(work, f)).metadata() }))
-    );
-    const pick = candidates
-      .filter(({ meta }) => !(meta.width === 1008 && meta.height === 1440))
-      .sort((a, b) => b.meta.width * b.meta.height - a.meta.width * a.meta.height)[0];
-    if (!pick) return null;
+export async function writeBook({ slug, out, parts, bookPart, title, author, coverFile, pictureFile }) {
+  async function picture(ref, name, alt) {
+    const from = await pictureFile(ref);
+    if (!from) return null;
     const file = `${name}.webp`;
-    const info = await sharp(path.join(work, pick.f))
+    const info = await sharp(from)
       .resize({ width: 800, withoutEnlargement: true })
       .webp({ quality: 74 })
       .toFile(path.join(out, file));
-    return { src: file, w: info.width, h: info.height };
+    return { src: file, w: info.width, h: info.height, ...(alt ? { alt: curl(alt) } : {}) };
   }
 
   const contents = [];
@@ -76,7 +71,7 @@ export async function writeBook({ pdf, slug, out, work, parts, bookPart }) {
       } else if (b.kind === "v") {
         blocks.push({ v: b.stanzas.map((st) => st.map(tidy)) });
       } else if (b.kind === "img") {
-        const img = await picture(b.page, `ch${p.id}-${++inText}`);
+        const img = await picture(b.ref, `ch${p.id}-${++inText}`, b.alt);
         if (img) blocks.push({ img });
       } else if (b.kind === "section") {
         blocks.push({ section: curl(b.text) });
@@ -84,12 +79,13 @@ export async function writeBook({ pdf, slug, out, work, parts, bookPart }) {
         blocks.push({ table: { head: b.head.map(tidy), rows: b.rows.map((r) => r.map(tidy)) } });
       }
     }
-    const image = p.picturePage ? await picture(p.picturePage, `ch${p.id}`) : null;
+    const image = p.picture ? await picture(p.picture, `ch${p.id}`, p.pictureAlt) : null;
     writeFileSync(
       path.join(out, `${p.id}.json`),
       JSON.stringify({
         id: p.id,
         ...(p.label ? { label: p.label } : {}),
+        ...(p.group ? { group: p.group } : {}),
         title: curl(p.title),
         ...(image ? { image } : {}),
         blocks,
@@ -101,25 +97,26 @@ export async function writeBook({ pdf, slug, out, work, parts, bookPart }) {
         (b.p ? words(b.p) : b.v ? b.v.flat().reduce((m, line) => m + words(line), 0) : 0),
       0
     );
-    contents.push({ id: p.id, ...(p.label ? { label: p.label } : {}), title: curl(p.title), words: count });
+    contents.push({
+      id: p.id,
+      ...(p.label ? { label: p.label } : {}),
+      ...(p.group ? { group: p.group } : {}),
+      title: curl(p.title),
+      words: count,
+    });
   }
 
-  // the cover is the whole first page — the picture with its lettering on it
-  execFileSync("pdftoppm", ["-r", "150", "-png", "-f", "1", "-l", "1", "-singlefile", pdf, path.join(work, "cover")]);
-  const cover = await sharp(path.join(work, "cover.png"))
+  const cover = await sharp(coverFile)
     .resize({ width: 720 })
     .webp({ quality: 78 })
     .toFile(path.join(out, "cover.webp"));
-
-  const info = execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
-  const meta = (key) => (info.match(new RegExp(`^${key}:\\s+(.*)$`, "m")) || [])[1]?.trim();
 
   writeFileSync(
     path.join(out, "book.json"),
     JSON.stringify({
       slug,
-      title: meta("Title")?.replace(/ — .*$/, "") ?? slug,
-      author: meta("Author") ?? "",
+      title: title ?? slug,
+      author: author ?? "",
       ...(bookPart ? { part: bookPart } : {}),
       cover: { src: "cover.webp", w: cover.width, h: cover.height },
       contents,

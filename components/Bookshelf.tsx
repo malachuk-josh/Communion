@@ -16,6 +16,7 @@ import {
   bookHref,
   bookUrl,
   fetchBookIndex,
+  partName,
   readPlace,
   type BookIndex,
 } from "@/lib/bookshelf";
@@ -41,7 +42,7 @@ export default function Bookshelf() {
               ...all,
               [book.slug]: n
                 ? t("shelf.atChapter", { n, of: String(index.contents.filter((c) => c.label).length) })
-                : entry.title,
+                : partName(entry),
             }));
           }
         })

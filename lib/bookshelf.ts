@@ -28,8 +28,8 @@ export interface ShelfBook {
   blurb: { en: string; es: string };
   /** its chapter-a-day plan, in lib/plans */
   plan?: string;
-  /** what a day of that plan reads, where it is a Book and not a chapter */
-  unit?: "book";
+  /** what a day of that plan reads, where it is not a chapter */
+  unit?: "book" | "canto";
   /** the book that carries on from this one, offered at its end */
   sequel?: string;
 }
@@ -84,6 +84,19 @@ export const SHELF: ShelfBook[] = [
     plan: "fall12",
     unit: "book",
   },
+  {
+    slug: "divine-comedy",
+    title: "The Divine Comedy",
+    subtitle: "Longfellow’s translation",
+    author: "Dante Alighieri",
+    lang: "en",
+    blurb: {
+      en: "Dante’s journey through Hell, Purgatory and Paradise, in Henry Wadsworth Longfellow’s translation of 1867, line for line with the Italian. All one hundred cantos, each headed by a summary of what happens in it, with two pictures to every canto.",
+      es: "El viaje de Dante por el Infierno, el Purgatorio y el Paraíso, en la traducción inglesa de Henry Wadsworth Longfellow de 1867, verso a verso con el italiano. Los cien cantos, cada uno encabezado por un resumen de lo que ocurre en él, con dos ilustraciones en cada canto.",
+    },
+    plan: "comedy100",
+    unit: "canto",
+  },
 ];
 
 export function shelfBook(slug: string | null | undefined): ShelfBook | undefined {
@@ -96,14 +109,24 @@ export interface BookImage {
   src: string;
   w: number;
   h: number;
+  /** what the picture shows, where the book gives it a title */
+  alt?: string;
 }
 
 export interface ContentsEntry {
   id: string;
   /** "Chapter 1", where the part is a chapter */
   label?: string;
+  /** the part of the work it is in — The Divine Comedy's Inferno — whose own
+   *  page is the entry titled the same */
+  group?: string;
   title: string;
   words: number;
+}
+
+/** A part's name standing alone: "Inferno · Canto I", where cantos repeat. */
+export function partName(e: { group?: string; title: string }): string {
+  return e.group && e.group !== e.title ? `${e.group} · ${e.title}` : e.title;
 }
 
 export interface BookIndex {
@@ -135,6 +158,7 @@ export type Block =
 export interface BookPart {
   id: string;
   label?: string;
+  group?: string;
   title: string;
   image?: BookImage;
   blocks: Block[];

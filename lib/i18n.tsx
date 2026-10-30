@@ -432,6 +432,10 @@ const dictionaries = {
       "The Fall",
     "plan.fall12.desc":
       "Paradise Lost in modern English verse, a Book a day for 12 days, from the fall of the rebel angels to the gates of Eden.",
+    "plan.comedy100":
+      "The Divine Comedy",
+    "plan.comedy100.desc":
+      "Dante’s Comedy in Longfellow’s translation, a canto a day for 100 days, from the dark forest to the love that moves the sun and the other stars.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
       "Read a book from the Bookshelf a little each day. Each day opens its reading, and you can mark it read at the end.",
@@ -446,6 +450,7 @@ const dictionaries = {
     "shelf.coverOf": "Cover of {title}",
     "shelf.withPlan": "A chapter a day · {n} days",
     "shelf.withPlanBooks": "A Book a day · {n} days",
+    "shelf.withPlanCantos": "A canto a day · {n} days",
     "shelf.contents": "Contents",
     "shelf.goesOn": "The story goes on",
     "shelf.followedBy": "Followed by {title}",
@@ -1168,6 +1173,10 @@ const dictionaries = {
       "The Fall",
     "plan.fall12.desc":
       "El paraíso perdido en verso inglés moderno, un libro al día durante 12 días, desde la caída de los ángeles rebeldes hasta las puertas del Edén. El libro está en inglés.",
+    "plan.comedy100":
+      "The Divine Comedy",
+    "plan.comedy100.desc":
+      "La Comedia de Dante en la traducción de Longfellow, un canto al día durante 100 días, desde la selva oscura hasta el amor que mueve el sol y las demás estrellas. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
       "Lee un libro de la estantería poco a poco, cada día. Cada día abre su lectura, y al final puedes marcarla como leída.",
@@ -1182,6 +1191,7 @@ const dictionaries = {
     "shelf.coverOf": "Portada de {title}",
     "shelf.withPlan": "Un capítulo al día · {n} días",
     "shelf.withPlanBooks": "Un libro al día · {n} días",
+    "shelf.withPlanCantos": "Un canto al día · {n} días",
     "shelf.contents": "Contenido",
     "shelf.goesOn": "La historia sigue",
     "shelf.followedBy": "Le sigue {title}",

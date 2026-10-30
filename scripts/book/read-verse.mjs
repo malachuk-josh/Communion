@@ -98,7 +98,7 @@ export function readVerse({ pages, pictures }) {
 
     for (const { line: l, pic: inText } of items) {
       if (inText) {
-        part.blocks.push({ kind: "img", page: page.number });
+        part.blocks.push({ kind: "img", ref: page.number });
         open = null;
         previous = null;
         continue;
@@ -110,7 +110,7 @@ export function readVerse({ pages, pictures }) {
           startPart({
             id: String(fromRoman(book[1])).padStart(2, "0"),
             title: html,
-            ...(pic ? { picturePage: page.number } : {}),
+            ...(pic ? { picture: page.number } : {}),
           });
         } else if (/^Notes on /.test(html) && part) {
           part.blocks.push({ kind: "section", text: html });

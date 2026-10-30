@@ -26,6 +26,7 @@ import {
   bookUrl,
   fetchBookIndex,
   fetchBookPart,
+  partName,
   readPlace,
   readRefs,
   SHELF,
@@ -37,6 +38,7 @@ import {
   type BookIndex,
   type BookPart,
   type BookRef,
+  type ContentsEntry,
   type Place,
   type ShelfBook,
 } from "@/lib/bookshelf";
@@ -84,13 +86,32 @@ export default function BookView() {
   );
 }
 
-/** "Chapter 5 · The Cross and the Hill Difficulty", or just the title. */
-function entryName(e: { label?: string; title: string }, t: (k: MessageKey, v?: Record<string, string>) => string) {
+/** "Chapter 5 · The Cross and the Hill Difficulty", "Inferno · Canto I", or just the title. */
+function entryName(
+  e: { label?: string; group?: string; title: string },
+  t: (k: MessageKey, v?: Record<string, string>) => string
+) {
   const n = e.label?.match(/\d+/)?.[0];
-  return n ? `${t("shelf.chapter", { n })} · ${e.title}` : e.title;
+  return n ? `${t("shelf.chapter", { n })} · ${e.title}` : partName(e);
 }
 
 const minutes = (words: number) => Math.max(1, Math.round(words / 220));
+
+/** Entries in their groups, in order; a group's own page is the entry titled as it is. */
+function groupsOf(entries: ContentsEntry[]) {
+  const groups: { name: string; page?: ContentsEntry; entries: ContentsEntry[] }[] = [];
+  for (const e of entries) {
+    const name = e.group ?? "";
+    let g = groups[groups.length - 1];
+    if (!g || g.name !== name) {
+      g = { name, entries: [] };
+      groups.push(g);
+    }
+    if (e.title === e.group) g.page = e;
+    else g.entries.push(e);
+  }
+  return groups;
+}
 
 // ---- the book's own page ------------------------------------------------------
 
@@ -118,8 +139,9 @@ function BookHome({ book }: { book: ShelfBook }) {
   const prequel = SHELF.find((b) => b.sequel === book.slug);
   // what comes before the first chapter, the chapters, and what follows them;
   // a chapter is a numbered part, whether it is called one ("Chapter 3") or
-  // only numbered (The Fall's "Book III")
-  const isChapter = (c: (typeof contents)[number]) => !!c.label || /^\d+$/.test(c.id);
+  // only numbered (The Fall's "Book III"), or a part of a group (a canto)
+  const isChapter = (c: (typeof contents)[number]) =>
+    !!c.label || !!c.group || /^\d+$/.test(c.id);
   const firstCh = contents.findIndex(isChapter);
   const lastCh = contents.length - 1 - [...contents].reverse().findIndex(isChapter);
   const front = firstCh > 0 ? contents.slice(0, firstCh) : [];
@@ -180,7 +202,13 @@ function BookHome({ book }: { book: ShelfBook }) {
             )}
             {book.plan && (
               <Link className="btn" href={`/discover?plan=${book.plan}`}>
-                <Icon name="plan" /> {t(book.unit === "book" ? "shelf.withPlanBooks" : "shelf.withPlan", {
+                <Icon name="plan" /> {t(
+                  book.unit === "book"
+                    ? "shelf.withPlanBooks"
+                    : book.unit === "canto"
+                      ? "shelf.withPlanCantos"
+                      : "shelf.withPlan",
+                  {
                   n: String(getPlan(book.plan)?.days.length ?? ""),
                 })}
               </Link>
@@ -207,7 +235,20 @@ function BookHome({ book }: { book: ShelfBook }) {
           <h2>{t("shelf.contents")}</h2>
           <ul>{front.map(row)}</ul>
           {index.part && chapters.length > 0 && <p className="bk-toc-part">{index.part}</p>}
-          <ul>{chapters.map(row)}</ul>
+          {chapters.some((c) => c.group) ? (
+            // a work in parts — Inferno, Purgatorio, Paradiso — each under its
+            // own heading, which opens that part's title page
+            groupsOf(chapters).map((g) => (
+              <Fragment key={g.name}>
+                <p className="bk-toc-part">
+                  {g.page ? <Link href={bookHref(book.slug, g.page.id)}>{g.name}</Link> : g.name}
+                </p>
+                <ul>{g.entries.map(row)}</ul>
+              </Fragment>
+            ))
+          ) : (
+            <ul>{chapters.map(row)}</ul>
+          )}
           <ul>{back.map(row)}</ul>
         </section>
       )}
@@ -375,6 +416,10 @@ function PartView({
           <header className={`bk-head${part.id === "note" ? " bk-head-quiet" : ""}`}>
             <Ornament />
             {part.label && <p className="bk-label">{part.label}</p>}
+            {/* the part of the work a canto is in, over its number */}
+            {!part.label && part.group && part.group !== part.title && (
+              <p className="bk-label">{part.group}</p>
+            )}
             {part.id !== "note" && <h1 className="bk-title">{part.title}</h1>}
             <Rule />
           </header>
@@ -391,7 +436,7 @@ function PartView({
                   src={bookUrl(book.slug, part.image.src)}
                   width={part.image.w}
                   height={part.image.h}
-                  alt=""
+                  alt={part.image.alt ?? ""}
                 />
               </button>
             </figure>
@@ -520,7 +565,7 @@ function BlockView({
             src={bookUrl(slug, block.img.src)}
             width={block.img.w}
             height={block.img.h}
-            alt=""
+            alt={block.img.alt ?? ""}
             loading="lazy"
           />
         </button>

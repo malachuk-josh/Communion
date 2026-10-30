@@ -6226,6 +6226,14 @@ button.compare-pick:last-child {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
 }
 
+/* A cover keeps its own shape once it has loaded. The PDF editions' page is
+   the shape held for it until then; The Divine Comedy's painting is a little
+   taller, and cropping it to that would cut into its gilt frame. */
+.shelf-cover img,
+.bk-cover img {
+  aspect-ratio: auto 720 / 1029;
+}
+
 .bk-about {
   display: flex;
   flex-direction: column;
@@ -6557,6 +6565,7 @@ button.compare-pick:last-child {
 .bk-argument {
   margin-bottom: 1.5em;
   text-align: left;
+  font-style: italic;
   font-size: 0.9em;
   line-height: 1.5;
   color: var(--ink-dim);

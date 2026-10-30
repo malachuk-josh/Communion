@@ -152,7 +152,7 @@ export function readProse({ pages, pictures }) {
           id: n ? String(n).padStart(2, "0") : title === "The Conclusion" ? "conclusion" : frontId(title),
           ...(pendingLabel ? { label: pendingLabel } : {}),
           title,
-          ...(pic ? { picturePage: page.number } : {}),
+          ...(pic ? { picture: page.number } : {}),
         });
         pendingLabel = null;
         previous = null;

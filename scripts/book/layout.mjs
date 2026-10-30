@@ -5,8 +5,9 @@
 // (read-prose.mjs, read-verse.mjs) turn these into parts and blocks.
 
 import { execFileSync } from "child_process";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import path from "path";
+import sharp from "sharp";
 
 const decode = (s) =>
   s
@@ -65,6 +66,41 @@ export function readLayout(pdf, work) {
   }
 
   return { pages, pictures };
+}
+
+/**
+ * What the writer needs from a PDF besides its text: each page's picture, the
+ * cover, and the title and author from its metadata.
+ */
+export async function pdfAssets(pdf, work) {
+  execFileSync("pdfimages", ["-j", "-p", pdf, path.join(work, "img")]);
+  const extracted = readdirSync(work).filter((f) => /^img-\d+-\d+\.(jpg|ppm|png)$/.test(f));
+
+  async function pictureFile(pageNumber) {
+    // the page's picture is its largest image that is not the parchment behind it
+    const candidates = await Promise.all(
+      extracted
+        .filter((f) => Number(f.split("-")[1]) === pageNumber)
+        .map(async (f) => ({ f, meta: await sharp(path.join(work, f)).metadata() }))
+    );
+    const pick = candidates
+      .filter(({ meta }) => !(meta.width === 1008 && meta.height === 1440))
+      .sort((a, b) => b.meta.width * b.meta.height - a.meta.width * a.meta.height)[0];
+    return pick ? path.join(work, pick.f) : null;
+  }
+
+  // the cover is the whole first page — the picture with its lettering on it
+  execFileSync("pdftoppm", ["-r", "150", "-png", "-f", "1", "-l", "1", "-singlefile", pdf, path.join(work, "cover")]);
+
+  const info = execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
+  const meta = (key) => (info.match(new RegExp(`^${key}:\\s+(.*)$`, "m")) || [])[1]?.trim();
+
+  return {
+    pictureFile,
+    coverFile: path.join(work, "cover.png"),
+    title: meta("Title")?.replace(/ — .*$/, ""),
+    author: meta("Author"),
+  };
 }
 
 export function mostCommon(values) {

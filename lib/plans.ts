@@ -548,6 +548,44 @@ const siege23: Plan = {
   days: shelfDays("siege-of-mansoul", SIEGE),
 };
 
+/** I, II, … XXXIV, as the cantos are numbered. */
+function roman(n: number): string {
+  const digits: [number, string][] = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  let out = "";
+  for (const [value, mark] of digits) {
+    for (; n >= value; n -= value) out += mark;
+  }
+  return out;
+}
+
+/** The Divine Comedy's three parts, and the cantos in each. */
+const COMEDY: [id: string, name: string, cantos: number][] = [
+  ["inferno", "Inferno", 34],
+  ["purgatorio", "Purgatorio", 33],
+  ["paradiso", "Paradiso", 33],
+];
+
+/** A canto a day, Inferno I to Paradiso XXXIII. */
+const comedy100: Plan = {
+  id: "comedy100",
+  icon: "sunrise",
+  category: "bookshelf",
+  name: "The Divine Comedy",
+  days: COMEDY.flatMap(([id, name, cantos]) =>
+    Array.from({ length: cantos }, (_, i) => ({
+      readings: [
+        {
+          b: 0,
+          c: 0,
+          shelf: "divine-comedy",
+          part: `${id}-${String(i + 1).padStart(2, "0")}`,
+          title: `${name} · Canto ${roman(i + 1)}`,
+        },
+      ],
+    }))
+  ),
+};
+
 /** The Fall goes a Book a day: Milton's own divisions, and each one whole. */
 const fall12: Plan = {
   id: "fall12",
@@ -590,6 +628,7 @@ export const PLANS: Plan[] = [
   pilgrimtwo16,
   siege23,
   fall12,
+  comedy100,
 ];
 
 export function getPlan(id: string): Plan | undefined {
