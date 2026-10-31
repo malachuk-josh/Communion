@@ -16,6 +16,7 @@ import Icon, { type IconName } from "@/components/Icon";
 import BackToMenu from "@/components/BackToMenu";
 import Devotional from "@/components/Devotional";
 import CommentaryGuide from "@/components/CommentaryGuide";
+import PlanReminderSheet, { reminderSummary } from "@/components/PlanReminderSheet";
 import HangOnWall from "@/components/HangOnWall";
 import { api } from "@/lib/client";
 import { DEFAULT_TRANSLATION, NOTE_MAX, getBook } from "@/lib/bible";
@@ -28,7 +29,7 @@ import {
 import { useI18n, type Lang, type MessageKey } from "@/lib/i18n";
 import { useStickyTab } from "@/lib/stickyTab";
 import { PLANS, readingHref, readingLabel } from "@/lib/plans";
-import type { PlanHour } from "@/lib/planReminders";
+import { EVERY_DAY, type PlanDays, type PlanHour } from "@/lib/planSchedule";
 import type { CustomPlanRow } from "@/lib/customPlanTypes";
 import { readOutbox } from "@/lib/localStore";
 import { scrollByY } from "@/lib/scroller";
@@ -126,6 +127,8 @@ export default function Journal() {
   const [planHours, setPlanHours] = useState<Record<string, PlanHour> | null>(
     null
   );
+  /** and on which days of the week; a plan missing here asks every day */
+  const [planDays, setPlanDays] = useState<Record<string, PlanDays>>({});
   /** the plans this reader wrote for themselves */
   const [custom, setCustom] = useState<CustomPlanRow[] | null>(null);
   /** scripture for the verses kept, keyed by verseKey() */
@@ -920,8 +923,13 @@ export default function Journal() {
   // plan they are not looking at asks for them.
   useEffect(() => {
     if (tab !== "plans" || planHours !== null) return;
-    api<{ hours: Record<string, PlanHour> }>("/api/plans/reminders")
-      .then((res) => setPlanHours(res.hours))
+    api<{ hours: Record<string, PlanHour>; days?: Record<string, PlanDays> }>(
+      "/api/plans/reminders"
+    )
+      .then((res) => {
+        setPlanDays(res.days ?? {});
+        setPlanHours(res.hours);
+      })
       .catch(() => setPlanHours({}));
   }, [tab, planHours]);
 
@@ -952,23 +960,25 @@ export default function Journal() {
   }, [tab, gotCustom]);
 
   /**
-   * Move one plan's reminder.
+   * Move one plan's reminder: its hour, or off, and the days it asks on.
    *
    * Written straight to the server rather than through the outbox: this is
-   * the one thing in the Journal that only means anything to the nightly
+   * the one thing in the Journal that only means anything to the hourly
    * sweep, and a reminder queued on a device with no signal would be a
    * setting that looks changed and does nothing. It shows as changed the
-   * moment it is picked, and puts itself back if the write fails.
+   * moment it is saved, and puts itself back if the write fails.
    */
-  const setPlanHour = async (planId: string, hour: PlanHour) => {
-    const before = planHours?.[planId];
+  const setPlanReminder = async (planId: string, hour: PlanHour, days: PlanDays) => {
+    const before = { hour: planHours?.[planId], days: planDays[planId] };
     setPlanHours((prev) => ({ ...(prev ?? {}), [planId]: hour }));
+    setPlanDays((prev) => ({ ...prev, [planId]: days }));
     try {
       await api("/api/plans/reminders", {
         method: "POST",
         body: {
           planId,
           hour,
+          days,
           // the sweep runs hourly and matches this against the reader's clock
           tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
         },
@@ -976,8 +986,14 @@ export default function Journal() {
     } catch {
       setPlanHours((prev) => {
         const next = { ...(prev ?? {}) };
-        if (before === undefined) delete next[planId];
-        else next[planId] = before;
+        if (before.hour === undefined) delete next[planId];
+        else next[planId] = before.hour;
+        return next;
+      });
+      setPlanDays((prev) => {
+        const next = { ...prev };
+        if (before.days === undefined) delete next[planId];
+        else next[planId] = before.days;
         return next;
       });
     }
@@ -1418,7 +1434,8 @@ export default function Journal() {
                       key={row.plan.id}
                       {...row}
                       hour={planHours?.[row.plan.id]}
-                      onHour={setPlanHour}
+                      days={planDays[row.plan.id] ?? EVERY_DAY}
+                      onReminder={setPlanReminder}
                       onMark={markToday}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
@@ -1441,7 +1458,8 @@ export default function Journal() {
                       key={row.plan.id}
                       {...row}
                       hour={planHours?.[row.plan.id]}
-                      onHour={setPlanHour}
+                      days={planDays[row.plan.id] ?? EVERY_DAY}
+                      onReminder={setPlanReminder}
                       onMark={markToday}
                       onLeave={leavePlan}
                       onRestart={restartPlan}
@@ -1460,16 +1478,14 @@ export default function Journal() {
   );
 }
 
-/** The hours a plan may be set to ask at — morning, midday, evening, night. */
-const PLAN_HOURS = [5, 6, 7, 8, 9, 10, 12, 15, 17, 19, 20, 21, 22];
-
 function PlanRow({
   plan,
   name: ownName,
   done,
   total,
   hour,
-  onHour,
+  days,
+  onReminder,
   onMark,
   onLeave,
   onRestart,
@@ -1481,7 +1497,9 @@ function PlanRow({
   total: number;
   /** undefined while the hours are still being fetched */
   hour: PlanHour | undefined;
-  onHour: (id: string, hour: PlanHour) => void;
+  /** the days of the week it asks on */
+  days: PlanDays;
+  onReminder: (id: string, hour: PlanHour, days: PlanDays) => void;
   onMark: (id: string, total: number) => void;
   onLeave: (id: string, name: string) => void;
   onRestart: (id: string) => void;
@@ -1489,6 +1507,7 @@ function PlanRow({
   const { lang, t } = useI18n();
   const [devotional, setDevotional] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [remindOpen, setRemindOpen] = useState(false);
   const pct = Math.round((done / total) * 100);
   const next = done < total ? plan.days[done] : null;
   // where the plan puts you next — its first reading is where the link lands
@@ -1612,38 +1631,36 @@ function PlanRow({
           onMark={() => onMark(plan.id, total)}
         />
       )}
+      {/* When the plan asks: a line saying so, and a sheet to change it —
+          on or off, the days of the week, the hour (PlanReminderSheet). */}
       {done < total && (
-        <label className="jr-plan-remind">
+        <div className="jr-plan-remind">
           <Icon name="bell" />
-          <span>{t("journal.remindAt")}</span>
-          <select
-            value={hour === undefined ? "" : String(hour)}
+          <span className="jr-remind-when">
+            {hour === undefined ? "…" : reminderSummary(hour, days, lang, t)}
+          </span>
+          <button
+            type="button"
+            className="btn btn-sm"
             disabled={hour === undefined}
-            aria-label={t("journal.remindAtFor", { name })}
-            onChange={(e) =>
-              onHour(
-                plan.id,
-                e.target.value === "off" ? "off" : Number(e.target.value)
-              )
-            }
+            onClick={() => setRemindOpen(true)}
+            aria-label={t("journal.remindAdjustFor", { name })}
           >
-            {hour === undefined && <option value="">…</option>}
-            <option value="off">{t("journal.remindOff")}</option>
-            {/* whatever they had is offered even if it is not one of ours —
-                an hour set before this list existed must not silently move */}
-            {(typeof hour === "number" && !PLAN_HOURS.includes(hour)
-              ? [...PLAN_HOURS, hour].sort((a, b) => a - b)
-              : PLAN_HOURS
-            ).map((h) => (
-              <option key={h} value={h}>
-                {new Date(2020, 0, 1, h).toLocaleTimeString(
-                  lang === "es" ? "es" : "en",
-                  { hour: "numeric", minute: "2-digit" }
-                )}
-              </option>
-            ))}
-          </select>
-        </label>
+            {t("journal.remindAdjust")}
+          </button>
+        </div>
+      )}
+      {remindOpen && hour !== undefined && (
+        <PlanReminderSheet
+          name={name}
+          hour={hour}
+          days={days}
+          onClose={() => setRemindOpen(false)}
+          onSave={(nextHour, nextDays) => {
+            setRemindOpen(false);
+            onReminder(plan.id, nextHour, nextDays);
+          }}
+        />
       )}
     </div>
   );

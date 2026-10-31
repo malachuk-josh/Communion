@@ -7,22 +7,48 @@
 // gets reminded properly. So the hour moved onto the plan itself, in the
 // Journal, where the plan already lives.
 //
+// Which days of the week it asks on is the plan's too, under "<planId>:days":
+// the plans themselves are the recommendation, a reading every day, but a
+// reader who reads on weekdays, or on Sundays and Wednesdays, should hear
+// from the plan on those days and be left alone on the others. The plan does
+// not change — its days are counted, not dated — it only comes round slower.
+//
 // Stored beside the plan's progress in the same hash, under "<planId>:at" —
 // the hash already keeps "<planId>:on" for the date it was last read, and a
 // plan's reminder is a fact about that plan in the same way. Plan ids carry
 // no colon, so a suffixed field can never be mistaken for one.
 
 import { db, keys } from "@/lib/db";
+import { DEFAULT_PLAN_HOUR, EVERY_DAY, type PlanDays, type PlanHour } from "@/lib/planSchedule";
 
-/** The hour a plan asks at, or that it has been told not to. */
-export type PlanHour = number | "off";
-
-/** What a plan asks at when nobody has said otherwise. */
-export const DEFAULT_PLAN_HOUR = 7;
+export { DEFAULT_PLAN_HOUR, EVERY_DAY, type PlanDays, type PlanHour };
 
 /** Field names inside user:<id>:plans. */
 const at = (planId: string) => `${planId}:at`;
 const nudged = (planId: string) => `${planId}:nudged`;
+const onDays = (planId: string) => `${planId}:days`;
+
+/** Every field a plan keeps besides its progress, for clearing when it is left. */
+export const planFields = (planId: string) => [
+  `${planId}:on`,
+  at(planId),
+  nudged(planId),
+  onDays(planId),
+];
+
+/** "135" back into [1, 3, 5]; nothing stored is every day. */
+function parseDays(raw: string | undefined): PlanDays {
+  const days = [...new Set((raw ?? "").replace(/[^0-6]/g, "").split("").map(Number))].sort();
+  return days.length ? days : EVERY_DAY;
+}
+
+/** Days a reader chose, if they are days: 0–6, each once, at least one. */
+export function cleanDays(value: unknown): PlanDays | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const days = [...new Set(value)];
+  if (!days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)) return null;
+  return (days as number[]).sort();
+}
 
 /** A stored field name that is a plan id rather than one of its attributes. */
 export function isPlanId(field: string): boolean {
@@ -48,10 +74,10 @@ export function fallbackHour(profile: Record<string, string>): PlanHour {
   return parseHour(profile.planReminderHour) ?? DEFAULT_PLAN_HOUR;
 }
 
-/** Every plan's hour for one reader, plans they are not walking included. */
+/** Every plan's hour and days for one reader, plans they are not walking included. */
 export async function readPlanHours(
   userId: string
-): Promise<{ hours: Record<string, PlanHour>; tz: string }> {
+): Promise<{ hours: Record<string, PlanHour>; days: Record<string, PlanDays>; tz: string }> {
   const kv = db();
   const [raw, profile] = await Promise.all([
     kv.hgetall(keys.userPlans(userId)),
@@ -60,11 +86,13 @@ export async function readPlanHours(
   const fields = raw ?? {};
   const fallback = fallbackHour(profile ?? {});
   const hours: Record<string, PlanHour> = {};
+  const days: Record<string, PlanDays> = {};
   for (const field of Object.keys(fields)) {
     if (!isPlanId(field)) continue;
     hours[field] = parseHour(fields[at(field)]) ?? fallback;
+    days[field] = parseDays(fields[onDays(field)]);
   }
-  return { hours, tz: profile?.planReminderTz ?? "" };
+  return { hours, days, tz: profile?.planReminderTz ?? "" };
 }
 
 /**
@@ -79,12 +107,17 @@ export async function writePlanHour(
   userId: string,
   planId: string,
   hour: PlanHour,
-  tz?: string
+  tz?: string,
+  /** the days it asks on, where they are being changed too */
+  days?: PlanDays
 ): Promise<void> {
   const kv = db();
   const updates: Record<string, string> = {
     [at(planId)]: hour === "off" ? "off" : String(hour),
   };
+  // every day is kept as nothing at all: it is the default, and a plan that
+  // has never been told otherwise reads the same
+  if (days) updates[onDays(planId)] = days.length === 7 ? "" : days.join("");
   // Moving the hour clears today's mark. Somebody who sets a plan to 8pm at
   // noon should hear from it this evening, not tomorrow — and the mark is
   // only there to stop the same plan asking twice in one day.
@@ -100,6 +133,11 @@ export function hourOf(
   planId: string
 ): PlanHour {
   return parseHour(fields[at(planId)]) ?? fallbackHour(profile);
+}
+
+/** The days one plan asks on, read from fields already in hand. */
+export function daysOf(fields: Record<string, string>, planId: string): PlanDays {
+  return parseDays(fields[onDays(planId)]);
 }
 
 /** Whether this plan has already spoken up today. */

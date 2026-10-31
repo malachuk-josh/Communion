@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDisplayName, getUserId, nameNotAddress } from "@/lib/auth";
 import { db, keys } from "@/lib/db";
-import { isPlanId } from "@/lib/planReminders";
+import { isPlanId, planFields } from "@/lib/planReminders";
 import {
   MAX_DAYS,
   MAX_PLANS,
@@ -214,7 +214,7 @@ export async function DELETE(req: Request) {
   const kv = db();
   const plan = await readCustomPlan(userId, id);
   await kv.hdel(keys.userCustomPlans(userId), id);
-  for (const field of [id, `${id}:on`, `${id}:at`, `${id}:nudged`]) {
+  for (const field of [id, ...planFields(id)]) {
     await kv.hdel(keys.userPlans(userId), field);
   }
   // The published copy goes with it. "This cannot be undone" has to mean the

@@ -4,6 +4,7 @@ import { readingLabel } from "@/lib/plans";
 import { db, keys } from "@/lib/db";
 import { resolvePlan } from "@/lib/customPlans";
 import {
+  daysOf,
   hourOf,
   isPlanId,
   markNudged,
@@ -48,6 +49,21 @@ function hourIn(timeZone: string | undefined): number {
   }
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Today's day of the week in a timezone, Sunday 0, as Date.getDay() counts. */
+function weekdayIn(timeZone: string | undefined): number {
+  try {
+    const name = new Intl.DateTimeFormat("en-US", {
+      timeZone: timeZone || "UTC",
+      weekday: "short",
+    }).format(new Date());
+    return WEEKDAYS.indexOf(name);
+  } catch {
+    return new Date().getUTCDay();
+  }
+}
+
 /** Today's date in a timezone, as YYYY-MM-DD. */
 function dayIn(timeZone: string | undefined): string {
   try {
@@ -82,9 +98,10 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
     const tz = profile.planReminderTz;
     const nowHour = hourIn(tz);
     const today = dayIn(tz);
+    const weekday = weekdayIn(tz);
 
     for (const field of Object.keys(fields)) {
-      // ":on", ":at" and ":nudged" are facts about a plan, not plans
+      // ":on", ":at", ":nudged" and ":days" are facts about a plan, not plans
       if (!isPlanId(field)) continue;
       // a plan this reader wrote for themselves resolves here too, or it
       // would be the one plan that never says anything
@@ -106,6 +123,8 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
        */
       const hour = hourOf(fields, profile, field);
       if (hour === "off") continue;
+      // on the days the reader chose; every day unless they said otherwise
+      if (!daysOf(fields, field).includes(weekday)) continue;
       if (nowHour < hour || nowHour - hour > 2) continue;
       if (nudgedOn(fields, field) === today) continue; // asked already today
 

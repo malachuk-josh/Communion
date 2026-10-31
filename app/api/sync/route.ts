@@ -5,7 +5,7 @@ import { BM_KEY, parseBmKey } from "@/lib/bookmarkKey";
 import { db, keys } from "@/lib/db";
 import { resolvePlan } from "@/lib/customPlans";
 import type { Plan } from "@/lib/plans";
-import { isPlanId } from "@/lib/planReminders";
+import { isPlanId, planFields } from "@/lib/planReminders";
 
 // The outbox drains here. Every operation is a statement of intent — "this
 // bookmark exists with this label", not "toggle this bookmark" — so replaying
@@ -318,13 +318,13 @@ export async function POST(req: Request) {
             rejected++;
             break;
           }
-          await kv.hdel(keys.userPlans(userId), plan.id);
-          await kv.hdel(keys.userPlans(userId), `${plan.id}:on`);
-          // The hour it asked at goes too. Somebody who leaves a plan and
-          // later rejoins it is starting again, and inheriting the six in the
-          // morning they set the last time round is not starting again.
-          await kv.hdel(keys.userPlans(userId), `${plan.id}:at`);
-          await kv.hdel(keys.userPlans(userId), `${plan.id}:nudged`);
+          // The hour and the days it asked on go too. Somebody who leaves a
+          // plan and later rejoins it is starting again, and inheriting the
+          // six in the morning they set the last time round is not starting
+          // again.
+          for (const field of [plan.id, ...planFields(plan.id)]) {
+            await kv.hdel(keys.userPlans(userId), field);
+          }
           // Nothing left to be nudged about: come out of the set the sweep
           // reads, so an account that has left every plan is not walked over
           // every hour for the rest of its life.
