@@ -5356,8 +5356,16 @@ button.compare-pick:last-child {
    there can be hundreds of them, and .card's 22px would make a wall. */
 
 /* The day's action, on a line of its own under the plan. */
+/* Mark today read, and beside it the day's devotional or guide: a row of
+   their own, spaced and centred on one another. As inline boxes they sat
+   flush together, each on its own text's baseline, so the one with an icon
+   rode higher than the one without. */
 .jr-plan-foot {
   flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-top: 4px;
 }
 
