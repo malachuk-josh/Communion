@@ -13,12 +13,14 @@
 // Where there is one, the PDF is the source rather than the Google Doc it
 // began as, because the PDF is the edition: its chapter breaks, its verse, its italics and where
 // each picture sits are all decided there. The layout is read back the way a
-// person would read it (scripts/book/layout.mjs), by one of two readers:
+// person would read it (scripts/book/layout.mjs), by one of three readers:
 //
 //   book/read-prose.mjs  the Parchment Edition: prose chapters, each with a
 //                        drop cap and a painting, verse among them
 //   book/read-verse.mjs  the Engraved Edition: a poem in Books, each with its
 //                        Argument, engravings in the text, and notes
+//   book/read-novel.mjs  a novel in parts, as Sion is set: chapters numbered
+//                        in words, many pictures in the text, letters set in
 //
 // A book that comes as a Google Doc is read from the Doc's HTML instead, by
 // book/read-doc.mjs: its headings and line breaks already say what a PDF's
@@ -32,6 +34,7 @@ import { tmpdir } from "os";
 import path from "path";
 import { pdfAssets, readLayout } from "./book/layout.mjs";
 import { isDoc, readDoc } from "./book/read-doc.mjs";
+import { isNovel, readNovel } from "./book/read-novel.mjs";
 import { isProse, readProse } from "./book/read-prose.mjs";
 import { isVerse, readVerse } from "./book/read-verse.mjs";
 import { writeBook } from "./book/write.mjs";
@@ -58,9 +61,15 @@ if (source.endsWith(".zip")) {
   book = readDoc(unpacked);
 } else {
   const layout = readLayout(source, WORK);
-  const reader = isProse(layout.pages) ? readProse : isVerse(layout.pages) ? readVerse : null;
+  const reader = isProse(layout.pages)
+    ? readProse
+    : isVerse(layout.pages)
+      ? readVerse
+      : isNovel(layout.pages)
+        ? readNovel
+        : null;
   if (!reader) {
-    console.error(`${source}: neither "Chapter N:" chapters nor "Book I" Books; which edition is this?`);
+    console.error(`${source}: no "Chapter N:" chapters, "Book I" Books or "Chapter One:" chapters; which edition is this?`);
     process.exit(1);
   }
   book = { ...reader(layout), ...(await pdfAssets(source, WORK)) };

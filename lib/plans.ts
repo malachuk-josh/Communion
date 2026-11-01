@@ -586,6 +586,53 @@ const comedy100: Plan = {
   ),
 };
 
+/** Sion's chapters, with the Interlude and the Coda in their places. */
+const SION: [part: string, title: string][] = [
+  ["01", "The Sacred Disease"],
+  ["02", "The Bishop of Life"],
+  ["03", "Bad Hardware"],
+  ["04", "The Failures"],
+  ["05", "The Architect"],
+  ["06", "Reprogramming"],
+  ["07", "Stephen"],
+  ["08", "True Light"],
+  ["09", "Three Days Dark"],
+  ["10", "The Hunted"],
+  ["11", "The Crossing"],
+  ["12", "The Doctor"],
+  ["13", "Teo"],
+  ["14", "The Book"],
+  ["15", "House Churches"],
+  ["16", "Letters from Home"],
+  ["17", "Heaven’s Noise"],
+  ["18", "The Architect’s Hand"],
+  ["19", "Lyda"],
+  ["20", "The Wreck"],
+  ["21", "Sabotage"],
+  ["22", "Mortal"],
+  ["interlude", "Interlude · The Record"],
+  ["23", "Grey"],
+  ["24", "Earth"],
+  ["25", "The Hierarch"],
+  ["26", "Before the Throne"],
+  ["27", "The Face of Light"],
+  ["28", "The Voice"],
+  ["29", "“I Am You”"],
+  ["30", "The Last Seizure"],
+  ["coda", "Coda · A Bishop’s Minute"],
+];
+
+/** A chapter a day, the Interlude and the Coda each a day of their own. */
+const sion32: Plan = {
+  id: "sion32",
+  icon: "cross",
+  category: "bookshelf",
+  name: "Sion",
+  days: SION.map(([part, title]) => ({
+    readings: [{ b: 0, c: 0, shelf: "sion", part, title }],
+  })),
+};
+
 /** The Fall goes a Book a day: Milton's own divisions, and each one whole. */
 const fall12: Plan = {
   id: "fall12",
@@ -629,6 +676,7 @@ export const PLANS: Plan[] = [
   siege23,
   fall12,
   comedy100,
+  sion32,
 ];
 
 export function getPlan(id: string): Plan | undefined {

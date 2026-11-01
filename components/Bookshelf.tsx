@@ -41,7 +41,11 @@ export default function Bookshelf() {
             setPlaces((all) => ({
               ...all,
               [book.slug]: n
-                ? t("shelf.atChapter", { n, of: String(index.contents.filter((c) => c.label).length) })
+                ? t("shelf.atChapter", {
+                    n,
+                    // numbered chapters only: an Interlude or a Coda is not "of 30"
+                    of: String(index.contents.filter((c) => /\d/.test(c.label ?? "")).length),
+                  })
                 : partName(entry),
             }));
           }

@@ -6714,6 +6714,22 @@ button.compare-pick:last-child {
   color: var(--ink-dim);
 }
 
+/* the part a chapter begins, small, over the chapter's own label */
+.bk-label-group {
+  margin-bottom: 2px;
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* A letter or a record in a novel — "Dear Stephen, …" — set in from both
+   margins, as the edition sets it; its italic is the text's own */
+.bk-quote {
+  margin: 0.4em 1.4em 1.2em;
+  text-align: left;
+}
+
 /* "Notes on Book I", after the verse */
 .bk-section {
   clear: both;

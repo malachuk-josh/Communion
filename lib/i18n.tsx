@@ -448,6 +448,10 @@ const dictionaries = {
       "The Divine Comedy",
     "plan.comedy100.desc":
       "Dante’s Comedy in Longfellow’s translation, a canto a day for 100 days, from the dark forest to the love that moves the sun and the other stars.",
+    "plan.sion32":
+      "Sion",
+    "plan.sion32.desc":
+      "Jack Malachuk’s novel a chapter a day for 32 days, from the Bounty Market on Mars to the last seizure, the Interlude and the Coda each a day of their own.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
       "Read a book from the Bookshelf a little each day. Each day opens its reading, and you can mark it read at the end.",
@@ -1201,6 +1205,10 @@ const dictionaries = {
       "The Divine Comedy",
     "plan.comedy100.desc":
       "La Comedia de Dante en la traducción de Longfellow, un canto al día durante 100 días, desde la selva oscura hasta el amor que mueve el sol y las demás estrellas. El libro está en inglés.",
+    "plan.sion32":
+      "Sion",
+    "plan.sion32.desc":
+      "La novela de Jack Malachuk, un capítulo al día durante 32 días, desde el Bounty Market de Marte hasta la última convulsión; el interludio y la coda, cada uno su propio día. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
       "Lee un libro de la estantería poco a poco, cada día. Cada día abre su lectura, y al final puedes marcarla como leída.",

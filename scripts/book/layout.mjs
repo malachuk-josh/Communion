@@ -2,7 +2,8 @@
 //
 // pdftohtml's XML gives every line with its position, font and <i>/<b>; a
 // second pass with the images in says where each picture sits. The readers
-// (read-prose.mjs, read-verse.mjs) turn these into parts and blocks.
+// (read-prose.mjs, read-verse.mjs, read-novel.mjs) turn these into parts and
+// blocks.
 
 import { execFileSync } from "child_process";
 import { readFileSync, readdirSync } from "fs";
@@ -54,6 +55,8 @@ export function readLayout(pdf, work) {
     });
 
   const pictures = {};
+  /** every picture on each page, in the order the page draws them */
+  const pagePictures = {};
   for (const chunk of boxXml.split(/<page number="/).slice(1)) {
     const number = parseInt(chunk, 10);
     for (const m of chunk.matchAll(/<image top="(\d+)" left="(\d+)" width="(\d+)" height="(\d+)"/g)) {
@@ -62,10 +65,11 @@ export function readLayout(pdf, work) {
       // pictures sit inside
       if (width >= 700) continue;
       pictures[number] = { top, bottom: top + height, left };
+      (pagePictures[number] ??= []).push({ top, bottom: top + height, left, index: pagePictures[number].length });
     }
   }
 
-  return { pages, pictures };
+  return { pages, pictures, pagePictures };
 }
 
 /**
@@ -76,16 +80,22 @@ export async function pdfAssets(pdf, work) {
   execFileSync("pdfimages", ["-j", "-p", pdf, path.join(work, "img")]);
   const extracted = readdirSync(work).filter((f) => /^img-\d+-\d+\.(jpg|ppm|png)$/.test(f));
 
-  async function pictureFile(pageNumber) {
-    // the page's picture is its largest image that is not the parchment behind it
-    const candidates = await Promise.all(
-      extracted
-        .filter((f) => Number(f.split("-")[1]) === pageNumber)
-        .map(async (f) => ({ f, meta: await sharp(path.join(work, f)).metadata() }))
-    );
-    const pick = candidates
-      .filter(({ meta }) => !(meta.width === 1008 && meta.height === 1440))
-      .sort((a, b) => b.meta.width * b.meta.height - a.meta.width * a.meta.height)[0];
+  /**
+   * A page's picture: its largest image that is not the parchment behind it.
+   * Or, named "page:n", the nth the page draws, for a page with more than one.
+   */
+  async function pictureFile(ref) {
+    const [pageNumber, nth] = String(ref).split(":").map(Number);
+    const onPage = extracted.filter((f) => Number(f.split("-")[1]) === pageNumber);
+    const candidates = (
+      await Promise.all(onPage.map(async (f) => ({ f, meta: await sharp(path.join(work, f)).metadata() })))
+    ).filter(({ meta }) => !(meta.width === 1008 && meta.height === 1440));
+    if (nth !== undefined && !Number.isNaN(nth)) {
+      // in the order they are drawn, which pdfimages numbers them in
+      const inOrder = candidates.sort((a, b) => Number(a.f.split("-")[2].split(".")[0]) - Number(b.f.split("-")[2].split(".")[0]));
+      return inOrder[nth] ? path.join(work, inOrder[nth].f) : null;
+    }
+    const pick = candidates.sort((a, b) => b.meta.width * b.meta.height - a.meta.width * a.meta.height)[0];
     return pick ? path.join(work, pick.f) : null;
   }
 

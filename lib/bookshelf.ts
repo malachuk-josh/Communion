@@ -97,6 +97,17 @@ export const SHELF: ShelfBook[] = [
     plan: "comedy100",
     unit: "canto",
   },
+  {
+    slug: "sion",
+    title: "Sion",
+    author: "Jack Malachuk",
+    lang: "en",
+    blurb: {
+      en: "No one in Abundance has seen an old man in forty years. The church’s renewal keeps its faithful young, and Sol Tarren, its Bishop of Life, hunts those who refuse it, until the seizures begin. A novel in three parts, The Hunter, The Apostle and The Trial, following an apostle’s road across a gilded solar system. Illustrated throughout.",
+      es: "Nadie en Abundance ha visto a un anciano en cuarenta años. La renovación de la iglesia mantiene jóvenes a sus fieles, y Sol Tarren, su obispo de la vida, persigue a quienes la rechazan, hasta que empiezan las convulsiones. Una novela en tres partes, El cazador, El apóstol y El juicio, que sigue el camino de un apóstol a través de un sistema solar dorado. Ilustrada de principio a fin.",
+    },
+    plan: "sion32",
+  },
 ];
 
 export function shelfBook(slug: string | null | undefined): ShelfBook | undefined {
@@ -124,8 +135,13 @@ export interface ContentsEntry {
   words: number;
 }
 
-/** A part's name standing alone: "Inferno · Canto I", where cantos repeat. */
-export function partName(e: { group?: string; title: string }): string {
+/**
+ * A part's name standing alone, where it is not a numbered chapter (those say
+ * "Chapter 5 · …" for themselves): "Interlude · The Record", for a part named
+ * as well as titled, or "Inferno · Canto I", where cantos repeat.
+ */
+export function partName(e: { label?: string; group?: string; title: string }): string {
+  if (e.label && !/\d/.test(e.label)) return `${e.label} · ${e.title}`;
   return e.group && e.group !== e.title ? `${e.group} · ${e.title}` : e.title;
 }
 
@@ -146,9 +162,11 @@ export interface BookIndex {
  * A poem in Books (The Fall) adds three: its engravings where they stand in
  * the verse (`img`), the poet's prose Argument at a Book's head and the notes
  * at its end (a paragraph's `style`), and the notes' own title (`section`).
+ * A novel's letters and records, set in from its margin, are paragraphs in
+ * the style "quote".
  */
 export type Block =
-  | { p: string; drop?: boolean; style?: "argument" | "note" }
+  | { p: string; drop?: boolean; style?: "argument" | "note" | "quote" }
   | { v: string[][] }
   | { h: string }
   | { img: BookImage }

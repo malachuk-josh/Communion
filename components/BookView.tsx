@@ -415,8 +415,13 @@ function PartView({
         <>
           <header className={`bk-head${part.id === "note" ? " bk-head-quiet" : ""}`}>
             <Ornament />
+            {/* The part of the work a chapter begins, over its label, as the
+                edition sets "PART ONE: THE HUNTER" over "Chapter One"; and the
+                canticle a canto is in, over its number, on every canto. */}
+            {part.label && part.group && index && prev?.group !== part.group && (
+              <p className="bk-label bk-label-group">{part.group}</p>
+            )}
             {part.label && <p className="bk-label">{part.label}</p>}
-            {/* the part of the work a canto is in, over its number */}
             {!part.label && part.group && part.group !== part.title && (
               <p className="bk-label">{part.group}</p>
             )}
