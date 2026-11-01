@@ -67,6 +67,7 @@ const reading = merge(
   // costs bytes — and the hills and valleys under them, about another
   listDir("maps"),
   listDir("maps/base"),
+  listDir("maps/modern"),
   listDir("maps/relief", () => true, ".webp")
 );
 

@@ -34,8 +34,10 @@
 // chapter maps for each book, and places.json for the place cards. Run when
 // the sources change; output committed.
 //
-// Since the place cards it also reads, from Natural Earth's geojson/,
-// ne_10m_admin_0_map_subunits, to say which country a site is in today.
+// Since the place cards and the then-and-now toggle it also reads, from
+// Natural Earth's geojson/, ne_10m_admin_0_map_subunits (which country a site
+// is in today, and the countries' names), ne_10m_admin_0_boundary_lines_land
+// and ne_10m_populated_places; and writes public/maps/modern/.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
@@ -907,6 +909,165 @@ for (const win of built) {
   writeFileSync(path.join(OUT, "base", `${win.id}.json`), json);
 }
 
+/*
+ * Then and now: today's borders, countries and cities for each window, for
+ * the map's toggle. One file a window, fetched the first time a reader turns
+ * it on.
+ *
+ * Borders are Natural Earth's land boundaries, an international one drawn
+ * whole and the disputed, indefinite and armistice lines dashed. Countries
+ * are named as Natural Earth's map subunits name them, at the point it gives
+ * for the label: a country once, from its main subunit, except that the
+ * West Bank and Gaza are each named, as atlases name them. Cities are its
+ * populated places down to a size that suits the window, largest first —
+ * Damascus and Amman across the Near East, Nablus and Hebron over Judea.
+ * Every city is drawn alike: which of them is a capital is, in one corner of
+ * these maps, the very thing in dispute.
+ *
+ * [en, es, x, y, rank] for each name.
+ */
+const lineFeatures = {
+  "10m": readGeo("ne_10m_admin_0_boundary_lines_land.geojson"),
+  "50m": readGeo("ne_50m_admin_0_boundary_lines_land.geojson"),
+};
+const placesNow = readGeo("ne_10m_populated_places.geojson");
+const DASHED = /^(Disputed|Indefinite|Line of control|Indeterminant)/;
+const UNLABELLED_TYPES = new Set(["Dependency", "Indeterminate", "Lease", "Overlay"]);
+const UNLABELLED = new Set(["Northern Cyprus", "Somaliland"]);
+const DRAWN = /^(International|Disputed|Indefinite|Line of control|Indeterminant)/;
+/** the smallest city kept in each window, by Natural Earth's scale rank */
+const CITY_RANK = {
+  levant: 10,
+  "asia-minor": 8,
+  "egypt-sinai": 8,
+  "near-east": 7,
+  mediterranean: 7,
+  world: 4,
+};
+function modernFor(win) {
+  const project = projector(win.bounds, 1000);
+  const [w, s, e, n] = win.bounds;
+  const inside = (lon, lat) => lon >= w && lon <= e && lat >= s && lat <= n;
+  // At the scale the window's rivers are drawn at, and as two paths, settled
+  // and dashed: thousands of border segments as thousands of elements would
+  // be the heaviest thing on the map for the least of what it says.
+  const solid = [];
+  const dashed = [];
+  for (const f of lineFeatures[win.rivers]) {
+    const cla = f.properties?.FEATURECLA ?? "";
+    if (!DRAWN.test(cla)) continue;
+    for (const line of linesOf(f.geometry)) {
+      for (const run of clipLine(line, win.bounds)) {
+        const thin = simplify(run, win.tolerance * 1.5);
+        if (thin.length < 2) continue;
+        (DASHED.test(cla) ? dashed : solid).push(toPath(thin, project));
+      }
+    }
+  }
+  const borders = [
+    ...(solid.length ? [{ d: solid.join("") }] : []),
+    ...(dashed.length ? [{ d: dashed.join(""), k: 1 }] : []),
+  ];
+  const countries = [];
+  const named = new Set();
+  for (const f of subunits) {
+    const p = f.properties;
+    const own = p.ADMIN === "Palestine" ? p.SUBUNIT : p.ADMIN;
+    // a country by its main subunit; Palestine's two by their own. Not the
+    // dependencies, leases and no man's lands (Britain's bases on Cyprus),
+    // and not the two breakaway states these windows hold: Cyprus is named
+    // once, with the line across it dashed, as atlases draw it
+    if (p.ADMIN !== "Palestine" && p.SUBUNIT !== p.ADMIN) continue;
+    if (UNLABELLED_TYPES.has(p.TYPE) || UNLABELLED.has(p.ADMIN)) continue;
+    // nor the states too small to name at these scales — Vatican City, San
+    // Marino, Monaco — measured by their ground rather than a rank; Gaza and
+    // Malta, a fifth of a square degree between them, stay
+    if (p.ADMIN !== "Palestine" && (p.MIN_LABEL ?? 0) > 5) continue;
+    let ground = 0;
+    for (const ring of ringsOf(f.geometry)) {
+      let a = 0;
+      for (let i = 0; i < ring.length; i++) {
+        const [x1, y1] = ring[i];
+        const [x2, y2] = ring[(i + 1) % ring.length];
+        a += x1 * y2 - x2 * y1;
+      }
+      ground += Math.abs(a) / 2;
+    }
+    if (ground < 0.02) continue;
+    if (named.has(own)) continue;
+    // Natural Earth's own point for the name where it is on this map; where
+    // it is not — Lebanon's and Egypt's are off the edge of the Levant — the
+    // middle of the largest piece of the country that is, if that piece is
+    // big enough to hold a name
+    let at = null;
+    if (inside(p.LABEL_X, p.LABEL_Y)) at = project.to(p.LABEL_X, p.LABEL_Y);
+    else {
+      let best = 0;
+      for (const ring of ringsOf(f.geometry)) {
+        const clipped = clipRing(ring, win.bounds);
+        if (clipped.length < 3) continue;
+        const pts = clipped.map(([lon, lat]) => project.to(lon, lat));
+        let area = 0;
+        let cx = 0;
+        let cy = 0;
+        for (let i = 0; i < pts.length; i++) {
+          const [x1, y1] = pts[i];
+          const [x2, y2] = pts[(i + 1) % pts.length];
+          const cross = x1 * y2 - x2 * y1;
+          area += cross;
+          cx += (x1 + x2) * cross;
+          cy += (y1 + y2) * cross;
+        }
+        area /= 2;
+        if (Math.abs(area) > best) {
+          best = Math.abs(area);
+          at = [cx / (6 * area), cy / (6 * area)];
+        }
+      }
+      // under a fortieth of the map is a sliver at its edge, not a country
+      if (best < (1000 * project.height) / 40) at = null;
+    }
+    if (!at) continue;
+    named.add(own);
+    const [x, y] = at;
+    // a country by the country's name, not its main subunit's (Bosnia's is
+    // "the Federation of Bosnia and Herzegovina"); the West Bank and Gaza by
+    // their own
+    const palestine = p.ADMIN === "Palestine";
+    countries.push([
+      palestine ? p.NAME_EN || own : own,
+      palestine ? p.NAME_ES || own : (countryEs.get(own) ?? own),
+      Math.round(x),
+      Math.round(y),
+      p.LABELRANK ?? 9,
+    ]);
+  }
+  countries.sort((a, b) => a[4] - b[4]);
+  const cities = [];
+  for (const f of placesNow) {
+    const p = f.properties;
+    if ((p.SCALERANK ?? 99) > CITY_RANK[win.id]) continue;
+    if (!inside(p.LONGITUDE, p.LATITUDE)) continue;
+    const [x, y] = project.to(p.LONGITUDE, p.LATITUDE);
+    cities.push([
+      p.NAME_EN || p.NAME,
+      p.NAME_ES || p.NAME_EN || p.NAME,
+      Math.round(x),
+      Math.round(y),
+      p.SCALERANK,
+    ]);
+  }
+  cities.sort((a, b) => a[4] - b[4]);
+  return { borders, countries, cities };
+}
+mkdirSync(path.join(OUT, "modern"), { recursive: true });
+let modernBytes = 0;
+for (const win of WINDOWS) {
+  const json = JSON.stringify(modernFor(win));
+  modernBytes += json.length;
+  writeFileSync(path.join(OUT, "modern", `${win.id}.json`), json);
+}
+
 // the eras, once, for every book to point at
 const erasJson = JSON.stringify(ERAS);
 writeFileSync(path.join(OUT, "eras.json"), erasJson);
@@ -1151,6 +1312,7 @@ for (const [id, n] of [...windowUse].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${id.padEnd(14)} ${String(n).padStart(4)} chapters`);
 }
 console.log(`books     : ${byBook.size} files`);
+console.log(`today     : ${kb(modernBytes)} KB of borders, countries and cities`);
 const routed = [...byBook.values()].flatMap((b) => Object.values(b)).filter((c) => c.route);
 console.log(`journeys  : ${journeys.length}, drawn on ${routed.length} chapters`);
 console.log(

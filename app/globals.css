@@ -2706,6 +2706,9 @@ html.navhide .chap-arrow {
  */
 .ctx-map,
 .map-full {
+  /* today, over the ancient map: a violet the rivers' blue and the journeys'
+     red are both clear of */
+  --map-now: rgba(185, 166, 255, 0.85);
   --map-sea: #080e1b;
   --map-land: #343a45;
   --map-coast: rgba(229, 180, 91, 0.55);
@@ -2723,6 +2726,7 @@ html.navhide .chap-arrow {
 :root[data-theme="light"] .ctx-map,
 :root[data-theme="light"] .map-full {
   /* an old map's water and ground: a greyed sea, land the colour of the page */
+  --map-now: rgba(84, 62, 150, 0.85);
   --map-sea: #bfcdcc;
   --map-land: #f3e6c8;
   --map-coast: rgba(90, 64, 30, 0.55);
@@ -2734,6 +2738,7 @@ html.navhide .chap-arrow {
 
 :root[data-theme="grey"] .ctx-map,
 :root[data-theme="grey"] .map-full {
+  --map-now: rgba(225, 225, 225, 0.8);
   --map-sea: #070707;
   --map-land: #303030;
   --map-coast: rgba(210, 210, 210, 0.5);
@@ -3178,10 +3183,77 @@ html.navhide .chap-arrow {
 
 .map-full-note {
   flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 12px;
   padding: 8px 16px 0;
   font-size: 0.74rem;
   color: var(--ink-faint);
   text-align: center;
+}
+
+/* then, or now: the toggle under the map */
+.mp-tools {
+  display: flex;
+  margin-top: 10px;
+}
+
+.mp-now {
+  cursor: pointer;
+}
+
+.mp-now svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* today's borders, settled and dashed, and its countries and cities */
+.mp-border {
+  fill: none;
+  stroke: var(--map-now);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.mp-border-open {
+  opacity: 0.65;
+}
+
+.mp-country {
+  fill: var(--map-now);
+  font-family: var(--sans);
+  font-size: calc(var(--mp-u, 1) * 11px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  paint-order: stroke fill;
+  stroke: var(--map-land);
+  stroke-width: calc(var(--mp-u, 1) * 2.5px);
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.mp-city {
+  pointer-events: none;
+}
+
+.mp-city rect {
+  fill: var(--map-now);
+}
+
+.mp-city text {
+  fill: var(--map-now);
+  font-family: var(--sans);
+  font-size: calc(var(--mp-u, 1) * 11px);
+  font-style: italic;
+  paint-order: stroke fill;
+  stroke: var(--map-land);
+  stroke-width: calc(var(--mp-u, 1) * 2.5px);
+  stroke-linejoin: round;
 }
 
 .verse-note {

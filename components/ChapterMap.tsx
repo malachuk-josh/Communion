@@ -64,6 +64,34 @@ interface Route {
   stops: { x: number; y: number; n: string; s: 0 | 1 }[];
 }
 
+/**
+ * Today's borders, countries and cities for a window, for the then-and-now
+ * toggle (scripts/build-maps.mjs): a settled border and a dashed one as a
+ * path each, and [en, es, x, y, rank] for each name, most prominent first.
+ */
+interface Modern {
+  borders: { d: string; k?: 1 }[];
+  countries: [string, string, number, number, number][];
+  cities: [string, string, number, number, number][];
+}
+
+/** Whether the reader last left the maps showing today's borders. */
+const NOW_KEY = "communion.mapNow";
+function readNow(): boolean {
+  try {
+    return localStorage.getItem(NOW_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeNow(on: boolean) {
+  try {
+    localStorage.setItem(NOW_KEY, on ? "1" : "0");
+  } catch {
+    // a private window: the toggle works, it is only not remembered
+  }
+}
+
 /** A leg as a path. */
 const legPath = (pts: [number, number][]) =>
   pts.map(([x, y], i) => `${i ? "L" : "M"}${x} ${y}`).join("");
@@ -280,6 +308,8 @@ const FACES = {
   range: { size: 12, italic: true, serif: true, track: 0.06, upper: false, halo: 0 },
   site: { size: 11.5, italic: false, serif: true, track: 0, upper: false, halo: 1.25 },
   stop: { size: 9.5, italic: false, serif: false, track: 0, upper: false, halo: 0 },
+  country: { size: 11, italic: false, serif: false, track: 0.16, upper: true, halo: 1.25 },
+  city: { size: 11, italic: true, serif: false, track: 0, upper: false, halo: 1.25 },
 } as const;
 type Face = (typeof FACES)[keyof typeof FACES];
 
@@ -423,9 +453,12 @@ function MapArt({
   crowd,
   avoid,
   glance = false,
+  modern = null,
 }: {
   base: Base;
   data: ChapterMapData;
+  /** today's borders and cities, when the reader has asked for them */
+  modern?: Modern | null;
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
   view: View;
   /** a place tapped: a pin the chapter names, or (full screen) the countryside */
@@ -687,7 +720,8 @@ function MapArt({
     // The era's regions, centred on their country, a line or two off it if
     // that is what it takes; left out if no line is free.
     const named: { key: string; text: string; x: number; y: number; water?: boolean }[] = [];
-    for (const r of regions) {
+    // with today's map over it, today's countries take the place of the age's
+    for (const r of modern ? [] : regions) {
       const face = r.water ? FACES.water : FACES.region;
       const text = lang === "es" ? r.es : r.en;
       const w = widthOf(text, face);
@@ -697,25 +731,6 @@ function MapArt({
         if (!fits(box) || !clear(box)) continue;
         taken.add(box);
         named.push({ key: r.en, text, x: r.x, y, water: r.water });
-        break;
-      }
-    }
-
-    // The kinds of ground, faintest of all, and a hundred pixels apart: they
-    // are the paper the chapter is printed on.
-    const grounds: { key: string; text: string; x: number; y: number; range: boolean }[] = [];
-    for (const t of base.terrain) {
-      if (grounds.some((g) => Math.hypot(g.x - t.x, g.y - t.y) < px * 100)) continue;
-      const range = t.k === "range";
-      const face = range ? FACES.range : FACES.ground;
-      const text = lang === "es" ? t.es : t.n;
-      const w = widthOf(text, face);
-      for (const dy of [0, -12, 12]) {
-        const y = t.y + dy * px;
-        const box = textBox(t.x, y, w, face, "middle", px);
-        if (!fits(box) || !clear(box)) continue;
-        taken.add(box);
-        grounds.push({ key: `${t.n}|${t.x}|${t.y}`, text, x: t.x, y, range });
         break;
       }
     }
@@ -779,7 +794,95 @@ function MapArt({
       file(p.lx, p.ly);
     }
     for (const r of named) file(r.x, r.y);
+
+    /*
+     * Today's countries and cities, when they are asked for, placed like the
+     * countryside — biggest first, where they fit — and instead of it: an
+     * ancient village and a modern town in the same place are two names for
+     * the eye to sort, and the toggle is for seeing what stands there now.
+     */
+    const countries: { key: string; text: string; x: number; y: number }[] = [];
+    const cities: { key: string; text: string; x: number; y: number; side: 1 | -1 }[] = [];
+    if (modern) {
+      // Cities keep their distance from one another; from the ancient names
+      // they need only not be written over them. Kept apart from those too,
+      // as the countryside is, Kavala would never stand beside Neapolis —
+      // which is the whole of what the toggle is for.
+      const placed: [number, number][] = [];
+      const gapCity = (px * spacing) ** 2;
+      for (const [en, es, x, y] of modern.cities) {
+        if (cities.length >= crowd) break;
+        if (!sees(x, y)) continue;
+        if (placed.some(([qx, qy]) => (qx - x) ** 2 + (qy - y) ** 2 < gapCity)) continue;
+        const text = lang === "es" ? es : en;
+        const mark: Box = [x - px * 3, y - px * 3, x + px * 3, y + px * 3];
+        if (!clear(mark)) continue;
+        const w = widthOf(text, FACES.city);
+        const first: 1 | -1 = x < vx + vw * 0.72 ? 1 : -1;
+        let side: 1 | -1 | null = null;
+        let box: Box | null = null;
+        for (const sd of [first, first > 0 ? -1 : 1] as (1 | -1)[]) {
+          const b = textBox(x + sd * 5 * px, y + 3.6 * px, w, FACES.city, sd > 0 ? "start" : "end", px);
+          if (fits(b) && clear(b)) {
+            side = sd;
+            box = b;
+            break;
+          }
+        }
+        if (!box || !side) continue;
+        taken.add(mark);
+        taken.add(box);
+        file(x, y);
+        placed.push([x, y]);
+        cities.push({ key: `${en}${x}`, text, x, y, side });
+      }
+      // A country is big, and its name can go a good way from its middle
+      // before it is somewhere else: up and down a few lines, and to either
+      // side, nearest first, to clear the ancient names written over it —
+      // and the cities, which cannot move, are set first.
+      const around: [number, number][] = [];
+      for (const dy of [0, -14, 14, -28, 28, -42, 42]) {
+        for (const dx of [0, -60, 60, -120, 120]) around.push([dx, dy]);
+      }
+      around.sort((a, b) => a[0] ** 2 / 4 + a[1] ** 2 - (b[0] ** 2 / 4 + b[1] ** 2));
+      for (const [en, es, x, y] of modern.countries) {
+        const text = lang === "es" ? es : en;
+        const w = widthOf(text, FACES.country);
+        for (const [dx, dy] of around) {
+          const lx = x + dx * px;
+          const ly = y + dy * px;
+          const box = textBox(lx, ly, w, FACES.country, "middle", px);
+          if (!fits(box) || !clear(box)) continue;
+          taken.add(box);
+          file(lx, ly);
+          countries.push({ key: en, text, x: lx, y: ly });
+          break;
+        }
+      }
+    }
+
+    // The kinds of ground, faintest of all, and a hundred pixels apart: they
+    // are the paper the chapter is printed on — after today's names, when
+    // those are asked for, so the Pindus does not keep Athens off the map.
+    const grounds: { key: string; text: string; x: number; y: number; range: boolean }[] = [];
+    for (const t of base.terrain) {
+      if (grounds.some((g) => Math.hypot(g.x - t.x, g.y - t.y) < px * 100)) continue;
+      const range = t.k === "range";
+      const face = range ? FACES.range : FACES.ground;
+      const text = lang === "es" ? t.es : t.n;
+      const w = widthOf(text, face);
+      for (const dy of [0, -12, 12]) {
+        const y = t.y + dy * px;
+        const box = textBox(t.x, y, w, face, "middle", px);
+        if (!fits(box) || !clear(box)) continue;
+        taken.add(box);
+        grounds.push({ key: `${t.n}|${t.x}|${t.y}`, text, x: t.x, y, range });
+        break;
+      }
+    }
+
     for (const g of grounds) file(g.x, g.y);
+
     const sites: {
       n: string;
       x: number;
@@ -788,7 +891,7 @@ function MapArt({
       side: 1 | -1;
       id?: string;
     }[] = [];
-    for (const [n, x, y, , mark, id] of base.sites) {
+    for (const [n, x, y, , mark, id] of modern ? [] : base.sites) {
       if (sites.length >= crowd) break;
       if (!sees(x, y)) continue;
       if (already.has(n.toLowerCase()) || pinned(n, x, y, id)) continue;
@@ -814,8 +917,8 @@ function MapArt({
       sites.push({ n, x, y, mark, side, id });
     }
 
-    return { laid, named, grounds, sites, badges };
-  }, [data.places, data.route, regions, base.terrain, base.sites, lang, vx, vy, vw, vh, px, spacing, crowd, cover, glance]);
+    return { laid, named, grounds, sites, badges, countries, cities };
+  }, [data.places, data.route, regions, base.terrain, base.sites, lang, vx, vy, vw, vh, px, spacing, crowd, cover, glance, modern]);
 
   return (
     <svg
@@ -861,6 +964,17 @@ function MapArt({
       ))}
       {base.lakes.map((d, i) => (
         <path key={`w${i}`} d={d} className="mp-lake" />
+      ))}
+
+      {/* today's borders, settled and dashed, under everything written */}
+      {modern?.borders.map((b, i) => (
+        <path
+          key={`m${i}`}
+          d={b.d}
+          className={`mp-border${b.k ? " mp-border-open" : ""}`}
+          strokeWidth={px * 1.3}
+          strokeDasharray={b.k ? `${px * 4} ${px * 3}` : undefined}
+        />
       ))}
 
       {/* the journey: over the ground, under every name. The earlier legs
@@ -967,6 +1081,31 @@ function MapArt({
         </text>
       ))}
 
+      {layout.countries.map((c) => (
+        <text
+          key={`c${c.key}`}
+          x={c.x}
+          y={c.y}
+          className="mp-country"
+          textAnchor="middle"
+          aria-hidden
+        >
+          {c.text}
+        </text>
+      ))}
+      {layout.cities.map((c) => (
+        <g key={`k${c.key}`} className="mp-city" aria-hidden>
+          <rect x={c.x - px * 2.2} y={c.y - px * 2.2} width={px * 4.4} height={px * 4.4} />
+          <text
+            x={c.x + px * 5 * c.side}
+            y={c.y + px * 3.6}
+            textAnchor={c.side > 0 ? "start" : "end"}
+          >
+            {c.text}
+          </text>
+        </g>
+      ))}
+
       {layout.badges.map((b, i) => (
         <g key={`b${i}`} className={`mp-stop${b.s ? " now" : ""}`} aria-hidden>
           <rect
@@ -1042,6 +1181,25 @@ function MapArt({
   );
 }
 
+/** Then, or now: today's borders and cities laid over the ancient map. */
+function NowToggle({ now, onNow }: { now: boolean; onNow: () => void }) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      className={`chip mp-now${now ? " chip-active" : ""}`}
+      aria-pressed={now}
+      onClick={(e) => {
+        // the panel's map opens full screen on a tap; this is not that tap
+        e.stopPropagation();
+        onNow();
+      }}
+    >
+      <Icon name="globe" /> {t("map.now")}
+    </button>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Full screen
 // ---------------------------------------------------------------------------
@@ -1077,6 +1235,9 @@ function MapViewer({
   regions,
   onPlace,
   onClose,
+  modern,
+  now,
+  onNow,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -1085,6 +1246,9 @@ function MapViewer({
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
   onPlace: (place: TappedPlace) => void;
   onClose: () => void;
+  modern: Modern | null;
+  now: boolean;
+  onNow: () => void;
 }) {
   const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -1360,6 +1524,7 @@ function MapViewer({
             /* the gap names keep from each other on the glass, in pixels */
             spacing={22}
             crowd={150}
+            modern={modern}
             onPlace={(place) => {
               // a finger that panned is not a finger that tapped
               if (travelled.current > 10) return;
@@ -1368,7 +1533,10 @@ function MapViewer({
           />
         )}
       </div>
-      <p className="map-full-note">{t("map.pinchHint")}</p>
+      <div className="map-full-note">
+        <NowToggle now={now} onNow={onNow} />
+        <span>{t("map.pinchHint")}</span>
+      </div>
     </div>
   );
 }
@@ -1416,6 +1584,15 @@ export default function ChapterMap({
   const [full, setFull] = useState(false);
   /** the place whose card is open, over the panel or the full-screen map */
   const [card, setCard] = useState<TappedPlace | null>(null);
+  /** today's borders and cities over the ancient map, as the reader last left it */
+  const [now, setNow] = useState(false);
+  useEffect(() => setNow(readNow()), []);
+  const [modern, setModern] = useState<Modern | null>(null);
+  const toggleNow = () =>
+    setNow((on) => {
+      writeNow(!on);
+      return !on;
+    });
   /** the zoom button in the panel's corner, which names keep clear of */
   const expandRef = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -1478,6 +1655,26 @@ export default function ChapterMap({
       cancelled = true;
     };
   }, [data]);
+
+  // today's layer for this window, fetched the first time it is asked for
+  useEffect(() => {
+    if (!now || !base) {
+      setModern(null);
+      return;
+    }
+    let cancelled = false;
+    load<Modern | null>(`/maps/modern/${base.id}.json`, null).then((m) => {
+      if (cancelled) return;
+      setModern(
+        m && Array.isArray(m.borders) && Array.isArray(m.countries) && Array.isArray(m.cities)
+          ? m
+          : null
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [now, base]);
 
   const regions = useMemo(() => {
     if (!base || !data) return [];
@@ -1584,11 +1781,16 @@ export default function ChapterMap({
           avoid={expandRef}
           glance
           onPlace={setCard}
+          modern={modern}
         />
         <span className="mp-expand" aria-hidden ref={expandRef}>
           <Icon name="search" />
         </span>
       </div>
+      <div className="mp-tools">
+        <NowToggle now={now} onNow={toggleNow} />
+      </div>
+      {now && <p className="mp-note">{t("map.nowNote")}</p>}
       <p className="mp-note">
         {data.more
           ? `${t("map.tapAPlace")} · ${t("map.andMore", { n: String(data.more) })}`
@@ -1611,6 +1813,9 @@ export default function ChapterMap({
             regions={regions}
             onClose={() => setFull(false)}
             onPlace={setCard}
+            modern={modern}
+            now={now}
+            onNow={toggleNow}
           />,
           document.body
         )}
