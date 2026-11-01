@@ -802,7 +802,7 @@ function VersePop({ verse, lang, onClose }: { verse: BookRef; lang: string; onCl
 // ---- the plan ---------------------------------------------------------------------
 
 /**
- * At the end of a chapter that is today's reading in the book's plan, the
+ * At the end of a chapter that ends today's reading in the book's plan, the
  * plan's own button — the same act as the Journal's, written the same way.
  */
 function MarkRead({ slug, partId, plan: planId }: { slug: string; partId: string; plan?: string }) {
@@ -832,8 +832,10 @@ function MarkRead({ slug, partId, plan: planId }: { slug: string; partId: string
     );
   }
   if (!plan || done === null || done >= plan.days.length) return null;
-  const today = plan.days[done].readings[0];
-  if (today.shelf !== slug || today.part !== partId) return null;
+  // at the end of the day's last reading: a day that is the Prologue and
+  // Chapter 1 is read when Chapter 1 is
+  const today = plan.days[done].readings.at(-1);
+  if (!today || today.shelf !== slug || today.part !== partId) return null;
 
   const mark = async () => {
     const next = done + 1;

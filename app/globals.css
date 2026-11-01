@@ -7027,6 +7027,28 @@ button.compare-pick:last-child {
   text-align: left;
 }
 
+/* An epigraph at a chapter's head — an in-world document, a catechism card
+   or a routing slip — set in further than a letter and a size down, as the
+   edition sets it: first a line saying what the document is, smaller and
+   dimmer, then the document. Ragged, as italic in a narrow column should be. */
+.bk-source,
+.bk-epigraph {
+  margin-left: 2em;
+  margin-right: 2em;
+  text-align: left;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+.bk-source {
+  /* the same inset as the document under it, in its own smaller ems */
+  margin: 0.2em 2.25em 0.5em;
+  font-size: 0.8em;
+  color: var(--ink-dim);
+}
+.bk-epigraph {
+  margin-bottom: 1.8em;
+}
+
 /* "Notes on Book I", after the verse */
 .bk-section {
   clear: both;

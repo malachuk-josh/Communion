@@ -586,8 +586,9 @@ const comedy100: Plan = {
   ),
 };
 
-/** Sion's chapters, with the Interlude and the Coda in their places. */
+/** Sion's chapters, with the Prologue, the Interlude and the Coda in their places. */
 const SION: [part: string, title: string][] = [
+  ["prologue", "Prologue"],
   ["01", "Abundance"],
   ["02", "The Sacred Disease"],
   ["03", "The Bishop of Life"],
@@ -624,18 +625,21 @@ const SION: [part: string, title: string][] = [
 ];
 
 /**
- * A chapter a day, the Interlude and the Coda each a day of their own: 33
- * days since the second edition added "Abundance" at the start. The id still
- * says 32 so that readers already on the plan keep their place in it.
+ * A chapter a day, the Interlude and the Coda each a day of their own, and
+ * the half-page Prologue read with Chapter 1: 33 days since the second
+ * edition added "Abundance" at the start. The id still says 32 so that
+ * readers already on the plan keep their place in it.
  */
+const sionReading = ([part, title]: [string, string]): Reading => ({ b: 0, c: 0, shelf: "sion", part, title });
 const sion32: Plan = {
   id: "sion32",
   icon: "cross",
   category: "bookshelf",
   name: "Sion",
-  days: SION.map(([part, title]) => ({
-    readings: [{ b: 0, c: 0, shelf: "sion", part, title }],
-  })),
+  days: [
+    { readings: SION.slice(0, 2).map(sionReading) },
+    ...SION.slice(2).map((p) => ({ readings: [sionReading(p)] })),
+  ],
 };
 
 /** The Fall goes a Book a day: Milton's own divisions, and each one whole. */

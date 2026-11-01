@@ -165,10 +165,11 @@ export interface BookIndex {
  * the verse (`img`), the poet's prose Argument at a Book's head and the notes
  * at its end (a paragraph's `style`), and the notes' own title (`section`).
  * A novel's letters and records, set in from its margin, are paragraphs in
- * the style "quote".
+ * the style "quote"; an epigraph at a chapter's head is a "source" saying
+ * what the document is, then the "epigraph" itself.
  */
 export type Block =
-  | { p: string; drop?: boolean; style?: "argument" | "note" | "quote" }
+  | { p: string; drop?: boolean; style?: "argument" | "note" | "quote" | "source" | "epigraph" }
   | { v: string[][] }
   | { h: string }
   | { img: BookImage }

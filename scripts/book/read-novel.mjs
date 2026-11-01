@@ -11,6 +11,10 @@
 //   - Letters and records — "Dear Stephen, …" at the head of a chapter, the
 //     tallies in the Interlude — are set in a little from the margin, in
 //     italic, and kept as quotations.
+//   - An epigraph — an in-world document at a chapter's head, a catechism
+//     card or a routing slip — is set in further and a size down: a line
+//     saying what the document is, a size smaller again, then the document,
+//     in italic. Each is kept as its own paragraph.
 //   - The pictures stand in the text, as many to a page as the page has, and
 //     are kept where they stand.
 //   - Every page carries the chapter's name at its head and the author or
@@ -45,6 +49,11 @@ function titleCase(s) {
 const isLabel = (l) => /SegoeUI/.test(l.font.family) && l.font.size === 13;
 const isTitle = (l) => /Constantia/.test(l.font.family) && l.font.size >= 30 && l.font.size < 60;
 const isBody = (l) => /Constantia/.test(l.font.family) && l.font.size === 17;
+/** An epigraph's line saying what it is, and the epigraph itself. */
+const isSource = (l) => /Constantia/.test(l.font.family) && l.font.size === 15;
+const isEpigraph = (l) => /Constantia/.test(l.font.family) && l.font.size === 16;
+/** An epigraph's lines 21 or 22 apart. */
+const EPIGRAPH_GAP = 26;
 
 /** Where the text begins, where a paragraph's first line is set in to, and a quotation's margin. */
 const QUOTE_LEFT = 80;
@@ -113,6 +122,18 @@ export function readNovel({ pages, pagePictures }) {
         previous = null;
         continue;
       }
+      if (part && (isSource(l) || isEpigraph(l))) {
+        const style = isSource(l) ? "source" : "epigraph";
+        const samePage = previous && previous.page === page.number;
+        const joins = previous?.style === style && (!samePage || l.top - previous.top < EPIGRAPH_GAP);
+        if (open && joins) open.text += " " + html;
+        else {
+          open = { kind: "p", text: html, style };
+          part.blocks.push(open);
+        }
+        previous = { page: page.number, top: l.top, quote: false, style };
+        continue;
+      }
       if (!isBody(l) || !part) continue;
 
       const samePage = previous && previous.page === page.number;
@@ -124,7 +145,7 @@ export function readNovel({ pages, pagePictures }) {
         joins = previous?.quote && (!samePage || gap < QUOTE_GAP);
       } else {
         // set in, a new paragraph; at the margin, the one before carries on
-        joins = previous && !previous.quote && l.left < INDENT_LEFT - 2;
+        joins = previous && !previous.quote && !previous.style && l.left < INDENT_LEFT - 2;
       }
       if (open && joins) {
         open.text += " " + html;

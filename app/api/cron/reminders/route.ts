@@ -140,10 +140,13 @@ async function sweepPlanReminders(): Promise<{ notified: number }> {
       const first = readings[0];
       const last = readings[readings.length - 1];
       // a day that is part of a chapter says which part — "Psalms 119:9–16"
+      // and a Bookshelf day of two parts names both: "Prologue · Abundance"
       const label =
         readings.length === 1
           ? readingLabel(first, getBook(first.b)?.en ?? "")
-          : `${getBook(first.b)?.en} ${first.c} – ${getBook(last.b)?.en} ${last.c}`;
+          : first.shelf
+            ? readings.map((r) => readingLabel(r, "")).join(" · ")
+            : `${getBook(first.b)?.en} ${first.c} – ${getBook(last.b)?.en} ${last.c}`;
 
       await sendPushToUser(userId, {
         title: plan.name,
