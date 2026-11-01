@@ -101,6 +101,21 @@ export async function pdfAssets(pdf, work) {
 
   // the cover is the whole first page — the picture with its lettering on it
   execFileSync("pdftoppm", ["-r", "150", "-png", "-f", "1", "-l", "1", "-singlefile", pdf, path.join(work, "cover")]);
+  // and again at full size, to be looked at closely: at the cover picture's
+  // own resolution, which nothing can make sharper, or at 300 dpi where its
+  // lettering is set as type, which comes out as sharp as it is drawn
+  const ppi = Math.max(
+    150,
+    ...execFileSync("pdfimages", ["-list", "-f", "1", "-l", "1", pdf], { encoding: "utf8" })
+      .split("\n")
+      .slice(2)
+      .map((row) => row.trim().split(/\s+/))
+      .filter((cols) => cols[2] === "image")
+      .map((cols) => Number(cols[12]) || 0)
+  );
+  const lettered = execFileSync("pdftotext", ["-f", "1", "-l", "1", pdf, "-"], { encoding: "utf8" }).trim() !== "";
+  const dpi = lettered ? Math.max(300, ppi) : ppi;
+  execFileSync("pdftoppm", ["-r", String(dpi), "-png", "-f", "1", "-l", "1", "-singlefile", pdf, path.join(work, "cover-full")]);
 
   const info = execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
   const meta = (key) => (info.match(new RegExp(`^${key}:\\s+(.*)$`, "m")) || [])[1]?.trim();
@@ -108,6 +123,7 @@ export async function pdfAssets(pdf, work) {
   return {
     pictureFile,
     coverFile: path.join(work, "cover.png"),
+    coverFullFile: path.join(work, "cover-full.png"),
     title: meta("Title")?.replace(/ — .*$/, ""),
     author: meta("Author"),
   };

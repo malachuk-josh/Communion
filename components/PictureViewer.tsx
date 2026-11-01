@@ -9,6 +9,10 @@
 // wheel, from the buttons or the keys, and 0 puts it back. A tap beside the
 // picture, the ✕, or Escape closes it.
 //
+// A picture with a larger copy (a book's cover, at the size the edition has
+// it) opens at once from the small one already on the page, and the larger
+// one takes its place when it has come, wherever the reader has zoomed to.
+//
 // The app turns the browser's own pinch-zoom off — on a home-screen app a
 // stray pinch is far likelier than a meant one — so the viewer answers the
 // pinch itself, as the map does. Pointer events rather than touch events,
@@ -34,10 +38,13 @@ const within = (v: number, a: number, b: number) => Math.min(Math.max(v, Math.mi
 
 export default function PictureViewer({
   src,
+  full,
   alt,
   onClose,
 }: {
   src: string;
+  /** the same picture larger, fetched now and shown when it has come */
+  full?: string;
   alt?: string;
   onClose: () => void;
 }) {
@@ -51,6 +58,24 @@ export default function PictureViewer({
   const img = useRef<HTMLImageElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // the larger copy, decoded before it is swapped in so the picture never
+  // blanks; without a signal it never comes, and the small one stays
+  const [shown, setShown] = useState(src);
+  useEffect(() => {
+    setShown(src);
+    if (!full) return;
+    let live = true;
+    const larger = new Image();
+    larger.src = full;
+    larger
+      .decode()
+      .then(() => live && setShown(full))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [src, full]);
 
   /**
    * Keep the picture on the screen. Larger than the screen, no edge of it
@@ -236,13 +261,12 @@ export default function PictureViewer({
       >
         <img
           ref={img}
-          src={src}
+          src={shown}
           alt={alt ?? ""}
           draggable={false}
-          onLoad={() => {
-            fit();
-            setView(FIT);
-          }}
+          // fitted again for the larger copy too, which is the same shape:
+          // the zoom stays where it was
+          onLoad={fit}
           width={box?.w}
           height={box?.h}
           style={{

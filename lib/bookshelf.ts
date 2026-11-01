@@ -122,6 +122,8 @@ export interface BookImage {
   h: number;
   /** what the picture shows, where the book gives it a title */
   alt?: string;
+  /** the same picture larger, fetched only to be looked at closely */
+  full?: string;
 }
 
 export interface ContentsEntry {

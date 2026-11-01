@@ -41,9 +41,10 @@ const words = (s) => s.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).leng
  * heading inside the part, such as its notes').
  *
  * A picture is named by `ref` — a page, a file — and `pictureFile` says where
- * its image is. `coverFile` is the cover, already the whole of it.
+ * its image is. `coverFile` is the cover, already the whole of it, and
+ * `coverFullFile`, where there is one, the same at the size it was made.
  */
-export async function writeBook({ slug, out, parts, bookPart, title, author, coverFile, pictureFile }) {
+export async function writeBook({ slug, out, parts, bookPart, title, author, coverFile, coverFullFile, pictureFile }) {
   async function picture(ref, name, alt) {
     const from = await pictureFile(ref);
     if (!from) return null;
@@ -110,6 +111,12 @@ export async function writeBook({ slug, out, parts, bookPart, title, author, cov
     .resize({ width: 720 })
     .webp({ quality: 78 })
     .toFile(path.join(out, "cover.webp"));
+  // and the cover as large as the edition has it, for the picture viewer to
+  // fetch when a reader opens the cover to look at it closely: the shelf and
+  // the book's page keep the small one
+  const full = await sharp(coverFullFile ?? coverFile)
+    .webp({ quality: 88 })
+    .toFile(path.join(out, "cover-full.webp"));
 
   writeFileSync(
     path.join(out, "book.json"),
@@ -118,7 +125,12 @@ export async function writeBook({ slug, out, parts, bookPart, title, author, cov
       title: title ?? slug,
       author: author ?? "",
       ...(bookPart ? { part: bookPart } : {}),
-      cover: { src: "cover.webp", w: cover.width, h: cover.height },
+      cover: {
+        src: "cover.webp",
+        w: cover.width,
+        h: cover.height,
+        ...(full.width > cover.width ? { full: "cover-full.webp" } : {}),
+      },
       contents,
     })
   );

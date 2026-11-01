@@ -193,6 +193,7 @@ function BookHome({ book }: { book: ShelfBook }) {
         {coverOpen && index && (
           <PictureViewer
             src={bookUrl(book.slug, index.cover.src)}
+            full={index.cover.full && bookUrl(book.slug, index.cover.full)}
             alt={t("shelf.coverOf", { title: book.title })}
             onClose={() => setCoverOpen(false)}
           />
@@ -512,6 +513,7 @@ function PartView({
       {viewing && (
         <PictureViewer
           src={bookUrl(book.slug, viewing.src)}
+          full={viewing.full && bookUrl(book.slug, viewing.full)}
           alt={viewing.alt}
           onClose={() => setViewing(null)}
         />
