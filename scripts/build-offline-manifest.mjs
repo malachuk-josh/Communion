@@ -27,13 +27,13 @@ function hashOf(file) {
  * file's hash. The hashes are a list in the same order as the URLs rather than
  * a map keyed by them, which would spell out all 800 paths a second time.
  */
-function listDir(dir, filter = () => true) {
+function listDir(dir, filter = () => true, ext = ".json") {
   const full = path.join(PUBLIC, dir);
   if (!existsSync(full)) return { urls: [], bytes: 0, hashes: [] };
   let bytes = 0;
   const hashes = [];
   const urls = readdirSync(full)
-    .filter((f) => f.endsWith(".json") && filter(f))
+    .filter((f) => f.endsWith(ext) && filter(f))
     .sort()
     .map((f) => {
       const file = path.join(full, f);
@@ -61,11 +61,13 @@ const reading = merge(
   // where Christ speaks — nine books and 33 KB, and it belongs with reading
   // rather than study: it is a printing convention, not an apparatus
   listDir("redletter"),
-  // the chapter maps, base windows and all: a third of a megabyte for the
-  // whole Bible, which is small enough that carving it into a tier of its own
-  // would cost the reader more thought than the download costs bytes
+  // the chapter maps, base windows and all: under a megabyte for the whole
+  // Bible with the place cards, which is small enough that carving it into a
+  // tier of its own would cost the reader more thought than the download
+  // costs bytes — and the hills and valleys under them, about another
   listDir("maps"),
-  listDir("maps/base")
+  listDir("maps/base"),
+  listDir("maps/relief", () => true, ".webp")
 );
 
 const translations = {

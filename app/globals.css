@@ -2969,6 +2969,19 @@ html.navhide .chap-arrow {
   stroke-linejoin: round;
 }
 
+/* the hills and valleys, blended in: level ground is the middle grey that
+   both blends leave as it was. Soft light on a dark ground; on parchment it
+   barely darkens at all, so there the harder blend, at a little over half. */
+.mp-relief {
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .mp-relief {
+  mix-blend-mode: hard-light;
+  opacity: 0.55;
+}
+
 /* A journey (scripts/map-journeys.mjs), in the reds ink dries to — the
    words of Christ's colour, which every theme already sets for its ground.
    The way here faint; this chapter's part bold, with the way it went. */

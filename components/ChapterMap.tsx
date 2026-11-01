@@ -841,6 +841,21 @@ function MapArt({
           <path key={`t${t.n}${i}`} d={d} className={`mp-ground mp-${t.k}`} />
         ))
       )}
+      {/* The lie of the land (scripts/build-relief.mjs): slopes shaded as if
+          lit from the north-west, blended into the map's own colours. Level
+          ground is a middle grey the blend leaves alone, so the sea and the
+          plains are untouched and every theme keeps its colours; a phone that
+          never fetched it simply has the flat map it had before. */}
+      <image
+        href={`/maps/relief/${base.id}.webp`}
+        x={0}
+        y={0}
+        width={base.width}
+        height={base.height}
+        preserveAspectRatio="none"
+        className="mp-relief"
+        aria-hidden
+      />
       {base.rivers.map((d, i) => (
         <path key={`r${i}`} d={d} className="mp-river" />
       ))}
