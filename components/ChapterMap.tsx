@@ -92,6 +92,21 @@ function writeNow(on: boolean) {
   }
 }
 
+/** A stop's numbers, in order, a run of three or more as a range: "1·15",
+ *  "11–13", "4·7–9". */
+function stopNumbers(nums: number[]): string {
+  const sorted = [...new Set(nums)].sort((a, b) => a - b);
+  const parts: string[] = [];
+  for (let i = 0; i < sorted.length; ) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+    if (j - i >= 2) parts.push(`${sorted[i]}–${sorted[j]}`);
+    else for (let k = i; k <= j; k++) parts.push(String(sorted[k]));
+    i = j + 1;
+  }
+  return parts.join("·");
+}
+
 /** A leg as a path. */
 const legPath = (pts: [number, number][]) =>
   pts.map(([x, y], i) => `${i ? "L" : "M"}${x} ${y}`).join("");
@@ -626,10 +641,30 @@ function MapArt({
      * other. Where nowhere is free, this chapter's own stops take the least
      * crowded spot, and a stop on the way here is not numbered until a pinch
      * makes room for it, as the countryside arrives.
+     *
+     * Stops nearer each other than a number is wide share one number at that
+     * size — Rome, the Three Taverns and the Forum of Appius are "11–13" from
+     * across the Mediterranean, Bethphage, Jerusalem and Bethany "9–11" — and
+     * come apart again as a pinch opens the ground between them.
      */
-    const badges: { x: number; y: number; cx: number; cy: number; w: number; n: string; s: 0 | 1 }[] = [];
+    const groups: { x: number; y: number; nums: number[]; s: 0 | 1; k: number }[] = [];
     for (const st of data.route?.stops ?? []) {
       if (!sees(st.x, st.y)) continue;
+      const nums = st.n.split("·").map(Number).filter((v) => Number.isFinite(v) && v > 0);
+      const g = groups.find((q) => Math.hypot(q.x - st.x, q.y - st.y) < px * 20);
+      if (g) {
+        g.x = (g.x * g.k + st.x) / (g.k + 1);
+        g.y = (g.y * g.k + st.y) / (g.k + 1);
+        g.k++;
+        g.nums.push(...nums);
+        if (st.s) g.s = 1;
+      } else {
+        groups.push({ x: st.x, y: st.y, nums, s: st.s, k: 1 });
+      }
+    }
+    const badges: { x: number; y: number; cx: number; cy: number; w: number; n: string; s: 0 | 1 }[] = [];
+    for (const g of groups) {
+      const st = { x: g.x, y: g.y, s: g.s, n: stopNumbers(g.nums) };
       const w = Math.max(15, widthOf(st.n, FACES.stop) + 9);
       const half = w / 2 + 2;
       const spots: [number, number][] = [
@@ -680,9 +715,7 @@ function MapArt({
       anchor: Spot["anchor"];
       lead: boolean;
     })[] = [];
-    for (const p of [...shown].sort(
-      (a, b) => isArea(a) - isArea(b) || a.y - b.y || a.x - b.x
-    )) {
+    const layOut = (p: Place) => {
       const area = isArea(p) === 1;
       const face = area ? FACES.area : FACES.name;
       const w = widthOf(p.n, face);
@@ -702,7 +735,7 @@ function MapArt({
         }
         if (cost === 0) break;
       }
-      if (area && least > 0 && glance) continue;
+      if (area && least > 0 && glance) return;
       // nowhere inside the frame at all: a name wider than the map
       if (!pickBox) {
         pickBox = textBox(p.x + pick.dx * px, p.y + pick.dy * px, w, face, pick.anchor, px);
@@ -715,7 +748,58 @@ function MapArt({
         anchor: pick.anchor,
         lead: pick.lead,
       });
-    }
+    };
+    const order = [...shown].sort((a, b) => isArea(a) - isArea(b) || a.y - b.y || a.x - b.x);
+    for (const p of order) if (!isArea(p)) layOut(p);
+
+    /*
+     * Today's cities, when they are asked for. Full screen, between the
+     * chapter's towns and its regions: a town and a city each mark one spot
+     * and cannot move, and a region's name can — OpenBible pins Greece at
+     * Athens, and written there first, Greece kept modern Athens off every
+     * map of Paul in Achaia — and full screen a region is always written,
+     * crowded if it must be. At a glance the chapter's own regions keep their
+     * place, since there a region with no room is left out altogether.
+     */
+    const cities: { key: string; text: string; x: number; y: number; side: 1 | -1 }[] = [];
+    const placeCities = () => {
+      if (!modern) return;
+      // Cities keep their distance from one another; from the ancient names
+      // they need only not be written over them. Kept apart from those too,
+      // as the countryside is, Kavala would never stand beside Neapolis —
+      // which is the whole of what the toggle is for.
+      const placed: [number, number][] = [];
+      const gapCity = (px * spacing) ** 2;
+      for (const [en, es, x, y] of modern.cities) {
+        if (cities.length >= crowd) break;
+        if (!sees(x, y)) continue;
+        if (placed.some(([qx, qy]) => (qx - x) ** 2 + (qy - y) ** 2 < gapCity)) continue;
+        const text = lang === "es" ? es : en;
+        const mark: Box = [x - px * 3, y - px * 3, x + px * 3, y + px * 3];
+        if (!clear(mark)) continue;
+        const w = widthOf(text, FACES.city);
+        const first: 1 | -1 = x < vx + vw * 0.72 ? 1 : -1;
+        let side: 1 | -1 | null = null;
+        let box: Box | null = null;
+        for (const sd of [first, first > 0 ? -1 : 1] as (1 | -1)[]) {
+          const b = textBox(x + sd * 5 * px, y + 3.6 * px, w, FACES.city, sd > 0 ? "start" : "end", px);
+          if (fits(b) && clear(b)) {
+            side = sd;
+            box = b;
+            break;
+          }
+        }
+        if (!box || !side) continue;
+        taken.add(mark);
+        taken.add(box);
+        placed.push([x, y]);
+        cities.push({ key: `${en}${x}`, text, x, y, side });
+      }
+    };
+
+    if (!glance) placeCities();
+    for (const p of order) if (isArea(p)) layOut(p);
+    if (glance) placeCities();
 
     // The era's regions, centred on their country, a line or two off it if
     // that is what it takes; left out if no line is free.
@@ -796,46 +880,14 @@ function MapArt({
     for (const r of named) file(r.x, r.y);
 
     /*
-     * Today's countries and cities, when they are asked for, placed like the
-     * countryside — biggest first, where they fit — and instead of it: an
-     * ancient village and a modern town in the same place are two names for
-     * the eye to sort, and the toggle is for seeing what stands there now.
+     * Today's countries, when they are asked for — their cities are set above,
+     * with the chapter's towns — placed like the countryside, biggest first,
+     * where they fit, and instead of it: an ancient village and a modern town
+     * in the same place are two names for the eye to sort, and the toggle is
+     * for seeing what stands there now.
      */
     const countries: { key: string; text: string; x: number; y: number }[] = [];
-    const cities: { key: string; text: string; x: number; y: number; side: 1 | -1 }[] = [];
     if (modern) {
-      // Cities keep their distance from one another; from the ancient names
-      // they need only not be written over them. Kept apart from those too,
-      // as the countryside is, Kavala would never stand beside Neapolis —
-      // which is the whole of what the toggle is for.
-      const placed: [number, number][] = [];
-      const gapCity = (px * spacing) ** 2;
-      for (const [en, es, x, y] of modern.cities) {
-        if (cities.length >= crowd) break;
-        if (!sees(x, y)) continue;
-        if (placed.some(([qx, qy]) => (qx - x) ** 2 + (qy - y) ** 2 < gapCity)) continue;
-        const text = lang === "es" ? es : en;
-        const mark: Box = [x - px * 3, y - px * 3, x + px * 3, y + px * 3];
-        if (!clear(mark)) continue;
-        const w = widthOf(text, FACES.city);
-        const first: 1 | -1 = x < vx + vw * 0.72 ? 1 : -1;
-        let side: 1 | -1 | null = null;
-        let box: Box | null = null;
-        for (const sd of [first, first > 0 ? -1 : 1] as (1 | -1)[]) {
-          const b = textBox(x + sd * 5 * px, y + 3.6 * px, w, FACES.city, sd > 0 ? "start" : "end", px);
-          if (fits(b) && clear(b)) {
-            side = sd;
-            box = b;
-            break;
-          }
-        }
-        if (!box || !side) continue;
-        taken.add(mark);
-        taken.add(box);
-        file(x, y);
-        placed.push([x, y]);
-        cities.push({ key: `${en}${x}`, text, x, y, side });
-      }
       // A country is big, and its name can go a good way from its middle
       // before it is somewhere else: up and down a few lines, and to either
       // side, nearest first, to clear the ancient names written over it —
@@ -1676,6 +1728,56 @@ export default function ChapterMap({
     };
   }, [now, base]);
 
+  /*
+   * The panel's own shape, for the crop it opens at.
+   *
+   * The small map is as wide as the panel and no taller than 46% of the
+   * screen. A chapter that runs north and south — Nazareth to Bethlehem — has
+   * a crop taller than that shape, and drawn into it the map was shrunk to
+   * the height and the width left over showed whatever lay beside the crop,
+   * past the window's own edge as a bare band of sea. So the crop is widened
+   * to the panel's shape about its middle, inside the window.
+   */
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [frameAspect, setFrameAspect] = useState(0);
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () =>
+      setFrameAspect(el.clientWidth / Math.max(1, window.innerHeight * 0.46));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [data, base]);
+  const panelView = useMemo((): View | null => {
+    if (!base || !data) return null;
+    const [fx, fy, fw, fh] = viewOf(data, base);
+    if (!frameAspect || fw / fh >= frameAspect) return [fx, fy, fw, fh];
+    const w = Math.min(base.width, fh * frameAspect);
+    const x = Math.max(0, Math.min(base.width - w, fx + fw / 2 - w / 2));
+    if (w >= fh * frameAspect - 0.5) return [x, fy, w, fh];
+    // The window itself is narrower than the panel's shape: the rest is taken
+    // off the top and the bottom instead, as far as the chapter's own places
+    // and this chapter's journey allow, and never into them.
+    const ys = [
+      ...data.places.map((p) => p.y),
+      ...(data.route?.legs ?? []).filter((l) => l.s).flatMap((l) => l.p.map(([, y]) => y)),
+    ];
+    const lo = Math.min(...ys) - 45;
+    const hi = Math.max(...ys) + 30;
+    const h = Math.min(fh, Math.max(w / frameAspect, hi - lo));
+    // about the crop's middle, moved to hold the places, and inside the crop
+    let y = fy + fh / 2 - h / 2;
+    y = Math.min(Math.max(y, hi - h), lo);
+    y = Math.max(fy, Math.min(fy + fh - h, y));
+    return [x, y, w, h];
+  }, [base, data, frameAspect]);
+
   const regions = useMemo(() => {
     if (!base || !data) return [];
     const to = project(base.bounds, base.width);
@@ -1757,6 +1859,7 @@ export default function ChapterMap({
           when you touch it. The places keep their own tap — they stop the
           click before it gets here. */}
       <div
+        ref={frameRef}
         className="mp-frame"
         role="button"
         tabIndex={0}
@@ -1770,7 +1873,7 @@ export default function ChapterMap({
           base={base}
           data={data}
           regions={regions}
-          view={focus}
+          view={panelView ?? focus}
           label={t("reader.ctxWhere")}
           /* Far wider apart in the panel than in the viewer, and far fewer.
              The same map is a third of the width in a card, and a countryside

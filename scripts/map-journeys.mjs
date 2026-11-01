@@ -17,6 +17,22 @@
 // dataset's best identifications, and where a road ran between them is
 // largely unknown. The exodus is drawn by the traditional route, with Sinai
 // at Jebel Musa, which the place cards mark as one possibility among several.
+//
+// Jesus' journeys are drawn a Gospel at a time, each as its own Gospel tells
+// them, rather than harmonised into one: Matthew, Mark, Luke and John do not
+// order the journeys alike, and a map of Mark 7 should be Mark's. Where the
+// boat comes ashore among the Gadarenes or the Gerasenes, the stop is Kursi on
+// the eastern shore, the traditional site: the dataset puts the Gerasenes at
+// Jerash, fifty kilometres inland, which is the region's city and not where a
+// herd ran down a steep place into the lake.
+
+
+/** From Judah's hills round the north of the Dead Sea and up into Moab. */
+const TO_MOAB = [[35.43, 31.85], [35.6, 31.8], "Medeba"];
+/** Down the Jordan valley on its east side, through Perea, to the fords at Jericho. */
+const PEREA = [[35.6, 32.65], [35.6, 32.2], [35.56, 31.95]];
+/** The coast road between Egypt and Gaza, across the north of Sinai. */
+const SINAI_COAST = [[32.6, 30.95], [33.8, 31.1], "Gaza"];
 
 export const JOURNEYS = [
   {
@@ -87,6 +103,67 @@ export const JOURNEYS = [
     whole: [[4, 33]],
   },
   {
+    id: "naomi",
+    start: "Moab 1",
+    steps: [
+      // "they two went until they came to Bethlehem"
+      { to: "Bethlehem 1", at: [8, 1], via: [...TO_MOAB].reverse() },
+    ],
+  },
+  {
+    id: "david",
+    start: "Gibeah 1",
+    steps: [
+      { to: "Naioth", at: [9, 19] },
+      { to: "Nob", at: [9, 21] },
+      { to: "Gath 1", at: [9, 21] },
+      { to: "Adullam", at: [9, 22] },
+      // round the south of the Dead Sea to Mizpeh of Moab, and back
+      { to: "Mizpeh 3", at: [9, 22], via: [[35.25, 31.25], [35.47, 31.0]] },
+      { to: "Hereth", at: [9, 22], via: [[35.47, 31.0], [35.25, 31.25]] },
+      { to: "Keilah", at: [9, 23] },
+      { to: "Ziph 1", at: [9, 23] },
+      { to: "Maon", at: [9, 23] },
+      { to: "Engedi", at: [9, 23] },
+      { to: "Carmel 1", at: [9, 25] },
+      { to: "Hachilah", at: [9, 26] },
+      { to: "Gath 1", at: [9, 27] },
+      { to: "Ziklag", at: [9, 27] },
+    ],
+  },
+  {
+    id: "elijah",
+    // before Ahab, in Samaria: his own Tishbe is barely located
+    start: "Samaria 1",
+    steps: [
+      { to: "Cherith", at: [11, 17] },
+      { to: "Zarephath", at: [11, 17] },
+      { to: "Mount Carmel", at: [11, 18] },
+      // he ran before Ahab's chariot to Jezreel
+      { to: "Jezreel 2", at: [11, 18] },
+      { to: "Beersheba 1", at: [11, 19] },
+      // forty days and forty nights unto Horeb
+      { to: "Mount Horeb", at: [11, 19] },
+      // Elisha, found at Abel-meholah
+      { to: "Abel-meholah", at: [11, 19] },
+    ],
+  },
+  {
+    id: "elijah2",
+    start: "Gilgal 2",
+    steps: [
+      { to: "Bethel 1", at: [12, 2] },
+      { to: "Jericho 1", at: [12, 2] },
+      // over Jordan on dry ground, and the chariot of fire
+      { to: "Jordan", at: [12, 2] },
+      // Elisha, alone, the way they came, and on
+      { to: "Jericho 1", at: [12, 2] },
+      { to: "Bethel 1", at: [12, 2] },
+      { to: "Mount Carmel", at: [12, 2] },
+      { to: "Samaria 1", at: [12, 2] },
+    ],
+  },
+  {
     id: "exile",
     start: "Jerusalem",
     steps: [
@@ -130,6 +207,140 @@ export const JOURNEYS = [
         at: [16, 2],
         via: ["Babylon 1", [44.0, 33.0], [42.4, 34.2], [40.89, 34.55], [39.1, 35.9], [37.16, 36.2], "Hamath 1", "Damascus"],
       },
+    ],
+  },
+  {
+    id: "egypt",
+    start: "Bethlehem 1",
+    steps: [
+      { to: "Egypt", at: [40, 2], via: ["Gaza", ...[...SINAI_COAST].reverse().slice(1)] },
+      // "he turned aside into the parts of Galilee"
+      { to: "Nazareth", at: [40, 2], via: [...SINAI_COAST, [34.75, 32.1]] },
+    ],
+  },
+  {
+    id: "childhood",
+    start: "Nazareth",
+    steps: [
+      { to: "Bethlehem 1", at: [42, 2] },
+      { to: "Jerusalem", at: [42, 2] },
+      { to: "Nazareth", at: [42, 2] },
+      // at twelve, to the feast
+      { to: "Jerusalem", at: [42, 2] },
+      { to: "Nazareth", at: [42, 2] },
+    ],
+  },
+  {
+    id: "jesusMatthew",
+    start: "Nazareth",
+    steps: [
+      { to: "Jordan", at: [40, 3] },
+      // "leaving Nazareth, he came and dwelt in Capernaum"
+      { to: "Nazareth", at: [40, 4] },
+      { to: "Capernaum", at: [40, 4] },
+      { to: "Gergesa", at: [40, 8], sea: true },
+      { to: "Capernaum", at: [40, 9], sea: true },
+      { to: "Nazareth", at: [40, 13] },
+      { to: "Bethsaida 2", at: [40, 14] },
+      { to: "Gennesaret", at: [40, 14], sea: true },
+      { to: "Tyre", at: [40, 15] },
+      { to: "Magadan", at: [40, 15], via: [[35.62, 32.95]] },
+      { to: "Caesarea Philippi", at: [40, 16] },
+      { to: "Capernaum", at: [40, 17] },
+      // "into the coasts of Judaea beyond Jordan"
+      { to: "Jericho 2", at: [40, 20], via: PEREA },
+      { to: "Bethphage", at: [40, 21] },
+      { to: "Jerusalem", at: [40, 21] },
+      { to: "Bethany 1", at: [40, 21] },
+    ],
+  },
+  {
+    id: "jesusMark",
+    start: "Nazareth",
+    steps: [
+      { to: "Jordan", at: [41, 1] },
+      { to: "Capernaum", at: [41, 1] },
+      { to: "Gergesa", at: [41, 5], sea: true },
+      { to: "Capernaum", at: [41, 5], sea: true },
+      { to: "Nazareth", at: [41, 6] },
+      { to: "Bethsaida 2", at: [41, 6] },
+      { to: "Gennesaret", at: [41, 6], sea: true },
+      { to: "Tyre", at: [41, 7] },
+      // "through Sidon, unto the sea of Galilee, through the midst of the coasts of Decapolis"
+      { to: "Sidon", at: [41, 7] },
+      { to: "Decapolis", at: [41, 7], via: [[35.65, 33.2]] },
+      { to: "Dalmanutha", at: [41, 8], sea: true },
+      { to: "Bethsaida 2", at: [41, 8], sea: true },
+      { to: "Caesarea Philippi", at: [41, 8] },
+      { to: "Capernaum", at: [41, 9] },
+      { to: "Jericho 2", at: [41, 10], via: PEREA },
+      { to: "Bethphage", at: [41, 11] },
+      { to: "Jerusalem", at: [41, 11] },
+      { to: "Bethany 1", at: [41, 11] },
+    ],
+  },
+  {
+    id: "jesusLuke",
+    start: "Nazareth",
+    steps: [
+      { to: "Jordan", at: [42, 3] },
+      { to: "Nazareth", at: [42, 4] },
+      { to: "Capernaum", at: [42, 4] },
+      { to: "Nain", at: [42, 7] },
+      { to: "Gergesa", at: [42, 8], sea: true },
+      { to: "Capernaum", at: [42, 8], sea: true },
+      { to: "Bethsaida 2", at: [42, 9] },
+      // "through the midst of Samaria and Galilee"
+      { to: "Samaria 2", at: [42, 17] },
+      { to: "Jericho 2", at: [42, 18] },
+      { to: "Bethphage", at: [42, 19] },
+      { to: "Jerusalem", at: [42, 19] },
+      { to: "Emmaus", at: [42, 24] },
+      { to: "Jerusalem", at: [42, 24] },
+      { to: "Bethany 1", at: [42, 24] },
+    ],
+  },
+  {
+    id: "jesusJohn",
+    // "Bethabara beyond Jordan, where John was baptizing"
+    start: "Bethany 2",
+    steps: [
+      { to: "Cana", at: [43, 2] },
+      { to: "Capernaum", at: [43, 2] },
+      { to: "Jerusalem", at: [43, 2] },
+      { to: "Sychar", at: [43, 4] },
+      { to: "Cana", at: [43, 4] },
+      { to: "Jerusalem", at: [43, 5] },
+      { to: "Bethsaida 2", at: [43, 6] },
+      { to: "Capernaum", at: [43, 6], sea: true },
+      { to: "Jerusalem", at: [43, 7] },
+      { to: "Bethany 2", at: [43, 10] },
+      { to: "Bethany 1", at: [43, 11] },
+      { to: "Ephraim 2", at: [43, 11] },
+      { to: "Bethany 1", at: [43, 12] },
+      { to: "Jerusalem", at: [43, 12] },
+    ],
+  },
+  {
+    id: "philip",
+    start: "Jerusalem",
+    steps: [
+      { to: "Samaria 1", at: [44, 8] },
+      // "the way that goeth down from Jerusalem unto Gaza", and found at Azotus
+      { to: "Ashdod", at: [44, 8], via: [[35.1, 31.75], [34.85, 31.6]] },
+      { to: "Caesarea", at: [44, 8] },
+    ],
+  },
+  {
+    id: "saul",
+    start: "Jerusalem",
+    steps: [
+      { to: "Damascus", at: [44, 9] },
+      { to: "Jerusalem", at: [44, 9] },
+      { to: "Caesarea", at: [44, 9] },
+      { to: "Tarsus", at: [44, 9], sea: true, via: [[34.75, 33.3], [35.2, 34.6], [35.6, 35.9], [35.0, 36.6]] },
+      // Barnabas "brought him unto Antioch"
+      { to: "Antioch 1", at: [44, 11], via: [[36.15, 36.85]] },
     ],
   },
   {
