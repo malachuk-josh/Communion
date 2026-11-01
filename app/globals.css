@@ -2969,6 +2969,87 @@ html.navhide .chap-arrow {
   stroke-linejoin: round;
 }
 
+/* A journey (scripts/map-journeys.mjs), in the reds ink dries to — the
+   words of Christ's colour, which every theme already sets for its ground.
+   The way here faint; this chapter's part bold, with the way it went. */
+.mp-route {
+  pointer-events: none;
+}
+
+.mp-leg {
+  fill: none;
+  stroke: var(--wj);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.38;
+}
+
+.mp-leg.now {
+  opacity: 0.92;
+}
+
+.mp-arrow {
+  fill: var(--wj);
+}
+
+.mp-stop-dot {
+  fill: var(--wj);
+  opacity: 0.5;
+}
+
+.mp-stop-dot.now {
+  opacity: 1;
+}
+
+.mp-stop {
+  pointer-events: none;
+}
+
+.mp-stop rect {
+  fill: var(--map-land);
+  stroke: var(--wj);
+  stroke-width: calc(var(--mp-u, 1) * 1.2px);
+  opacity: 0.75;
+}
+
+.mp-stop text {
+  fill: var(--wj);
+  font-family: var(--sans);
+  font-size: calc(var(--mp-u, 1) * 9.5px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.mp-stop.now rect {
+  fill: var(--wj);
+  stroke: none;
+  opacity: 1;
+}
+
+.mp-stop.now text {
+  fill: var(--map-land);
+  opacity: 1;
+}
+
+/* the journey's name, under the era's */
+.mp-journey {
+  margin: -2px 0 8px;
+  color: var(--wj);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.map-full-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-full-title .mp-journey {
+  margin: 2px 0 0;
+}
+
 /* the thread from a moved name back to the place it names */
 .mp-leader {
   stroke: var(--ink-faint);

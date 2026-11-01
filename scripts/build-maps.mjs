@@ -39,6 +39,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
+import { JOURNEYS } from "./map-journeys.mjs";
 
 const [NE_DIR, OB_DIR] = process.argv.slice(2);
 if (!NE_DIR || !OB_DIR) {
@@ -702,6 +703,8 @@ for (const a of lines("ancient.jsonl")) {
   }
   const place = {
     id: a.id,
+    // the dataset's own name for it, "Antioch 2", which the journeys use
+    fid: a.friendly_id,
     name: label(a),
     ll: points.get(bestId),
     type: (a.types ?? ["settlement"])[0],
@@ -748,6 +751,60 @@ function oneEach(places) {
   return kept;
 }
 const gazette = oneEach(allPlaces.values());
+
+// ---------------------------------------------------------------------------
+// Journeys: see scripts/map-journeys.mjs
+// ---------------------------------------------------------------------------
+
+const byFid = new Map([...allPlaces.values()].map((p) => [p.fid, p]));
+const where = (ref, journey) => {
+  if (Array.isArray(ref)) return ref;
+  const p = byFid.get(ref);
+  if (!p) {
+    console.error(`journey ${journey}: no located place called "${ref}"`);
+    process.exit(1);
+  }
+  return p.ll;
+};
+const before = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
+const sameChapter = (a, b) => a[0] === b[0] && a[1] === b[1];
+
+/**
+ * Each journey as legs — the points it is drawn through, the chapter that
+ * tells of it, by sea or not, and the number of the stop it ends at — and the
+ * chapters it is drawn on.
+ */
+const journeys = JOURNEYS.map((j) => {
+  let from = where(j.start, j.id);
+  const legs = j.steps.map((step, i) => {
+    const to = where(step.to, j.id);
+    const leg = {
+      pts: [from, ...(step.via ?? []).map((v) => where(v, j.id)), to],
+      at: step.at,
+      sea: !!step.sea,
+      stop: i + 2, // the start is 1
+    };
+    from = to;
+    return leg;
+  });
+  return { id: j.id, start: where(j.start, j.id), legs, whole: j.whole ?? [] };
+});
+
+/** The journey a chapter shows, and which of its legs are this chapter's. */
+function journeyFor(bookNr, chapter) {
+  const here = [bookNr, chapter];
+  for (const j of journeys) {
+    const whole = j.whole.some((c) => sameChapter(c, here));
+    const own = j.legs.filter((l) => sameChapter(l.at, here));
+    if (!whole && !own.length) continue;
+    return {
+      j,
+      shown: whole ? j.legs : j.legs.filter((l) => sameChapter(l.at, here) || before(l.at, here)),
+      now: (l) => whole || sameChapter(l.at, here),
+    };
+  }
+  return null;
+}
 
 /*
  * Every named place in the Bible, whether or not this chapter names it.
@@ -820,9 +877,11 @@ const holds = (win, [lon, lat]) => {
   return lon >= w && lon <= e && lat >= s && lat <= n;
 };
 
-function chooseWindow(places) {
+function chooseWindow(places, mustHold = []) {
   let fallback = null;
   for (const win of built) {
+    // a journey's legs in this chapter are drawn whole or not at all
+    if (!mustHold.every((p) => holds(win, p.ll))) continue;
     const inside = places.filter((p) => holds(win, p.ll)).length;
     // Every window is a compromise with the one place that sits outside it —
     // Tarshish on a map of Judah, Rome on a map of Galilee. Four fifths in
@@ -976,7 +1035,15 @@ const windowUse = new Map();
 for (const [key, held] of chapters) {
   const [bookNr, chapter] = key.split(":").map(Number);
   const places = oneEach(held.values());
-  const chosen = chooseWindow(places);
+  const journey = journeyFor(bookNr, chapter);
+  // This chapter's part of the journey has to fit on the map as well as its
+  // places. The earlier part, faded, may run off its edge — back to Ur from
+  // Moriah — rather than pull a chapter about one hill out to the whole Near
+  // East, where the coast is drawn coarser and the country is emptier.
+  const routePts = journey
+    ? journey.shown.filter(journey.now).flatMap((l) => l.pts).map((ll) => ({ ll }))
+    : [];
+  const chosen = chooseWindow(places, routePts);
   if (!chosen) {
     skipped++;
     continue;
@@ -1005,12 +1072,52 @@ for (const [key, held] of chapters) {
     continue;
   }
 
+  /*
+   * The journey, in the window's own units: each leg as the points it is
+   * drawn through, bold (1) if this chapter tells of it and faded (0) if an
+   * earlier one did; and the stops, numbered in order, with the numbers of a
+   * place passed through twice — Lystra, going and coming back — on one mark.
+   */
+  let route;
+  const opening = [...drawn];
+  if (journey) {
+    const at = (ll) => project.to(ll[0], ll[1]);
+    const legs = journey.shown.map((l) => ({
+      p: l.pts.map(at),
+      s: journey.now(l) ? 1 : 0,
+      ...(l.sea ? { sea: 1 } : {}),
+    }));
+    const marks = [];
+    const mark = (ll, n, s) => {
+      const [x, y] = at(ll);
+      const there = marks.find((m) => Math.hypot(m.x - x, m.y - y) < 1.5);
+      if (there) {
+        there.n.push(n);
+        there.s = Math.max(there.s, s);
+      } else marks.push({ x, y, n: [n], s });
+    };
+    const first = journey.shown[0];
+    mark(journey.j.start, 1, first && journey.now(first) ? 1 : 0);
+    for (const l of journey.shown) mark(l.pts[l.pts.length - 1], l.stop, journey.now(l) ? 1 : 0);
+    route = {
+      j: journey.j.id,
+      legs,
+      stops: marks.map((m) => ({ x: m.x, y: m.y, n: m.n.join("·"), s: m.s })),
+    };
+    // the map opens on this chapter's part of it, as well as on its places
+    for (const l of legs) {
+      if (!l.s) continue;
+      for (const [x, y] of l.p) opening.push({ n: "", x, y });
+    }
+  }
+
   if (!byBook.has(bookNr)) byBook.set(bookNr, {});
   byBook.get(bookNr)[chapter] = {
     base: win.id,
     era,
-    focus: focusOn(drawn, project.width, project.height),
+    focus: focusOn(opening, project.width, project.height),
     places: drawn,
+    ...(route ? { route } : {}),
     // said out loud in the panel when the chapter names more than fit
     ...(inFrame.length > drawn.length ? { more: inFrame.length - drawn.length } : {}),
   };
@@ -1044,6 +1151,8 @@ for (const [id, n] of [...windowUse].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${id.padEnd(14)} ${String(n).padStart(4)} chapters`);
 }
 console.log(`books     : ${byBook.size} files`);
+const routed = [...byBook.values()].flatMap((b) => Object.values(b)).filter((c) => c.route);
+console.log(`journeys  : ${journeys.length}, drawn on ${routed.length} chapters`);
 console.log(
   `cards     : ${Object.keys(cards).length} places, ${Object.keys(same).length} twins, ` +
     `${countries.length} countries, ${kb(cardsJson.length)} KB`

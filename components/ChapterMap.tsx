@@ -48,6 +48,58 @@ interface ChapterMapData {
   places: Place[];
   /** named in the chapter but left off, because the map would not hold them */
   more?: number;
+  /** the journey this chapter is part of, where it is one */
+  route?: Route;
+}
+
+/**
+ * A journey on the map (scripts/map-journeys.mjs): each leg as the points it
+ * is drawn through, bold (s 1) where this chapter tells of it and faded where
+ * an earlier one did; and its stops, numbered in order, a place passed through
+ * twice carrying both numbers ("1·15").
+ */
+interface Route {
+  j: string;
+  legs: { p: [number, number][]; s: 0 | 1; sea?: 1 }[];
+  stops: { x: number; y: number; n: string; s: 0 | 1 }[];
+}
+
+/** A leg as a path. */
+const legPath = (pts: [number, number][]) =>
+  pts.map(([x, y], i) => `${i ? "L" : "M"}${x} ${y}`).join("");
+
+/**
+ * The arrowhead half way along a leg, pointing the way it went: half way by
+ * distance travelled, not by points, so a leg bent round a coast is marked in
+ * its middle rather than at a bend.
+ */
+function arrowOf(pts: [number, number][], size: number): string | null {
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) {
+    total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  }
+  if (total < size * 4) return null;
+  let left = total / 2;
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1];
+    const [bx, by] = pts[i];
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len < left) {
+      left -= len;
+      continue;
+    }
+    const ux = (bx - ax) / len;
+    const uy = (by - ay) / len;
+    const mx = ax + ux * left;
+    const my = ay + uy * left;
+    const f = (n: number) => n.toFixed(2);
+    return (
+      `M${f(mx + ux * size)} ${f(my + uy * size)}` +
+      `L${f(mx - ux * size - uy * size * 0.8)} ${f(my - uy * size + ux * size * 0.8)}` +
+      `L${f(mx - ux * size + uy * size * 0.8)} ${f(my - uy * size - ux * size * 0.8)}Z`
+    );
+  }
+  return null;
 }
 
 interface Base {
@@ -227,6 +279,7 @@ const FACES = {
   ground: { size: 10, italic: false, serif: false, track: 0.18, upper: true, halo: 0 },
   range: { size: 12, italic: true, serif: true, track: 0.06, upper: false, halo: 0 },
   site: { size: 11.5, italic: false, serif: true, track: 0, upper: false, halo: 1.25 },
+  stop: { size: 9.5, italic: false, serif: false, track: 0, upper: false, halo: 0 },
 } as const;
 type Face = (typeof FACES)[keyof typeof FACES];
 
@@ -532,6 +585,50 @@ function MapArt({
     }
 
     /*
+     * A journey's numbered stops: marks like the dots, which names keep off.
+     * A number sits beside its stop rather than on it, so the dot stays the
+     * place: up and to the left first, then wherever round it is free of the
+     * dots and the numbers already set — Perga and Attalia, Seleucia and
+     * Antioch, are a few miles apart and their numbers would sit on each
+     * other. Where nowhere is free, this chapter's own stops take the least
+     * crowded spot, and a stop on the way here is not numbered until a pinch
+     * makes room for it, as the countryside arrives.
+     */
+    const badges: { x: number; y: number; cx: number; cy: number; w: number; n: string; s: 0 | 1 }[] = [];
+    for (const st of data.route?.stops ?? []) {
+      if (!sees(st.x, st.y)) continue;
+      const w = Math.max(15, widthOf(st.n, FACES.stop) + 9);
+      const half = w / 2 + 2;
+      const spots: [number, number][] = [
+        [-half, -10],
+        [half, -10],
+        [-half, 10],
+        [half, 10],
+        [-(half + 4), 0],
+        [half + 4, 0],
+        [0, -15],
+        [0, 15],
+      ];
+      let best: { cx: number; cy: number; box: Box } | null = null;
+      let least = Infinity;
+      for (const [dx, dy] of spots) {
+        const cx = st.x + dx * px;
+        const cy = st.y + dy * px;
+        const box: Box = [cx - (px * w) / 2, cy - px * 7.5, cx + (px * w) / 2, cy + px * 7.5];
+        if (!fits(box)) continue;
+        const cost = covered(box);
+        if (cost < least) {
+          least = cost;
+          best = { cx, cy, box };
+        }
+        if (cost === 0) break;
+      }
+      if (!best || (!st.s && least > 0)) continue;
+      taken.add(best.box);
+      badges.push({ ...st, cx: best.cx, cy: best.cy, w });
+    }
+
+    /*
      * Towns first, then the regions the chapter names: a dot needs the room
      * beside it, and a region can be written anywhere over its own ground.
      *
@@ -717,8 +814,8 @@ function MapArt({
       sites.push({ n, x, y, mark, side, id });
     }
 
-    return { laid, named, grounds, sites };
-  }, [data.places, regions, base.terrain, base.sites, lang, vx, vy, vw, vh, px, spacing, crowd, cover, glance]);
+    return { laid, named, grounds, sites, badges };
+  }, [data.places, data.route, regions, base.terrain, base.sites, lang, vx, vy, vw, vh, px, spacing, crowd, cover, glance]);
 
   return (
     <svg
@@ -750,6 +847,36 @@ function MapArt({
       {base.lakes.map((d, i) => (
         <path key={`w${i}`} d={d} className="mp-lake" />
       ))}
+
+      {/* the journey: over the ground, under every name. The earlier legs
+          faint, this chapter's bold with the way it went; by sea, dashed. */}
+      {data.route && (
+        <g className="mp-route" aria-hidden>
+          {data.route.legs.map((l, i) => (
+            <path
+              key={`j${i}`}
+              d={legPath(l.p)}
+              className={`mp-leg${l.s ? " now" : ""}`}
+              strokeWidth={px * (l.s ? 2.6 : 1.7)}
+              strokeDasharray={l.sea ? `${px * 6} ${px * 4.5}` : undefined}
+            />
+          ))}
+          {data.route.legs.map((l, i) => {
+            if (!l.s) return null;
+            const d = arrowOf(l.p, px * 4.5);
+            return d ? <path key={`a${i}`} d={d} className="mp-arrow" /> : null;
+          })}
+          {data.route.stops.map((st, i) => (
+            <circle
+              key={`s${i}`}
+              cx={st.x}
+              cy={st.y}
+              r={px * (st.s ? 2.4 : 1.8)}
+              className={`mp-stop-dot${st.s ? " now" : ""}`}
+            />
+          ))}
+        </g>
+      )}
 
       {/* the kinds of ground, named faintest of all and only where they fit */}
       {layout.grounds.map((g) => (
@@ -823,6 +950,21 @@ function MapArt({
         >
           {r.text}
         </text>
+      ))}
+
+      {layout.badges.map((b, i) => (
+        <g key={`b${i}`} className={`mp-stop${b.s ? " now" : ""}`} aria-hidden>
+          <rect
+            x={b.cx - (px * b.w) / 2}
+            y={b.cy - px * 7}
+            width={px * b.w}
+            height={px * 14}
+            rx={px * 7}
+          />
+          <text x={b.cx} y={b.cy + px * 3.4} textAnchor="middle">
+            {b.n}
+          </text>
+        </g>
       ))}
 
       {/* the regions first, so a town at a region's anchor — Antioch, where
@@ -1149,7 +1291,14 @@ function MapViewer({
   return (
     <div className="map-full">
       <div className="map-full-bar">
-        <p className="mp-era">{t(`map.era.${data.era}` as MessageKey)}</p>
+        <div className="map-full-title">
+          <p className="mp-era">{t(`map.era.${data.era}` as MessageKey)}</p>
+          {data.route && (
+            <p className="mp-journey">
+              {t(`map.journey.${data.route.j}` as MessageKey)}
+            </p>
+          )}
+        </div>
         <div className="map-full-tools">
           <button
             type="button"
@@ -1388,6 +1537,9 @@ export default function ChapterMap({
         <Icon name="globe" /> {t("reader.ctxWhere")}
       </h3>
       <p className="mp-era">{t(`map.era.${data.era}` as MessageKey)}</p>
+      {data.route && (
+        <p className="mp-journey">{t(`map.journey.${data.route.j}` as MessageKey)}</p>
+      )}
       {/* The whole map opens it, not a corner of it: at this size the map is
           an illustration, and an illustration you can enlarge should enlarge
           when you touch it. The places keep their own tap — they stop the
@@ -1427,6 +1579,7 @@ export default function ChapterMap({
           ? `${t("map.tapAPlace")} · ${t("map.andMore", { n: String(data.more) })}`
           : t("map.tapAPlace")}
       </p>
+      {data.route && <p className="mp-note">{t("map.routeNote")}</p>}
       <p className="mp-credit">{t("map.credit")}</p>
 
       {/* Out to the body: the context panel is a .glass card, and a
