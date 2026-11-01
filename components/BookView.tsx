@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/Icon";
+import PictureViewer from "@/components/PictureViewer";
 import { getBook } from "@/lib/bible";
 import { BOOK_FONTS } from "@/lib/bookFonts";
 import {
@@ -120,6 +121,7 @@ function BookHome({ book }: { book: ShelfBook }) {
   const [index, setIndex] = useState<BookIndex | null>(null);
   const [failed, setFailed] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
+  const [coverOpen, setCoverOpen] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -169,16 +171,32 @@ function BookHome({ book }: { book: ShelfBook }) {
       <div className="bk-home">
         <div className="bk-cover">
           {index ? (
-            <img
-              src={bookUrl(book.slug, index.cover.src)}
-              width={index.cover.w}
-              height={index.cover.h}
-              alt={t("shelf.coverOf", { title: book.title })}
-            />
+            // the cover opens over the screen, to be looked at closely, as
+            // the pictures inside do
+            <button
+              type="button"
+              className="bk-cover-btn"
+              onClick={() => setCoverOpen(true)}
+              aria-label={t("shelf.viewCover", { title: book.title })}
+            >
+              <img
+                src={bookUrl(book.slug, index.cover.src)}
+                width={index.cover.w}
+                height={index.cover.h}
+                alt={t("shelf.coverOf", { title: book.title })}
+              />
+            </button>
           ) : (
             <div className="bk-cover-blank skeleton" />
           )}
         </div>
+        {coverOpen && index && (
+          <PictureViewer
+            src={bookUrl(book.slug, index.cover.src)}
+            alt={t("shelf.coverOf", { title: book.title })}
+            onClose={() => setCoverOpen(false)}
+          />
+        )}
         <div className="bk-about">
           <h1 className="bk-book-title">{book.title}</h1>
           {book.subtitle && <p className="bk-book-sub">{book.subtitle}</p>}
@@ -492,7 +510,11 @@ function PartView({
       )}
 
       {viewing && (
-        <PictureView src={bookUrl(book.slug, viewing.src)} onClose={() => setViewing(null)} />
+        <PictureViewer
+          src={bookUrl(book.slug, viewing.src)}
+          alt={viewing.alt}
+          onClose={() => setViewing(null)}
+        />
       )}
       {verse && <VersePop verse={verse} lang={lang} onClose={() => setVerse(null)} />}
     </article>
@@ -688,26 +710,6 @@ function Inline({ html, onRef }: { html: string; onRef: (r: BookRef) => void }) 
 }
 
 // ---- over the page ------------------------------------------------------------------
-
-/** A picture on its own, as large as the screen allows. */
-function PictureView({ src, onClose }: { src: string; onClose: () => void }) {
-  const { t } = useI18n();
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [onClose]);
-  return (
-    <div className="bk-viewer" role="dialog" aria-modal="true" aria-label={t("shelf.viewPicture")} onClick={onClose}>
-      <img src={src} alt="" />
-      <button type="button" className="lex-close bk-viewer-close" onClick={onClose} aria-label={t("common.close")}>
-        ✕
-      </button>
-    </div>
-  );
-}
 
 /**
  * The verse a bracket points to, over the book, without leaving it — and the

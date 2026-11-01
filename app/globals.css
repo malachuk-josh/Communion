@@ -6359,6 +6359,22 @@ button.compare-pick:last-child {
   width: min(62%, 250px);
 }
 
+/* the cover is a button that opens it over the screen */
+.bk-cover-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: zoom-in;
+}
+
+.bk-cover-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 .bk-cover img,
 .bk-cover-blank {
   display: block;
@@ -6891,32 +6907,128 @@ button.compare-pick:last-child {
   border-radius: 12px;
 }
 
-/* a picture, on its own, as large as the screen allows */
+/* A picture, or a cover, on its own over the screen, as large as the screen
+   allows, to be zoomed into (components/PictureViewer.tsx). The stage takes
+   every touch for itself: the pinch, the drag and the double-tap are the
+   viewer's, not the page's. */
 .bk-viewer {
   position: fixed;
   inset: 0;
   z-index: 90;
+  background: rgba(8, 8, 12, 0.96);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.bk-viewer-stage {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
-  background: rgba(8, 8, 12, 0.94);
+  /* room above for the ✕ and below for the zoom, the same both ways so the
+     picture sits in the middle of the screen */
+  padding: max(64px, calc(env(safe-area-inset-top) + 56px)) 12px;
+  overflow: hidden;
+  touch-action: none;
   cursor: zoom-out;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.bk-viewer img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+/* a phone on its side has little height to spare: the picture takes it all,
+   and the ✕ and the zoom sit over it */
+@media (max-height: 500px) {
+  .bk-viewer-stage {
+    padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+}
+
+.bk-viewer-stage img {
+  display: block;
+  flex: none;
+  max-width: none;
   border-radius: 6px;
+  transform-origin: center;
+  will-change: transform;
+  cursor: zoom-in;
+  -webkit-user-drag: none;
+}
+
+.bk-viewer-stage.zoomed,
+.bk-viewer-stage.zoomed img {
+  cursor: grab;
+}
+
+.bk-viewer-stage.zoomed:active,
+.bk-viewer-stage.zoomed:active img {
+  cursor: grabbing;
 }
 
 .bk-viewer-close {
   position: absolute;
+  z-index: 1;
   top: max(14px, env(safe-area-inset-top));
   right: 14px;
   color: #f2f0ea;
   border-color: rgba(242, 240, 234, 0.4);
+  background: rgba(8, 8, 12, 0.55);
+}
+
+.bk-viewer-zoom {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid rgba(242, 240, 234, 0.25);
+  border-radius: 999px;
+  background: rgba(8, 8, 12, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.bk-viewer-zoom button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #f2f0ea;
+  font: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bk-viewer-zoom .bk-viewer-pct {
+  min-width: 64px;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bk-viewer-zoom button:hover:not(:disabled) {
+  background: rgba(242, 240, 234, 0.12);
+}
+
+.bk-viewer-zoom button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bk-viewer-zoom .bk-viewer-pct:disabled {
+  opacity: 0.75;
+}
+
+.bk-viewer-zoom button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
 }
 
 .bk-verse-pop .bk-pop-tr {
