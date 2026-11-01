@@ -347,9 +347,17 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// A book's pictures at full size, for zooming into, are online only: several
+// times the size of the book they belong to, so neither its download for
+// offline nor this cache keeps them. The browser's own cache has them for as
+// long as it likes; without a signal the viewer stays with the picture on the
+// page.
+const ONLINE_ONLY = /^\/books\/[^/]+\/full\//;
+
 const isData = (url) =>
   url.origin === self.location.origin &&
   url.pathname !== DATA_MARK &&
+  !ONLINE_ONLY.test(url.pathname) &&
   DATA_PATHS.some((p) => url.pathname.startsWith(p));
 
 const under = (pathname, prefix) =>
@@ -441,6 +449,7 @@ self.addEventListener("message", (event) => {
         typeof u === "string" &&
         u.startsWith("/") &&
         !u.startsWith("//") &&
+        !ONLINE_ONLY.test(u) &&
         DATA_PATHS.some((p) => u.startsWith(p))
     )
     .slice(0, MAX_CACHE_URLS);

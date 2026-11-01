@@ -9,7 +9,7 @@
 // change to the characters: the PDF's font drew them straight, and the
 // reader's font draws them properly.
 
-import { writeFileSync } from "fs";
+import { mkdirSync, writeFileSync } from "fs";
 import path from "path";
 import sharp from "sharp";
 
@@ -29,6 +29,9 @@ export function curl(s) {
 
 const tidy = (s) => curl(s.replace(/<\/i> <i>/g, " ").replace(/<\/b> <b>/g, " ").replace(/\s+/g, " ").trim());
 
+/** the widest a full-size picture is kept; the editions' are well within it */
+const FULL_WIDTH = 2400;
+
 const words = (s) => s.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
 
 // ---- writing it ------------------------------------------------------------
@@ -43,8 +46,31 @@ const words = (s) => s.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).leng
  * A picture is named by `ref` — a page, a file — and `pictureFile` says where
  * its image is. `coverFile` is the cover, already the whole of it, and
  * `coverFullFile`, where there is one, the same at the size it was made.
+ *
+ * Every picture is written twice: at a phone's width, which is what the page
+ * shows and what a book downloaded for offline keeps; and, in full/, as large
+ * as the edition has it, for the picture viewer to fetch when a reader zooms
+ * in. full/ is online only — the offline download and the service worker
+ * both leave it alone — since it is several times the size of the rest.
  */
 export async function writeBook({ slug, out, parts, bookPart, title, author, coverFile, coverFullFile, pictureFile }) {
+  mkdirSync(path.join(out, "full"), { recursive: true });
+
+  /**
+   * The picture as large as it was made, for looking at closely; nothing
+   * where that is not much larger than the one already on the page.
+   */
+  async function fullSize(from, name, shown, quality) {
+    const { width } = await sharp(from).metadata();
+    if (!width || width < shown * 1.2) return null;
+    const file = `full/${name}.webp`;
+    await sharp(from)
+      .resize({ width: Math.min(width, FULL_WIDTH) })
+      .webp({ quality })
+      .toFile(path.join(out, file));
+    return file;
+  }
+
   async function picture(ref, name, alt) {
     const from = await pictureFile(ref);
     if (!from) return null;
@@ -53,7 +79,14 @@ export async function writeBook({ slug, out, parts, bookPart, title, author, cov
       .resize({ width: 800, withoutEnlargement: true })
       .webp({ quality: 74 })
       .toFile(path.join(out, file));
-    return { src: file, w: info.width, h: info.height, ...(alt ? { alt: curl(alt) } : {}) };
+    const full = await fullSize(from, name, info.width, 84);
+    return {
+      src: file,
+      w: info.width,
+      h: info.height,
+      ...(alt ? { alt: curl(alt) } : {}),
+      ...(full ? { full } : {}),
+    };
   }
 
   const contents = [];
@@ -111,12 +144,9 @@ export async function writeBook({ slug, out, parts, bookPart, title, author, cov
     .resize({ width: 720 })
     .webp({ quality: 78 })
     .toFile(path.join(out, "cover.webp"));
-  // and the cover as large as the edition has it, for the picture viewer to
-  // fetch when a reader opens the cover to look at it closely: the shelf and
-  // the book's page keep the small one
-  const full = await sharp(coverFullFile ?? coverFile)
-    .webp({ quality: 88 })
-    .toFile(path.join(out, "cover-full.webp"));
+  // and as large as the edition has it, for the viewer: the shelf and the
+  // book's page keep the small one
+  const fullCover = await fullSize(coverFullFile ?? coverFile, "cover", cover.width, 88);
 
   writeFileSync(
     path.join(out, "book.json"),
@@ -129,7 +159,7 @@ export async function writeBook({ slug, out, parts, bookPart, title, author, cov
         src: "cover.webp",
         w: cover.width,
         h: cover.height,
-        ...(full.width > cover.width ? { full: "cover-full.webp" } : {}),
+        ...(fullCover ? { full: fullCover } : {}),
       },
       contents,
     })

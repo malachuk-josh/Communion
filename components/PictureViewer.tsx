@@ -9,9 +9,10 @@
 // wheel, from the buttons or the keys, and 0 puts it back. A tap beside the
 // picture, the ✕, or Escape closes it.
 //
-// A picture with a larger copy (a book's cover, at the size the edition has
-// it) opens at once from the small one already on the page, and the larger
-// one takes its place when it has come, wherever the reader has zoomed to.
+// A picture with a larger copy — a book's pictures and its cover, at the
+// size the edition has them, which are online only — opens at once from the
+// small one already on the page, and the larger one takes its place when it
+// has come, wherever the reader has zoomed to.
 //
 // The app turns the browser's own pinch-zoom off — on a home-screen app a
 // stray pinch is far likelier than a meant one — so the viewer answers the

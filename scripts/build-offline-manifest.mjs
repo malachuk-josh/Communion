@@ -108,6 +108,9 @@ const commentary = merge(
  * The Bookshelf, a tier per book: its text and its pictures, a few megabytes
  * each, and a book is something somebody chooses to keep rather than part of
  * a set. Read from public/books, so a book added there is offered here.
+ *
+ * Only the files at the top of a book's folder: its pictures at full size,
+ * in full/, are online only (see scripts/book/write.mjs and public/sw.js).
  */
 const BOOK_FILE = /\.(json|webp|jpg|png)$/;
 const books = Object.fromEntries(
@@ -117,8 +120,9 @@ const books = Object.fromEntries(
       const dir = path.join(PUBLIC, "books", slug);
       let bytes = 0;
       const hashes = [];
-      const urls = readdirSync(dir)
-        .filter((f) => BOOK_FILE.test(f))
+      const urls = readdirSync(dir, { withFileTypes: true })
+        .filter((f) => f.isFile() && BOOK_FILE.test(f.name))
+        .map((f) => f.name)
         .sort()
         .map((f) => {
           bytes += statSync(path.join(dir, f)).size;
