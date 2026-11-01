@@ -30,7 +30,12 @@
 // Usage:
 //   node scripts/build-maps.mjs <natural-earth-geojson-dir> <openbible-data-dir>
 //
-// Writes public/maps/. Run when the sources change; output committed.
+// Writes public/maps/: a base map for each window, the eras, a file of
+// chapter maps for each book, and places.json for the place cards. Run when
+// the sources change; output committed.
+//
+// Since the place cards it also reads, from Natural Earth's geojson/,
+// ne_10m_admin_0_map_subunits, to say which country a site is in today.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
@@ -596,65 +601,153 @@ for (const m of lines("modern.jsonl")) {
 
 /**
  * "Bethel 1" is Bethel. The trailing number tells two places of the same name
- * apart in the dataset and means nothing to a reader — there is only ever one
- * of them on a given chapter's map, and it is labelled by where it sits.
+ * apart in the dataset and means nothing to a reader; where two of them are
+ * on one map, they are told apart by where they sit, and by the place card.
  */
 const label = (place) => {
   const bare = place.friendly_id.replace(/ \d+$/, "");
   return place.preceding_article ? `${place.preceding_article} ${bare}` : bare;
 };
 
-const chapters = new Map(); // "40:2" → [place, …]
-/** every located place, by name, for the windows' gazetteers */
+/*
+ * Which country a place is in today, for its card.
+ *
+ * Natural Earth's map subunits, so that a site in Iraqi Kurdistan is in Iraq
+ * and one in the UN's buffer zone is in Syria. Left off for Israel, the West
+ * Bank and Gaza: Jerusalem alone sits across the line between them, and a
+ * card is no place to settle that. There, the modern site's own name says
+ * where it is.
+ */
+const subunits = readGeo("ne_10m_admin_0_map_subunits.geojson");
+const UNNAMED = new Set(["Israel", "Palestine"]);
+const countryEs = new Map(
+  subunits
+    .filter((f) => f.properties.SUBUNIT === f.properties.ADMIN)
+    .map((f) => [f.properties.ADMIN, f.properties.NAME_ES || f.properties.ADMIN])
+);
+function insideRing(ring, [x, y]) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function polygonsOf(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === "Polygon") return [geometry.coordinates];
+  if (geometry.type === "MultiPolygon") return geometry.coordinates;
+  return [];
+}
+const countryShapes = subunits.map((f) => ({
+  admin: f.properties.ADMIN,
+  bbox: f.bbox,
+  polygons: polygonsOf(f.geometry),
+}));
+function countryAt(ll) {
+  for (const c of countryShapes) {
+    const b = c.bbox;
+    if (b && (ll[0] < b[0] || ll[0] > b[2] || ll[1] < b[1] || ll[1] > b[3])) continue;
+    for (const [outer, ...holes] of c.polygons) {
+      if (insideRing(outer, ll) && !holes.some((h) => insideRing(h, ll))) {
+        return UNNAMED.has(c.admin) ? null : c.admin;
+      }
+    }
+  }
+  return null;
+}
+
+/*
+ * Two entries with one name are one place on the map only when they are the
+ * same spot.
+ *
+ * The dataset numbers places that share a name — Antioch 1 in Syria, Antioch
+ * 2 in Pisidia; four Apheks — and these maps used to file every place under
+ * its name, so a chapter naming both Antiochs drew one of them: Acts 13 lost
+ * the Antioch Paul preached in. Now a place is filed under its own id, and
+ * only same-named entries within a few miles of each other — the dataset's
+ * alternative readings of one site — are taken as one.
+ */
+const SAME_SPOT = 0.2; // degrees, about twenty kilometres
+const sameSpot = (a, b) =>
+  a.name === b.name && Math.hypot(a.ll[0] - b.ll[0], a.ll[1] - b.ll[1]) < SAME_SPOT;
+
+const chapters = new Map(); // "40:2" → Map(id → place)
+/** every located place, by id, for the windows' gazetteers and the cards */
 const allPlaces = new Map();
 let resolved = 0;
 let unplaced = 0;
 
 for (const a of lines("ancient.jsonl")) {
-  // the best-attested modern site this place has been identified with
-  let best = null;
-  let bestScore = -1;
-  for (const [id, assoc] of Object.entries(a.modern_associations ?? {})) {
-    const score = assoc.score ?? 0;
-    if (points.has(id) && score > bestScore) {
-      best = id;
-      bestScore = score;
-    }
-  }
-  if (!best) {
+  // the modern sites it has been identified with, best attested first; the
+  // first is where it is drawn (the sort is stable, so of two equally attested
+  // the dataset's own first stays first)
+  const sites = Object.entries(a.modern_associations ?? {})
+    // a site scholarship has marked unlikely scores below nothing: not drawn
+    .filter(([id, assoc]) => points.has(id) && (assoc.score ?? 0) >= 0)
+    .sort((x, y) => (y[1].score ?? 0) - (x[1].score ?? 0));
+  if (!sites.length) {
     unplaced++;
     continue;
   }
   resolved++;
+  const [bestId, best] = sites[0];
+  const verses = [];
+  for (const v of a.verses ?? []) {
+    const [book, chapter, verse] = String(v.osis ?? "").split(".");
+    const nr = BOOK_NR.get(book);
+    if (!nr || !chapter) continue;
+    verses.push({ nr, chapter: Number(chapter), verse: Number(verse) || 1, osis: book });
+  }
   const place = {
+    id: a.id,
     name: label(a),
-    ll: points.get(best),
+    ll: points.get(bestId),
     type: (a.types ?? ["settlement"])[0],
     // How often the whole Bible names it, as a stand-in for how much it
     // matters. Joshua 15 names 163 places in one breath — every village on
     // Judah's border — and a map with 163 labels on it is a map of nothing.
     // Ranking by this keeps Hebron and Beersheba and drops the hamlets.
     weight: (a.verses ?? []).length,
+    // for the card: what the site is called now, how sure scholarship is of
+    // it (out of 1000, OpenBible's own measure), and the next best guesses
+    modern: best.name ?? "",
+    score: best.score ?? 0,
+    others: sites
+      .slice(1)
+      .filter(([, s]) => (s.score ?? 0) >= 100)
+      .slice(0, 2)
+      .map(([, s]) => s.name)
+      .filter(Boolean),
+    verses,
   };
   // A place is a place whether or not the chapter in front of the reader
   // happens to name it — this is what fills the country between the pins.
-  if (!allPlaces.has(place.name) || allPlaces.get(place.name).weight < place.weight) {
-    allPlaces.set(place.name, place);
-  }
-  for (const v of a.verses ?? []) {
-    const [book, chapter, verse] = String(v.osis ?? "").split(".");
-    const nr = BOOK_NR.get(book);
-    if (!nr || !chapter) continue;
-    const key = `${nr}:${chapter}`;
+  allPlaces.set(place.id, place);
+  for (const v of verses) {
+    const key = `${v.nr}:${v.chapter}`;
     if (!chapters.has(key)) chapters.set(key, new Map());
     const held = chapters.get(key);
     // the verse is kept so tapping a pin can land on the line that names it
-    const at = Number(verse) || 1;
-    if (!held.has(place.name) || held.get(place.name).v > at) {
-      held.set(place.name, { ...place, v: at, osis: book });
+    if (!held.has(place.id) || held.get(place.id).v > v.verse) {
+      held.set(place.id, { ...place, v: v.verse, osis: v.osis });
     }
   }
 }
+
+/** One of each place, the better known of any two that are the same spot. */
+function oneEach(places) {
+  const kept = [];
+  for (const p of [...places].sort((a, b) => b.weight - a.weight)) {
+    const twin = kept.find((k) => sameSpot(k, p));
+    if (!twin) kept.push({ ...p });
+    // named earlier in the chapter under its other entry: that verse is first
+    else if (p.v !== undefined && p.v < twin.v) twin.v = p.v;
+  }
+  return kept;
+}
+const gazette = oneEach(allPlaces.values());
 
 /*
  * Every named place in the Bible, whether or not this chapter names it.
@@ -671,23 +764,26 @@ for (const a of lines("ancient.jsonl")) {
  * five thousand of them across the six windows and the key names would cost
  * more than the values.
  *
- * [name, x, y, how often the Bible names it, and what mark it takes:
- *  0 a name written across country, 1 a town's dot, 2 a peak]
+ * [name, x, y, how often the Bible names it, what mark it takes (0 a name
+ *  written across country, 1 a town's dot, 2 a peak), and its id]
  */
 function gazetteer(win) {
   const project = projector(win.bounds, 1000);
   const [w, s, e, n] = win.bounds;
   const out = [];
-  for (const [name, place] of allPlaces) {
+  for (const place of gazette) {
     const [lon, lat] = place.ll;
     if (lon < w || lon > e || lat < s || lat > n) continue;
     const [x, y] = project.to(lon, lat);
     out.push([
-      name,
+      place.name,
       Math.round(x),
       Math.round(y),
       place.weight,
       markFor(place.type),
+      // which place it is, for its card, and so a chapter's own pin is not
+      // written a second time — by id, since a name may be two places
+      place.id,
     ]);
   }
   // most-named first, so the drawing can stop wherever it runs out of room
@@ -756,6 +852,63 @@ for (const win of built) {
 const erasJson = JSON.stringify(ERAS);
 writeFileSync(path.join(OUT, "eras.json"), erasJson);
 
+/*
+ * The place cards: what a place was, where it is now, and everywhere else the
+ * Bible names it.
+ *
+ * One file for every place, fetched the first time a card is opened. Each is
+ * [name, kind, the modern site, how sure scholarship is of it out of 1000,
+ *  its country (an index into `countries`, or -1), the chapters that name it
+ *  as "book.chapter.verse" at the first verse in each, in the Bible's order,
+ *  how many verses name it, and the next best sites, where the first is
+ *  uncertain].
+ *
+ * Two entries that are one spot share a card: `same` sends the lesser to the
+ * better known, whose card carries the verses of both.
+ */
+const countries = [];
+const countryOf = new Map();
+const cards = {};
+const same = {};
+for (const kept of gazette) {
+  const twins = [...allPlaces.values()].filter((p) => p.id !== kept.id && sameSpot(p, kept));
+  for (const t of twins) same[t.id] = kept.id;
+  const firsts = new Map();
+  let count = 0;
+  for (const p of [kept, ...twins]) {
+    for (const v of p.verses) {
+      count++;
+      const key = v.nr * 1000 + v.chapter;
+      if (!firsts.has(key) || firsts.get(key) > v.verse) firsts.set(key, v.verse);
+    }
+  }
+  const refs = [...firsts]
+    .sort((a, b) => a[0] - b[0])
+    .map(([key, verse]) => `${Math.floor(key / 1000)}.${key % 1000}.${verse}`)
+    .join(" ");
+  const country = countryAt(kept.ll);
+  let ci = -1;
+  if (country) {
+    if (!countryOf.has(country)) {
+      countryOf.set(country, countries.length);
+      countries.push([country, countryEs.get(country) ?? country]);
+    }
+    ci = countryOf.get(country);
+  }
+  cards[kept.id] = [
+    kept.name,
+    kept.type,
+    kept.modern,
+    kept.score,
+    ci,
+    refs,
+    count,
+    ...(kept.score < 500 && kept.others.length ? [kept.others] : []),
+  ];
+}
+const cardsJson = JSON.stringify({ countries, places: cards, same });
+writeFileSync(path.join(OUT, "places.json"), cardsJson);
+
 /** As many as a phone can label without the map becoming a list. */
 const MAX_PINS = 16;
 
@@ -822,7 +975,7 @@ const windowUse = new Map();
 
 for (const [key, held] of chapters) {
   const [bookNr, chapter] = key.split(":").map(Number);
-  const places = [...held.values()];
+  const places = oneEach(held.values());
   const chosen = chooseWindow(places);
   if (!chosen) {
     skipped++;
@@ -840,10 +993,13 @@ for (const [key, held] of chapters) {
     .slice(0, MAX_PINS)
     .map((p) => {
       const [x, y] = project.to(p.ll[0], p.ll[1]);
-      return { n: p.name, x, y, v: p.v, t: p.type };
+      return { n: p.name, x, y, v: p.v, t: p.type, id: p.id, w: p.weight };
     })
-    // north to south, so labels are laid out in a stable order
-    .sort((a, b) => a.y - b.y || a.x - b.x);
+    // north to south, so labels are laid out in a stable order; and of two
+    // drawn at one spot — Bethel and Luz, the same hill under two names — the
+    // better known last, so it is the one on top under a thumb
+    .sort((a, b) => a.y - b.y || a.x - b.x || a.w - b.w)
+    .map(({ w, ...pin }) => pin);
   if (drawn.length === 0) {
     skipped++;
     continue;
@@ -888,6 +1044,10 @@ for (const [id, n] of [...windowUse].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${id.padEnd(14)} ${String(n).padStart(4)} chapters`);
 }
 console.log(`books     : ${byBook.size} files`);
+console.log(
+  `cards     : ${Object.keys(cards).length} places, ${Object.keys(same).length} twins, ` +
+    `${countries.length} countries, ${kb(cardsJson.length)} KB`
+);
 console.log(
   `size      : ${kb(baseBytes)} KB base + ${kb(erasJson.length)} KB eras + ` +
     `${kb(bookBytes)} KB chapters = ${kb(baseBytes + erasJson.length + bookBytes)} KB`

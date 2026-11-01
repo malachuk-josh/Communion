@@ -4040,6 +4040,11 @@ export default function Reader({
                   setChapter(contextOpen);
                   setHighlightVerse(verse);
                 }}
+                onGoToRef={(ref, fromVerse) => {
+                  setContextOpen(null);
+                  // with the way back, as a cross-reference has
+                  jumpToRef(contextOpen, ref, fromVerse);
+                }}
               />
               <div className="ctx-section">
                 <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>

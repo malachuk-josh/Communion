@@ -1913,6 +1913,105 @@ mark {
   z-index: 80;
 }
 
+/* A place on the map, told about (components/PlaceCard.tsx): what it was,
+   where it is now and how sure anyone is, and every chapter that names it. */
+.place-card {
+  max-width: 460px;
+}
+
+.place-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.place-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.place-kind {
+  margin: 6px 0 0;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+
+.place-today {
+  margin: 12px 0 0;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+}
+
+.place-sure {
+  margin: 2px 0 0;
+  color: var(--ink-dim);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.place-others {
+  margin: 4px 0 0;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}
+
+.place-go {
+  margin-top: 16px;
+}
+
+.place-refs-head {
+  margin: 20px 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.place-refs {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the book's name, and its chapters beside it, wrapping under themselves */
+.place-refs li {
+  display: grid;
+  grid-template-columns: minmax(86px, 34%) 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.place-book {
+  padding-top: 4px;
+  font-family: var(--serif);
+  overflow-wrap: anywhere;
+}
+
+.place-chapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.place-ch {
+  justify-content: center;
+  min-width: 38px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.place-more {
+  margin-top: 12px;
+}
+
 .book-picker h3 {
   margin: 14px 0 8px;
   font-size: 0.78rem;
@@ -2838,6 +2937,22 @@ html.navhide .chap-arrow {
  */
 .mp-site {
   pointer-events: none;
+}
+
+/* full screen, the countryside opens its cards too */
+.mp-site-tap {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* its thumb-sized target, unseen: `.mp-site circle` would paint it */
+.mp-site .mp-hit {
+  fill: transparent;
+}
+
+.mp-site-tap:hover text,
+.mp-site-tap:focus-visible text {
+  fill: var(--ink-dim);
 }
 
 .mp-site circle {

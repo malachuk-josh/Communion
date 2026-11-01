@@ -23,7 +23,9 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/Icon";
+import PlaceCard, { type TappedPlace } from "@/components/PlaceCard";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { load } from "@/lib/mapData";
 
 interface Place {
   /** the name as the reader knows it */
@@ -34,6 +36,8 @@ interface Place {
   v: number;
   /** settlement, region, river, mountain … */
   t: string;
+  /** OpenBible's id for it, for its card; absent from files built before */
+  id?: string;
 }
 
 interface ChapterMapData {
@@ -54,8 +58,8 @@ interface Base {
   land: string[];
   lakes: string[];
   rivers: string[];
-  /** every named place: [name, x, y, weight, 0 area / 1 town / 2 peak] */
-  sites: [string, number, number, number, number][];
+  /** every named place: [name, x, y, weight, 0 area / 1 town / 2 peak, id] */
+  sites: [string, number, number, number, number, string?][];
   /** the kinds of ground: deserts, ranges, deltas, plains */
   terrain: {
     n: string;
@@ -78,39 +82,6 @@ type Eras = Record<string, { regions: Region[] }>;
 
 /** [x, y, width, height] in the base window's own units. */
 type View = [number, number, number, number];
-
-/*
- * One fetch per file, shared by every chapter that wants it.
- *
- * A reader moves through a book a chapter at a time and the whole book's
- * places are one file; the six base maps and the era labels are the same for
- * everybody. Held, so only the first chapter of a book costs anything.
- *
- * Only what arrived is held. This used to keep the failures too: a request
- * that died once — a dropped signal, or the phone suspending the app halfway
- * through it — was remembered as "there is no map", and every Context opened
- * afterwards was handed that same answer until the app was restarted. One
- * lost request for the Levant took the maps out of 452 chapters at once, and
- * a home screen app can go days without restarting, so to the reader the
- * feature had simply been removed. A failure is forgotten now, and the next
- * time the panel opens it asks again.
- */
-const held = new Map<string, Promise<unknown>>();
-function load<T>(url: string, fallback: T): Promise<T> {
-  let hit = held.get(url) as Promise<T> | undefined;
-  if (!hit) {
-    const asked: Promise<T> = fetch(url).then((res) => {
-      if (!res.ok) throw new Error(`${res.status} ${url}`);
-      return res.json() as Promise<T>;
-    });
-    asked.catch(() => {
-      if (held.get(url) === asked) held.delete(url);
-    });
-    held.set(url, asked);
-    hit = asked;
-  }
-  return hit.catch(() => fallback);
-}
 
 /** The same projection the build script used, so a region label lands where
  *  the coastline it belongs to was drawn. */
@@ -157,6 +128,10 @@ const AREAS = [
 ];
 const markFor = (type: string): 0 | 1 | 2 =>
   PEAKS.includes(type) ? 2 : AREAS.includes(type) ? 0 : 1;
+
+/** Regions before towns, otherwise as they were. */
+const byAreaFirst = (a: Place, b: Place) =>
+  (markFor(a.t) === 0 ? 0 : 1) - (markFor(b.t) === 0 ? 0 : 1);
 
 /** The peak glyph, sitting on the ground with its summit on the point. */
 const peakPath = (x: number, y: number, px: number) =>
@@ -400,7 +375,8 @@ function MapArt({
   data: ChapterMapData;
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
   view: View;
-  onPlace: (verse: number) => void;
+  /** a place tapped: a pin the chapter names, or (full screen) the countryside */
+  onPlace: (place: TappedPlace) => void;
   label: string;
   /** how far apart names must stand on the glass, in pixels */
   spacing: number;
@@ -657,14 +633,27 @@ function MapArt({
      * size the map is drawn. How far apart is `spacing`, measured between
      * points, which is what makes the countryside arrive as a reader pinches
      * in; whether a name actually fits is the boxes, which is what keeps it
-     * off everything already written. Nothing here is tappable: these are not
-     * what the chapter is about.
+     * off everything already written. Full screen, each opens its card; in the
+     * panel they are the paper, and a tap anywhere opens the map.
      */
     const gap = (px * spacing) ** 2;
-    const already = new Set([
-      ...data.places.map((p) => p.n.toLowerCase()),
-      ...regions.map((r) => (lang === "es" ? r.es : r.en).toLowerCase()),
-    ]);
+    // A place the chapter names is not written again as countryside: the same
+    // id, or the same name close by (a file from before the ids, or the
+    // other entry of one spot). The same name far off is another place —
+    // Antioch in Pisidia is still there when the chapter is about Syria's.
+    const pinIds = new Set(data.places.map((p) => p.id).filter(Boolean));
+    const near = px * 40;
+    const pinned = (n: string, x: number, y: number, id?: string) =>
+      (id !== undefined && pinIds.has(id)) ||
+      data.places.some(
+        (p) =>
+          p.n.toLowerCase() === n.toLowerCase() &&
+          Math.abs(p.x - x) < near &&
+          Math.abs(p.y - y) < near
+      );
+    const already = new Set(
+      regions.map((r) => (lang === "es" ? r.es : r.en).toLowerCase())
+    );
     // the same filing for the density test, in squares one gap wide, so a
     // site only measures itself against the squares around it
     const reach = Math.max(px * spacing, 1e-9);
@@ -694,11 +683,18 @@ function MapArt({
     }
     for (const r of named) file(r.x, r.y);
     for (const g of grounds) file(g.x, g.y);
-    const sites: { n: string; x: number; y: number; mark: number; side: 1 | -1 }[] = [];
-    for (const [n, x, y, , mark] of base.sites) {
+    const sites: {
+      n: string;
+      x: number;
+      y: number;
+      mark: number;
+      side: 1 | -1;
+      id?: string;
+    }[] = [];
+    for (const [n, x, y, , mark, id] of base.sites) {
       if (sites.length >= crowd) break;
       if (!sees(x, y)) continue;
-      if (already.has(n.toLowerCase())) continue;
+      if (already.has(n.toLowerCase()) || pinned(n, x, y, id)) continue;
       if (crowded(x, y)) continue;
       const dot: Box = [x - px * 3, y - px * 3, x + px * 3, y + px * 3];
       if (mark && !clear(dot)) continue;
@@ -718,7 +714,7 @@ function MapArt({
       if (mark) taken.add(dot);
       taken.add(box);
       file(x, y);
-      sites.push({ n, x, y, mark, side });
+      sites.push({ n, x, y, mark, side, id });
     }
 
     return { laid, named, grounds, sites };
@@ -770,21 +766,52 @@ function MapArt({
 
       {/* under everything the chapter itself names, and under the era's
           regions: this is the ground, not the subject */}
-      {layout.sites.map((p) => (
-        <g key={`n${p.n}`} className="mp-site" aria-hidden>
-          {p.mark === 1 && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
-          {p.mark === 2 && (
-            <path d={peakPath(p.x, p.y, px * 0.82)} className="mp-peak" />
-          )}
-          <text
-            x={p.x + px * 4.5 * p.side}
-            y={p.y + px * 3.6}
-            textAnchor={p.side > 0 ? "start" : "end"}
+      {layout.sites.map((p) => {
+        // full screen, the countryside has cards too; at a glance it is the
+        // paper, and a tap anywhere opens the map
+        const tappable = !glance && !!p.id;
+        const open = () => onPlace({ id: p.id, n: p.n });
+        return (
+          <g
+            key={`n${p.id ?? p.n}${p.x}`}
+            className={`mp-site${tappable ? " mp-site-tap" : ""}`}
+            aria-hidden={tappable ? undefined : true}
+            role={tappable ? "button" : undefined}
+            tabIndex={tappable ? 0 : undefined}
+            aria-label={tappable ? p.n : undefined}
+            onClick={
+              tappable
+                ? (e) => {
+                    e.stopPropagation();
+                    open();
+                  }
+                : undefined
+            }
+            onKeyDown={
+              tappable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") open();
+                  }
+                : undefined
+            }
           >
-            {p.n}
-          </text>
-        </g>
-      ))}
+            {tappable && (
+              <circle cx={p.x} cy={p.y} r={px * 11} className="mp-hit" />
+            )}
+            {p.mark === 1 && <circle cx={p.x} cy={p.y} r={px * 1.5} />}
+            {p.mark === 2 && (
+              <path d={peakPath(p.x, p.y, px * 0.82)} className="mp-peak" />
+            )}
+            <text
+              x={p.x + px * 4.5 * p.side}
+              y={p.y + px * 3.6}
+              textAnchor={p.side > 0 ? "start" : "end"}
+            >
+              {p.n}
+            </text>
+          </g>
+        );
+      })}
 
       {layout.named.map((r) => (
         <text
@@ -798,27 +825,34 @@ function MapArt({
         </text>
       ))}
 
-      {layout.laid.map((p) => {
+      {/* the regions first, so a town at a region's anchor — Antioch, where
+          Pisidia is written — is on top of it and keeps its own tap */}
+      {[...layout.laid].sort(byAreaFirst).map((p) => {
         const mark = markFor(p.t);
         const side = p.anchor === "end" ? -1 : 1;
+        const open = () => onPlace({ id: p.id, n: p.n, v: p.v });
         return (
           <g
-            key={p.n}
+            key={p.id ?? p.n}
             className={`mp-pin${mark === 0 ? " mp-area" : ""}`}
             onClick={(e) => {
-              // the map behind opens full screen; a place goes to its verse
+              // the map behind opens full screen; a place opens its card
               e.stopPropagation();
-              onPlace(p.v);
+              open();
             }}
             role="button"
             tabIndex={0}
+            aria-label={p.n}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onPlace(p.v);
+              if (e.key === "Enter" || e.key === " ") open();
             }}
           >
             {/* a fat invisible target: these are small marks and this is a
-                phone. The dot is five pixels across and the thumb is not. */}
-            <circle cx={p.x} cy={p.y} r={px * 15} className="mp-hit" />
+                phone. The dot is five pixels across and the thumb is not. A
+                region has no dot, and is tapped by its name. */}
+            {mark !== 0 && (
+              <circle cx={p.x} cy={p.y} r={px * 15} className="mp-hit" />
+            )}
             {/* the hairline back to the dot, for a name that had to be moved
                 off it to be read at all */}
             {p.lead && (
@@ -892,7 +926,7 @@ function MapViewer({
   /** already checked for four numbers — see viewOf */
   focus: View;
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
-  onPlace: (verse: number) => void;
+  onPlace: (place: TappedPlace) => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -1162,10 +1196,10 @@ function MapViewer({
             /* the gap names keep from each other on the glass, in pixels */
             spacing={22}
             crowd={150}
-            onPlace={(verse) => {
+            onPlace={(place) => {
               // a finger that panned is not a finger that tapped
               if (travelled.current > 10) return;
-              onPlace(verse);
+              onPlace(place);
             }}
           />
         )}
@@ -1202,17 +1236,22 @@ export default function ChapterMap({
   bookNr,
   chapter,
   onGoToVerse,
+  onGoToRef,
 }: {
   bookNr: number;
   chapter: number;
   /** take the reader to the verse this place is named in */
   onGoToVerse: (verse: number) => void;
+  /** take the reader to another chapter that names it, from this verse */
+  onGoToRef?: (ref: [number, number, number], fromVerse: number) => void;
 }) {
   const { lang, t } = useI18n();
   const [data, setData] = useState<ChapterMapData | null | undefined>(undefined);
   const [base, setBase] = useState<Base | null>(null);
   const [eras, setEras] = useState<Eras>({});
   const [full, setFull] = useState(false);
+  /** the place whose card is open, over the panel or the full-screen map */
+  const [card, setCard] = useState<TappedPlace | null>(null);
   /** the zoom button in the panel's corner, which names keep clear of */
   const expandRef = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -1377,7 +1416,7 @@ export default function ChapterMap({
           crowd={34}
           avoid={expandRef}
           glance
-          onPlace={onGoToVerse}
+          onPlace={setCard}
         />
         <span className="mp-expand" aria-hidden ref={expandRef}>
           <Icon name="search" />
@@ -1403,13 +1442,29 @@ export default function ChapterMap({
             focus={focus}
             regions={regions}
             onClose={() => setFull(false)}
-            onPlace={(verse) => {
-              setFull(false);
-              onGoToVerse(verse);
-            }}
+            onPlace={setCard}
           />,
           document.body
         )}
+      {card && (
+        <PlaceCard
+          place={card}
+          bookNr={bookNr}
+          chapter={chapter}
+          onClose={() => setCard(null)}
+          onGoToVerse={(verse) => {
+            setCard(null);
+            setFull(false);
+            onGoToVerse(verse);
+          }}
+          onGoToRef={(ref) => {
+            const from = card.v ?? 1;
+            setCard(null);
+            setFull(false);
+            if (onGoToRef) onGoToRef(ref, from);
+          }}
+        />
+      )}
     </div>
   );
 }
