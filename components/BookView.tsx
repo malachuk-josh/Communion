@@ -20,6 +20,7 @@ import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import PictureViewer from "@/components/PictureViewer";
+import { fetchAhead, mayFetchAhead, watchPictures } from "@/lib/pictures";
 import { getBook } from "@/lib/bible";
 import { BOOK_FONTS } from "@/lib/bookFonts";
 import {
@@ -32,6 +33,7 @@ import {
   readRefs,
   SHELF,
   shelfBook,
+  fullUrl,
   syncPlace,
   writePlace,
   type Block,
@@ -122,6 +124,11 @@ function BookHome({ book }: { book: ShelfBook }) {
   const [failed, setFailed] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [coverOpen, setCoverOpen] = useState(false);
+  // the cover is the picture most often opened: its larger copy is fetched
+  // with the page, where the connection allows (lib/pictures.ts)
+  useEffect(() => {
+    if (index && mayFetchAhead()) fetchAhead(fullUrl(book.slug, index.cover));
+  }, [index, book.slug]);
 
   useEffect(() => {
     let live = true;
@@ -177,6 +184,7 @@ function BookHome({ book }: { book: ShelfBook }) {
               type="button"
               className="bk-cover-btn"
               onClick={() => setCoverOpen(true)}
+              onPointerDown={() => fetchAhead(fullUrl(book.slug, index.cover))}
               aria-label={t("shelf.viewCover", { title: book.title })}
             >
               <img
@@ -193,7 +201,7 @@ function BookHome({ book }: { book: ShelfBook }) {
         {coverOpen && index && (
           <PictureViewer
             src={bookUrl(book.slug, index.cover.src)}
-            full={index.cover.full && bookUrl(book.slug, index.cover.full)}
+            full={fullUrl(book.slug, index.cover)}
             alt={t("shelf.coverOf", { title: book.title })}
             onClose={() => setCoverOpen(false)}
           />
@@ -372,6 +380,11 @@ function PartView({
     };
   }, [book.slug, partId]);
 
+  // each picture's larger copy fetched as it nears the screen, so that it
+  // opens sharp (lib/pictures.ts); the article is there once the part is
+  const article = useRef<HTMLElement>(null);
+  useEffect(() => (part ? watchPictures(article.current, scroller()) : undefined), [part]);
+
   // Open where the reader left this part, or at its top; then keep the place
   // as they read. A different part opened from the contents starts at its top.
   useEffect(() => {
@@ -409,7 +422,7 @@ function PartView({
   const next = at >= 0 && at < contents.length - 1 ? contents[at + 1] : null;
 
   return (
-    <article className="bk-part" style={{ ["--bk-size" as string]: `${pt}pt` }}>
+    <article ref={article} className="bk-part" style={{ ["--bk-size" as string]: `${pt}pt` }}>
       <div className="bk-bar">
         {fromJournal ? (
           <Link href="/menu/journal" className="passage-link back-link">
@@ -454,6 +467,8 @@ function PartView({
                 type="button"
                 className="bk-figure-btn"
                 onClick={() => setViewing(part.image!)}
+                onPointerDown={() => fetchAhead(fullUrl(book.slug, part.image))}
+                data-full={fullUrl(book.slug, part.image)}
                 aria-label={t("shelf.viewPicture")}
               >
                 <img
@@ -513,7 +528,7 @@ function PartView({
       {viewing && (
         <PictureViewer
           src={bookUrl(book.slug, viewing.src)}
-          full={viewing.full && bookUrl(book.slug, viewing.full)}
+          full={fullUrl(book.slug, viewing)}
           alt={viewing.alt}
           onClose={() => setViewing(null)}
         />
@@ -588,6 +603,8 @@ function BlockView({
           type="button"
           className="bk-figure-btn"
           onClick={() => onPicture(block.img)}
+          onPointerDown={() => fetchAhead(fullUrl(slug, block.img))}
+          data-full={fullUrl(slug, block.img)}
           aria-label={t("shelf.viewPicture")}
         >
           <img

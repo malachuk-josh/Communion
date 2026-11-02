@@ -187,6 +187,10 @@ export interface BookPart {
 
 export const bookUrl = (slug: string, file: string) => `/books/${slug}/${file}`;
 
+/** Where a picture's larger copy is, if it has one. */
+export const fullUrl = (slug: string, img?: { full?: string } | null) =>
+  img?.full ? bookUrl(slug, img.full) : undefined;
+
 const indexes = new Map<string, Promise<BookIndex>>();
 
 export function fetchBookIndex(slug: string): Promise<BookIndex> {

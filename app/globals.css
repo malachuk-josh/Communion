@@ -7269,6 +7269,21 @@ button.compare-pick:last-child {
   cursor: grabbing;
 }
 
+/* the larger copy on its way: a thin ring, quiet, in the middle of the dark */
+.bk-viewer-wait {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 2px solid rgba(242, 240, 234, 0.2);
+  border-top-color: rgba(242, 240, 234, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ptr-spin 0.8s linear infinite;
+}
+
 .bk-viewer-close {
   position: absolute;
   z-index: 1;

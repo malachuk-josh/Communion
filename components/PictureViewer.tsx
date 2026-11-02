@@ -10,9 +10,13 @@
 // picture, the ✕, or Escape closes it.
 //
 // A picture with a larger copy — a book's pictures and its cover, at the
-// size the edition has them, which are online only — opens at once from the
-// small one already on the page, and the larger one takes its place when it
-// has come, wherever the reader has zoomed to.
+// size the edition has them, which are online only — opens on the larger
+// one. The chapter fetches it as the picture comes near the screen
+// (lib/pictures.ts), so it is usually there already; when it is not, the
+// viewer waits for it, a moment, over a quiet spinner, rather than showing
+// the small one first and sharpening under the reader's eyes. Only a slow
+// connection, kept waiting more than a couple of seconds, is shown the small
+// one meanwhile, and offline the small one is all there is.
 //
 // The app turns the browser's own pinch-zoom off — on a home-screen app a
 // stray pinch is far likelier than a meant one — so the viewer answers the
@@ -22,11 +26,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "@/lib/i18n";
+import { hasArrived, whenArrived } from "@/lib/pictures";
 
 const MAX = 4;
 /** how far a double-tap goes in */
 const TAP_ZOOM = 2.5;
 const BUTTON_STEP = 1.6;
+/** how long a slow connection waits on the larger copy before the small one is shown meanwhile */
+const SLOW_MS = 2500;
 
 /** The picture's scale, and how far it has moved from where it sits at rest. */
 type View = { s: number; x: number; y: number };
@@ -60,23 +67,34 @@ export default function PictureViewer({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // the larger copy, decoded before it is swapped in so the picture never
-  // blanks; without a signal it never comes, and the small one stays
-  const [shown, setShown] = useState(src);
+  // the picture shown: the larger copy once it has come, nothing (and the
+  // spinner) while it is coming, and the small one offline or when the wait
+  // runs long
+  const online = () => typeof navigator === "undefined" || navigator.onLine;
+  const [shown, setShown] = useState<string | null>(() =>
+    !full || !online() ? src : hasArrived(full) ? full : null
+  );
   useEffect(() => {
-    setShown(src);
-    if (!full) return;
+    if (!full || !online()) {
+      setShown(src);
+      return;
+    }
+    if (hasArrived(full)) {
+      setShown(full);
+      return;
+    }
+    setShown(null);
     let live = true;
-    const larger = new Image();
-    larger.src = full;
-    larger
-      .decode()
+    const meanwhile = setTimeout(() => live && setShown((s) => s ?? src), SLOW_MS);
+    whenArrived(full)
       .then(() => live && setShown(full))
-      .catch(() => {});
+      .catch(() => live && setShown((s) => s ?? src));
     return () => {
       live = false;
+      clearTimeout(meanwhile);
     };
   }, [src, full]);
+  const waiting = !!full && shown !== full && online();
 
   /**
    * Keep the picture on the screen. Larger than the screen, no edge of it
@@ -138,7 +156,7 @@ export default function PictureViewer({
   // a picture already in the cache can be there before its load is heard
   useEffect(() => {
     if (mounted && img.current?.complete) fit();
-  }, [mounted, fit]);
+  }, [mounted, shown, fit]);
 
   // a turned phone is a different screen: the picture is fitted to it again
   // and kept inside it
@@ -260,22 +278,25 @@ export default function PictureViewer({
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
-        <img
-          ref={img}
-          src={shown}
-          alt={alt ?? ""}
-          draggable={false}
-          // fitted again for the larger copy too, which is the same shape:
-          // the zoom stays where it was
-          onLoad={fit}
-          width={box?.w}
-          height={box?.h}
-          style={{
-            transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})`,
-            ...(box ? { width: box.w, height: box.h } : null),
-          }}
-        />
+        {shown && (
+          <img
+            ref={img}
+            src={shown}
+            alt={alt ?? ""}
+            draggable={false}
+            // fitted again for the larger copy too, which is the same shape:
+            // the zoom stays where it was
+            onLoad={fit}
+            width={box?.w}
+            height={box?.h}
+            style={{
+              transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})`,
+              ...(box ? { width: box.w, height: box.h } : null),
+            }}
+          />
+        )}
       </div>
+      {waiting && <span className="bk-viewer-wait" role="status" aria-label={t("common.loading")} />}
       <button type="button" className="lex-close bk-viewer-close" onClick={onClose} aria-label={t("common.close")}>
         ✕
       </button>
