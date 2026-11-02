@@ -451,7 +451,7 @@ const dictionaries = {
     "plan.sion32":
       "Sion",
     "plan.sion32.desc":
-      "Jack Malachuk’s novel a chapter a day for 33 days, from the Prologue and dawn over Abundance on Mars to the last seizure, the Interlude and the Coda each a day of their own.",
+      "Jack Malachuk’s novel a chapter a day for 33 days, with the Prologue read alongside the first chapter and the Interlude and the Coda each a day of their own.",
     "planCat.bookshelf": "Bookshelf",
     "shelf.planLead":
       "Read a book from the Bookshelf a little each day. Each day opens its reading, and you can mark it read at the end.",
@@ -1267,7 +1267,7 @@ const dictionaries = {
     "plan.sion32":
       "Sion",
     "plan.sion32.desc":
-      "La novela de Jack Malachuk, un capítulo al día durante 33 días, desde el prólogo y el amanecer sobre Abundance, en Marte, hasta la última convulsión; el interludio y la coda, cada uno su propio día. El libro está en inglés.",
+      "La novela de Jack Malachuk, un capítulo al día durante 33 días; el prólogo se lee junto con el primer capítulo, y el interludio y la coda tienen cada uno su propio día. El libro está en inglés.",
     "planCat.bookshelf": "Estantería",
     "shelf.planLead":
       "Lee un libro de la estantería poco a poco, cada día. Cada día abre su lectura, y al final puedes marcarla como leída.",
