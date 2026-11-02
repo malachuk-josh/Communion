@@ -103,8 +103,8 @@ export const SHELF: ShelfBook[] = [
     author: "Jack Malachuk",
     lang: "en",
     blurb: {
-      en: "No one in Abundance has seen an old man in forty years. The church’s renewal keeps its faithful young, and Sol Tarren, its Bishop of Life, hunts those who refuse it, until the seizures begin. A novel in three parts, The Hunter, The Apostle and The Trial, following an apostle’s road across a gilded solar system. Illustrated throughout.",
-      es: "Nadie en Abundance ha visto a un anciano en cuarenta años. La renovación de la iglesia mantiene jóvenes a sus fieles, y Sol Tarren, su obispo de la vida, persigue a quienes la rechazan, hasta que empiezan las convulsiones. Una novela en tres partes, El cazador, El apóstol y El juicio, que sigue el camino de un apóstol a través de un sistema solar dorado. Ilustrada de principio a fin.",
+      en: "No one in Abundance has seen an old man in forty years. Under a dome built to turn the Martian dawn to gold, the church’s Renewal keeps its faithful young, and Sol Tarren, its Bishop of Life, has never doubted the gift. Then, at noon in the Bounty Market, a stranger with white hair falls to the ground, and the crowd draws back from him as if from fire. A novel of faith, mercy and memory. Illustrated throughout.",
+      es: "Nadie en Abundance ha visto a un anciano en cuarenta años. Bajo una cúpula construida para volver dorado el amanecer de Marte, la Renovación de la iglesia mantiene jóvenes a sus fieles, y Sol Tarren, su obispo de la vida, nunca ha dudado del don. Hasta que, al mediodía, en el Bounty Market, un desconocido de pelo blanco cae al suelo, y la multitud se aparta de él como del fuego. Una novela de fe, misericordia y memoria. Ilustrada de principio a fin.",
     },
     plan: "sion32",
   },
