@@ -6796,6 +6796,22 @@ button.compare-pick:last-child {
   border-radius: 8px;
 }
 
+/* the same contents in the navigator beside a chapter: inside the panel's
+   margins, a little smaller, and the last row clear of the panel's foot */
+.bk-nav-toc {
+  margin: 0;
+  padding: 4px 14px 8px;
+}
+
+.bk-nav-toc .bk-toc-row {
+  padding: 9px 6px;
+  font-size: 1rem;
+}
+
+.bk-nav-toc .bk-toc-part:first-child {
+  margin-top: 8px;
+}
+
 @media (min-width: 640px) {
   .bk-home {
     grid-template-columns: 240px minmax(0, 1fr);

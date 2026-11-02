@@ -16,9 +16,12 @@
 // ornaments.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/Icon";
+import MenuMenu from "@/components/MenuMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import PictureViewer from "@/components/PictureViewer";
 import { fetchAhead, mayFetchAhead, watchPictures } from "@/lib/pictures";
 import { getBook } from "@/lib/bible";
@@ -116,6 +119,79 @@ function groupsOf(entries: ContentsEntry[]) {
   return groups;
 }
 
+/**
+ * A book's contents: what comes before the first chapter, the chapters
+ * (under their parts' headings where the book has parts), and what follows
+ * them, each with how long it takes to read. On the book's own page, and in
+ * the navigator that folds out beside a chapter, with `here` marked.
+ */
+function ContentsList({
+  slug,
+  index,
+  here,
+  onPick,
+}: {
+  slug: string;
+  index: BookIndex;
+  here?: string;
+  /** a part chosen: the navigator closes on it */
+  onPick?: () => void;
+}) {
+  const { t } = useI18n();
+  const contents = index.contents;
+  // a chapter is a numbered part, whether it is called one ("Chapter 3") or
+  // only numbered (The Fall's "Book III"), or a part of a group (a canto)
+  const isChapter = (c: ContentsEntry) => !!c.label || !!c.group || /^\d+$/.test(c.id);
+  const firstCh = contents.findIndex(isChapter);
+  const lastCh = contents.length - 1 - [...contents].reverse().findIndex(isChapter);
+  const front = firstCh > 0 ? contents.slice(0, firstCh) : [];
+  const chapters = firstCh >= 0 ? contents.slice(firstCh, lastCh + 1) : contents;
+  const back = firstCh >= 0 ? contents.slice(lastCh + 1) : [];
+
+  const row = (c: ContentsEntry) => (
+    <li key={c.id}>
+      <Link
+        href={bookHref(slug, c.id)}
+        className={`bk-toc-row${c.id === here ? " here" : ""}`}
+        aria-current={c.id === here ? "page" : undefined}
+        onClick={onPick}
+      >
+        {c.label && <span className="bk-toc-n">{c.label.match(/\d+/)?.[0]}</span>}
+        <span className="bk-toc-title">{c.title}</span>
+        <span className="bk-toc-min">{t("shelf.minutes", { n: String(minutes(c.words)) })}</span>
+      </Link>
+    </li>
+  );
+
+  return (
+    <>
+      <ul>{front.map(row)}</ul>
+      {index.part && chapters.length > 0 && <p className="bk-toc-part">{index.part}</p>}
+      {chapters.some((c) => c.group) ? (
+        // a work in parts — Inferno, Purgatorio, Paradiso — each under its
+        // own heading, which opens that part's title page
+        groupsOf(chapters).map((g) => (
+          <Fragment key={g.name}>
+            <p className="bk-toc-part">
+              {g.page ? (
+                <Link href={bookHref(slug, g.page.id)} onClick={onPick}>
+                  {g.name}
+                </Link>
+              ) : (
+                g.name
+              )}
+            </p>
+            <ul>{g.entries.map(row)}</ul>
+          </Fragment>
+        ))
+      ) : (
+        <ul>{chapters.map(row)}</ul>
+      )}
+      <ul>{back.map(row)}</ul>
+    </>
+  );
+}
+
 // ---- the book's own page ------------------------------------------------------
 
 function BookHome({ book }: { book: ShelfBook }) {
@@ -146,29 +222,6 @@ function BookHome({ book }: { book: ShelfBook }) {
   const current = contents.find((c) => c.id === place?.part);
   const sequel = shelfBook(book.sequel);
   const prequel = SHELF.find((b) => b.sequel === book.slug);
-  // what comes before the first chapter, the chapters, and what follows them;
-  // a chapter is a numbered part, whether it is called one ("Chapter 3") or
-  // only numbered (The Fall's "Book III"), or a part of a group (a canto)
-  const isChapter = (c: (typeof contents)[number]) =>
-    !!c.label || !!c.group || /^\d+$/.test(c.id);
-  const firstCh = contents.findIndex(isChapter);
-  const lastCh = contents.length - 1 - [...contents].reverse().findIndex(isChapter);
-  const front = firstCh > 0 ? contents.slice(0, firstCh) : [];
-  const chapters = firstCh >= 0 ? contents.slice(firstCh, lastCh + 1) : contents;
-  const back = firstCh >= 0 ? contents.slice(lastCh + 1) : [];
-
-  const row = (c: (typeof chapters)[number]) => (
-    <li key={c.id}>
-      <Link
-        href={bookHref(book.slug, c.id)}
-        className={`bk-toc-row${c.id === place?.part ? " here" : ""}`}
-      >
-        {c.label && <span className="bk-toc-n">{c.label.match(/\d+/)?.[0]}</span>}
-        <span className="bk-toc-title">{c.title}</span>
-        <span className="bk-toc-min">{t("shelf.minutes", { n: String(minutes(c.words)) })}</span>
-      </Link>
-    </li>
-  );
 
   return (
     <>
@@ -260,23 +313,7 @@ function BookHome({ book }: { book: ShelfBook }) {
       {index && (
         <section className="bk-toc" aria-label={t("shelf.contents")}>
           <h2>{t("shelf.contents")}</h2>
-          <ul>{front.map(row)}</ul>
-          {index.part && chapters.length > 0 && <p className="bk-toc-part">{index.part}</p>}
-          {chapters.some((c) => c.group) ? (
-            // a work in parts — Inferno, Purgatorio, Paradiso — each under its
-            // own heading, which opens that part's title page
-            groupsOf(chapters).map((g) => (
-              <Fragment key={g.name}>
-                <p className="bk-toc-part">
-                  {g.page ? <Link href={bookHref(book.slug, g.page.id)}>{g.name}</Link> : g.name}
-                </p>
-                <ul>{g.entries.map(row)}</ul>
-              </Fragment>
-            ))
-          ) : (
-            <ul>{chapters.map(row)}</ul>
-          )}
-          <ul>{back.map(row)}</ul>
+          <ContentsList slug={book.slug} index={index} here={place?.part} />
         </section>
       )}
     </>
@@ -361,6 +398,28 @@ function PartView({
   const [verse, setVerse] = useState<BookRef | null>(null);
   const [pt, setPt] = useState(14);
   const restored = useRef(false);
+  const router = useRouter();
+
+  // The navigator: the book's contents, and the rest of the shelf, folded
+  // out from the left by the same tab on the right edge that The Word's
+  // reading controls fold out from, in the same place and the same way.
+  // Escape, a tap on the shade or the tab again puts it away, and so does
+  // choosing a chapter, which is all there is to choose here.
+  const [navOpen, setNavOpen] = useState(false);
+  const navRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setNavOpen(false), [partId, book.slug]);
+  useEffect(() => {
+    if (!navOpen) return;
+    const panel = navRef.current;
+    panel?.focus({ preventScroll: true });
+    // the chapter being read, in the middle of the list rather than at the top of it
+    panel?.querySelector(".bk-toc-row.here")?.scrollIntoView({ block: "center" });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
 
   useEffect(() => {
     setPt(readTextPt());
@@ -534,6 +593,94 @@ function PartView({
         />
       )}
       {verse && <VersePop verse={verse} lang={lang} onClose={() => setVerse(null)} />}
+
+      {/* the tab, as The Word's: the grip above and below the icon */}
+      <button
+        type="button"
+        className={`glass panel-tab${navOpen ? " open" : ""}`}
+        onClick={() => setNavOpen(!navOpen)}
+        aria-expanded={navOpen}
+        aria-controls="book-panel"
+        aria-label={t(navOpen ? "shelf.closePanel" : "shelf.openPanel")}
+        title={t(navOpen ? "shelf.closePanel" : "shelf.openPanel")}
+      >
+        <svg className="pt-grip" viewBox="0 0 8 10" aria-hidden="true">
+          <path d="M1 1.5v7M4 1.5v7M7 1.5v7" />
+        </svg>
+        <Icon name={navOpen ? "close" : "book"} />
+        <svg className="pt-grip" viewBox="0 0 8 10" aria-hidden="true">
+          <path d="M1 1.5v7M4 1.5v7M7 1.5v7" />
+        </svg>
+      </button>
+
+      {navOpen && (
+        <>
+          <div className="panel-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
+          <div
+            id="book-panel"
+            ref={navRef}
+            tabIndex={-1}
+            className="glass side-panel bk-nav"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("shelf.panel")}
+          >
+            <div className="sp-head">
+              <span className="sp-where">
+                <Icon name="book" /> {book.title}
+              </span>
+              <ThemeToggle className="sp-icon-btn" />
+              <MenuMenu className="sp-icon-btn" onNavigate={() => setNavOpen(false)} />
+            </div>
+
+            {/* pinned over the contents as they scroll: the shelf's other
+                books, as The Word's translations are, and the book's page */}
+            <div className="sp-fixed">
+              <div className="sp-pad sp-top">
+                <select
+                  className="sp-trans"
+                  aria-label={t("shelf.otherBook")}
+                  value={book.slug}
+                  onChange={(e) => {
+                    setNavOpen(false);
+                    router.push(bookHref(e.target.value));
+                  }}
+                >
+                  {SHELF.map((b) => (
+                    <option key={b.slug} value={b.slug}>
+                      {b.subtitle ? `${b.title} · ${b.subtitle.replace(/:.*$/, "")}` : b.title}
+                    </option>
+                  ))}
+                </select>
+                <Link
+                  href={bookHref(book.slug)}
+                  className="btn btn-sm sp-bm"
+                  onClick={() => setNavOpen(false)}
+                  title={t("shelf.bookPage")}
+                  aria-label={t("shelf.bookPage")}
+                >
+                  <Icon name="books" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="sp-body">
+              {index ? (
+                <section className="bk-toc bk-nav-toc" aria-label={t("shelf.contents")}>
+                  <ContentsList
+                    slug={book.slug}
+                    index={index}
+                    here={partId}
+                    onPick={() => setNavOpen(false)}
+                  />
+                </section>
+              ) : (
+                <p className="sp-pad skeleton-text">…</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </article>
   );
 }
