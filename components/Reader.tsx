@@ -43,6 +43,8 @@ import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import ChapterMap from "@/components/ChapterMap";
 import StudyPictures from "@/components/StudyPictures";
+import TextPictures from "@/components/TextPictures";
+import { artOf, loadBibleArt, useTextPictures, type BibleArt } from "@/lib/bibleArt";
 import { useI18n } from "@/lib/i18n";
 import {
   onScroll as onPageScroll,
@@ -355,6 +357,9 @@ export default function Reader({
     string,
     { v: number; en: string; es?: string }[]
   > | null>(null);
+  /** the illustrated Bible's pictures, when they are on (lib/bibleArt.ts) */
+  const [textPics, setTextPics] = useTextPictures();
+  const [bibleArt, setBibleArt] = useState<Awaited<ReturnType<typeof loadBibleArt>>>(null);
   /** [verse, 1 for poetry] for every run of every chapter of the open book. */
   const [paras, setParas] = useState<Record<string, [number, number][]> | null>(
     null
@@ -1364,6 +1369,48 @@ export default function Reader({
     };
   }, [bookNr]);
 
+  // The illustrated Bible's index, the first time pictures are on. It moves
+  // the text below wherever a picture lands, so the verse being read is held
+  // where it is, as it is when the headings arrive.
+  useEffect(() => {
+    if (!textPics || bibleArt) return;
+    let live = true;
+    loadBibleArt().then((index) => {
+      if (!live || !index) return;
+      holdVerse();
+      setBibleArt(index);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textPics, bibleArt]);
+
+  /** The open book's pictures, keyed "chapter:verse", and each chapter's in order. */
+  const bookArt = useMemo(() => {
+    const at = new Map<string, BibleArt[]>();
+    const byChapter = new Map<number, BibleArt[]>();
+    if (!bibleArt) return { at, byChapter };
+    for (const [key, list] of Object.entries(bibleArt.chapters)) {
+      const [b, c] = key.split(":").map(Number);
+      if (b !== bookNr) continue;
+      for (const [id, v] of list) {
+        const art = artOf(bibleArt, id);
+        if (!art) continue;
+        at.set(`${c}:${v}`, [...(at.get(`${c}:${v}`) ?? []), art]);
+        byChapter.set(c, [...(byChapter.get(c) ?? []), art]);
+      }
+    }
+    return { at, byChapter };
+  }, [bibleArt, bookNr]);
+  /** The pictures beginning at a verse, when pictures are on. */
+  const picsAt = (ch: number, verse: number): BibleArt[] | undefined =>
+    textPics ? bookArt.at.get(`${ch}:${verse}`) : undefined;
+  const picsHere = (ch: number, verse: number) => {
+    const pics = picsAt(ch, verse);
+    return pics ? <TextPictures pics={pics} chapterPics={bookArt.byChapter.get(ch) ?? pics} /> : null;
+  };
+
   // Where the paragraphs are, and which runs are poetry. One file per book,
   // derived from the World English Bible's own markup — see
   // scripts/build-paragraphs.mjs. Until it arrives the reader stays on a line
@@ -1479,13 +1526,17 @@ export default function Reader({
     const marks = new Map(
       (paras?.[ch] ?? []).map(([v, poetry]) => [v, poetry === 1])
     );
-    const runs: { title?: string; poetry: boolean; verses: Verse[] }[] = [];
+    const runs: { title?: string; pics?: number; poetry: boolean; verses: Verse[] }[] = [];
     for (const v of verses) {
       const title = headAt(ch, v.verse);
       const opens = marks.has(v.verse);
-      if (title || opens || runs.length === 0) {
+      // a picture opens a run of its own, so it sits between paragraphs
+      // rather than splitting one
+      const pics = picsAt(ch, v.verse) ? v.verse : undefined;
+      if (title || opens || pics || runs.length === 0) {
         runs.push({
           title,
+          pics,
           poetry: opens
             ? marks.get(v.verse)!
             : (runs[runs.length - 1]?.poetry ?? false),
@@ -2845,6 +2896,7 @@ export default function Reader({
                     >
                       {stanzaMark(ch, v.verse)}
                       {title && <h3 className="section-head">{title}</h3>}
+                      {picsHere(ch, v.verse)}
                       <p>
                         <sup className="verse-num">{v.verse}</sup>
                         {lineMark(ch, v.verse)}
@@ -3050,6 +3102,7 @@ export default function Reader({
                 runsOf(ch, verses).map((run, i) => (
                   <div key={i} className="section">
                     {run.title && <h3 className="section-head">{run.title}</h3>}
+                    {run.pics !== undefined && picsHere(ch, run.pics)}
                     {/* Verse is set as lines and prose as paragraphs, which is
                         what a printed Bible does and why the two are told
                         apart in the data. Isaiah is both, chapter by chapter. */}
@@ -3133,6 +3186,7 @@ export default function Reader({
               runsOf(ch, verses).map((run, i) => (
                 <div key={i} className="section">
                   {run.title && <h3 className="section-head">{run.title}</h3>}
+                  {run.pics !== undefined && picsHere(ch, run.pics)}
                   {run.verses.map((v) => {
                     const mark = markOf(ch, v.verse);
                     return (
@@ -4328,6 +4382,25 @@ export default function Reader({
                   }}
                 />
                 <p className="cal-hint pinch-tip">{t("reader.pinchHint")}</p>
+              </div>
+
+              {/* The illustrated Bible, where a story begins: off until a
+                  reader turns it on, here beside the page it changes. */}
+              <div className="sp-pad sp-prefs">
+                <label className="toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={textPics}
+                    onChange={(e) => {
+                      holdVerse();
+                      setTextPics(e.target.checked);
+                    }}
+                  />
+                  <span>
+                    <Icon name="picture" /> {t("reader.textPictures")}
+                  </span>
+                </label>
+                <p className="cal-hint">{t("reader.textPicturesHint")}</p>
               </div>
 
               {/* The typeface too, at the foot of the panel, the same picker

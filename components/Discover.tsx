@@ -29,6 +29,7 @@ import { useStickyTab } from "@/lib/stickyTab";
 import MyWall from "@/components/MyWall";
 import MyPrayers from "@/components/MyPrayers";
 import Bookshelf from "@/components/Bookshelf";
+import PictureShelf from "@/components/PictureShelf";
 import { WallSignIn } from "@/components/SignInNeeded";
 import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
@@ -181,6 +182,8 @@ export default function Discover() {
           {/* the books, above the plans: reading materials sit together, and
               the covers are seen before the long list of plans */}
           <Bookshelf />
+          {/* the Picture Bible: its stories, and the way to the gallery */}
+          <PictureShelf />
           <PlansSection open={openPlan} />
         </>
       )}

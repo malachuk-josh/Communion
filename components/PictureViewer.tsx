@@ -28,6 +28,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { hasArrived, whenArrived } from "@/lib/pictures";
 
@@ -57,6 +59,8 @@ export interface PictureCaption {
   /** what in it is reconstructed or uncertain */
   note?: string;
   sources?: { t: string; u: string }[];
+  /** where to go from it: the passage it shows */
+  go?: { label: string; href: string };
 }
 
 export default function PictureViewer({
@@ -348,6 +352,11 @@ export default function PictureViewer({
             <span className="bk-viewer-cap-title">{caption.title}</span>
             <span className="bk-viewer-cap-more">{about ? t("reader.studyLess") : t("reader.studyMore")}</span>
           </button>
+          {caption.go && (
+            <Link href={caption.go.href} className="bk-viewer-cap-go" onClick={onClose}>
+              <Icon name="book" /> {caption.go.label}
+            </Link>
+          )}
           {about && (
             <div className="bk-viewer-cap-body">
               {caption.refs && <p className="bk-viewer-cap-refs">{caption.refs}</p>}

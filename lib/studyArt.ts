@@ -24,17 +24,17 @@ export interface StudyArt {
   h: number;
 }
 
-interface Index {
+export interface StudyIndex {
   note: string;
   items: Record<string, Omit<StudyArt, "id">>;
   chapters: Record<string, string[]>;
 }
 
-let loading: Promise<Index | null> | null = null;
+let loading: Promise<StudyIndex | null> | null = null;
 
-function load(): Promise<Index | null> {
+export function loadStudyArt(): Promise<StudyIndex | null> {
   loading ??= fetch("/art/study.json")
-    .then((r) => (r.ok ? (r.json() as Promise<Index>) : null))
+    .then((r) => (r.ok ? (r.json() as Promise<StudyIndex>) : null))
     .catch(() => {
       // offline before it was ever fetched: try again next time
       loading = null;
@@ -45,9 +45,17 @@ function load(): Promise<Index | null> {
 
 /** The study pictures for a chapter, in the order the libraries give them. */
 export async function studyArtFor(bookNr: number, chapter: number): Promise<StudyArt[]> {
-  const index = await load();
+  const index = await loadStudyArt();
   if (!index) return [];
   return (index.chapters[`${bookNr}:${chapter}`] ?? [])
     .map((id) => (index.items[id] ? { id, ...index.items[id] } : null))
     .filter((a): a is StudyArt => a !== null);
+}
+
+/** Every study picture from one library, in its own order, the diagrams last. */
+export function studySet(index: StudyIndex, set: StudyArt["set"]): StudyArt[] {
+  const all = Object.entries(index.items)
+    .filter(([, a]) => a.set === set)
+    .map(([id, a]) => ({ id, ...a }));
+  return [...all.filter((a) => a.type !== "diagram"), ...all.filter((a) => a.type === "diagram")];
 }
