@@ -36,8 +36,7 @@ export default function TextPictures({
             <img src={p.src} alt={p.alt} loading="lazy" width={p.w} height={p.h} />
           </button>
           <figcaption>
-            {artLabel(p, lang, bookName).label}{" "}
-            <span className="text-pic-kind">· {t("pics.illustration")}</span>
+            {artLabel(p, lang, bookName).label}
           </figcaption>
         </figure>
       ))}
@@ -50,7 +49,6 @@ export default function TextPictures({
           onClose={() => setOpen(null)}
           caption={{
             title: artLabel(shown, lang, bookName).label,
-            kind: t("pics.illustration"),
             refs: passageLabel(shown, bookName),
             note: [shown.note, t("pics.illustrationNote")].filter(Boolean).join(" "),
           }}

@@ -52,8 +52,8 @@ const within = (v: number, a: number, b: number) => Math.min(Math.max(v, Math.mi
 /** What a study picture is, shown over its top edge: a line, and more on a tap. */
 export interface PictureCaption {
   title: string;
-  /** what sort of picture — "Study reconstruction", "Measured diagram" */
-  kind: string;
+  /** what sort of picture — "Study reconstruction", "Measured diagram" — where it needs saying */
+  kind?: string;
   refs?: string;
   period?: string;
   /** what in it is reconstructed or uncertain */
@@ -345,10 +345,11 @@ export default function PictureViewer({
             onClick={() => setAbout((a) => !a)}
             aria-expanded={about}
           >
-            <span className="bk-viewer-cap-kind">
-              {caption.kind}
-              {step ? ` · ${step.at}` : ""}
-            </span>
+            {(caption.kind || step) && (
+              <span className="bk-viewer-cap-kind">
+                {[caption.kind, step?.at].filter(Boolean).join(" · ")}
+              </span>
+            )}
             <span className="bk-viewer-cap-title">{caption.title}</span>
             <span className="bk-viewer-cap-more">{about ? t("reader.studyLess") : t("reader.studyMore")}</span>
           </button>

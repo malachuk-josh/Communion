@@ -77,7 +77,6 @@ export default function PictureGallery() {
     h: a.h,
     caption: {
       title: label,
-      kind: t("pics.illustration"),
       refs: passageLabel(a, bookName),
       note: [a.note, t("pics.illustrationNote")].filter(Boolean).join(" "),
       go: { label: t("pics.read"), href: passageHref(a.b, a.c, a.v) },

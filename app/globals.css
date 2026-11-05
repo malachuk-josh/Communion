@@ -7836,10 +7836,6 @@ button.compare-pick:last-child {
   color: var(--ink-dim);
 }
 
-.text-pic-kind {
-  color: var(--ink-faint);
-}
-
 .text-pic button:focus-visible img {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
