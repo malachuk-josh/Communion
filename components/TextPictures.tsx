@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import PictureViewer from "@/components/PictureViewer";
-import type { BibleArt } from "@/lib/bibleArt";
+import { BOOKS } from "@/lib/bible";
+import { artLabel, passageLabel, type BibleArt } from "@/lib/bibleArt";
 import { useI18n } from "@/lib/i18n";
 
 export default function TextPictures({
@@ -19,7 +20,11 @@ export default function TextPictures({
   /** every picture in the chapter, for stepping through from this one */
   chapterPics: BibleArt[];
 }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
+  const bookName = (nr: number) => {
+    const b = BOOKS.find((x) => x.nr === nr);
+    return b ? (lang === "es" ? b.es : b.en) : "";
+  };
   const [open, setOpen] = useState<number | null>(null);
   const shown = open === null ? null : chapterPics[open];
 
@@ -31,7 +36,8 @@ export default function TextPictures({
             <img src={p.src} alt={p.alt} loading="lazy" width={p.w} height={p.h} />
           </button>
           <figcaption>
-            {p.title} <span className="text-pic-kind">· {t("pics.illustration")}</span>
+            {artLabel(p, lang, bookName).label}{" "}
+            <span className="text-pic-kind">· {t("pics.illustration")}</span>
           </figcaption>
         </figure>
       ))}
@@ -43,9 +49,9 @@ export default function TextPictures({
           alt={shown.alt}
           onClose={() => setOpen(null)}
           caption={{
-            title: shown.title,
+            title: artLabel(shown, lang, bookName).label,
             kind: t("pics.illustration"),
-            refs: shown.ref,
+            refs: passageLabel(shown, bookName),
             note: [shown.note, t("pics.illustrationNote")].filter(Boolean).join(" "),
           }}
           step={

@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import Icon from "@/components/Icon";
 import PictureViewer, { type PictureCaption } from "@/components/PictureViewer";
 import { BOOKS } from "@/lib/bible";
-import { artOf, loadBibleArt, type BibleArt, type Story } from "@/lib/bibleArt";
+import { artLabel, artOf, loadBibleArt, passageLabel, type BibleArt, type Story } from "@/lib/bibleArt";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { parsePassage } from "@/lib/passage";
 import { loadStudyArt, studySet, type StudyArt, type StudyIndex } from "@/lib/studyArt";
@@ -64,23 +64,26 @@ export default function PictureGallery() {
   const storyName = (id: string) => t(`pics.story.${id}` as MessageKey);
   const passageHref = (b: number, c: number, v?: number) => `/?b=${b}&c=${c}${v ? `&v=${v}` : ""}`;
 
-  const fromBible = (a: BibleArt): Tile => ({
+  const fromBible = (a: BibleArt): Tile => {
+    const { label, sub } = artLabel(a, lang, bookName);
+    return {
     id: a.id,
-    title: a.title,
-    ref: a.ref,
+    title: label,
+    ref: sub ?? "",
     src: a.src,
     full: a.full,
     alt: a.alt,
     w: a.w,
     h: a.h,
     caption: {
-      title: a.title,
+      title: label,
       kind: t("pics.illustration"),
-      refs: a.ref,
+      refs: passageLabel(a, bookName),
       note: [a.note, t("pics.illustrationNote")].filter(Boolean).join(" "),
       go: { label: t("pics.read"), href: passageHref(a.b, a.c, a.v) },
     },
-  });
+    };
+  };
   const fromStudy = (a: StudyArt): Tile => {
     const at = a.refs.map((r) => parsePassage(r)).find(Boolean);
     return {

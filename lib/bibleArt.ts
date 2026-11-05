@@ -7,13 +7,22 @@ import { useEffect, useState } from "react";
 
 export interface BibleArt {
   id: string;
+  /** the library's own name for it */
   title: string;
+  /** its label: words of the passage, quoted from the King James text */
+  q: string;
+  /** the chapter and verse the quote is from */
+  qc: number;
+  qv: number;
   /** "Genesis 22:1-14", as the library gives it */
   ref: string;
   /** where the scene begins: book, chapter, verse */
   b: number;
   c: number;
   v: number;
+  /** and where it ends */
+  ce: number;
+  ve: number;
   /** "passage scene", "parable illustration", … */
   kind: string;
   alt: string;
@@ -98,4 +107,24 @@ export function useTextPictures(): [boolean, (on: boolean) => void] {
     return () => window.removeEventListener(EVENT, hear);
   }, []);
   return [on, writeTextPictures];
+}
+
+/** The passage a picture shows, named in the reader's language: "Génesis 1:1-5". */
+export function passageLabel(a: BibleArt, bookName: (nr: number) => string): string {
+  const end = a.ce && a.ce !== a.c ? `${a.ce}:${a.ve}` : a.ve && a.ve !== a.v ? `${a.ve}` : "";
+  return `${bookName(a.b)} ${a.c}:${a.v}${end ? `-${end}` : ""}`;
+}
+
+/**
+ * What a picture is called, and the line under it. In English, the words of
+ * the passage it shows as the King James has them, and the verse they are
+ * from. In Spanish, where the quote would be English, the passage itself.
+ */
+export function artLabel(
+  a: BibleArt,
+  lang: string,
+  bookName: (nr: number) => string
+): { label: string; sub?: string } {
+  if (lang === "en" && a.q) return { label: `“${a.q}”`, sub: `${bookName(a.b)} ${a.qc}:${a.qv}` };
+  return { label: passageLabel(a, bookName) };
 }

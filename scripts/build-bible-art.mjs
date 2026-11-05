@@ -13,6 +13,10 @@
 //   public/art/bible.json                   what each is, where it begins,
 //                                           and the stories it belongs to
 //
+// Each is labelled with words from its own passage — scripts/art/
+// bible-quotes.json, one King James clause per picture, checked against
+// public/bible/kjv — rather than with the library's own titles.
+//
 // As with the study pictures (scripts/build-study-art.mjs), the hash in the
 // name is the picture's own, and scripts/art/holds.json keeps out whatever
 // the accuracy audit has an open "fix" or "redo" on, or has not yet seen.
@@ -35,6 +39,15 @@ if (!src || !existsSync(src)) {
 
 const manifest = JSON.parse(readFileSync(path.join(ART, "bible-manifest.json"), "utf8"));
 const holds = JSON.parse(readFileSync(path.join(ART, "holds.json"), "utf8")).held ?? {};
+// Each picture's label: words of its own passage, quoted from the King James
+// text, and the verse they are from. Checked word for word against the text
+// the reader shows; a quote that is not there stops the build.
+const quotes = JSON.parse(readFileSync(path.join(ART, "bible-quotes.json"), "utf8"));
+const kjvCache = {};
+const kjvVerse = (b, c, v) => {
+  kjvCache[b] ??= JSON.parse(readFileSync(path.join(ROOT, "public", "bible", "kjv", `${b}.json`), "utf8"));
+  return (kjvCache[b][c] ?? []).find(([n]) => n === v)?.[1] ?? "";
+};
 
 const BOOKS = [...readFileSync(path.join(ROOT, "lib", "bible.ts"), "utf8").matchAll(
   /\{ nr: (\d+), en: "([^"]+)"/g
@@ -76,12 +89,24 @@ for (const a of manifest.assets) {
 
   const p = a.passage;
   const b = bookNr(a.book_name);
+  const quote = quotes[a.id];
+  if (!quote) throw new Error(`${a.id}: no quote in bible-quotes.json`);
+  const [qc, qv] = quote.at.split(":").map(Number);
+  if (!kjvVerse(b, qc, qv).includes(quote.q)) {
+    throw new Error(`${a.id}: "${quote.q}" is not in ${a.book_name} ${quote.at}`);
+  }
   items[a.id] = {
     title: clean(a.title),
+    q: quote.q,
+    qc,
+    qv,
     ref: clean(a.reference),
     b,
     c: p.chapter_start,
     v: p.verse_start,
+    // where it ends, for the passage's name in the reader's own language
+    ce: p.chapter_end,
+    ve: p.verse_end,
     kind: a.depiction_kind,
     alt: clean(a.alt_text || a.title),
     note: clean(a.depiction_note),
