@@ -1,0 +1,16 @@
+{
+  "about": "Pictures held back from the app until a corrected version passes the audit (the 'Claude audits' folder in Drive). Remove an entry once its fix is audited OK or minor, then re-run scripts/build-study-art.mjs.",
+  "held": {
+    "ARCH-FIR-003": "fix: the great cherubim face the viewer instead of the hall",
+    "ARCH-HER-004": "fix: candle-like lamps; curtain opening on the wrong side",
+    "ARCH-HER-005": "fix: Holy of Holies drawn as a cube, not 20 x 20 x 40",
+    "ARCH-HER-010": "fix: the section does not show porch, hall and inner room",
+    "WORLD-TRV-001": "redo: Galilee boat cutaway is the wrong hull type",
+    "WORLD-TRV-003": "redo: Paul's grain ship drawn as a small coaster",
+    "WORLD-OBJ-001": "fix: the Herodian lamp is the wrong form",
+    "WORLD-OBJ-002": "fix: the stone jars are small mugs, not large lathe-turned jars",
+    "WORLD-CLO-005": "fix: legionary shield on the auxiliary garrison of Acts 21",
+    "WORLD-CITY-002": "fix: Ephesus drawn as a village with a tiny theatre",
+    "WORLD-CITY-004": "fix: Antioch's background is a modern hill town"
+  }
+}

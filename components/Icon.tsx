@@ -243,6 +243,12 @@ const PATHS = {
     "M12 13.8l-1.2 1.6h2.4z",
     "M6.6 6.6L4.8 3.4M17.4 6.6l1.8-3.2"
   ],
+  // a framed picture: hills and the sun
+  picture: [
+    "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
+    "M3.5 16.5l5-5 4.5 4.5 2.5-2.5 5 5",
+    circle(15.5, 9.5, 1.6),
+  ],
 };
 
 /** Icons whose shape needs a filled counter to read at text size. */

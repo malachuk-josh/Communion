@@ -43,6 +43,10 @@ const DATA_PATHS = [
   // the Bookshelf's books: their text, covers and illustrations, which are
   // published once and replaced whole when a book is revised
   "/books/",
+  // the study pictures in a chapter's Context: the index, and each picture at
+  // the size for the page under a name carrying its own hash, so a replaced
+  // picture is a new file rather than a stale one
+  "/art/",
 ];
 
 // Read-only API responses worth showing stale.
@@ -347,12 +351,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// A book's pictures at full size, for zooming into, are online only: several
+// A book's pictures at full size, for zooming into, are online only — and
+// the study pictures' likewise: several
 // times the size of the book they belong to, so neither its download for
 // offline nor this cache keeps them. The browser's own cache has them for as
 // long as it likes; without a signal the viewer stays with the picture on the
 // page.
-const ONLINE_ONLY = /^\/books\/[^/]+\/full\//;
+const ONLINE_ONLY = /^\/(?:books\/[^/]+|art\/[^/]+)\/full\//;
 
 const isData = (url) =>
   url.origin === self.location.origin &&

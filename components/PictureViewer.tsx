@@ -1,6 +1,9 @@
 "use client";
 
 // A book's picture, or its cover, over the whole screen to look at closely.
+// A study picture from a chapter's Context comes with a caption — what it
+// is, and on a tap what in it is reconstructed and where that comes from —
+// and with the chapter's others a swipe or an arrow away.
 //
 // It opens as large as the screen allows. Pinch to zoom, up to four times
 // that, and drag to move about in it; double-tap a place to zoom in on it,
@@ -44,20 +47,38 @@ const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 const middle = (a: Point, b: Point) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const within = (v: number, a: number, b: number) => Math.min(Math.max(v, Math.min(a, b)), Math.max(a, b));
 
+/** What a study picture is, shown over its top edge: a line, and more on a tap. */
+export interface PictureCaption {
+  title: string;
+  /** what sort of picture — "Study reconstruction", "Measured diagram" */
+  kind: string;
+  refs?: string;
+  period?: string;
+  /** what in it is reconstructed or uncertain */
+  note?: string;
+  sources?: { t: string; u: string }[];
+}
+
 export default function PictureViewer({
   src,
   full,
   alt,
   onClose,
+  caption,
+  step,
 }: {
   src: string;
   /** the same picture larger, fetched now and shown when it has come */
   full?: string;
   alt?: string;
   onClose: () => void;
+  caption?: PictureCaption;
+  /** one of a set: where it is in it, and the ways to the others */
+  step?: { at: string; prev: () => void; next: () => void };
 }) {
   const { t } = useI18n();
   const [view, setView] = useState<View>(FIT);
+  const [about, setAbout] = useState(false);
   const viewRef = useRef(view);
   viewRef.current = view;
   /** the picture's size at rest: the screen's, less its margins, in the picture's shape */
@@ -171,6 +192,8 @@ export default function PictureViewer({
       else if (e.key === "+" || e.key === "=") zoomCentre(BUTTON_STEP);
       else if (e.key === "-") zoomCentre(1 / BUTTON_STEP);
       else if (e.key === "0") setView(FIT);
+      else if (step && e.key === "ArrowLeft" && viewRef.current.s === 1) step.prev();
+      else if (step && e.key === "ArrowRight" && viewRef.current.s === 1) step.next();
     };
     const el = stage.current;
     const onWheel = (e: WheelEvent) => {
@@ -187,7 +210,7 @@ export default function PictureViewer({
       el?.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", fit);
     };
-  }, [onClose, mounted, zoomAt, zoomCentre, fit]);
+  }, [onClose, mounted, zoomAt, zoomCentre, fit, step]);
 
   // ---- fingers and the mouse --------------------------------------------------
 
@@ -245,8 +268,18 @@ export default function PictureViewer({
     }
     if (left.length > 0 || !at) return;
     const wasPinch = pinch.current !== null;
+    const began = drag.current?.at;
     pinch.current = null;
     drag.current = null;
+    // across the screen, at rest, is to the next picture of a set
+    if (step && !wasPinch && began && viewRef.current.s === 1 && e.type !== "pointercancel") {
+      const dx = at.x - began.x;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(at.y - began.y)) {
+        if (dx < 0) step.next();
+        else step.prev();
+        return;
+      }
+    }
     if (wasPinch || travelled.current > 10 || e.type === "pointercancel") return;
 
     // a tap: beside the picture, at its own size, it closes; twice on the
@@ -300,6 +333,54 @@ export default function PictureViewer({
       <button type="button" className="lex-close bk-viewer-close" onClick={onClose} aria-label={t("common.close")}>
         ✕
       </button>
+      {caption && (
+        <div className={`bk-viewer-cap${about ? " open" : ""}`}>
+          <button
+            type="button"
+            className="bk-viewer-cap-head"
+            onClick={() => setAbout((a) => !a)}
+            aria-expanded={about}
+          >
+            <span className="bk-viewer-cap-kind">
+              {caption.kind}
+              {step ? ` · ${step.at}` : ""}
+            </span>
+            <span className="bk-viewer-cap-title">{caption.title}</span>
+            <span className="bk-viewer-cap-more">{about ? t("reader.studyLess") : t("reader.studyMore")}</span>
+          </button>
+          {about && (
+            <div className="bk-viewer-cap-body">
+              {caption.refs && <p className="bk-viewer-cap-refs">{caption.refs}</p>}
+              {caption.period && <p className="bk-viewer-cap-period">{caption.period}</p>}
+              {caption.note && <p>{caption.note}</p>}
+              {caption.sources && caption.sources.length > 0 && (
+                <>
+                  <h4>{t("reader.studySources")}</h4>
+                  <ul>
+                    {caption.sources.map((s) => (
+                      <li key={s.u}>
+                        <a href={s.u} target="_blank" rel="noopener noreferrer">
+                          {s.t}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {step && view.s === 1 && (
+        <>
+          <button type="button" className="bk-viewer-step prev" onClick={step.prev} aria-label={t("reader.studyPrev")}>
+            ‹
+          </button>
+          <button type="button" className="bk-viewer-step next" onClick={step.next} aria-label={t("reader.studyNext")}>
+            ›
+          </button>
+        </>
+      )}
       <div className="bk-viewer-zoom">
         <button
           type="button"

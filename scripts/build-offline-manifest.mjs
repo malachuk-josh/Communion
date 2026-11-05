@@ -68,7 +68,10 @@ const reading = merge(
   listDir("maps"),
   listDir("maps/base"),
   listDir("maps/modern"),
-  listDir("maps/relief", () => true, ".webp")
+  listDir("maps/relief", () => true, ".webp"),
+  // which study pictures belong to which chapter: the index only, about 70 KB; the
+  // pictures themselves are kept as they are looked at
+  listDir("art")
 );
 
 const translations = {

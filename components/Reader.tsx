@@ -42,6 +42,7 @@ import { api, guestId } from "@/lib/client";
 import BookNav from "@/components/BookNav";
 import Icon from "@/components/Icon";
 import ChapterMap from "@/components/ChapterMap";
+import StudyPictures from "@/components/StudyPictures";
 import { useI18n } from "@/lib/i18n";
 import {
   onScroll as onPageScroll,
@@ -4046,6 +4047,10 @@ export default function Reader({
                   jumpToRef(contextOpen, ref, fromVerse);
                 }}
               />
+              {/* What the chapter builds or handles, drawn: the Tabernacle in
+                  Exodus, the Temple in Kings, a house's roof in Mark 2. Only
+                  the chapters that have any show the row. */}
+              <StudyPictures bookNr={bookNr} chapter={contextOpen} />
               <div className="ctx-section">
                 <h3><Icon name="jar" /> {t("reader.ctxPractical")}</h3>
                 <p>{ctxOf(contextOpen)!.practical}</p>
