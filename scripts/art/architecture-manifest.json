@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "version": "2.0",
+  "version": "3.1",
   "collection_id": "kjv_bible_architecture_v1",
   "title": "KJV Bible Architecture",
   "scope": "Standalone architecture library, separate from the narrative illustration collection.",
@@ -8,9 +8,9 @@
   "image_count": 36,
   "target_image_count": 36,
   "supplementary_diagram_count": 8,
-  "generation_method": "Built-in ImageGen reconstructions plus a deterministic vector construction study; source types identified per asset.",
-  "native_illustration_count": 35,
-  "technical_primary_count": 1,
+  "generation_method": "31 built-in ImageGen reconstructions and5 primary technical studies;8 additional companion diagrams.",
+  "native_illustration_count": 31,
+  "technical_primary_count": 5,
   "important_display_rule": "Retain required_display_note and source links beside each image in a study app. Do not present a reconstruction as a surveyed original.",
   "measurement_rule": "Cubits retained; no single metre/foot conversion certified.",
   "assets": [
@@ -143,15 +143,15 @@
       "reconstruction_choices": [
         "Lampstand base and branch curves, precise furniture intervals and bread shapes are inferred."
       ],
-      "required_display_note": "Looking west: seven-lamp stand south/left, table north/right, incense altar before one continuous veil. Twelve visible flat cakes form two rows of six; flat shape and row layout are selected interpretations of the KJV provision. Four gold inner-veil pillars have silver bases. Furniture spacing, fittings and woven guardian anatomy are reconstructed. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "Looking west into the Tabernacle Holy Place: one seven-lamp stand south/left, one table north/right with twelve flat cakes arranged as two rows of six, and one incense altar before the inner veil. Lamp and textile forms are selected reconstructions; the colored guardian design uses the collection's human-headed winged-lion interpretation. Hidden details and exact dimensions are not certified.",
       "diagrams": [
         "tabernacle-plan"
       ],
       "critical_visual_checks": [
-        "One seven-oil-lamp stand left",
-        "One table right with twelve cakes in two rows of six",
-        "One gold incense altar before the continuous four-colour veil",
-        "Four inner-veil pillars with silver bases; no Ark outside veil"
+        "Viewed full output and counted seven separate flames at outer lamp spout tips, rather than central candles.",
+        "Counted six cakes in each of two visible rows; both small frankincense dishes separate from the cakes.",
+        "Four rear posts on silver sockets; matching scarlet/blue/purple cloth guardians and continuous aligned colored bands/hem.",
+        "Left lampstand/south and right table/north in west-looking composition; earthen floor and gold upright boards."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -208,38 +208,52 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Tabernacle Holy Place. Table north; lampstand south; gold incense altar before veil. One lampstand, central shaft plus six branches; seven oil lamps. Veil on four gold-covered pillars with silver sockets. Lampstand base and branch curves, precise furniture intervals and bread shapes are inferred. Looking west: seven-lamp stand south/left, table north/right, incense altar before one continuous veil. Twelve visible flat cakes form two rows of six; flat shape and row layout are selected interpretations of the KJV provision. Four gold inner-veil pillars have silver bases. Furniture spacing, fittings and woven guardian anatomy are reconstructed. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: One seven-oil-lamp stand left; One table right with twelve cakes in two rows of six; One gold incense altar before the continuous four-colour veil; Four inner-veil pillars with silver bases; no Ark outside veil.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Same continuous dyed-linen veil/motif design as ARCH-TAB-009. Lampstand has explicit almond/floral cups and seven projecting oil-lamp wick spouts. Retains twelve flat cakes in two countable rows of six, one north table, one south lampstand and one incense altar before veil. Looking west into the Tabernacle Holy Place: one seven-lamp stand south/left, one table north/right with twelve flat cakes arranged as two rows of six, and one incense altar before the inner veil. Lamp and textile forms are selected reconstructions; the colored guardian design uses the collection's human-headed winged-lion interpretation. Hidden details and exact dimensions are not certified.",
       "image": "assets/webp/ARCH-TAB-003.webp",
       "thumbnail": "thumbnails/ARCH-TAB-003.webp",
       "master_file": "ARCH-TAB-003.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "Tabernacle Holy Place. Reconstructed Wilderness setting; chronology not fixed.",
+      "alt_text": "Looking west into a gold-boarded Tabernacle: seven spout-tip lamps left, twelve cakes on a table right, incense altar before a continuous dyed cherub-patterned veil.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-TAB-003.png",
-      "display_caption": "Tabernacle Holy Place. Looking west: seven-lamp stand south/left, table north/right, incense altar before one continuous veil. Twelve visible flat cakes form two rows of six; flat shape and row layout are selected interpretations of the KJV provision. Four gold inner-veil pillars have silver bases. Furniture spacing, fittings and woven guardian anatomy are reconstructed. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "Tabernacle Holy Place. Looking west into the Tabernacle Holy Place: one seven-lamp stand south/left, one table north/right with twelve flat cakes arranged as two rows of six, and one incense altar before the inner veil. Lamp and textile forms are selected reconstructions; the colored guardian design uses the collection's human-headed winged-lion interpretation. Hidden details and exact dimensions are not certified.",
       "sha256": {
-        "webp": "bd239adcd7af329c29d0d934cff688997d8def9470a9c7b49e7f7ad8a22f703b",
-        "master_png": "02c014f67072534873c3dc1f081ca6406cff3697bf3de84d35017a5efc9abfdb"
+        "master_png": "4c94e2fcbb980e8dc11071b4b7e0ed4f1f8fc932c90222552623de405e76c230",
+        "webp": "5fb2632afaa846e6914fc4ea39a0a6a576d0a78e59d39a028edae1353d75d554"
       },
       "bytes": {
-        "webp": 538186,
-        "master_png": 3054640
+        "master_png": 3125046,
+        "webp": 587456
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed selected native and reported details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native: Counted twelve separated flat cakes in two rows of six, seven lit spout cups, four gold pillars/silver bases and one continuous coloured linen veil. One incense altar, gold boards, earth floor; no Ark visible.",
-        "not_assessable": [
-          "Exact furniture scale",
-          "Cake shape and pattern arrangement interpreted"
+        "worker_visual_audit": [
+          "Viewed full output and counted seven separate flames at outer lamp spout tips, rather than central candles.",
+          "Counted six cakes in each of two visible rows; both small frankincense dishes separate from the cakes.",
+          "Four rear posts on silver sockets; matching scarlet/blue/purple cloth guardians and continuous aligned colored bands/hem.",
+          "Left lampstand/south and right table/north in west-looking composition; earthen floor and gold upright boards."
         ],
-        "reconstruction_notes": [],
-        "attempts": 4
+        "coordinator_visual_audit": [
+          "Viewed seven distinct spout flames and twelve cakes in two rows of six, golden furniture, colored woven cherubim, four gold posts/silver bases. The chosen winged human-headed quadruped pattern is interpretive; invisible details and dimensions not certified."
+        ],
+        "not_assessable": [
+          "Exact branch cup/knop allocation and every hidden fixture.",
+          "Perspective furniture dimensions, precise weaving and the hidden fabric behind supports."
+        ],
+        "attempts": 1,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "4c94e2fcbb980e8dc11071b4b7e0ed4f1f8fc932c90222552623de405e76c230",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1M5srLJOnUWOrJjXVF9lzJBP21uXzQysi/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1M5srLJOnUWOrJjXVF9lzJBP21uXzQysi/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "native_master_file": "ARCH-TAB-003.png",
+      "correction_receipt": "production/receipts/ARCH-TAB-003.json",
+      "review_receipt": "production/coordinator/ARCH-TAB-003.json",
+      "master_drive_url": "https://drive.google.com/file/d/1qzKe-XUTMXJVeunEqj-OX5So84A-RD14/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/1qzKe-XUTMXJVeunEqj-OX5So84A-RD14/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "1qzKe-XUTMXJVeunEqj-OX5So84A-RD14",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-TAB-004",
@@ -267,15 +281,14 @@
       "reconstruction_choices": [
         "Cherub anatomy, height, pole length and room division are inferred."
       ],
-      "required_display_note": "The two small mercy-seat cherubim are distinct from the monumental figures later described for Solomon’s Temple. Their detailed form is uncertain. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "Ark study in the Tabernacle inner chamber. Two small inward-facing guardians incline their human faces toward the mercy seat; visible carrying fittings lie at the lower corners. Human-headed winged-lion anatomy is a selected ancient Near Eastern interpretation, not an anatomy supplied by the KJV. Hidden fittings and exact dimensions are not certified.",
       "diagrams": [
         "tabernacle-plan"
       ],
       "critical_visual_checks": [
-        "Single Ark",
-        "Two small cherubim, no giant Temple figures",
-        "Retained carrying staves",
-        "No divine statue"
+        "Viewed the generated full image: two small gold human-headed winged-lion figures have bowed faces, inward toward the flat cover.",
+        "Two near low rings and one continuous near stave are visible beside the feet; far stave and fittings are partly hidden by the chest.",
+        "Gold boards, earth floor and off-white/blue/purple/scarlet woven overhead textiles retained; no human or invented inscription."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -326,41 +339,56 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Tabernacle Ark and inner chamber. Ark 2.5 by 1.5 by 1.5 cubits, gold-covered wood. Two mercy-seat cherubim, facing one another and toward cover. Carrying staves remain in the rings. Cherub anatomy, height, pole length and room division are inferred. The two small mercy-seat cherubim are distinct from the monumental figures later described for Solomon’s Temple. Their detailed form is uncertain. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Single Ark; Two small cherubim, no giant Temple figures; Retained carrying staves; No divine statue.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Visible carrying-ring positions moved to the lower corners beside the feet, with near pole passing through near pair. Both human faces now incline distinctly downward toward the mercy-seat cover while remaining inward-facing. Retains the shared human-headed winged-lion design; colored woven ceiling motifs rather than gold embroidery. Ark study in the Tabernacle inner chamber. Two small inward-facing guardians incline their human faces toward the mercy seat; visible carrying fittings lie at the lower corners. Human-headed winged-lion anatomy is a selected ancient Near Eastern interpretation, not an anatomy supplied by the KJV. Hidden fittings and exact dimensions are not certified.",
       "image": "assets/webp/ARCH-TAB-004.webp",
       "thumbnail": "thumbnails/ARCH-TAB-004.webp",
       "master_file": "ARCH-TAB-004.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "Tabernacle Ark and inner chamber. Reconstructed Wilderness setting; chronology not fixed.",
+      "alt_text": "Gold Ark with two small human-faced winged-lion figures bowed inward toward its cover; near-side carrying fittings low beside the feet.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-TAB-004.png",
-      "display_caption": "Tabernacle Ark and inner chamber. The two small mercy-seat cherubim are distinct from the monumental figures later described for Solomon’s Temple. Their detailed form is uncertain. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "Tabernacle Ark and inner chamber. Ark study in the Tabernacle inner chamber. Two small inward-facing guardians incline their human faces toward the mercy seat; visible carrying fittings lie at the lower corners. Human-headed winged-lion anatomy is a selected ancient Near Eastern interpretation, not an anatomy supplied by the KJV. Hidden fittings and exact dimensions are not certified.",
       "sha256": {
-        "webp": "baff3cce8f83cce5721e3b26ab7ab708c578f8cc0d3837d4bfdcb2bf630c596c",
-        "master_png": "2707494f7b3e6ee455deb7cb3ce9c78ec3529e815a90efca608ae73b69a9f2d2"
+        "master_png": "144892ee1b897b9e19b6f08bde5482fffe1172b30ca34e72be227d1a07c770be",
+        "webp": "0897ae9b578d15dba32293c86939c5a853dabf02c15e495d99f7e8979dad5aaf"
       },
       "bytes": {
-        "webp": 530574,
-        "master_png": 3001741
+        "master_png": 2832350,
+        "webp": 488854
       },
       "visual_audit": {
-        "worker_visual_audit": "Two small human-headed winged sphinxes, paws on lid; two near rings and two pole lines; far rings hidden. Continuous gold boards and four-color linen with matching motifs.",
-        "coordinator_visual_audit": "Viewed native PNG independently: two opposed human-faced lion-bodied winged figures agree with reference; chest grounded with parallel carrying poles; near rings visible. Gold upright boards and multicolor textile motifs clear. Board tops cropped, so complete board proportions and hidden far rings are not certified.",
+        "worker_visual_audit": [
+          "Viewed the generated full image: two small gold human-headed winged-lion figures have bowed faces, inward toward the flat cover.",
+          "Two near low rings and one continuous near stave are visible beside the feet; far stave and fittings are partly hidden by the chest.",
+          "Gold boards, earth floor and off-white/blue/purple/scarlet woven overhead textiles retained; no human or invented inscription."
+        ],
+        "coordinator_visual_audit": [],
         "not_assessable": [
-          "Full four-ring count; far pair physically occluded",
-          "Complete board height/width ratio in cropped room",
-          "Exact cubit dimensions in perspective"
+          "Far carrying rings and complete concealed stave connections.",
+          "Exact cubit dimensions, ancient creature anatomy and textile technique cannot be certified from the perspective render.",
+          "Hidden far fittings and exact dimensions are not certified."
         ],
-        "reconstruction_notes": [
-          "Short chest supports, pole lengths, textile motif layout and sphinx anatomy are interpretive."
-        ],
-        "attempts": 1
+        "attempts": 1,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "144892ee1b897b9e19b6f08bde5482fffe1172b30ca34e72be227d1a07c770be",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/16QL6e-QbhrzKENyFhNl0NfO0i1FDLNE2/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/16QL6e-QbhrzKENyFhNl0NfO0i1FDLNE2/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      },
+      "native_master_file": "ARCH-TAB-004.png",
+      "correction_receipt": "production/receipts/ARCH-TAB-004.json",
+      "review_receipt": "production/coordinator/ARCH-TAB-004.json",
+      "master_drive_url": "https://drive.google.com/file/d/182FbUv2hMOIdqOS3x49hwuqG95PpDPi-/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/182FbUv2hMOIdqOS3x49hwuqG95PpDPi-/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "182FbUv2hMOIdqOS3x49hwuqG95PpDPi-",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-TAB-005",
@@ -784,7 +812,7 @@
     },
     {
       "id": "ARCH-FIR-003",
-      "title": "First Temple: longitudinal cutaway",
+      "title": "First Temple: technical cutaway",
       "group": "First Temple",
       "period": "Iron Age Jerusalem; Kings-based teaching model",
       "kjv_passages": [
@@ -794,27 +822,29 @@
       "source_ids": [
         "K-1K6",
         "R-GARFINKEL",
-        "M-MET-SPHINX"
+        "M-MET-SPHINX",
+        "K-2C3",
+        "K-1K8"
       ],
       "kjv_constraints": [
         "House length 60; hall length 40.",
         "Oracle 20 by 20 by 20; main house 30 high."
       ],
       "reconstruction_choices": [
-        "Wall thickness, ceiling structure, roof and space above oracle are inferred.",
-        "Conventional east entrance, west oracle."
+        "Door size, porchheight, material finish, structural thickness, roof joins and upper-oracle space remain chosen or schematic.",
+        "The technical model omits furnishings rather than claiming an empty FirstTemple oracle."
       ],
-      "required_display_note": "Kings-based teaching cutaway: 40-cubit hall and 20-cubit oracle within the 30-high house. The ten-cubit difference above the oracle does not establish a particular attic. Gold-finished undersides are distinguished from deliberately exposed section edges and upper construction. Hall portable furnishings are omitted for structural teaching. Exact transverse spans, wall thicknesses and roof engineering are not certified. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "Technical Kings-based cutaway: a 60-by-20-by-30 house, 20-cubit oracle, real cedar partition with a central olivewood doorway, and roofed 20-by-10 porch. Porch height is chosen, not stated by Kings. Three annex storeys stand beside the shared ground floor to 15 cubits; the inset gives 5/6/7 clear widths. Furnishings, structural thicknesses and corner/roof completion are outside this model.",
       "diagrams": [
         "first-temple-kings"
       ],
       "critical_visual_checks": [
-        "Distinct 40-cubit hall and 20-cubit oracle",
-        "Oracle lower than 30-high main block",
-        "No Herodian empty-oracle inventory applied here"
+        "Source-specific dimensioned technical panels",
+        "One declared coordinate/scale model",
+        "Schematic/hidden completion and format limitation identified"
       ],
       "status": "included",
-      "medium": "AI-generated reconstruction, built-in ImageGen",
+      "medium": "Deterministic SVG primary technical study",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
@@ -836,6 +866,18 @@
           "kind": "Museum object; comparative iconography only",
           "url": "https://www.metmuseum.org/art/collection/search/325660",
           "evidence_limit": "Human-headed winged-lion anatomy is a regional comparison, not an excavated Ark or proof of the KJV cherub form. The specific ivory's Egyptian headdress is not imported into the reconstruction."
+        },
+        {
+          "id": "K-2C3",
+          "title": "2 Chronicles 3 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/2CH03.htm"
+        },
+        {
+          "id": "K-1K8",
+          "title": "1 Kings 8 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/1KI08.htm"
         }
       ],
       "evidence_policy": {
@@ -844,37 +886,56 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. First Temple: longitudinal cutaway. House length 60; hall length 40. Oracle 20 by 20 by 20; main house 30 high. Wall thickness, ceiling structure, roof and space above oracle are inferred. Conventional east entrance, west oracle. Kings-based teaching cutaway: 40-cubit hall and 20-cubit oracle within the 30-high house. The ten-cubit difference above the oracle does not establish a particular attic. Gold-finished undersides are distinguished from deliberately exposed section edges and upper construction. Hall portable furnishings are omitted for structural teaching. Exact transverse spans, wall thicknesses and roof engineering are not certified. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Distinct 40-cubit hall and 20-cubit oracle; Oracle lower than 30-high main block; No Herodian empty-oracle inventory applied here.",
+      "production_brief_type": "Deterministic technical source model; SVG/program/receipt preserved. Failed native paintings remain history only.",
+      "normalized_production_brief": "Correction summary. Technical Kings-based cutaway: a 60-by-20-by-30 house, 20-cubit oracle, real cedar partition with a central olivewood doorway, and roofed 20-by-10 porch. Porch height is chosen, not stated by Kings. Three annex storeys stand beside the shared ground floor to 15 cubits; the inset gives 5/6/7 clear widths. Furnishings, structural thicknesses and corner/roof completion are outside this model.",
       "image": "assets/webp/ARCH-FIR-003.webp",
       "thumbnail": "thumbnails/ARCH-FIR-003.webp",
       "master_file": "ARCH-FIR-003.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "First Temple: longitudinal cutaway. Reconstructed Iron Age Jerusalem; Kings-based teaching model.",
-      "is_native_generated_image": true,
-      "native_master_file": "ARCH-FIR-003.png",
-      "display_caption": "First Temple: longitudinal cutaway. Kings-based teaching cutaway: 40-cubit hall and 20-cubit oracle within the 30-high house. The ten-cubit difference above the oracle does not establish a particular attic. Gold-finished undersides are distinguished from deliberately exposed section edges and upper construction. Hall portable furnishings are omitted for structural teaching. Exact transverse spans, wall thicknesses and roof engineering are not certified. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "width": 1600,
+      "height": 1950,
+      "alt_text": "Technical axonometric with one continuous ground floor, real cedar partition around a central double doorway, roofed porch,15-high side annex and5/6/7-width inset.",
+      "is_native_generated_image": false,
+      "display_caption": "First Temple: technical cutaway. Technical Kings-based cutaway: a 60-by-20-by-30 house, 20-cubit oracle, real cedar partition with a central olivewood doorway, and roofed 20-by-10 porch. Porch height is chosen, not stated by Kings. Three annex storeys stand beside the shared ground floor to 15 cubits; the inset gives 5/6/7 clear widths. Furnishings, structural thicknesses and corner/roof completion are outside this model.",
       "sha256": {
-        "webp": "65c1c3629593fb7320f7835609765769a5da81c90a8bb7162942d29b5ad3218d",
-        "master_png": "3daf21bdc180902f5b22b4c0462d31a468ceccdbfbee0cc8703800516dabd8f5"
+        "master_png": "300fa0ad27e00b694c7ae63ce15467a23a59eb567c2b620602ec98faf0cba1bf",
+        "webp": "eaa6a20a7bc1c5dd0c42c647fb6c1b56c29b7ea62b3b5b010e61f2ec4ceaf88c"
       },
       "bytes": {
-        "webp": 578526,
-        "master_png": 3087105
+        "master_png": 334635,
+        "webp": 224176
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker inspected native output and reported these specific fixes: Oracle and hall shown as distinct chambers with lower oracle ceiling; Shared human-headed winged sphinx guardians and wall carvings; Gold ceiling underside and separate small Ark cherubim. Visibility limits retained.",
-        "coordinator_visual_audit": "Root viewed: two chambers and upper void above west oracle; two monumental guardians face east, small Ark pair distinct, carved motifs and gold ceiling visible. Exact transverse wingspan hidden by oblique section.",
-        "not_assessable": [
-          "Exact transverse wing reach and metric room depth"
+        "worker_visual_audit": [
+          "Actual PNG: continuousz0floor, realpartitionaroundcentralmodestdouble doorway, roofedporch andclerestory.",
+          "Threeannexstoreysarebesidehouseup to15; insetshows5/6/7clearwidthsand5eachheightagainst30housewall.",
+          "No underfloorcells, artificiallighting or claimthatFirstTempleoraclewasempty; furnishingsomitted explicitly."
         ],
-        "reconstruction_notes": [],
-        "attempts": 1
+        "coordinator_visual_audit": [
+          "Whole frame reviewed: cedar partition surrounds a modest central olivewood doorway; oracle20cube and hall40separate, roofed20x10porch drawn. Three annexstoreys sit beside house above shared floor, with separate5/6/7by5inset and no cells underfloor.30house and20oracle height visible;30porch height expressly chosen because Kingsdoesnotgiveit. Structural thickness and removed/transparent walls are schematic; no recovered survey or cinematic success claimed."
+        ],
+        "not_assessable": [
+          "Door size, porchheight, material finish, structural thickness, roof joins and upper-oracle space remain chosen or schematic.",
+          "The technical model omits furnishings rather than claiming an empty FirstTemple oracle."
+        ],
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "300fa0ad27e00b694c7ae63ce15467a23a59eb567c2b620602ec98faf0cba1bf",
+        "attempts": 0,
+        "scope": "Current selected output internally reviewed; technical formats do not claim successful painting repairs. Fresh external re-review open."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1_M_5zvaDGg1w-66jlyUDRfV1Cpivak_t/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1_M_5zvaDGg1w-66jlyUDRfV1Cpivak_t/view?usp=drivesdk"
+      "source_evidence_limit": "Selected textual geometry model, not a recovered survey. Material/engineering profiles and specified schematic parts remain inferred.",
+      "correction_receipt": "production/receipts/ARCH-FIR-003.json",
+      "review_receipt": "production/coordinator/ARCH-FIR-003.json",
+      "raster_master_file": "ARCH-FIR-003.png",
+      "svg": "assets/svg/ARCH-FIR-003.svg",
+      "source_svg_sha256": "b44dd16edfaa460bdce467d3107292ab6f742e45dd775a2e6e2bd7091fabae4a",
+      "dimensioned_source_model": true,
+      "scale_drawing_scope": "Dimensioned model components use stated source units; explicitly schematic profiles and completion are not measured. Not a recovered engineering survey.",
+      "format_limitation": "Requested cinematic painting repair was not achieved; selected replacement is an explicitly technical source-model study.",
+      "master_drive_url": "https://drive.google.com/file/d/1ePneWxbihOZhDYtDtC2n95Kqv2r9ydIW/view?usp=drivesdk",
+      "raster_master_drive_url": "https://drive.google.com/file/d/1ePneWxbihOZhDYtDtC2n95Kqv2r9ydIW/view?usp=drivesdk",
+      "master_drive_file_id": "1ePneWxbihOZhDYtDtC2n95Kqv2r9ydIW",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_upload_receipt": "production/published-masters.json"
     },
     {
       "id": "ARCH-FIR-004",
@@ -888,7 +949,9 @@
         "K-1K7",
         "K-1K6",
         "R-GARFINKEL",
-        "M-MET-SPHINX"
+        "M-MET-SPHINX",
+        "K-2C4",
+        "K-EX25"
       ],
       "kjv_constraints": [
         "Ten gold candlesticks: five on each side.",
@@ -898,14 +961,15 @@
         "Furniture spacing, branch profiles and placement of the single table are reconstruction choices.",
         "Bread provision is not displayed; individual lamp branch forms are simplified, not a recovered design."
       ],
-      "required_display_note": "Kings furniture-inventory study before bread placement: ten visible lampstands, one bare table and one gold incense altar. Branch profiles, individual wicks, spacing and carved guardian anatomy are reconstructed; this is not the complete furnished daily service. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "First Temple furnishings in the Kings inventory: ten lampstands and one table, with the incense altar before the western oracle doorway. Seven-lamp designs and carved door details are interpretive; the source-specific companion plan controls placement. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "diagrams": [
         "first-temple-kings"
       ],
       "critical_visual_checks": [
-        "Ten stands, five each side",
-        "One table and one incense altar",
-        "Oil lamps rather than candles; individual branch/wick geometry not certified"
+        "Ten lampstand bases counted, five far/north and five near/south.",
+        "Seven separate vessel bodies and flames counted on each of all ten tops.",
+        "One bare table and one tall square horned incense altar; no bread display.",
+        "Carved open leaves centered on west/left short end; no sidewall doorway along north or south."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -913,16 +977,16 @@
       "image_is_scale_drawing": false,
       "sources": [
         {
-          "id": "K-1K6",
-          "title": "1 Kings 6 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/1KI06.htm"
-        },
-        {
           "id": "K-1K7",
           "title": "1 Kings 7 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/1KI07.htm"
+        },
+        {
+          "id": "K-1K6",
+          "title": "1 Kings 6 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/1KI06.htm"
         },
         {
           "id": "R-GARFINKEL",
@@ -936,6 +1000,18 @@
           "kind": "Museum object; comparative iconography only",
           "url": "https://www.metmuseum.org/art/collection/search/325660",
           "evidence_limit": "Human-headed winged-lion anatomy is a regional comparison, not an excavated Ark or proof of the KJV cherub form. The specific ivory's Egyptian headdress is not imported into the reconstruction."
+        },
+        {
+          "id": "K-2C4",
+          "title": "2 Chronicles 4 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/2CH04.htm"
+        },
+        {
+          "id": "K-EX25",
+          "title": "Exodus 25 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/EXO25.htm"
         }
       ],
       "evidence_policy": {
@@ -944,38 +1020,52 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. First Temple Holy Place: Kings inventory. Ten gold candlesticks: five on each side. One gold table and one gold altar in Kings. Furniture spacing, branch profiles and placement of the single table are reconstruction choices. Bread provision is not displayed; individual lamp branch forms are simplified, not a recovered design. Kings furniture-inventory study before bread placement: ten visible lampstands, one bare table and one gold incense altar. Branch profiles, individual wicks, spacing and carved guardian anatomy are reconstructed; this is not the complete furnished daily service. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Ten stands, five each side; One table and one incense altar; Oil lamps rather than candles; individual branch/wick geometry not certified.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Ten lampstands now share seven separate vessels. West oracle doorway located centrally within full short-end partition. Kings single table kept distinct from Chronicles ten-table variant. First Temple furnishings in the Kings inventory: ten lampstands and one table, with the incense altar before the western oracle doorway. Seven-lamp designs and carved door details are interpretive; the source-specific companion plan controls placement. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "image": "assets/webp/ARCH-FIR-004.webp",
       "thumbnail": "thumbnails/ARCH-FIR-004.webp",
       "master_file": "ARCH-FIR-004.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "First Temple Holy Place: Kings inventory. Reconstructed Kings-based inventory model.",
+      "alt_text": "Overhead Kings inventory: ten seven-lamped stands, one bare table and a square incense altar, with oracle doors centered at the western end.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-FIR-004.png",
-      "display_caption": "First Temple Holy Place: Kings inventory. Kings furniture-inventory study before bread placement: ten visible lampstands, one bare table and one gold incense altar. Branch profiles, individual wicks, spacing and carved guardian anatomy are reconstructed; this is not the complete furnished daily service. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "First Temple Holy Place: Kings inventory. First Temple furnishings in the Kings inventory: ten lampstands and one table, with the incense altar before the western oracle doorway. Seven-lamp designs and carved door details are interpretive; the source-specific companion plan controls placement. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "sha256": {
-        "webp": "59f76bbaa56276e52c3128d66f003344245b99693f1a731ad224a35d0f99391e",
-        "master_png": "f92f1458dfb4f8d19562b91d964041c362a73cfb85c95e260a3cf667a3912ca1"
+        "master_png": "978ae2f8afba8b8f172b1104b4ce7dc747574cef68e9794fed748b37898041fa",
+        "webp": "f5664f0f76aa4f5582211af164b67aec372f8023ff9adc417d0ef99b5a253c80"
       },
       "bytes": {
-        "webp": 401136,
-        "master_png": 2556011
+        "master_png": 2598033,
+        "webp": 426256
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed native and reported details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native: Counted ten stands/five per side, one table, one incense altar; wall and door reliefs use human-headed winged sphinx convention. Oil flames appear at shallow cups.",
-        "not_assessable": [
-          "Exact branch/wick construction",
-          "Bread intentionally not staged"
+        "worker_visual_audit": [
+          "Ten lampstand bases counted, five far/north and five near/south.",
+          "Seven separate vessel bodies and flames counted on each of all ten tops.",
+          "One bare table and one tall square horned incense altar; no bread display.",
+          "Carved open leaves centered on west/left short end; no sidewall doorway along north or south."
         ],
-        "reconstruction_notes": [],
-        "attempts": 1
+        "coordinator_visual_audit": [
+          "Viewed ten distinct lampstand bases, five each side, with seven separate oil vessels/flames per fixture. One bare central gold table plus distinct smoking incense altar. West short-end partition has centered paired doors. Arrangement and small decoration are schematic; no exact room dimensions certified from this perspective."
+        ],
+        "not_assessable": [
+          "Pinched spout anatomy and exact cup/flower allocation at small output scale.",
+          "Exact cubit plan, door geometry and gold engineering; companion vector governs."
+        ],
+        "attempts": 2,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "978ae2f8afba8b8f172b1104b4ce7dc747574cef68e9794fed748b37898041fa",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1LKaVJFj-twqlUGg-DeT6N7Q79nxbeflD/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1LKaVJFj-twqlUGg-DeT6N7Q79nxbeflD/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "native_master_file": "ARCH-FIR-004.png",
+      "correction_receipt": "production/receipts/ARCH-FIR-004.json",
+      "review_receipt": "production/coordinator/ARCH-FIR-004.json",
+      "master_drive_url": "https://drive.google.com/file/d/1b_WNBOUKUA4s8EDmBUPsDr1I-_Lbaezp/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/1b_WNBOUKUA4s8EDmBUPsDr1I-_Lbaezp/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "1b_WNBOUKUA4s8EDmBUPsDr1I-_Lbaezp",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-FIR-005",
@@ -992,7 +1082,9 @@
         "R-GARFINKEL",
         "M-MET-SPHINX",
         "K-2C13",
-        "K-2C29"
+        "K-2C29",
+        "K-1K6",
+        "K-EX25"
       ],
       "kjv_constraints": [
         "Ten lampstands: five on each side.",
@@ -1002,14 +1094,15 @@
         "Exact table-to-lamp intervals, furniture design and bread distribution over the ten tables are not specified.",
         "Bread provision is not displayed; individual lamp branch forms are simplified, not a recovered design."
       ],
-      "required_display_note": "Chronicles 4:8 inventory study before bread placement: ten visible tables and ten visible lampstands, five of each per side. Kings lists one table; Chronicles 13:11 and 29:18 also use the singular. These readings remain distinct. Branch forms, spacing, ornament and bread distribution are reconstructed; no 120-loaf claim is made. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "First Temple furnishings in the Chronicles inventory: ten lampstands and ten tables, shown separately from the Kings one-table view. Tables are bare to avoid assigning an unsupported loaf total. Placement and cubit geometry follow the source-specific companion diagram. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "diagrams": [
         "first-temple-chronicles"
       ],
       "critical_visual_checks": [
-        "Ten tables, five each side",
-        "Ten lampstands, five each side",
-        "Bare table surfaces; inventory study before bread placement"
+        "Ten lampstand bases counted five per side; seven vessels/flames on each.",
+        "Ten separate bare table tops, five north and five south.",
+        "One square-bodied horned incense altar separate from tables.",
+        "No bread display; same western doorway/carved woodwork and lamp design as FIR004."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -1017,16 +1110,16 @@
       "image_is_scale_drawing": false,
       "sources": [
         {
-          "id": "K-2C3",
-          "title": "2 Chronicles 3 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/2CH03.htm"
-        },
-        {
           "id": "K-2C4",
           "title": "2 Chronicles 4 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH04.htm"
+        },
+        {
+          "id": "K-2C3",
+          "title": "2 Chronicles 3 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/2CH03.htm"
         },
         {
           "id": "R-GARFINKEL",
@@ -1052,6 +1145,18 @@
           "title": "2 Chronicles 29 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH29.htm"
+        },
+        {
+          "id": "K-1K6",
+          "title": "1 Kings 6 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/1KI06.htm"
+        },
+        {
+          "id": "K-EX25",
+          "title": "Exodus 25 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/EXO25.htm"
         }
       ],
       "evidence_policy": {
@@ -1060,38 +1165,52 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. First Temple Holy Place: Chronicles inventory. Ten lampstands: five on each side. Ten tables: five on each side. Exact table-to-lamp intervals, furniture design and bread distribution over the ten tables are not specified. Bread provision is not displayed; individual lamp branch forms are simplified, not a recovered design. Chronicles 4:8 inventory study before bread placement: ten visible tables and ten visible lampstands, five of each per side. Kings lists one table; Chronicles 13:11 and 29:18 also use the singular. These readings remain distinct. Branch forms, spacing, ornament and bread distribution are reconstructed; no 120-loaf claim is made. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Ten tables, five each side; Ten lampstands, five each side; Bare table surfaces; inventory study before bread placement.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Ten seven-lamped stands match corrected Kings design. Ten bare tables preserve separate Chronicles inventory without invented loaf total. Oracle door pair matches corrected west-end partition. First Temple furnishings in the Chronicles inventory: ten lampstands and ten tables, shown separately from the Kings one-table view. Tables are bare to avoid assigning an unsupported loaf total. Placement and cubit geometry follow the source-specific companion diagram. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "image": "assets/webp/ARCH-FIR-005.webp",
       "thumbnail": "thumbnails/ARCH-FIR-005.webp",
       "master_file": "ARCH-FIR-005.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "First Temple Holy Place: Chronicles inventory. Reconstructed Chronicles-based inventory model.",
+      "alt_text": "Overhead Chronicles inventory: ten seven-lamped stands and ten bare tables in north and south rows, plus one incense altar and west-end oracle doors.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-FIR-005.png",
-      "display_caption": "First Temple Holy Place: Chronicles inventory. Chronicles 4:8 inventory study before bread placement: ten visible tables and ten visible lampstands, five of each per side. Kings lists one table; Chronicles 13:11 and 29:18 also use the singular. These readings remain distinct. Branch forms, spacing, ornament and bread distribution are reconstructed; no 120-loaf claim is made. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "First Temple Holy Place: Chronicles inventory. First Temple furnishings in the Chronicles inventory: ten lampstands and ten tables, shown separately from the Kings one-table view. Tables are bare to avoid assigning an unsupported loaf total. Placement and cubit geometry follow the source-specific companion diagram. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "sha256": {
-        "webp": "ba6a4e50bd34bca1e088eb0e16a5feba8650c3e1bad5f57cd4ad45643435a11a",
-        "master_png": "7d055bcf6117741b7aad86a977c39e4bdc967135483f1ffa78514094724e4e30"
+        "master_png": "38dce0241cc52b3513b12138d5bf5787c78e15cd43078384fdfffb30e1361060",
+        "webp": "2698830ef57f90e8069e72469de9ab26c0aac66e066c35314b82bacc30fd7762"
       },
       "bytes": {
-        "webp": 490948,
-        "master_png": 2747772
+        "master_png": 2510637,
+        "webp": 417020
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed native and reported details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native: Counted ten bare tables and ten stands/five each side, one altar; no cloths or bread display; selected shared relief anatomy.",
-        "not_assessable": [
-          "Detailed lampstand branch form",
-          "No120-loaf inventory claim"
+        "worker_visual_audit": [
+          "Ten lampstand bases counted five per side; seven vessels/flames on each.",
+          "Ten separate bare table tops, five north and five south.",
+          "One square-bodied horned incense altar separate from tables.",
+          "No bread display; same western doorway/carved woodwork and lamp design as FIR004."
         ],
-        "reconstruction_notes": [],
-        "attempts": 1
+        "coordinator_visual_audit": [
+          "Viewed ten lampstands, seven separate vessels/flames per fixture, ten bare tables arranged five each side and one distinct incense altar; same west door design and human-faced cherub relief model as FIR004. Source-specific Chronicles inventory remains distinct from Kings one-table study."
+        ],
+        "not_assessable": [
+          "Pinched wick-spout anatomy and exact cup allocation at small fixture scale.",
+          "Exact plan, dimensions and structural woodwork; companion vector governs."
+        ],
+        "attempts": 1,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "38dce0241cc52b3513b12138d5bf5787c78e15cd43078384fdfffb30e1361060",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1J9meFQJJdWw6tgNImdNw_JvhHqumdFkI/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1J9meFQJJdWw6tgNImdNw_JvhHqumdFkI/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "native_master_file": "ARCH-FIR-005.png",
+      "correction_receipt": "production/receipts/ARCH-FIR-005.json",
+      "review_receipt": "production/coordinator/ARCH-FIR-005.json",
+      "master_drive_url": "https://drive.google.com/file/d/1bd2_vU7SEMWXz83plBO5E5NTyqswIk6j/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/1bd2_vU7SEMWXz83plBO5E5NTyqswIk6j/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "1bd2_vU7SEMWXz83plBO5E5NTyqswIk6j",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-FIR-006",
@@ -1120,26 +1239,20 @@
       "reconstruction_choices": [
         "Cherub anatomy and exact Ark position are inferred; faces toward house follows Chronicles convention."
       ],
-      "required_display_note": "Two monumental oracle guardians are distinct from the Ark's two small mercy-seat figures. The selected frontal room approximates the 20-cubit cube, with large inner wings meeting and outer wings reaching the walls. Gold interior finish is shown. Perspective does not certify exact dimensions, all Ark rings or hidden fittings. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "Kings oracle reconstruction with two monumental guardians whose wings span north-south and faces look east toward the hall, following the selected Chronicles orientation. The smaller Ark is separate beneath the wings, with staves projecting eastward. Exact cubit sizes, hidden fittings and detailed creature anatomy remain interpretive. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "diagrams": [
         "first-temple-kings"
       ],
       "critical_visual_checks": [
-        "Two monumental cherubim",
-        "Small Ark remains a separate scale",
-        "No divine statue"
+        "Viewed full output: two separate parallel staves extend toward foreground/east.",
+        "Two large human-headed guardians face viewer/east; inner wing tips meet near center, outer wings extend toward side walls.",
+        "Small Ark and two small mercy-seat figures remain centered below the monumental wings; no table or extra figures."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
-        {
-          "id": "K-EX25",
-          "title": "Exodus 25 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/EXO25.htm"
-        },
         {
           "id": "K-1K6",
           "title": "1 Kings 6 KJV",
@@ -1157,6 +1270,12 @@
           "title": "2 Chronicles 3 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH03.htm"
+        },
+        {
+          "id": "K-EX25",
+          "title": "Exodus 25 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/EXO25.htm"
         },
         {
           "id": "R-GARFINKEL",
@@ -1178,38 +1297,51 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. First Temple oracle: large cherubim and Ark. Two large olivewood, gold-overlaid cherubim, each 10 cubits high. Each wing 5; combined span reaches across 20-cubit oracle. Ark is a separate small object beneath their wings. Cherub anatomy and exact Ark position are inferred; faces toward house follows Chronicles convention. Two monumental oracle guardians are distinct from the Ark's two small mercy-seat figures. The selected frontal room approximates the 20-cubit cube, with large inner wings meeting and outer wings reaching the walls. Gold interior finish is shown. Perspective does not certify exact dimensions, all Ark rings or hidden fittings. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Two monumental cherubim; Small Ark remains a separate scale; No divine statue.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Ark staves now project eastward toward the hall/viewer instead of across the room. Small Ark remains distinct from two monumental north/south guardians facing the hall. Kings oracle reconstruction with two monumental guardians whose wings span north-south and faces look east toward the hall, following the selected Chronicles orientation. The smaller Ark is separate beneath the wings, with staves projecting eastward. Exact cubit sizes, hidden fittings and detailed creature anatomy remain interpretive. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "image": "assets/webp/ARCH-FIR-006.webp",
       "thumbnail": "thumbnails/ARCH-FIR-006.webp",
       "master_file": "ARCH-FIR-006.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "First Temple oracle: large cherubim and Ark. Reconstructed Kings geometry with Chronicles orientation convention.",
+      "alt_text": "First Temple oracle with north-south wing spans, large guardians facing east and the smaller Ark beneath, its staves projecting toward the hall.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-FIR-006.png",
-      "display_caption": "First Temple oracle: large cherubim and Ark. Two monumental oracle guardians are distinct from the Ark's two small mercy-seat figures. The selected frontal room approximates the 20-cubit cube, with large inner wings meeting and outer wings reaching the walls. Gold interior finish is shown. Perspective does not certify exact dimensions, all Ark rings or hidden fittings. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "First Temple oracle: large cherubim and Ark. Kings oracle reconstruction with two monumental guardians whose wings span north-south and faces look east toward the hall, following the selected Chronicles orientation. The smaller Ark is separate beneath the wings, with staves projecting eastward. Exact cubit sizes, hidden fittings and detailed creature anatomy remain interpretive. Human-headed winged-lion anatomy is a selected regional interpretation; the KJV does not supply that detailed anatomy.",
       "sha256": {
-        "webp": "735603d393b780ea007b457e64fde7640d4cdbe11af56de49bc684a99f11a4b0",
-        "master_png": "d5b3468980f0937d70f48030ac8a622db36b56bb2ef5ff8b3fa2ffa3e43667f3"
+        "master_png": "5a9f5f9ec48767eb9a9fa241c462456c03849ccf8735b4a5d1b745ea9d23fb22",
+        "webp": "1a47ec1ab8417aacdf70246d4c4ab729f0572e5c46864c11364cd57abfcb758a"
       },
       "bytes": {
-        "webp": 375570,
-        "master_png": 2478317
+        "master_png": 2344516,
+        "webp": 356216
       },
       "visual_audit": {
-        "worker_visual_audit": "Nearly square opening, two large roughly square span-height figures, heads half room height, inner tips meet/outer touch walls; small central Ark with two small sphinxes. Exact20/10 dimensions controlled by SVG, not certified in perspective.",
-        "coordinator_visual_audit": "Viewed native: oracle opening reads square; both monumental figures stand approximately half wall height with spread wings joining at center and reaching side walls. Their human faces and animal bodies agree with selected motif, as do two separate small Ark figures. Gold wall carvings visible. Perspective proportions remain approximate.",
-        "not_assessable": [
-          "Exact room depth and cubit dimensions in frontal perspective",
-          "Hidden Ark carrying rings and exact pole allocation"
+        "worker_visual_audit": [
+          "Viewed full output: two separate parallel staves extend toward foreground/east.",
+          "Two large human-headed guardians face viewer/east; inner wing tips meet near center, outer wings extend toward side walls.",
+          "Small Ark and two small mercy-seat figures remain centered below the monumental wings; no table or extra figures."
         ],
-        "reconstruction_notes": [],
-        "attempts": 2
+        "coordinator_visual_audit": [
+          "Viewed two near-facing parallel Ark staves, two monumental human-headed winged quadrupeds arranged north/south and facing east toward viewer. The small Ark is subordinate; far ring fittings and tiny guardians cannot be fully assessed. Exact anatomy and installed Ark dimensions remain interpreted."
+        ],
+        "not_assessable": [
+          "Exact room/guardian/Ark dimensions and concealed carrying-ring connections.",
+          "Small guardian facial angle and full end-on Ark geometry are too small for exact certification."
+        ],
+        "attempts": 1,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "5a9f5f9ec48767eb9a9fa241c462456c03849ccf8735b4a5d1b745ea9d23fb22",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/10aGxf8HwfalL8bD7L3YzDafn5VC97V8b/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/10aGxf8HwfalL8bD7L3YzDafn5VC97V8b/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "native_master_file": "ARCH-FIR-006.png",
+      "correction_receipt": "production/receipts/ARCH-FIR-006.json",
+      "review_receipt": "production/coordinator/ARCH-FIR-006.json",
+      "master_drive_url": "https://drive.google.com/file/d/14hSdcwqXv8cDaLQdVLr6_9tjj-bIumuB/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/14hSdcwqXv8cDaLQdVLr6_9tjj-bIumuB/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "14hSdcwqXv8cDaLQdVLr6_9tjj-bIumuB",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-FIR-007",
@@ -1406,7 +1538,7 @@
     },
     {
       "id": "ARCH-HER-002",
-      "title": "Herodian sanctuary: east front",
+      "title": "Herodian sanctuary: technical facade diagram",
       "group": "Herodian Temple",
       "period": "First-century pre-AD 70 reconstruction",
       "kjv_passages": [
@@ -1417,28 +1549,31 @@
         "H-WAR5",
         "H-ANT15",
         "H-MID4",
-        "H-MID3"
+        "H-MID3",
+        "V3-SRC-065",
+        "V3-SRC-066",
+        "V3-SRC-067",
+        "V3-SRC-068"
       ],
       "kjv_constraints": [
         "KJV identifies the Temple but supplies no complete facade elevations."
       ],
       "reconstruction_choices": [
-        "100-cubit-wide, 100-cubit-high front follows Josephus and Middot.",
-        "Rear width 70 follows Middot; Josephus differs.",
-        "Masonry, gold fittings, roofline and carved details are reconstructed.",
-        "Open outer portal chooses Middot 40 high by 20 wide; Josephus gives 70 by 25. Inner gold doors are recessed beyond the open porch."
+        "Later Middot source model selected; Josephus portal70-by25 stays separate.",
+        "Step runs, facade materials, engineering and wall thickness are schematic, not recovered fabric."
       ],
-      "required_display_note": "Reconstructed from ancient descriptions, not a surviving elevation. This model selects Middot where its dimensions differ from Josephus; the sources are not averaged. Open outer portal selects Middot 40 by 20, not Josephus 70 by 25; exact dimensions are controlled by source notes, not perspective measurement. Gilding applies to principal east front with white portions retained after Josephus; selected Middot portal differs from Josephus.",
+      "required_display_note": "Dimensioned teaching elevation and width comparison following the selected later Middot model: facade 100 by 100 cubits, rear width 70 with 15-cubit shoulders, open portal 40 by 20, and a twelve-riser count study. Step runs are schematic; no surviving ancient facade or single historical source consensus is asserted.",
       "diagrams": [
         "herodian-sanctuary"
       ],
       "critical_visual_checks": [
-        "Wide monumental front",
-        "No Solomon-specific freestanding pillar pair",
-        "Appropriate pre-70 architecture"
+        "100-by100 square front",
+        "40-high by20-wide open portal",
+        "Twelve numbered risers",
+        "70-wide rear plus two15-wide shoulders"
       ],
       "status": "included",
-      "medium": "AI-generated reconstruction, built-in ImageGen",
+      "medium": "Deterministic SVG primary technical study",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
@@ -1461,16 +1596,44 @@
           "url": "https://penelope.uchicago.edu/josephus/ant-15.html"
         },
         {
+          "id": "H-MID4",
+          "title": "Mishnah Middot 4 (later rabbinic description)",
+          "kind": "Later rabbinic description",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4"
+        },
+        {
           "id": "H-MID3",
           "title": "Mishnah Middot 3 (later rabbinic description)",
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Middot.3"
         },
         {
-          "id": "H-MID4",
-          "title": "Mishnah Middot 4 (later rabbinic description)",
-          "kind": "Later rabbinic description",
-          "url": "https://www.sefaria.org/Mishnah_Middot.4"
+          "id": "V3-SRC-065",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.3.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-066",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.3.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-067",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-068",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
         }
       ],
       "evidence_policy": {
@@ -1479,38 +1642,57 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Herodian sanctuary: east front. KJV identifies the Temple but supplies no complete facade elevations. 100-cubit-wide, 100-cubit-high front follows Josephus and Middot. Rear width 70 follows Middot; Josephus differs. Masonry, gold fittings, roofline and carved details are reconstructed. Open outer portal chooses Middot 40 high by 20 wide; Josephus gives 70 by 25. Inner gold doors are recessed beyond the open porch. Reconstructed from ancient descriptions, not a surviving elevation. This model selects Middot where its dimensions differ from Josephus; the sources are not averaged. Open outer portal selects Middot 40 by 20, not Josephus 70 by 25; exact dimensions are controlled by source notes, not perspective measurement. Gilding applies to principal east front with white portions retained after Josephus; selected Middot portal differs from Josephus. Required visible checks: Wide monumental front; No Solomon-specific freestanding pillar pair; Appropriate pre-70 architecture.",
+      "production_brief_type": "Deterministic technical revision; SVG source, production receipt and hash-bound review preserved.",
+      "normalized_production_brief": "Deterministic revision:  Dimensioned teaching elevation and width comparison following the selected later Middot model: facade 100 by 100 cubits, rear width 70 with 15-cubit shoulders, open portal 40 by 20, and a twelve-riser count study. Step runs are schematic; no surviving ancient facade or single historical source consensus is asserted.",
       "image": "assets/webp/ARCH-HER-002.webp",
       "thumbnail": "thumbnails/ARCH-HER-002.webp",
       "master_file": "ARCH-HER-002.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "Herodian sanctuary: east front. Reconstructed First-century pre-AD 70 reconstruction.",
-      "is_native_generated_image": true,
-      "native_master_file": "ARCH-HER-002.png",
-      "display_caption": "Herodian sanctuary: east front. Reconstructed from ancient descriptions, not a surviving elevation. This model selects Middot where its dimensions differ from Josephus; the sources are not averaged. Open outer portal selects Middot 40 by 20, not Josephus 70 by 25; exact dimensions are controlled by source notes, not perspective measurement. Gilding applies to principal east front with white portions retained after Josephus; selected Middot portal differs from Josephus.",
+      "width": 1600,
+      "height": 2600,
+      "alt_text": "Dimensioned Middot teaching plate: square100-by100 facade,40-by20 portal, twelve-riser profile and70-plus15-plus15 plan-width comparison.",
+      "is_native_generated_image": false,
+      "display_caption": "Herodian sanctuary: technical facade diagram. Dimensioned teaching elevation and width comparison following the selected later Middot model: facade 100 by 100 cubits, rear width 70 with 15-cubit shoulders, open portal 40 by 20, and a twelve-riser count study. Step runs are schematic; no surviving ancient facade or single historical source consensus is asserted.",
       "sha256": {
-        "webp": "742cc12b52db6be27daf959dd691055ba20df8d0b516668e85ddb7c1e7224bff",
-        "master_png": "e0e828447e793b3e3c0f2884cf8d932fd7808b33b2b5f5abe2ee8478c747af70"
+        "master_png": "5806f4c6fed7f790aa9d3fe01358b386e4e2353e0fd3b3e18aa8828a9be6fdbd",
+        "webp": "7fc6e88340947b40ce1b5f6d74232b375a45bb0a3c22d699119d69003fb654ae"
       },
       "bytes": {
-        "webp": 324184,
-        "master_png": 2395605
+        "master_png": 171253,
+        "webp": 165208
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker viewed selected native, independently reported these specific corrections and limits.",
-        "coordinator_visual_audit": "Viewed native: gold principal front nearly square, open portal about one fifth front width/two fifths height, white side and trim remain, recessed doors with golden vine. Two tiny adults provide informal scale only; exact absolute dimensions not measured from artwork.",
-        "not_assessable": [
-          "Precise scale from tiny figures",
-          "Complete side/rear building arrangement"
+        "worker_visual_audit": [],
+        "coordinator_visual_audit": [
+          "Viewed square100x100 facade, open40x20 portal, twelve countable schematic risers,70rear15+15width comparison. Deterministic technical primary replaces native attempts whose facade ratio remained visibly broad."
         ],
-        "reconstruction_notes": [],
-        "attempts": 2
+        "not_assessable": [
+          "Full ancient facade fabric, engineering, tread/landing geometry, metrical cubit conversion and source reconciliation remain unestablished.",
+          "Native perspective art and schematic reconstructions do not certify hidden counts, exact recovered fabric or source agreement."
+        ],
+        "attempts": 0,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "5806f4c6fed7f790aa9d3fe01358b386e4e2353e0fd3b3e18aa8828a9be6fdbd",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1QGzlP4yfY-Ve6s3Cbq_I7PzP0Xegxg8u/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1QGzlP4yfY-Ve6s3Cbq_I7PzP0Xegxg8u/view?usp=drivesdk"
+      "source_evidence_limit": "Source-specific dimensioned teaching model; wall thickness, engineering, hidden completion and modern cubit conversion remain uncertified.",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      },
+      "raster_master_file": "ARCH-HER-002.png",
+      "svg": "assets/svg/ARCH-HER-002.svg",
+      "source_svg_sha256": "9c1bad433e0eb15c1869623d6f2b5d6bb10e18b387642d56356f29ce2a1715e6",
+      "dimensioned_source_model": true,
+      "scale_drawing_scope": "Only the source-specific dimensioned panel components share their stated scale; structural completion, thicknesses and profile runs retain the plate-specific qualifications.",
+      "correction_receipt": "production/receipts/ARCH-HER-002.json",
+      "review_receipt": "production/coordinator/ARCH-HER-002.json",
+      "master_drive_url": "https://drive.google.com/file/d/14mRPvwflmWC7sWJ7UrWiks-rTugmYpvX/view?usp=drivesdk",
+      "raster_master_drive_url": "https://drive.google.com/file/d/14mRPvwflmWC7sWJ7UrWiks-rTugmYpvX/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "14mRPvwflmWC7sWJ7UrWiks-rTugmYpvX",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-HER-004",
@@ -1527,7 +1709,9 @@
         "H-WAR5",
         "H-MID4",
         "K-LEV24",
-        "H-YOMA51"
+        "H-YOMA51",
+        "V3-SRC-067",
+        "V3-SRC-068"
       ],
       "kjv_constraints": [
         "Luke records incense service in the Temple.",
@@ -1538,14 +1722,15 @@
         "Middot hall plan 40 by 20, inner height 40; Josephus gives a differing height.",
         "Furniture form and transferred orientation are reconstruction conventions."
       ],
-      "required_display_note": "One seven-lamp stand, one table with twelve visible flat cakes in two rows of six, and one incense altar. Cake form and row layout are selected interpretations. The two-curtain screen selects Mishnah Yoma 5:1's majority account; Rabbi Yosei gives one curtain. Middot's inner height is selected separately from Josephus; exact scale is governed by the diagram.",
+      "required_display_note": "Tall Herodian Holy Place selecting the Middot 20-wide, 40-high hall model: lampstand south/left, twelve cakes north/right and incense altar before the double screen. The outer screen opens south without a cinched tie-back; the inner opening is hidden. Yoma's majority two-curtain account is selected, while Rabbi Yosei's single-curtain alternative and Josephus's differing dimensions remain separate. Native perspective is unmeasured.",
       "diagrams": [
         "herodian-sanctuary"
       ],
       "critical_visual_checks": [
-        "One seven-oil-lamp stand",
-        "One table and one small gold altar",
-        "No Ark, ten stands or sacrificial altar inside"
+        "Complete rear screen roughly500pxwide by950pxhigh; ceiling well above furnishings.",
+        "Seven separate lamp flames left;12cakes counted2rows6right, two frankincense dishes;incense altarcenter.",
+        "Left/south outer opening reveals second cloth plane; no encircling strap, brass rod, Ark or monumental cherubs.",
+        "Matte floor and consistent cream/blue/purple/scarlet screen."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -1553,22 +1738,16 @@
       "image_is_scale_drawing": false,
       "sources": [
         {
-          "id": "K-EX26",
-          "title": "Exodus 26 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/EXO26.htm"
-        },
-        {
-          "id": "K-LEV24",
-          "title": "Leviticus 24 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/LEV24.htm"
-        },
-        {
           "id": "K-LK1",
           "title": "Luke 1 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/LUK01.htm"
+        },
+        {
+          "id": "K-EX26",
+          "title": "Exodus 26 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/EXO26.htm"
         },
         {
           "id": "H-WAR5",
@@ -1583,11 +1762,31 @@
           "url": "https://www.sefaria.org/Mishnah_Middot.4"
         },
         {
+          "id": "K-LEV24",
+          "title": "Leviticus 24 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/LEV24.htm"
+        },
+        {
           "id": "H-YOMA51",
           "title": "Mishnah Yoma 5:1: two-curtain account and Rabbi Yosei's one-curtain alternative",
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Yoma.5.1",
           "evidence_limit": "Two curtains separated by a cubit is the selected opinion, not an uncontested contemporary survey; Rabbi Yosei gives one curtain."
+        },
+        {
+          "id": "V3-SRC-067",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-068",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
         }
       ],
       "evidence_policy": {
@@ -1596,38 +1795,52 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Herodian Holy Place. Luke records incense service in the Temple. Tabernacle north-table/south-lamp arrangement supplies a comparison, not Temple excavation. Josephus inventory: one menorah, one table, one incense altar. Middot hall plan 40 by 20, inner height 40; Josephus gives a differing height. Furniture form and transferred orientation are reconstruction conventions. One seven-lamp stand, one table with twelve visible flat cakes in two rows of six, and one incense altar. Cake form and row layout are selected interpretations. The two-curtain screen selects Mishnah Yoma 5:1's majority account; Rabbi Yosei gives one curtain. Middot's inner height is selected separately from Josephus; exact scale is governed by the diagram. Required visible checks: One seven-oil-lamp stand; One table and one small gold altar; No Ark, ten stands or sacrificial altar inside.",
+      "production_brief_type": "Correction summary; exact native generator call, actual reference hashes and review records preserved separately.",
+      "normalized_production_brief": "Correction summary. Tall Herodian Holy Place selecting the Middot 20-wide, 40-high hall model: lampstand south/left, twelve cakes north/right and incense altar before the double screen. The outer screen opens south without a cinched tie-back; the inner opening is hidden. Yoma's majority two-curtain account is selected, while Rabbi Yosei's single-curtain alternative and Josephus's differing dimensions remain separate. Native perspective is unmeasured.",
       "image": "assets/webp/ARCH-HER-004.webp",
       "thumbnail": "thumbnails/ARCH-HER-004.webp",
       "master_file": "ARCH-HER-004.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "Herodian Holy Place. Reconstructed First-century pre-AD 70; Middot dimensional model.",
+      "width": 1024,
+      "height": 1536,
+      "alt_text": "Tall gold-lined Holy Place with seven lamps south/left,12cakes north/right, incense altar and uncinched south opening in double fabric screen.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-HER-004.png",
-      "display_caption": "Herodian Holy Place. One seven-lamp stand, one table with twelve visible flat cakes in two rows of six, and one incense altar. Cake form and row layout are selected interpretations. The two-curtain screen selects Mishnah Yoma 5:1's majority account; Rabbi Yosei gives one curtain. Middot's inner height is selected separately from Josephus; exact scale is governed by the diagram.",
+      "display_caption": "Herodian Holy Place. Tall Herodian Holy Place selecting the Middot 20-wide, 40-high hall model: lampstand south/left, twelve cakes north/right and incense altar before the double screen. The outer screen opens south without a cinched tie-back; the inner opening is hidden. Yoma's majority two-curtain account is selected, while Rabbi Yosei's single-curtain alternative and Josephus's differing dimensions remain separate. Native perspective is unmeasured.",
       "sha256": {
-        "webp": "f9b262a13b59ae6da16547d6cc86188038d190e506f323f0b6933f5bfa7f828c",
-        "master_png": "34049521c9b66b2c6792f692347318307438e59a9c534f6492157db88db7c5ad"
+        "master_png": "3eb77f6711d7f226b6c5a65d7ebad91ebb60d2a923f13744cfc4a190e1332f8c",
+        "webp": "0d480ccdfc11799f80fadaa171178b89c81e08517e88ba248cff3c3e70ddd398"
       },
       "bytes": {
-        "webp": 547762,
-        "master_png": 3030603
+        "master_png": 2187845,
+        "webp": 255264
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed and reported selected details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native. Counted twelve flat cakes, two rows of six; seven flames, one table/lampstand/altar and two separated curtains. Inner chamber occluded.",
-        "not_assessable": [
-          "Hidden inner contents",
-          "Furniture scale and cake form interpreted"
+        "worker_visual_audit": [
+          "Complete rear screen roughly500pxwide by950pxhigh; ceiling well above furnishings.",
+          "Seven separate lamp flames left;12cakes counted2rows6right, two frankincense dishes;incense altarcenter.",
+          "Left/south outer opening reveals second cloth plane; no encircling strap, brass rod, Ark or monumental cherubs.",
+          "Matte floor and consistent cream/blue/purple/scarlet screen."
         ],
-        "reconstruction_notes": [],
-        "attempts": 1
+        "coordinator_visual_audit": [
+          "Whole frame reviewed: complete rear screen visibly tall relative to width; free folds and south-side opening reveal second curtain plane, with no cinching strap. Seven separate lamp flames and twelve cakes in two visible rows of six; altar centered. Exact room40cubit dimensions, one-cubit gap and hidden north opening remain technical-model matters."
+        ],
+        "not_assessable": [
+          "Exact20width/40height/40depth and1-cubit screen gap cannot be certified from perspective; technical model governs.",
+          "Hidden north opening, exact lamp spout/cup allocation and screen support/weaving are not certified."
+        ],
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "3eb77f6711d7f226b6c5a65d7ebad91ebb60d2a923f13744cfc4a190e1332f8c",
+        "attempts": 2,
+        "scope": "Current selected output internally reviewed; technical formats do not claim successful painting repairs. Fresh external re-review open."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1zp0pKD-f31jpmhQn38mwlfozalNDlNdk/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1zp0pKD-f31jpmhQn38mwlfozalNDlNdk/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective does not certify hidden geometry, exact source dimensions or recovered fabric.",
+      "correction_receipt": "production/receipts/ARCH-HER-004.json",
+      "review_receipt": "production/coordinator/ARCH-HER-004.json",
+      "native_master_file": "ARCH-HER-004.png",
+      "master_drive_url": "https://drive.google.com/file/d/1NMNmo72cwS1W-NeQIngm3DMSJCy1_1eP/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/1NMNmo72cwS1W-NeQIngm3DMSJCy1_1eP/view?usp=drivesdk",
+      "master_drive_file_id": "1NMNmo72cwS1W-NeQIngm3DMSJCy1_1eP",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_upload_receipt": "production/published-masters.json"
     },
     {
       "id": "ARCH-HER-005",
@@ -1641,7 +1854,8 @@
         "K-HB9",
         "H-WAR5",
         "H-MID4",
-        "H-YOMA5"
+        "H-YOMA5",
+        "H-YOMA51"
       ],
       "kjv_constraints": [
         "Hebrews 9 describes first-covenant tabernacle furnishings, not a Herodian inventory."
@@ -1651,14 +1865,15 @@
         "Chosen room floor 20 by 20, height 40 follows Middot; do not copy Solomon’s 20-cubit cube.",
         "A foundation stone, if shown, belongs to later Yoma tradition."
       ],
-      "required_display_note": "Teaching cutaway with two near walls removed, showing an empty inner chamber after Josephus: no Ark or monumental cherubim. The 20-by-20 floor and 40-cubit height select Middot, rather than Solomon's cube or Josephus' differing height. Perspective does not certify the full height. Gold finish, slab layout and removed wall/roof details are reconstructed; Hebrews 9 describes the tabernacle, not a Herodian inventory.",
+      "required_display_note": "Tall empty inner-chamber teaching cutaway selecting Middot's 20-by-20 floor and 40-cubit height, with the eastern double screen indicated at the threshold. Josephus describes the inner chamber as empty; his different height is kept separate. Removed walls, finishes and fittings are reconstructed, and the perspective render does not certify dimensions.",
       "diagrams": [
         "herodian-sanctuary"
       ],
       "critical_visual_checks": [
-        "Empty room without Ark or monumental cherubim",
-        "Visible cut surfaces, not an ordinary doorway view",
-        "Selected square floor and tall chamber; exact height not visually certified"
+        "Viewed second full output: a tall rectangular-prism chamber with whole floor/ceiling framed, two retained gold walls and empty interior.",
+        "Two full-height woven fabric edges lie at the east/right threshold with a visible intervening strip, not metal poles.",
+        "Small anonymous white-robed figure stands outside; no person or object inside the chamber.",
+        "No city/towers, exterior battlements, Ark, statues or furniture."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -1688,6 +1903,13 @@
           "title": "Mishnah Yoma 5:2 (later foundation-stone tradition)",
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Yoma.5.2"
+        },
+        {
+          "id": "H-YOMA51",
+          "title": "Mishnah Yoma 5:1: two-curtain account and Rabbi Yosei's one-curtain alternative",
+          "kind": "Later rabbinic description",
+          "url": "https://www.sefaria.org/Mishnah_Yoma.5.1",
+          "evidence_limit": "Two curtains separated by a cubit is the selected opinion, not an uncontested contemporary survey; Rabbi Yosei gives one curtain."
         }
       ],
       "evidence_policy": {
@@ -1696,41 +1918,52 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Herodian Most Holy Place: empty chamber cutaway. Hebrews 9 describes first-covenant tabernacle furnishings, not a Herodian inventory. Josephus describes the inner chamber as empty. Chosen room floor 20 by 20, height 40 follows Middot; do not copy Solomon’s 20-cubit cube. A foundation stone, if shown, belongs to later Yoma tradition. Teaching cutaway with two near walls removed, showing an empty inner chamber after Josephus: no Ark or monumental cherubim. The 20-by-20 floor and 40-cubit height select Middot, rather than Solomon's cube or Josephus' differing height. Perspective does not certify the full height. Gold finish, slab layout and removed wall/roof details are reconstructed; Hebrews 9 describes the tabernacle, not a Herodian inventory. Required visible checks: Empty room without Ark or monumental cherubim; Visible cut surfaces, not an ordinary doorway view; Selected square floor and tall chamber; exact height not visually certified.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Taller vertical chamber replaces the earlier cube-like room. Full floor and ceiling retained in portrait teaching cutaway. Eastern double fabric screen and connected podium/threshold provide an entrance and physical context; no isolated floating box. Tall empty inner-chamber teaching cutaway selecting Middot's 20-by-20 floor and 40-cubit height, with the eastern double screen indicated at the threshold. Josephus describes the inner chamber as empty; his different height is kept separate. Removed walls, finishes and fittings are reconstructed, and the perspective render does not certify dimensions.",
       "image": "assets/webp/ARCH-HER-005.webp",
       "thumbnail": "thumbnails/ARCH-HER-005.webp",
       "master_file": "ARCH-HER-005.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "Herodian Most Holy Place: empty chamber cutaway. Reconstructed First-century pre-AD 70; Middot dimensional model.",
+      "width": 1024,
+      "height": 1536,
+      "alt_text": "Portrait cutaway of a tall, gold-lined, empty Herodian inner chamber with east-side double-screen threshold and adjacent hall-floor stub.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-HER-005.png",
-      "display_caption": "Herodian Most Holy Place: empty chamber cutaway. Teaching cutaway with two near walls removed, showing an empty inner chamber after Josephus: no Ark or monumental cherubim. The 20-by-20 floor and 40-cubit height select Middot, rather than Solomon's cube or Josephus' differing height. Perspective does not certify the full height. Gold finish, slab layout and removed wall/roof details are reconstructed; Hebrews 9 describes the tabernacle, not a Herodian inventory.",
+      "display_caption": "Herodian Most Holy Place: empty chamber cutaway. Tall empty inner-chamber teaching cutaway selecting Middot's 20-by-20 floor and 40-cubit height, with the eastern double screen indicated at the threshold. Josephus describes the inner chamber as empty; his different height is kept separate. Removed walls, finishes and fittings are reconstructed, and the perspective render does not certify dimensions.",
       "sha256": {
-        "webp": "964fe824f937ee285221954420c2266af013697afc36a1d2e58f7e1f68150c68",
-        "master_png": "a6af7bebeb09425f03fca32db77cd7647a7274c1dddc9ee579c0ca068a070601"
+        "master_png": "868b99d42d3671b03fb38d3d82b51a946aba88115edea635a74ee30512a75cfd",
+        "webp": "7977d9e3f5b9d2039f922c09aaec05f12bba57ba82be6d6291261d98b8bfc52c"
       },
       "bytes": {
-        "webp": 242498,
-        "master_png": 2307736
+        "master_png": 2499594,
+        "webp": 326908
       },
       "visual_audit": {
-        "worker_visual_audit": "Square matte floor and tall empty golden chamber; no Ark or furniture.",
-        "coordinator_visual_audit": "Root independently inspected the full native image: Square matte floor and tall empty golden chamber; no Ark or furniture.",
+        "worker_visual_audit": [
+          "Viewed second full output: a tall rectangular-prism chamber with whole floor/ceiling framed, two retained gold walls and empty interior.",
+          "Two full-height woven fabric edges lie at the east/right threshold with a visible intervening strip, not metal poles.",
+          "Small anonymous white-robed figure stands outside; no person or object inside the chamber.",
+          "No city/towers, exterior battlements, Ark, statues or furniture."
+        ],
+        "coordinator_visual_audit": [
+          "Viewed selected second attempt: complete tall chamber from floor to ceiling, empty gold-clad inner room, visible doubled fabric threshold, connected podium and human context figure. No Ark or monumental guardians. Exact 20x20x40 cubits cannot be certified in perspective and companion measured model governs."
+        ],
         "not_assessable": [
-          "Middot 20-square floor and 40-height model selected; perspective does not certify dimensions.",
-          "Surface finishes and cutaway edges are reconstruction choices."
+          "The 20-by-20-by-40 selected dimensions cannot be certified by perspective; companion drawing governs them.",
+          "Exact figure-to-building scale, hidden curtain opening and wall/roof engineering are inferred."
         ],
-        "reconstruction_notes": [
-          "Middot 20-square floor and 40-height model selected; perspective does not certify dimensions.",
-          "Surface finishes and cutaway edges are reconstruction choices."
-        ],
-        "attempts": 1
+        "attempts": 2,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "868b99d42d3671b03fb38d3d82b51a946aba88115edea635a74ee30512a75cfd",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1lsocHd0Y4x-2ySzouLSaEVQnjdquslKa/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1lsocHd0Y4x-2ySzouLSaEVQnjdquslKa/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "native_master_file": "ARCH-HER-005.png",
+      "correction_receipt": "production/receipts/ARCH-HER-005.json",
+      "review_receipt": "production/coordinator/ARCH-HER-005.json",
+      "master_drive_url": "https://drive.google.com/file/d/1cjMrEsitNUSf5pynUCRk9PnTjG6Uubal/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/1cjMrEsitNUSf5pynUCRk9PnTjG6Uubal/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "1cjMrEsitNUSf5pynUCRk9PnTjG6Uubal",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-HER-006",
@@ -1967,7 +2200,7 @@
         "Partial eastern corridor mosaic and coloured fresco follow the excavation description; the whole room is not tiled.",
         "Preliminary coin and abandonment chronology is qualified, not replaced by a 29 CE-only claim."
       ],
-      "required_display_note": "Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments; they are not six recovered complete shafts. Benches/corridor, partial mosaic and fresco evidence inform the room. The carved four-footed stone's function is proposed; far feet and the near bench are partly obscured. IAA's 2013 preliminary report mentions a 43 CE coin in mosaic bedding; the picture is not certified as an AD 30 interior.",
+      "required_display_note": "Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments, rather than six recovered complete shafts. Benches, corridor, partial mosaic and fresco evidence inform the room. The carved stone's function is proposed; far feet and the near bench are partly obscured. The IAA's 2013 preliminary report, based on an initial coin examination, records a 43 CE coin in the reading-room mosaic foundation; this reconstruction does not establish the room's appearance in AD 30.",
       "diagrams": [],
       "critical_visual_checks": [
         "Six separate columns in two rows of three",
@@ -1991,7 +2224,7 @@
           "title": "Dina Avshalom-Gorni and Arfan Najar, Migdal excavation report (IAA, 2013)",
           "kind": "Primary preliminary excavation report",
           "url": "https://hadashot.iaa.org.il/Report_Detail_Eng.aspx?id=2304&mag_id=120",
-          "evidence_limit": "The 2013 preliminary report records a 43 CE coin in reading-room mosaic foundation. Six roof columns are Netzer's proposed completion; the carved stone's prayer-table function is proposed, not established."
+          "evidence_limit": "The IAA 2013 preliminary report records a 43 CE coin in the reading-room mosaic foundation, based on an initial coin examination. A later numismatic revision was not verified in this batch. Six roof columns complete Netzer's proposal; the carved stone's prayer-table function remains proposed."
         }
       ],
       "evidence_policy": {
@@ -2001,7 +2234,7 @@
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
       "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Magdala: first-century synagogue comparison. Luke describes synagogue reading at Nazareth, not this Magdala building. Six columns, support completion, roof and removed section are interpreted. The Magdala Stone follows the actual excavated carved block; its prayer/reading function is proposed. Partial eastern corridor mosaic and coloured fresco follow the excavation description; the whole room is not tiled. Preliminary coin and abandonment chronology is qualified, not replaced by a 29 CE-only claim. Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments; they are not six recovered complete shafts. Benches/corridor, partial mosaic and fresco evidence inform the room. The carved four-footed stone's function is proposed; far feet and the near bench are partly obscured. IAA's 2013 preliminary report mentions a 43 CE coin in mosaic bedding; the picture is not certified as an AD 30 interior. Required visible checks: Six separate columns in two rows of three; Low carved Magdala Stone with menorah motif; Perimeter basalt benches/corridor and partial mosaic; No named cast, church or later Torah shrine.",
+      "normalized_production_brief": "Historical study asset. Magdala: first-century synagogue comparison. Luke describes synagogue reading at Nazareth, not this Magdala building. Six columns, support completion, roof and removed section are interpreted. The Magdala Stone follows the actual excavated carved block; its prayer/reading function is proposed. Partial eastern corridor mosaic and coloured fresco follow the excavation description; the whole room is not tiled. Preliminary coin and abandonment chronology is qualified, not replaced by a 29 CE-only claim. Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments, rather than six recovered complete shafts. Benches, corridor, partial mosaic and fresco evidence inform the room. The carved stone's function is proposed; far feet and the near bench are partly obscured. The IAA's 2013 preliminary report, based on an initial coin examination, records a 43 CE coin in the reading-room mosaic foundation; this reconstruction does not establish the room's appearance in AD 30. Required visible checks: Six separate columns in two rows of three; Low carved Magdala Stone with menorah motif; Perimeter basalt benches/corridor and partial mosaic; No named cast, church or later Torah shrine.",
       "image": "assets/webp/ARCH-CTX-001.webp",
       "thumbnail": "thumbnails/ARCH-CTX-001.webp",
       "master_file": "ARCH-CTX-001.png",
@@ -2010,7 +2243,7 @@
       "alt_text": "Magdala: first-century synagogue comparison. Reconstructed Early Roman Magdala; selected reconstruction of the synagogue's last reported phase.",
       "is_native_generated_image": true,
       "native_master_file": "ARCH-CTX-001.png",
-      "display_caption": "Magdala: first-century synagogue comparison. Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments; they are not six recovered complete shafts. Benches/corridor, partial mosaic and fresco evidence inform the room. The carved four-footed stone's function is proposed; far feet and the near bench are partly obscured. IAA's 2013 preliminary report mentions a 43 CE coin in mosaic bedding; the picture is not certified as an AD 30 interior.",
+      "display_caption": "Magdala: first-century synagogue comparison. Magdala archaeological comparison, not Nazareth or proof Jesus used this building. The roof is removed for teaching. Six columns complete Netzer's proposed reconstruction from fragments, rather than six recovered complete shafts. Benches, corridor, partial mosaic and fresco evidence inform the room. The carved stone's function is proposed; far feet and the near bench are partly obscured. The IAA's 2013 preliminary report, based on an initial coin examination, records a 43 CE coin in the reading-room mosaic foundation; this reconstruction does not establish the room's appearance in AD 30.",
       "sha256": {
         "webp": "1452852d3f3f94f92cb8a5802e6afc07744e59dc94851ee8d9a8f9fe046c7dbd",
         "master_png": "0d65c9e9bd805190fa3500c0dc7e0bda9559c590e9f2e0d48af3737b99969ac6"
@@ -2036,7 +2269,13 @@
       },
       "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
       "master_drive_url": "https://drive.google.com/file/d/1TWceAvpPJ6SayF9FObrs1qTTR791bIqz/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1TWceAvpPJ6SayF9FObrs1qTTR791bIqz/view?usp=drivesdk"
+      "native_master_drive_url": "https://drive.google.com/file/d/1TWceAvpPJ6SayF9FObrs1qTTR791bIqz/view?usp=drivesdk",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      }
     },
     {
       "id": "ARCH-CTX-002",
@@ -2163,7 +2402,7 @@
         "The KJV does not specify a circular stone; no actual Jesus-tomb identification is asserted.",
         "Front rock is removed for teaching; the passage connection remains partly occluded. The one-bench layout is interpretive, not established by the period comparison source."
       ],
-      "required_display_note": "Period comparison, not an identification of Jesus’ tomb. A circular rolling stone is an elite-tomb possibility rather than an explicit KJV shape. Partial teaching cutaway: the passage bend is hidden behind retained rock; this view does not demonstrate a complete original floor plan. Teaching cutaway of a selected elite tomb type, not the identified tomb of Jesus. The round closure and track are reconstructed choices, not a KJV specification.",
+      "required_display_note": "Teaching cutaway of a selected elite Jerusalem tomb type, not the identified tomb of Jesus. The circular rolling stone and track are reconstruction choices, not an explicit KJV specification. The passage bend is hidden behind retained rock; this view does not show a complete original floor plan.",
       "diagrams": [],
       "critical_visual_checks": [
         "Rock-hewn chamber and stone closure",
@@ -2208,7 +2447,7 @@
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
       "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Jerusalem: elite rock-cut tomb comparison. New tomb hewn in rock; a great stone rolled to its door. John locates the tomb in a garden. Exact chamber plan, bench arrangement and circular disc stone are selected period possibilities. The KJV does not specify a circular stone; no actual Jesus-tomb identification is asserted. Front rock is removed for teaching; the passage connection remains partly occluded. The one-bench layout is interpretive, not established by the period comparison source. Period comparison, not an identification of Jesus’ tomb. A circular rolling stone is an elite-tomb possibility rather than an explicit KJV shape. Partial teaching cutaway: the passage bend is hidden behind retained rock; this view does not demonstrate a complete original floor plan. Teaching cutaway of a selected elite tomb type, not the identified tomb of Jesus. The round closure and track are reconstructed choices, not a KJV specification. Required visible checks: Rock-hewn chamber and stone closure; No modern Garden Tomb claim or church fittings; No body, angels or named cast.",
+      "normalized_production_brief": "Historical study asset. Jerusalem: elite rock-cut tomb comparison. New tomb hewn in rock; a great stone rolled to its door. John locates the tomb in a garden. Exact chamber plan, bench arrangement and circular disc stone are selected period possibilities. The KJV does not specify a circular stone; no actual Jesus-tomb identification is asserted. Front rock is removed for teaching; the passage connection remains partly occluded. The one-bench layout is interpretive, not established by the period comparison source. Teaching cutaway of a selected elite Jerusalem tomb type, not the identified tomb of Jesus. The circular rolling stone and track are reconstruction choices, not an explicit KJV specification. The passage bend is hidden behind retained rock; this view does not show a complete original floor plan. Required visible checks: Rock-hewn chamber and stone closure; No modern Garden Tomb claim or church fittings; No body, angels or named cast.",
       "image": "assets/webp/ARCH-CTX-003.webp",
       "thumbnail": "thumbnails/ARCH-CTX-003.webp",
       "master_file": "ARCH-CTX-003.png",
@@ -2217,7 +2456,7 @@
       "alt_text": "Jerusalem: elite rock-cut tomb comparison. Reconstructed Late Second Temple Jewish tomb; contextual reconstruction.",
       "is_native_generated_image": true,
       "native_master_file": "ARCH-CTX-003.png",
-      "display_caption": "Jerusalem: elite rock-cut tomb comparison. Period comparison, not an identification of Jesus’ tomb. A circular rolling stone is an elite-tomb possibility rather than an explicit KJV shape. Partial teaching cutaway: the passage bend is hidden behind retained rock; this view does not demonstrate a complete original floor plan. Teaching cutaway of a selected elite tomb type, not the identified tomb of Jesus. The round closure and track are reconstructed choices, not a KJV specification.",
+      "display_caption": "Jerusalem: elite rock-cut tomb comparison. Teaching cutaway of a selected elite Jerusalem tomb type, not the identified tomb of Jesus. The circular rolling stone and track are reconstruction choices, not an explicit KJV specification. The passage bend is hidden behind retained rock; this view does not show a complete original floor plan.",
       "sha256": {
         "webp": "78cb42caf89758591aa5663c072b3176baf4a9ea40e031c6a89cc5f80c751ae1",
         "master_png": "16fe1cbb3d270a17163eea7f51cbfcb707b987bb8c06624ef6ffd73060625091"
@@ -2238,7 +2477,13 @@
       },
       "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
       "master_drive_url": "https://drive.google.com/file/d/1zmNnIjV2Q3hhTpAfgUtUtaVBZ5CqtUOp/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1zmNnIjV2Q3hhTpAfgUtUtaVBZ5CqtUOp/view?usp=drivesdk"
+      "native_master_drive_url": "https://drive.google.com/file/d/1zmNnIjV2Q3hhTpAfgUtUtaVBZ5CqtUOp/view?usp=drivesdk",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      }
     },
     {
       "id": "ARCH-TAB-007",
@@ -2262,7 +2507,7 @@
       "reconstruction_choices": [
         "Partial wall view; board thickness, corner joinery and exact bar fittings are inferred."
       ],
-      "required_display_note": "Construction detail: partial wall, not the full board allocation. Silver sockets are distinct from the doorway’s brass sockets. Lower assembly detail only: tops and the remaining bars lie outside the crop. This is not a complete wall elevation.",
+      "required_display_note": "Partial lower-wall construction detail. Silver sockets differ from the brass doorway sockets; board tops and the remaining bars lie outside the crop. This is not a complete wall elevation.",
       "diagrams": [
         "tabernacle-coverings"
       ],
@@ -2308,7 +2553,7 @@
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
       "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Tabernacle: lower board assembly, sockets and bars. Each board 10 cubits high and 1.5 wide; two tenons and two silver sockets. Five bars per wall group; middle bar runs end to end. Partial wall view; board thickness, corner joinery and exact bar fittings are inferred. Construction detail: partial wall, not the full board allocation. Silver sockets are distinct from the doorway’s brass sockets. Lower assembly detail only: tops and the remaining bars lie outside the crop. This is not a complete wall elevation. Required visible checks: Two silver bases for each complete visible board; Upright gold-covered boards; No unsupported full-wall count claim.",
+      "normalized_production_brief": "Historical study asset. Tabernacle: lower board assembly, sockets and bars. Each board 10 cubits high and 1.5 wide; two tenons and two silver sockets. Five bars per wall group; middle bar runs end to end. Partial wall view; board thickness, corner joinery and exact bar fittings are inferred. Partial lower-wall construction detail. Silver sockets differ from the brass doorway sockets; board tops and the remaining bars lie outside the crop. This is not a complete wall elevation. Required visible checks: Two silver bases for each complete visible board; Upright gold-covered boards; No unsupported full-wall count claim.",
       "image": "assets/webp/ARCH-TAB-007.webp",
       "thumbnail": "thumbnails/ARCH-TAB-007.webp",
       "master_file": "ARCH-TAB-007.png",
@@ -2317,7 +2562,7 @@
       "alt_text": "Tabernacle: lower board assembly, sockets and bars. Reconstructed Wilderness setting; construction detail.",
       "is_native_generated_image": true,
       "native_master_file": "ARCH-TAB-007.png",
-      "display_caption": "Tabernacle: lower board assembly, sockets and bars. Construction detail: partial wall, not the full board allocation. Silver sockets are distinct from the doorway’s brass sockets. Lower assembly detail only: tops and the remaining bars lie outside the crop. This is not a complete wall elevation.",
+      "display_caption": "Tabernacle: lower board assembly, sockets and bars. Partial lower-wall construction detail. Silver sockets differ from the brass doorway sockets; board tops and the remaining bars lie outside the crop. This is not a complete wall elevation.",
       "sha256": {
         "webp": "c313a5f470b42cdebc415535a56474a6da457e133e2cb47919c6bd07e3129c5d",
         "master_png": "cc18f08db2672bf247cc2476ff21c2d2dce666cce7ac967b1d49ff063ea5d1ca"
@@ -2337,7 +2582,13 @@
       },
       "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
       "master_drive_url": "https://drive.google.com/file/d/11T7KrhVQDOlp0znC3TRQuanx81k7PGA0/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/11T7KrhVQDOlp0znC3TRQuanx81k7PGA0/view?usp=drivesdk"
+      "native_master_drive_url": "https://drive.google.com/file/d/11T7KrhVQDOlp0znC3TRQuanx81k7PGA0/view?usp=drivesdk",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      }
     },
     {
       "id": "ARCH-TAB-008",
@@ -2446,14 +2697,14 @@
       "reconstruction_choices": [
         "Motif anatomy, weaving pattern, hanging hardware detail and exact folds are inferred."
       ],
-      "required_display_note": "Inner veil: four pillars and silver bases. The outer tent doorway instead has five pillars with brass bases. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "required_display_note": "Inner-veil study: four gold-covered supports on silver sockets and one continuous four-color linen hanging. Dyed winged-sphinx motifs illustrate a selected ancient Near Eastern interpretation of cherubim, not a proven KJV anatomy. Hidden attachments and exact weaving are inferred.",
       "diagrams": [
         "tabernacle-plan"
       ],
       "critical_visual_checks": [
-        "Four inner-veil pillars",
-        "Four silver bases if unobscured",
-        "Not five-post outer doorway"
+        "Viewed full generated image: four complete gold posts and four silver sockets.",
+        "Three large flat human-headed winged-lion textile motifs are respectively scarlet, blue and purple, not metallic gold.",
+        "Cloth has shallow vertical weight, uninterrupted lower hem/bands behind pillars and no tied openings or gathered scallops."
       ],
       "status": "included",
       "medium": "AI-generated reconstruction, built-in ImageGen",
@@ -2486,38 +2737,57 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Tabernacle: inner veil and silver bases. Veil with blue, purple, scarlet, fine linen and cherubim. Four gold-covered pillars on four silver sockets. Motif anatomy, weaving pattern, hanging hardware detail and exact folds are inferred. Inner veil: four pillars and silver bases. The outer tent doorway instead has five pillars with brass bases. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy. Required visible checks: Four inner-veil pillars; Four silver bases if unobscured; Not five-post outer doorway.",
+      "production_brief_type": "Correction summary; exact native generator call, actual references and review hashes are preserved in production receipts.",
+      "normalized_production_brief": "Correction summary: Gold guardian embroidery replaced by blue, purple and scarlet thread-color figures. One nearly flat continuous lower hem and aligned bands across four posts, without separate swag drapes. Human-headed winged-lion convention and four round posts/silver bases retained consistently with selected Ark-room design. Inner-veil study: four gold-covered supports on silver sockets and one continuous four-color linen hanging. Dyed winged-sphinx motifs illustrate a selected ancient Near Eastern interpretation of cherubim, not a proven KJV anatomy. Hidden attachments and exact weaving are inferred.",
       "image": "assets/webp/ARCH-TAB-009.webp",
       "thumbnail": "thumbnails/ARCH-TAB-009.webp",
       "master_file": "ARCH-TAB-009.png",
       "width": 1536,
       "height": 1024,
-      "alt_text": "Tabernacle: inner veil and silver bases. Reconstructed Wilderness setting; textile and support detail.",
+      "alt_text": "Continuous flat linen inner veil with blue, purple and scarlet woven guardian motifs across four gold posts on silver sockets.",
       "is_native_generated_image": true,
-      "native_master_file": "ARCH-TAB-009.png",
-      "display_caption": "Tabernacle: inner veil and silver bases. Inner veil: four pillars and silver bases. The outer tent doorway instead has five pillars with brass bases. Human-headed winged sphinx anatomy is a selected ancient Near Eastern interpretation; the detailed anatomy is not specified by the KJV. Human-headed winged-sphinx anatomy is a selected ancient Near Eastern interpretation; the KJV does not specify that detailed anatomy.",
+      "display_caption": "Tabernacle: inner veil and silver bases. Inner-veil study: four gold-covered supports on silver sockets and one continuous four-color linen hanging. Dyed winged-sphinx motifs illustrate a selected ancient Near Eastern interpretation of cherubim, not a proven KJV anatomy. Hidden attachments and exact weaving are inferred.",
       "sha256": {
-        "webp": "be3532b5a6465eea75aadbe3b7b61ac9f09527295c7da1e64b19b88b82c40e1a",
-        "master_png": "20edb0edffc103f1b37ef56f69572433514e2565c78fc9775c7edc8646ca1b71"
+        "master_png": "b4f10b3b5ff26f9e4d6997dd8c064a066070b8ea41f6cd18bf9f4a9e151a141a",
+        "webp": "ca60c24207075d9070d500db68b5d11bf00fab9a3a761d5f1acfea504bd11668"
       },
       "bytes": {
-        "webp": 656206,
-        "master_png": 3593045
+        "master_png": 3479419,
+        "webp": 636812
       },
       "visual_audit": {
-        "worker_visual_audit": "Four pillars/bases, continuous lower hem/bands behind pillars, no opening or split. Human-headed winged lion motifs match ceiling. Hidden unity behind pillars not directly proven.",
-        "coordinator_visual_audit": "Viewed native: four gold supports in four visible silver sockets, one linen hanging with continuous bottom hem and color bands across spans; no open gaps or separated swag drapes. Woven human-headed winged lion figures match chosen convention, all four textile colors visible.",
-        "not_assessable": [
-          "Hidden attachment points and fabric behind pillars",
-          "Exact motif allocation and weaving method"
+        "worker_visual_audit": [
+          "Viewed full generated image: four complete gold posts and four silver sockets.",
+          "Three large flat human-headed winged-lion textile motifs are respectively scarlet, blue and purple, not metallic gold.",
+          "Cloth has shallow vertical weight, uninterrupted lower hem/bands behind pillars and no tied openings or gathered scallops."
         ],
-        "reconstruction_notes": [],
-        "attempts": 1
+        "coordinator_visual_audit": [
+          "Viewed four gold posts with silver bases and continuous four-color linen veil with woven colored cherubim. No separate decorative swags or metallic gold cherub appliques. Motif anatomy and exact weaving remain interpretive."
+        ],
+        "not_assessable": [
+          "Fabric continuity concealed behind posts and precise original loom/weave construction.",
+          "Actual cherub anatomy is not specified by the KJV; motifs are the selected regional interpretation."
+        ],
+        "attempts": 1,
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "b4f10b3b5ff26f9e4d6997dd8c064a066070b8ea41f6cd18bf9f4a9e151a141a",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1m8DDUWcIiUThx6GD6f7rqLA0W224tTre/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1m8DDUWcIiUThx6GD6f7rqLA0W224tTre/view?usp=drivesdk"
+      "source_evidence_limit": "Native perspective and hidden completion are interpretive, not scale certification, excavated survey or engineering.",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      },
+      "native_master_file": "ARCH-TAB-009.png",
+      "correction_receipt": "production/receipts/ARCH-TAB-009.json",
+      "review_receipt": "production/coordinator/ARCH-TAB-009.json",
+      "master_drive_url": "https://drive.google.com/file/d/19Y3LjEpY8FxQ72WmvUvbfN1vmcMB8uFh/view?usp=drivesdk",
+      "native_master_drive_url": "https://drive.google.com/file/d/19Y3LjEpY8FxQ72WmvUvbfN1vmcMB8uFh/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "19Y3LjEpY8FxQ72WmvUvbfN1vmcMB8uFh",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-TAB-010",
@@ -2539,7 +2809,7 @@
       "reconstruction_choices": [
         "Doorway motif is not explicitly prescribed as cherubim; pattern, hardware and folds are inferred."
       ],
-      "required_display_note": "Outer tent doorway: five pillars, brass bases. This is distinct from the court gate and the four-post inner veil. Tent door lower detail with five posts, distinct from the four-post court gate; profiles and embroidery layout are interpreted.",
+      "required_display_note": "Outer tent doorway lower detail: five pillars and brass bases, distinct from the court gate and the four-post inner veil. Pillar profiles and embroidery layout are interpreted.",
       "diagrams": [
         "tabernacle-plan"
       ],
@@ -2573,7 +2843,7 @@
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
       "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Tabernacle: doorway and brass bases. Doorway needlework textile of blue, purple, scarlet and fine linen. Five gold-covered pillars with five brass sockets. Doorway motif is not explicitly prescribed as cherubim; pattern, hardware and folds are inferred. Outer tent doorway: five pillars, brass bases. This is distinct from the court gate and the four-post inner veil. Tent door lower detail with five posts, distinct from the four-post court gate; profiles and embroidery layout are interpreted. Required visible checks: Five door supports; Brass bases; No asserted inner-veil cherub pattern.",
+      "normalized_production_brief": "Historical study asset. Tabernacle: doorway and brass bases. Doorway needlework textile of blue, purple, scarlet and fine linen. Five gold-covered pillars with five brass sockets. Doorway motif is not explicitly prescribed as cherubim; pattern, hardware and folds are inferred. Outer tent doorway lower detail: five pillars and brass bases, distinct from the court gate and the four-post inner veil. Pillar profiles and embroidery layout are interpreted. Required visible checks: Five door supports; Brass bases; No asserted inner-veil cherub pattern.",
       "image": "assets/webp/ARCH-TAB-010.webp",
       "thumbnail": "thumbnails/ARCH-TAB-010.webp",
       "master_file": "ARCH-TAB-010.png",
@@ -2582,7 +2852,7 @@
       "alt_text": "Tabernacle: doorway and brass bases. Reconstructed Wilderness setting; doorway detail.",
       "is_native_generated_image": true,
       "native_master_file": "ARCH-TAB-010.png",
-      "display_caption": "Tabernacle: doorway and brass bases. Outer tent doorway: five pillars, brass bases. This is distinct from the court gate and the four-post inner veil. Tent door lower detail with five posts, distinct from the four-post court gate; profiles and embroidery layout are interpreted.",
+      "display_caption": "Tabernacle: doorway and brass bases. Outer tent doorway lower detail: five pillars and brass bases, distinct from the court gate and the four-post inner veil. Pillar profiles and embroidery layout are interpreted.",
       "sha256": {
         "webp": "bd94a51c78aa2635190d310cb3850296ef3afab4a6d20e204add70f2390cb845",
         "master_png": "1660ff4f3badb85391608108315d0970eb71cd791b92888c91b08e299e40a381"
@@ -2602,7 +2872,13 @@
       },
       "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
       "master_drive_url": "https://drive.google.com/file/d/1lOlw96nRyJLBCLL88Y2EagxCnk5U9IYA/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1lOlw96nRyJLBCLL88Y2EagxCnk5U9IYA/view?usp=drivesdk"
+      "native_master_drive_url": "https://drive.google.com/file/d/1lOlw96nRyJLBCLL88Y2EagxCnk5U9IYA/view?usp=drivesdk",
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      }
     },
     {
       "id": "ARCH-FIR-008",
@@ -2708,7 +2984,7 @@
     },
     {
       "id": "ARCH-FIR-009",
-      "title": "First Temple'side chambers: exact ratio and beam-joint study",
+      "title": "First Temple: side chambers",
       "group": "First Temple",
       "period": "Kings-based teaching section",
       "kjv_passages": [
@@ -2726,18 +3002,18 @@
         "Exact wall thickness, staircase and individual-room subdivisions are not specified.",
         "Teaching section removes walls to expose ledges."
       ],
-      "required_display_note": "Technical section following 1 Kings 6:6,10: internal widths 5/6/7 and equal 5-high storeys. Beams bear on rebates without wall sockets. Outer annex face stays vertical. Wall thickness, floor construction, roof and joint details are inferred. Use the supplied SVG for sharp labels.",
+      "required_display_note": "Technical section based on 1 Kings 6:6,10: internal chamber widths 5/6/7 and equal five-cubit-high storeys. Beams bear on rebates without wall sockets. The outer annex wall and a schematic human figure are shown; wall/floor thicknesses, joint completion and figure stature remain inferred. This is a dimensioned teaching study, not a complete structural survey.",
       "diagrams": [
         "first-temple-kings"
       ],
       "critical_visual_checks": [
-        "5/6/7 room widths against equal5-high storeys",
-        "Vertical exterior annex line",
-        "Beam ends before upper wall faces, supported on rebates",
-        "Schematic structural thickness and inset explicitly qualified"
+        "Three internal widths5/6/7",
+        "Three equal5-high storeys",
+        "Visible outer annex wall and correctly terminating leader",
+        "Beam bearing on rebate without wall socket"
       ],
       "status": "included",
-      "medium": "Deterministic vector teaching study",
+      "medium": "Deterministic SVG primary technical study",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
@@ -2760,44 +3036,68 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Deterministic drawing specification; no ImageGen prompt.",
-      "normalized_production_brief": "Technical drawing specification. First Temple'side chambers: exact ratio and beam-joint study. Three side-chamber levels widen upward: 5, 6, 7 cubits. Chambers described as 5 cubits high; wall ledges receive beams. Exact wall thickness, staircase and individual-room subdivisions are not specified. Teaching section removes walls to expose ledges. Technical section following 1 Kings 6:6,10: internal widths 5/6/7 and equal 5-high storeys. Beams bear on rebates without wall sockets. Outer annex face stays vertical. Wall thickness, floor construction, roof and joint details are inferred. Use the supplied SVG for sharp labels. Required visible checks: 5/6/7 room widths against equal5-high storeys; Vertical exterior annex line; Beam ends before upper wall faces, supported on rebates; Schematic structural thickness and inset explicitly qualified.",
+      "production_brief_type": "Deterministic technical revision; SVG source, production receipt and hash-bound review preserved.",
+      "normalized_production_brief": "Deterministic revision: Added visible west annex outer wall; corrected its leader endpoint. Added house-wall break indication and approximate human figure. Retains5/6/7 inner widths and equal5-high storeys. Technical section based on 1 Kings 6:6,10: internal chamber widths 5/6/7 and equal five-cubit-high storeys. Beams bear on rebates without wall sockets. The outer annex wall and a schematic human figure are shown; wall/floor thicknesses, joint completion and figure stature remain inferred. This is a dimensioned teaching study, not a complete structural survey.",
       "is_native_generated_image": false,
       "scale_scope": "Main panel: widths 5/6/7 and equal 5-high storeys at one scale; joint inset and structural thicknesses schematic.",
       "source_svg": "assets/svg/ARCH-FIR-009.svg",
-      "source_evidence_limit": "Main-panel chamber ratios share one scale; construction thicknesses and enlarged joint inset are schematic. Not an engineering specification or excavated survey.",
+      "source_evidence_limit": "Source-specific dimensioned teaching model; wall thickness, engineering, hidden completion and modern cubit conversion remain uncertified.",
       "image": "assets/webp/ARCH-FIR-009.webp",
       "thumbnail": "thumbnails/ARCH-FIR-009.webp",
       "master_file": "ARCH-FIR-009.png",
       "width": 1600,
       "height": 2200,
-      "alt_text": "First Temple'side chambers: exact ratio and beam-joint study. Labelled technical section with reconstruction limits.",
-      "raster_master_file": "ARCH-FIR-009.png",
-      "svg": "assets/svg/ARCH-FIR-009.svg",
-      "source_svg_sha256": "4adf1a513143b63816f23c8efe009919f3c1d0febfd543a01f9d4e39c500f2e9",
-      "display_caption": "First Temple'side chambers: exact ratio and beam-joint study. Technical section following 1 Kings 6:6,10: internal widths 5/6/7 and equal 5-high storeys. Beams bear on rebates without wall sockets. Outer annex face stays vertical. Wall thickness, floor construction, roof and joint details are inferred. Use the supplied SVG for sharp labels.",
+      "alt_text": "First Temple side-chamber section with5/6/7 internal widths, three equal five-high storeys, visible outer annex wall, schematic human and beam-bearing inset.",
+      "display_caption": "First Temple: side chambers. Technical section based on 1 Kings 6:6,10: internal chamber widths 5/6/7 and equal five-cubit-high storeys. Beams bear on rebates without wall sockets. The outer annex wall and a schematic human figure are shown; wall/floor thicknesses, joint completion and figure stature remain inferred. This is a dimensioned teaching study, not a complete structural survey.",
       "sha256": {
-        "webp": "adc22f7e4727e01be2367acba4d114559866c555b5ea9ae554f0c85cdeb2567f",
-        "master_png": "24413ed62fa629a1fb0abe5a096143938ff444381c02c59c62eae25430db6f4d"
+        "master_png": "1ad146813f411ea1fab57cbbd3a64253caf703f193be071618229a2271ed6d89",
+        "webp": "6d5bc630ca8751aa483a9d6458a5085b069243999487fa055f7465165467fbd5"
       },
       "bytes": {
-        "webp": 172304,
-        "master_png": 187360
+        "master_png": 168859,
+        "webp": 160092
       },
       "visual_audit": {
-        "worker_visual_audit": "Independent agent viewed final PNG and passed equal storey ratios,5/6/7 progression, vertical outside line, all three non-embedded beam ends and enlarged bearing inset; no substantive defect.",
-        "coordinator_visual_audit": "Root viewed rendered technical study:5/6/7 internal widths against equal5-high tiers, vertical outer annex face, three cedar ends stop before upper wall faces and bear on exposed rebates. Enlarged joint shows no wall socket. Final label/leader spacing reviewed.",
+        "worker_visual_audit": [
+          "Added visible west annex outer wall; corrected its leader endpoint.",
+          "Added house-wall break indication and approximate human figure.",
+          "Retains5/6/7 inner widths and equal5-high storeys."
+        ],
+        "coordinator_visual_audit": [
+          "Actual PNG: visible vertical outer annex wall at west/left; outer-face leader terminates at that wall rather than the house side. Stepped inner widths 5/6/7 and equal 5-high storeys remain visible.",
+          "House-wall break at top, schematic human figure and separated 5-wide label are visible. Joint enlargement shows beam bearing on the rebate without a socket through the upper wall face.",
+          "Title reads First Temple: side chambers. Wall thickness, figure, floor thickness and structural completion remain schematic; no engineering or modern cubit conversion certified."
+        ],
         "not_assessable": [
-          "Wall thickness, roof and joint engineering are inferred.",
-          "Floor thickness and enlarged inset are schematic; dimensions govern room ratios, not a construction specification."
+          "Wall thickness, joint completion and human stature are schematic.",
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
         ],
-        "reconstruction_notes": [
-          "Wall thickness, roof and joint engineering are inferred.",
-          "Floor thickness and enlarged inset are schematic; dimensions govern room ratios, not a construction specification."
-        ],
-        "attempts": 1
+        "attempts": 0,
+        "coordinator_status": "acceptable_with_documented_limits_for_internal_integration",
+        "selected_sha256": "1ad146813f411ea1fab57cbbd3a64253caf703f193be071618229a2271ed6d89",
+        "scope": "Internal review of these selected corrected pixels; not a fresh external re-audit or universal historical certification."
       },
-      "master_drive_url": "https://drive.google.com/file/d/1l7is9rrEDqmTRhjUUisk5TxnXt2iIu1q/view?usp=drivesdk"
+      "metadata_revision": {
+        "batch": "audit-monitor-batch-001",
+        "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+        "image_regenerated": false,
+        "normalized_brief_metadata_revised": true
+      },
+      "raster_master_file": "ARCH-FIR-009.png",
+      "svg": "assets/svg/ARCH-FIR-009.svg",
+      "source_svg_sha256": "00bdac7edc16be42e92794b365d728b47c306d17e291110ecf9fe8bc10eb7250",
+      "dimensioned_source_model": true,
+      "scale_drawing_scope": "Only the source-specific dimensioned panel components share their stated scale; structural completion, thicknesses and profile runs retain the plate-specific qualifications.",
+      "correction_receipt": "production/receipts/ARCH-FIR-009.json",
+      "review_receipt": "production/coordinator/ARCH-FIR-009.json",
+      "master_drive_url": "https://drive.google.com/file/d/1BLgdV8GCTbRaWxNWx6grtEH-CanrrY3Y/view?usp=drivesdk",
+      "raster_master_drive_url": "https://drive.google.com/file/d/1BLgdV8GCTbRaWxNWx6grtEH-CanrrY3Y/view?usp=drivesdk",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_drive_file_id": "1BLgdV8GCTbRaWxNWx6grtEH-CanrrY3Y",
+      "master_upload_receipt": "production/published-masters-batch002.json"
     },
     {
       "id": "ARCH-FIR-010",
@@ -3082,7 +3382,7 @@
     },
     {
       "id": "ARCH-HER-009",
-      "title": "Herodian priests court: altar and laver",
+      "title": "Herodian court: technical axonometric",
       "group": "Herodian Temple",
       "period": "Middot-based court reconstruction",
       "kjv_passages": [
@@ -3092,25 +3392,31 @@
         "K-LK1",
         "H-MID3",
         "H-MID5",
-        "H-WAR5"
+        "H-WAR5",
+        "H-MID4",
+        "V3-SRC-067",
+        "V3-SRC-068",
+        "V31-SRC-069",
+        "V31-SRC-070",
+        "V3-SRC-065",
+        "V3-SRC-066"
       ],
       "kjv_constraints": [
         "KJV incense service is distinct from external burnt offerings."
       ],
       "reconstruction_choices": [
-        "Altar footprint 32 square selects Middot; Josephus gives 50 square.",
-        "Southern ramp; laver between altar and porch, offset south, after Middot.",
-        "Complete basin and altar surface details are reconstructed."
+        "Recovered facade/engineering, hidden interiors, exact material finish, full court boundary and source agreement.",
+        "Altar profile, exact laver shape/offset and stair landing layout are simplified."
       ],
-      "required_display_note": "Middot-based outdoor altar model: 32 cubits square with southern ramp. Josephus gives a differing size; the sources are not averaged. Selected dimensions are stated in the source notes, not certified by this perspective. Laver form, visible taps, altar surface and complete court arrangement are reconstructed.",
+      "required_display_note": "Technical axonometric following a selected later Middot model:100-square front,70-wide rear,15-cubit shoulders and16-deep porch head. The altar is on the east-west axis; ramp and laver are south. Court profiles, exact laver offset and structural completion remain schematic. Josephus is kept separate.",
       "diagrams": [],
       "critical_visual_checks": [
-        "Sacrificial altar outdoors",
-        "Ramp on south",
-        "Laver has no Solomon Sea oxen"
+        "Source-specific dimensioned technical panels",
+        "One declared coordinate/scale model",
+        "Schematic/hidden completion and format limitation identified"
       ],
       "status": "included",
-      "medium": "AI-generated reconstruction, built-in ImageGen",
+      "medium": "Deterministic SVG primary technical study",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
@@ -3119,12 +3425,6 @@
           "title": "Luke 1 KJV",
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/LUK01.htm"
-        },
-        {
-          "id": "H-WAR5",
-          "title": "Josephus, Jewish War 5.5 (public-domain Whiston translation)",
-          "kind": "Ancient historical account",
-          "url": "https://penelope.uchicago.edu/josephus/war-5.html"
         },
         {
           "id": "H-MID3",
@@ -3137,6 +3437,60 @@
           "title": "Mishnah Middot 5 (later rabbinic description)",
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Middot.5.1"
+        },
+        {
+          "id": "H-WAR5",
+          "title": "Josephus, Jewish War 5.5 (public-domain Whiston translation)",
+          "kind": "Ancient historical account",
+          "url": "https://penelope.uchicago.edu/josephus/war-5.html"
+        },
+        {
+          "id": "H-MID4",
+          "title": "Mishnah Middot 4 (later rabbinic description)",
+          "kind": "Later rabbinic description",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4"
+        },
+        {
+          "id": "V3-SRC-067",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-068",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V31-SRC-069",
+          "title": "Mishnah Middot.3.1",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.1",
+          "kind": "Later rabbinic text; selected source model",
+          "evidence_limit": "Source-specific testimony, not a recovered survey or reconciled historical consensus."
+        },
+        {
+          "id": "V31-SRC-070",
+          "title": "Mishnah Middot.3.3",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.3",
+          "kind": "Later rabbinic text; selected source model",
+          "evidence_limit": "Source-specific testimony, not a recovered survey or reconciled historical consensus."
+        },
+        {
+          "id": "V3-SRC-065",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.3.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-066",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.3.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.3.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
         }
       ],
       "evidence_policy": {
@@ -3145,42 +3499,60 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Herodian priests court: altar and laver. KJV incense service is distinct from external burnt offerings. Altar footprint 32 square selects Middot; Josephus gives 50 square. Southern ramp; laver between altar and porch, offset south, after Middot. Complete basin and altar surface details are reconstructed. Middot-based outdoor altar model: 32 cubits square with southern ramp. Josephus gives a differing size; the sources are not averaged. Selected dimensions are stated in the source notes, not certified by this perspective. Laver form, visible taps, altar surface and complete court arrangement are reconstructed. Required visible checks: Sacrificial altar outdoors; Ramp on south; Laver has no Solomon Sea oxen.",
+      "production_brief_type": "Deterministic technical source model; SVG/program/receipt preserved. Failed native paintings remain history only.",
+      "normalized_production_brief": "Correction summary. Technical axonometric following a selected later Middot model:100-square front,70-wide rear,15-cubit shoulders and16-deep porch head. The altar is on the east-west axis; ramp and laver are south. Court profiles, exact laver offset and structural completion remain schematic. Josephus is kept separate.",
       "image": "assets/webp/ARCH-HER-009.webp",
       "thumbnail": "thumbnails/ARCH-HER-009.webp",
       "master_file": "ARCH-HER-009.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "Herodian priests court: altar and laver. Reconstructed Middot-based court reconstruction.",
-      "is_native_generated_image": true,
-      "native_master_file": "ARCH-HER-009.png",
-      "display_caption": "Herodian priests court: altar and laver. Middot-based outdoor altar model: 32 cubits square with southern ramp. Josephus gives a differing size; the sources are not averaged. Selected dimensions are stated in the source notes, not certified by this perspective. Laver form, visible taps, altar surface and complete court arrangement are reconstructed.",
+      "width": 1600,
+      "height": 1900,
+      "alt_text": "Technical T-plan axonometric:100-square front,16-deep head,84-long70-wide rear,15-cubit shoulders,20-by40 portal; compass shows south ramp and laver.",
+      "is_native_generated_image": false,
+      "display_caption": "Herodian court: technical axonometric. Technical axonometric following a selected later Middot model:100-square front,70-wide rear,15-cubit shoulders and16-deep porch head. The altar is on the east-west axis; ramp and laver are south. Court profiles, exact laver offset and structural completion remain schematic. Josephus is kept separate.",
       "sha256": {
-        "webp": "04bd006701111758552c480f54cbb1df464e1c25ce7db749a1dabd70ae916f7a",
-        "master_png": "db893abc3200d988e3fd4d94dffc0caee635bd1d4ae3227662907624fa205700"
+        "master_png": "888eff7131cbfb749584279ab42c944c5362d120201e0eaf3be1f69026df1bc7",
+        "webp": "843f4bcfd10438f55844e02ad3330d64d00f9b3ff29c2f75210b1968e9d1ef3e"
       },
       "bytes": {
-        "webp": 393042,
-        "master_png": 2595610
+        "master_png": 290782,
+        "webp": 183564
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed and reported selected details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native. Broad stepped altar, four horns, red line, ramp and fire visible; five laver taps visible; gold/white front has smaller entrance.",
-        "not_assessable": [
-          "Exact perspective dimensions",
-          "Full tap count occluded"
+        "worker_visual_audit": [
+          "Actual PNG: T roof outline with15-cubit side steps,100-square front,70rear,16head/84body and20x40portal labelled against projected edges.",
+          "Overall100 includesfoundation6; sourcecoordinatesz0..100 andportalz6..46.",
+          "Compass agrees withsouthramp andsouth-offsetlaver betweenporch/altar; labels refined forclearance."
         ],
-        "reconstruction_notes": [],
-        "attempts": 2
+        "coordinator_visual_audit": [
+          "Whole frame reviewed: visible shouldered T-shaped roof and reentrant side, square frontal envelope, portal, south ramp and south-offset laver. Source-model geometry includes100overall height with6foundation;100front width/70rear/15shoulders/16head/84body are visible dimension lines. Simplified altar profile/laver/stairs and hidden structure remain explicit. This is a technical primary; cinematic perspective painting remains unmet."
+        ],
+        "not_assessable": [
+          "Recovered facade/engineering, hidden interiors, exact material finish, full court boundary and source agreement.",
+          "Altar profile, exact laver shape/offset and stair landing layout are simplified."
+        ],
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "888eff7131cbfb749584279ab42c944c5362d120201e0eaf3be1f69026df1bc7",
+        "attempts": 0,
+        "scope": "Current selected output internally reviewed; technical formats do not claim successful painting repairs. Fresh external re-review open."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/19SlmLsiZKoNPIxpu4NsPyHqyQOf1Bcza/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/19SlmLsiZKoNPIxpu4NsPyHqyQOf1Bcza/view?usp=drivesdk"
+      "source_evidence_limit": "Selected textual geometry model, not a recovered survey. Material/engineering profiles and specified schematic parts remain inferred.",
+      "correction_receipt": "production/receipts/ARCH-HER-009.json",
+      "review_receipt": "production/coordinator/ARCH-HER-009.json",
+      "raster_master_file": "ARCH-HER-009.png",
+      "svg": "assets/svg/ARCH-HER-009.svg",
+      "source_svg_sha256": "7395a0c9fbf5eec8365533bd91ae0012370896497ea007e713317da59761b234",
+      "dimensioned_source_model": true,
+      "scale_drawing_scope": "Dimensioned model components use stated source units; explicitly schematic profiles and completion are not measured. Not a recovered engineering survey.",
+      "format_limitation": "Requested cinematic painting repair was not achieved; selected replacement is an explicitly technical source-model study.",
+      "master_drive_url": "https://drive.google.com/file/d/15HC7CMIy3-xBg9fNa5vHKyDbcQBh2oic/view?usp=drivesdk",
+      "raster_master_drive_url": "https://drive.google.com/file/d/15HC7CMIy3-xBg9fNa5vHKyDbcQBh2oic/view?usp=drivesdk",
+      "master_drive_file_id": "15HC7CMIy3-xBg9fNa5vHKyDbcQBh2oic",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_upload_receipt": "production/published-masters.json"
     },
     {
       "id": "ARCH-HER-010",
-      "title": "Herodian sanctuary: unfurnished structural section",
+      "title": "Herodian sanctuary: technical longitudinal section",
       "group": "Herodian Temple",
       "period": "Middot-based teaching model",
       "kjv_passages": [
@@ -3192,28 +3564,29 @@
         "K-HB9",
         "H-WAR5",
         "H-MID4",
-        "H-YOMA51"
+        "H-YOMA51",
+        "V31-SRC-071",
+        "V3-SRC-067",
+        "V3-SRC-068"
       ],
       "kjv_constraints": [
         "Hebrews 9'supplies tabernacle comparison, not a Herodian Ark inventory."
       ],
       "reconstruction_choices": [
-        "Selected Middot hall 40 by 20 and western chamber 20 by 20; lower and upper dimensions follow the companion diagram.",
-        "Portable furnishings are deliberately absent from this structural scope; HER-004 supplies the furnished hall.",
-        "Roof, upper extent, wall thickness and side-cell elevations are reconstructed."
+        "Recovered construction profiles, material finishes, fullcellallocation and upperporchcompletion are not established.",
+        "Sourceheightandlengthmodels are selected later testimony, not a reconciled contemporarysurvey."
       ],
-      "required_display_note": "Unfurnished structural teaching section using the selected Middot model. The western inner chamber is empty after Josephus; his different inner height is not blended into the section. Portable furnishings are intentionally absent; HER-004 supplies the furnished hall. Two curtain edges and a gap select Yoma 5:1's majority account, while Rabbi Yosei gives one curtain. Exact selected dimensions belong to the companion SVG; upper extent, cells, roof and engineering remain interpreted.",
+      "required_display_note": "Technical longitudinal section using the selected later Middot model:100 cubits overall length and height, including6 foundation;40-by-40 hall,20-long by40-high empty inner chamber and40-high upper chamber. Yoma5:1 supplies the selected two-curtain gap. Side cells are outside the cutplane; no underfloor cells are invented. Layer profiles and upper porch completion are schematic; Josephus remains a separate source.",
       "diagrams": [
         "herodian-sanctuary"
       ],
       "critical_visual_checks": [
-        "Lower and upper structural zones with west-side cells",
-        "Empty western inner chamber",
-        "Two curtain edges and gap",
-        "No portable furniture in this structural study"
+        "Source-specific dimensioned technical panels",
+        "One declared coordinate/scale model",
+        "Schematic/hidden completion and format limitation identified"
       ],
       "status": "included",
-      "medium": "AI-generated reconstruction, built-in ImageGen",
+      "medium": "Deterministic SVG primary technical study",
       "measurement_unit": "cubit; no fixed modern conversion asserted",
       "image_is_scale_drawing": false,
       "sources": [
@@ -3247,6 +3620,27 @@
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Yoma.5.1",
           "evidence_limit": "Two curtains separated by a cubit is the selected opinion, not an uncontested contemporary survey; Rabbi Yosei gives one curtain."
+        },
+        {
+          "id": "V31-SRC-071",
+          "title": "Mishnah Middot.4.1",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.1",
+          "kind": "Later rabbinic text; selected source model",
+          "evidence_limit": "Source-specific testimony, not a recovered survey or reconciled historical consensus."
+        },
+        {
+          "id": "V3-SRC-067",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.6",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.6",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
+        },
+        {
+          "id": "V3-SRC-068",
+          "title": "Mishnah source-specific passage — Mishnah_Middot.4.7",
+          "url": "https://www.sefaria.org/Mishnah_Middot.4.7",
+          "kind": "Source-specific text or comparison",
+          "evidence_limit": "Only the cited source-specific model; not a recovered survey."
         }
       ],
       "evidence_policy": {
@@ -3255,38 +3649,56 @@
         "archaeological_evidence": "Preserved remains and comparative structures do not certify invented superstructures.",
         "reconstruction_choice": "All unstated dimensions, fittings, colors, rooflines and camera-visible completion are interpretive."
       },
-      "production_brief_type": "Normalized production brief; not a verbatim transcript of a generation call.",
-      "normalized_production_brief": "Historical study asset. Herodian sanctuary: unfurnished structural section. Hebrews 9'supplies tabernacle comparison, not a Herodian Ark inventory. Selected Middot hall 40 by 20 and western chamber 20 by 20; lower and upper dimensions follow the companion diagram. Portable furnishings are deliberately absent from this structural scope; HER-004 supplies the furnished hall. Roof, upper extent, wall thickness and side-cell elevations are reconstructed. Unfurnished structural teaching section using the selected Middot model. The western inner chamber is empty after Josephus; his different inner height is not blended into the section. Portable furnishings are intentionally absent; HER-004 supplies the furnished hall. Two curtain edges and a gap select Yoma 5:1's majority account, while Rabbi Yosei gives one curtain. Exact selected dimensions belong to the companion SVG; upper extent, cells, roof and engineering remain interpreted. Required visible checks: Lower and upper structural zones with west-side cells; Empty western inner chamber; Two curtain edges and gap; No portable furniture in this structural study.",
+      "production_brief_type": "Deterministic technical source model; SVG/program/receipt preserved. Failed native paintings remain history only.",
+      "normalized_production_brief": "Correction summary. Technical longitudinal section using the selected later Middot model:100 cubits overall length and height, including6 foundation;40-by-40 hall,20-long by40-high empty inner chamber and40-high upper chamber. Yoma5:1 supplies the selected two-curtain gap. Side cells are outside the cutplane; no underfloor cells are invented. Layer profiles and upper porch completion are schematic; Josephus remains a separate source.",
       "image": "assets/webp/ARCH-HER-010.webp",
       "thumbnail": "thumbnails/ARCH-HER-010.webp",
       "master_file": "ARCH-HER-010.png",
-      "width": 1536,
-      "height": 1024,
-      "alt_text": "Herodian sanctuary: unfurnished structural section. Reconstructed Middot-based teaching model.",
-      "is_native_generated_image": true,
-      "native_master_file": "ARCH-HER-010.png",
-      "display_caption": "Herodian sanctuary: unfurnished structural section. Unfurnished structural teaching section using the selected Middot model. The western inner chamber is empty after Josephus; his different inner height is not blended into the section. Portable furnishings are intentionally absent; HER-004 supplies the furnished hall. Two curtain edges and a gap select Yoma 5:1's majority account, while Rabbi Yosei gives one curtain. Exact selected dimensions belong to the companion SVG; upper extent, cells, roof and engineering remain interpreted.",
+      "width": 1550,
+      "height": 1850,
+      "alt_text": "Technical longitudinal section:100by100 overall including6foundation,40-by40 hall,20-by40 empty inner chamber,40-high upper and no underfloor cell grid.",
+      "is_native_generated_image": false,
+      "display_caption": "Herodian sanctuary: technical longitudinal section. Technical longitudinal section using the selected later Middot model:100 cubits overall length and height, including6 foundation;40-by-40 hall,20-long by40-high empty inner chamber and40-high upper chamber. Yoma5:1 supplies the selected two-curtain gap. Side cells are outside the cutplane; no underfloor cells are invented. Layer profiles and upper porch completion are schematic; Josephus remains a separate source.",
       "sha256": {
-        "webp": "c7fa2f39fd966ac650c07769e131e366f81819556885d51a6991c4ab1fd296f0",
-        "master_png": "e62c79a8d733e7a40ecfd8ec52ced7aa7a0fa0018a37e7989dd3ee355baa7c7d"
+        "master_png": "31d8dfca6836c9ab6a4b2b5934857c4c8721a276a26dc544bae35cd39121a952",
+        "webp": "08a850ba20ddd3645f68f2363b6423531a6f25296dc26614516631fdf0f78126"
       },
       "bytes": {
-        "webp": 386300,
-        "master_png": 2627405
+        "master_png": 190150,
+        "webp": 186474
       },
       "visual_audit": {
-        "worker_visual_audit": "Worker independently viewed selected native and reported details and limits.",
-        "coordinator_visual_audit": "Root independently viewed native: Near-square two-level structural mass, three west-side cells, separated thin curtain edges and empty inner/hall/upper spaces; no later castle skyline.",
-        "not_assessable": [
-          "Exact100/40/20 dimensions and one-cubit curtain gap",
-          "Cell heights, upper extent and roof construction"
+        "worker_visual_audit": [
+          "Actual PNG: overall100-by100section;6foundation,40x40hall,20x40inner,40upper andsource-listedheightbands.",
+          "Twopurplefabriclinesbound1cubitgap; solidfoundationhasnocellgrid; westcellzonehatchedandqualified.",
+          "Sidecellsoutsideaxialcutplane; exactroompanelscommon10px/cubit; overallheightlabelclearofcellcallout."
         ],
-        "reconstruction_notes": [],
-        "attempts": 3
+        "coordinator_visual_audit": [
+          "Whole frame reviewed: overall100longby100high section, lowerhall40long/40high, inner20long/40high and upper40high.6foundation solid with no underfloor cells. Doublecurtain onecubitgap and source-listedroofbands drawn; westcellzone hatched and qualified, not a recovered grid. Josephus innerheight60 and later Middot40 remain alternatives. This technical section does not fulfill a corrected cinematic painting."
+        ],
+        "not_assessable": [
+          "Recovered construction profiles, material finishes, fullcellallocation and upperporchcompletion are not established.",
+          "Sourceheightandlengthmodels are selected later testimony, not a reconciled contemporarysurvey."
+        ],
+        "coordinator_status": "accepted_with_documented_limits",
+        "selected_sha256": "31d8dfca6836c9ab6a4b2b5934857c4c8721a276a26dc544bae35cd39121a952",
+        "attempts": 0,
+        "scope": "Current selected output internally reviewed; technical formats do not claim successful painting repairs. Fresh external re-review open."
       },
-      "source_evidence_limit": "Photorealistic completion is interpretive. The picture is not a scale drawing or archaeological survey.",
-      "master_drive_url": "https://drive.google.com/file/d/1eH7Z5Oqd5NiZ_b9_5tzkzcOH-_OnEjRn/view?usp=drivesdk",
-      "native_master_drive_url": "https://drive.google.com/file/d/1eH7Z5Oqd5NiZ_b9_5tzkzcOH-_OnEjRn/view?usp=drivesdk"
+      "source_evidence_limit": "Selected textual geometry model, not a recovered survey. Material/engineering profiles and specified schematic parts remain inferred.",
+      "correction_receipt": "production/receipts/ARCH-HER-010.json",
+      "review_receipt": "production/coordinator/ARCH-HER-010.json",
+      "raster_master_file": "ARCH-HER-010.png",
+      "svg": "assets/svg/ARCH-HER-010.svg",
+      "source_svg_sha256": "4fa7da2d26f8e04b9d1976775ab530ff02651b6966330eacd2796d6c12bfaa23",
+      "dimensioned_source_model": true,
+      "scale_drawing_scope": "Dimensioned model components use stated source units; explicitly schematic profiles and completion are not measured. Not a recovered engineering survey.",
+      "format_limitation": "Requested cinematic painting repair was not achieved; selected replacement is an explicitly technical source-model study.",
+      "master_drive_url": "https://drive.google.com/file/d/1uXu8rvHXQ980V1czFVCcobuREejes7CK/view?usp=drivesdk",
+      "raster_master_drive_url": "https://drive.google.com/file/d/1uXu8rvHXQ980V1czFVCcobuREejes7CK/view?usp=drivesdk",
+      "master_drive_file_id": "1uXu8rvHXQ980V1czFVCcobuREejes7CK",
+      "master_publication_status": "uploaded_and_download_verified",
+      "master_upload_receipt": "production/published-masters.json"
     },
     {
       "id": "ARCH-HER-011",
@@ -3677,8 +4089,8 @@
       "path": "diagrams/tabernacle-plan.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "71e3db7645849c672601939798a0a9f5cc742606797f637f8983db91fa0ec620",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "f165cb8891686999f21fbf030c4d5c8dd86dba901ff4162bf6772b4cbdc593f1",
       "source_ids": [
         "K-EX25",
         "K-EX26",
@@ -3724,7 +4136,26 @@
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/EXO40.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/tabernacle-plan.png",
+      "png_sha256": "e3fa67c1bf690e30e1f6164455e51ddd2de04dd1e6911612edc6e9cc0ff6d544",
+      "visual_audit": {
+        "id": "tabernacle-plan",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "e3fa67c1bf690e30e1f6164455e51ddd2de04dd1e6911612edc6e9cc0ff6d544",
+        "actual_visual_findings": [
+          "Actual PNG: Gate 20 is clear of the east court line. Visible symbol/color key explains gold furniture, bronze laver/altar and purple curtain/entrance.",
+          "100 by 50 court, east-to-west approach, tent 30 by 10 convention and schematic furniture positions remain legible and qualified; exact offsets and symbol sizes are not certified."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "f165cb8891686999f21fbf030c4d5c8dd86dba901ff4162bf6772b4cbdc593f1"
+      }
     },
     {
       "id": "DGM-TABERNACLE-COVERINGS",
@@ -3732,8 +4163,8 @@
       "path": "diagrams/tabernacle-coverings.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "3a64cb960b71e8d9277f0a15fcd23c15e31b653a30d1275b33f570109640dfc5",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "9e7d0c6e164c57ddd29410d49f4e9ab376c339f8ef9920c33ad1deeaf4d52a1d",
       "source_ids": [
         "K-EX26",
         "K-EX36",
@@ -3758,7 +4189,26 @@
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/EXO38.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/tabernacle-coverings.png",
+      "png_sha256": "9d8548b91850aa8cbf88cbfcd883d747381ebe79fe92fcc030826e8abf4a6bc2",
+      "visual_audit": {
+        "id": "tabernacle-coverings",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "9d8548b91850aa8cbf88cbfcd883d747381ebe79fe92fcc030826e8abf4a6bc2",
+        "actual_visual_findings": [
+          "Actual PNG: ten linen panels in5+5 groups, eleven goat-hair panels in5+6 groups, 28/30 lengths and one-cubit side extensions are visible. One board, two tenons and two sockets are shown.",
+          "Footer retains conventional 48 boards/96 board sockets plus 4 veil sockets, distinguishing five brass door sockets. The drawing is a flat layout before folding rather than a certified finished roof profile."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "9e7d0c6e164c57ddd29410d49f4e9ab376c339f8ef9920c33ad1deeaf4d52a1d"
+      }
     },
     {
       "id": "DGM-FIRST-TEMPLE-KINGS",
@@ -3766,8 +4216,8 @@
       "path": "diagrams/first-temple-kings.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "e5e7055de1e1835577f977a412443e18dc69f1e3e94fc24e85336563cee8d2da",
+      "note": "Orientation labels moved clear of the plan; spacing repaired. All nontext geometry is byte-for-attribute identical to the prior source-specific model.",
+      "sha256": "3807211a05292c53d15b7340383c80c1e064030fabf118debe220972aa258556",
       "source_ids": [
         "K-1K6",
         "K-1K7",
@@ -3792,7 +4242,23 @@
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH03.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/first-temple-kings.png",
+      "png_sha256": "fc7e644a0720353a7e1f9408c86fccc889add9b12debf4bbdf4513796dbec8dd",
+      "visual_audit": {
+        "id": "first-temple-kings",
+        "selected_sha256": "fc7e644a0720353a7e1f9408c86fccc889add9b12debf4bbdf4513796dbec8dd",
+        "svg_sha256": "3807211a05292c53d15b7340383c80c1e064030fabf118debe220972aa258556",
+        "reviewer": "coordinator",
+        "reviewed_utc": "2026-11-05T23:05:39.098813+00:00",
+        "status": "accepted_with_documented_limits",
+        "actual_visual_findings": [
+          "Whole frame reviewed: WEST left of chamber band, EAST alongside plan at same baseline; no text-band collision. Kings dimensions/inventory and separate Chronicles variant note retained. Worker geometry-identity check records unchanged nontext elements; structural and symbol spacing remain schematic."
+        ],
+        "not_assessable": [
+          "Not a recovered survey or engineering drawing."
+        ]
+      }
     },
     {
       "id": "DGM-FIRST-TEMPLE-CHRONICLES",
@@ -3800,8 +4266,8 @@
       "path": "diagrams/first-temple-chronicles.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "44266f128243c22da5b3f80c339eef9c4aa1dbc2044f9015baa6f6363e530662",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "55b17be197438c39f1a09072be04a010a3cf0049b6a5cea53bc3a62369852bc0",
       "source_ids": [
         "K-2C3",
         "K-2C4",
@@ -3811,18 +4277,6 @@
         "K-2C29"
       ],
       "sources": [
-        {
-          "id": "K-1K6",
-          "title": "1 Kings 6 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/1KI06.htm"
-        },
-        {
-          "id": "K-1K7",
-          "title": "1 Kings 7 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/1KI07.htm"
-        },
         {
           "id": "K-2C3",
           "title": "2 Chronicles 3 KJV",
@@ -3836,6 +4290,18 @@
           "url": "https://ebible.org/eng-kjv/2CH04.htm"
         },
         {
+          "id": "K-1K6",
+          "title": "1 Kings 6 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/1KI06.htm"
+        },
+        {
+          "id": "K-1K7",
+          "title": "1 Kings 7 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/1KI07.htm"
+        },
+        {
           "id": "K-2C13",
           "title": "2 Chronicles 13 KJV",
           "kind": "KJV text",
@@ -3847,7 +4313,26 @@
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH29.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/first-temple-chronicles.png",
+      "png_sha256": "5776741f30b926cbb9a1cec302c4351e4c920baa16f366582aceff9c846e488d",
+      "visual_audit": {
+        "id": "first-temple-chronicles",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "5776741f30b926cbb9a1cec302c4351e4c920baa16f366582aceff9c846e488d",
+        "actual_visual_findings": [
+          "Actual PNG: ten tables and ten lampstand symbols are countable. Oracle is labelled20 by 20 plan rather than assigning a Chronicles cube statement.",
+          "Footer attributes oracle height 20 to Kings 6:20 and states Chronicles has both a veil 3:14 and doors 4:22. Kings annex comparison remains an explicit inset; singular-table passages remain distinguished from the ten-table inventory."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "55b17be197438c39f1a09072be04a010a3cf0049b6a5cea53bc3a62369852bc0"
+      }
     },
     {
       "id": "DGM-FIRST-TEMPLE-PORCH-VARIANT",
@@ -3855,8 +4340,8 @@
       "path": "diagrams/first-temple-porch-variant.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "773e4cfe2af3a186190f2c8638ad5cfaad61e9ce55b2f37cec4581efaf134345",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "d8c29dbbcfd68cf4b5054008a84fe17b272b910ea2c1e49f30f0ce337dc963e2",
       "source_ids": [
         "K-2C3",
         "K-1K6",
@@ -3864,6 +4349,12 @@
         "R-PORCH-TEXTUAL"
       ],
       "sources": [
+        {
+          "id": "K-2C3",
+          "title": "2 Chronicles 3 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/2CH03.htm"
+        },
         {
           "id": "K-1K6",
           "title": "1 Kings 6 KJV",
@@ -3877,19 +4368,32 @@
           "url": "https://ebible.org/eng-kjv/1KI07.htm"
         },
         {
-          "id": "K-2C3",
-          "title": "2 Chronicles 3 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/2CH03.htm"
-        },
-        {
           "id": "R-PORCH-TEXTUAL",
           "title": "Roger L. Omanson and John E. Ellington, A Handbook on 1-2 Chronicles (UBS, 2014), commentary on 2 Chronicles 3:4",
           "kind": "Textual translation commentary",
           "url": "https://tips.translation.bible/story/translation-commentary-on-2-chronicles-34/",
           "evidence_limit": "Reports that some Septuagint and Syriac manuscripts read 20. The collection retains KJV 120; this note does not certify a tower, roof engineering or a harmonized height."
         }
-      ]
+      ],
+      "raster_path": "diagrams/first-temple-porch-variant.png",
+      "png_sha256": "1425084072cfcafaa8bd801a2ce6e059189703b3b637163b7cd2bc37b807465d",
+      "visual_audit": {
+        "id": "first-temple-porch-variant",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "1425084072cfcafaa8bd801a2ce6e059189703b3b637163b7cd2bc37b807465d",
+        "actual_visual_findings": [
+          "Actual PNG:120-high porch and 30-high house share one scale; porch visibly reaches four times the house height. 60-long house and 10-projecting porch are dimensioned on the same horizontal scale.",
+          "Sheet identifies KJV 120 as a textual study, not recovered architecture. Greek/Syriac 20 reading is qualified by the UBS handbook; no unsupported specific-codex attribution is asserted. Engineering and modern cubit conversion remain uncertified."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "d8c29dbbcfd68cf4b5054008a84fe17b272b910ea2c1e49f30f0ce337dc963e2"
+      }
     },
     {
       "id": "DGM-SEA-SUPPORTS",
@@ -3897,8 +4401,8 @@
       "path": "diagrams/sea-supports.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "e81f32a00d1470203c796a069fb59f6df51908f55b5abc7d14acedd2395fc595",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "66a0c27db4e5707c679f9b294573bf933da90c502d766098b0c0c283c3fc2812",
       "source_ids": [
         "K-1K7",
         "K-2C4"
@@ -3916,7 +4420,26 @@
           "kind": "KJV text",
           "url": "https://ebible.org/eng-kjv/2CH04.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/sea-supports.png",
+      "png_sha256": "0a1d22604a199c5fabafdef52fa382877d735fb8f21faa1def684824f10a5ef2",
+      "visual_audit": {
+        "id": "sea-supports",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "0a1d22604a199c5fabafdef52fa382877d735fb8f21faa1def684824f10a5ef2",
+        "actual_visual_findings": [
+          "Actual PNG: twelve support symbols, three toward each cardinal direction, are countable under the single transparent basin footprint; no ox is placed above the rim.",
+          "Footer correctly reads thickness one handbreadth and brim like a lily cup. Kings knops, Chronicles oxen likenesses and differing 2000/3000 capacity descriptions stay separate, without claiming modern exact-volume reconciliation."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "66a0c27db4e5707c679f9b294573bf933da90c502d766098b0c0c283c3fc2812"
+      }
     },
     {
       "id": "DGM-HERODIAN-SANCTUARY",
@@ -3924,8 +4447,8 @@
       "path": "diagrams/herodian-sanctuary.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "f5b12b110e8a03bad7491baa9ba685c6bd6843856446552c964e8a8ea1f3115c",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "605517c996b7304e5f7f2355793f71997f88fedb4014ce8b6ca585bc3e711388",
       "source_ids": [
         "H-MID3",
         "H-MID4",
@@ -3933,12 +4456,6 @@
         "H-WAR5"
       ],
       "sources": [
-        {
-          "id": "H-WAR5",
-          "title": "Josephus, Jewish War 5.5 (public-domain Whiston translation)",
-          "kind": "Ancient historical account",
-          "url": "https://penelope.uchicago.edu/josephus/war-5.html"
-        },
         {
           "id": "H-MID3",
           "title": "Mishnah Middot 3 (later rabbinic description)",
@@ -3957,8 +4474,34 @@
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Yoma.5.1",
           "evidence_limit": "Two curtains separated by a cubit is the selected opinion, not an uncontested contemporary survey; Rabbi Yosei gives one curtain."
+        },
+        {
+          "id": "H-WAR5",
+          "title": "Josephus, Jewish War 5.5 (public-domain Whiston translation)",
+          "kind": "Ancient historical account",
+          "url": "https://penelope.uchicago.edu/josephus/war-5.html"
         }
-      ]
+      ],
+      "raster_path": "diagrams/herodian-sanctuary.png",
+      "png_sha256": "a01b7c853292ec1d0114b946c76a411435708d9e124a28274c8d1e2a9b34ed6b",
+      "visual_audit": {
+        "id": "herodian-sanctuary",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "a01b7c853292ec1d0114b946c76a411435708d9e124a28274c8d1e2a9b34ed6b",
+        "actual_visual_findings": [
+          "Actual PNG: west cell band is visible and labelled with a clear leader; two close purple curtain lines are drawn at the one-cubit partition, with a leader that does not cross SOUTH. Porch is explicitly labelled;70rear dimension is clear of the outline.",
+          "Plan retains100 front versus 70 rear,15-cubit shoulders each side, empty inner room and the selected later Middot model.100 by 100 facade and 40 by 20 open portal are dimensioned. West cell count/completion is not claimed as complete.",
+          "Yoma majority two-curtain account and one-curtain alternative, Middot and Josephus dimensional differences remain explicitly separated."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "605517c996b7304e5f7f2355793f71997f88fedb4014ce8b6ca585bc3e711388"
+      }
     },
     {
       "id": "DGM-HERODIAN-FIFTEEN-STEPS",
@@ -3966,26 +4509,131 @@
       "path": "diagrams/herodian-fifteen-steps.svg",
       "kind": "deterministic labelled study diagram",
       "is_native_generated_image": false,
-      "note": "Dimension labels follow the stated sources; inferred structure and schematic symbols are identified in the drawing.",
-      "sha256": "5344e366d9370e78601593f7d370a9f2a9f34a419a1fb206e1ff720d8c57f823",
+      "note": "Revised source-specific labelled teaching diagram. Dimensioned panels follow the named textual model; symbols, completion and all stated schematic limits remain distinct from a recovered survey.",
+      "sha256": "d2ae3592dd9064fda64d9a18660f4e183ca39dc348cb4d5e1eae8529053e1c1e",
       "source_ids": [
         "H-MID2",
         "K-ACT3"
       ],
       "sources": [
         {
-          "id": "K-ACT3",
-          "title": "Acts 3 KJV",
-          "kind": "KJV text",
-          "url": "https://ebible.org/eng-kjv/ACT03.htm"
-        },
-        {
           "id": "H-MID2",
           "title": "Mishnah Middot 2 (later rabbinic description)",
           "kind": "Later rabbinic description",
           "url": "https://www.sefaria.org/Mishnah_Middot.2?lang=en"
+        },
+        {
+          "id": "K-ACT3",
+          "title": "Acts 3 KJV",
+          "kind": "KJV text",
+          "url": "https://ebible.org/eng-kjv/ACT03.htm"
         }
-      ]
+      ],
+      "raster_path": "diagrams/herodian-fifteen-steps.png",
+      "png_sha256": "565c1cf6cce92711736872b038736647af1ff0ea3456fc41ab647f67d0898374",
+      "visual_audit": {
+        "id": "herodian-fifteen-steps",
+        "status": "acceptable_with_documented_limits_for_internal_integration",
+        "reviewer": "world_fresh_triage independent internal reviewer",
+        "selected_sha256": "565c1cf6cce92711736872b038736647af1ff0ea3456fc41ab647f67d0898374",
+        "actual_visual_findings": [
+          "Actual PNG: fifteen arcs in plan and profile numerals 1 through 15 are visible. Bottom/east and top/west labels agree; Nicanor gate and the two courts are identified.",
+          "Rise/run are expressly exaggerated for count readability. Nicanor identification and KJV Beautiful Gate are not certified as identical. Optional half-cubit rise/tread was not added; no scale claim is inferred."
+        ],
+        "not_assessable": [
+          "Reviewed the rendered diagrams and supplied audit/source distinctions; this pass did not independently re-read every full source publication or verify the UBS witness discussion against manuscripts.",
+          "SVG remains the preferred zoomable form. Raster labels and notes should not be required to be read unzoomed at narrow phone width.",
+          "Textual dimension models are distinct from recovered surveys; furniture spacing, thicknesses, structural details and hypothetical completion remain interpreted.",
+          "Empty footer bands have been trimmed; whitespace needed by the diagrams remains."
+        ],
+        "independent_svg_sha256": "d2ae3592dd9064fda64d9a18660f4e183ca39dc348cb4d5e1eae8529053e1c1e"
+      }
     }
-  ]
+  ],
+  "external_audit_status": "selected_corrections_internally_reviewed_fresh_external_rereview_open",
+  "release_scope": "Batch003:2 native replacements,3 technical format replacements,1 companion label revision, and explicit technical naming forHER002.",
+  "metadata_update_history": {
+    "batch": "audit-monitor-batch-001",
+    "updated_utc": "2026-11-05T20:23:13.445192+00:00",
+    "kind": "metadata_only",
+    "source_edition": "2.0",
+    "changed_asset_ids": [
+      "ARCH-TAB-004",
+      "ARCH-TAB-007",
+      "ARCH-TAB-009",
+      "ARCH-TAB-010",
+      "ARCH-HER-002",
+      "ARCH-CTX-003",
+      "ARCH-FIR-009",
+      "ARCH-CTX-001"
+    ],
+    "visual_pixels_changed": false,
+    "external_audit_status": "open_after_metadata_update",
+    "note": "Caption and source qualifications updated. No new image generation or diagram redraw occurred. Fresh external visual findings remain open.",
+    "audit_url": "https://drive.google.com/file/d/1o7iZNG5dx8xTcP0U5fw8LUPiccGZLClk/view?usp=drivesdk",
+    "receipts": "production/history/v2.1-METADATA-UPDATE.json"
+  },
+  "master_publication": {
+    "download_verified_changed_master_count": 5,
+    "pending_changed_master_ids": [],
+    "package_publication": "canonical_latest_guide_records_archive_publication_and_verification"
+  },
+  "visual_update_history": [
+    {
+      "batch": "audit-monitor-batch-002",
+      "kind": "selected_visual_corrections",
+      "visual_pixels_changed": true,
+      "changed_asset_ids": [
+        "ARCH-TAB-003",
+        "ARCH-TAB-004",
+        "ARCH-TAB-009",
+        "ARCH-FIR-003",
+        "ARCH-FIR-004",
+        "ARCH-FIR-005",
+        "ARCH-FIR-006",
+        "ARCH-HER-004",
+        "ARCH-HER-005",
+        "ARCH-HER-009",
+        "ARCH-HER-010",
+        "ARCH-HER-011",
+        "ARCH-HER-002",
+        "ARCH-FIR-009"
+      ],
+      "receipts": "production/history/v3.0/VISUAL-UPDATE.json",
+      "review_scope": "Hash-bound internal selected-pixel review; fresh external re-review remains open."
+    }
+  ],
+  "visual_update": {
+    "batch": "audit-monitor-batch-003",
+    "changed_asset_ids": [
+      "ARCH-HER-004",
+      "ARCH-HER-011",
+      "ARCH-FIR-003",
+      "ARCH-HER-009",
+      "ARCH-HER-010"
+    ],
+    "technical_format_changes": [
+      "ARCH-FIR-003",
+      "ARCH-HER-009",
+      "ARCH-HER-010"
+    ],
+    "supplementary_revisions": [
+      "first-temple-kings"
+    ],
+    "metadata_only_label_changes": [
+      "ARCH-HER-002"
+    ],
+    "receipts": "VISUAL-UPDATE.json",
+    "painting_specific_limit": "Cinematic repairs for the three technical-format replacements remain unmet."
+  },
+  "master_publication_history": [
+    {
+      "version": "3.0",
+      "record": {
+        "download_verified_changed_master_count": 14,
+        "pending_changed_master_ids": []
+      }
+    }
+  ],
+  "release_status": "reviewed_versioned_edition_external_re_review_open"
 }
