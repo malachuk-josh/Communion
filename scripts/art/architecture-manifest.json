@@ -812,7 +812,7 @@
     },
     {
       "id": "ARCH-FIR-003",
-      "title": "First Temple: technical cutaway",
+      "title": "First Temple: plan and longitudinal section",
       "group": "First Temple",
       "period": "Iron Age Jerusalem; Kings-based teaching model",
       "kjv_passages": [
@@ -834,7 +834,7 @@
         "Door size, porchheight, material finish, structural thickness, roof joins and upper-oracle space remain chosen or schematic.",
         "The technical model omits furnishings rather than claiming an empty FirstTemple oracle."
       ],
-      "required_display_note": "Technical Kings-based cutaway: a 60-by-20-by-30 house, 20-cubit oracle, real cedar partition with a central olivewood doorway, and roofed 20-by-10 porch. Porch height is chosen, not stated by Kings. Three annex storeys stand beside the shared ground floor to 15 cubits; the inset gives 5/6/7 clear widths. Furnishings, structural thicknesses and corner/roof completion are outside this model.",
+      "required_display_note": "A technical study of the 1 Kings 6 measurements in cubits: a house 60 long, 20 wide and 30 high; a hall of 40 and an oracle of 20 by 20 by 20; a porch 10 deep across the 20-cubit front; side chambers on the north, south and west in three storeys of 5 cubits, 5, 6 and 7 cubits wide. Door widths are schematic, Kings gives no porch height, and the space above the oracle is unspecified.",
       "diagrams": [
         "first-temple-kings"
       ],
@@ -893,7 +893,7 @@
       "master_file": "ARCH-FIR-003.png",
       "width": 1600,
       "height": 1950,
-      "alt_text": "Technical axonometric with one continuous ground floor, real cedar partition around a central double doorway, roofed porch,15-high side annex and5/6/7-width inset.",
+      "alt_text": "Dimensioned plan and west-to-east section of the First Temple: oracle, hall and porch, with three tiers of side chambers.",
       "is_native_generated_image": false,
       "display_caption": "First Temple: technical cutaway. Technical Kings-based cutaway: a 60-by-20-by-30 house, 20-cubit oracle, real cedar partition with a central olivewood doorway, and roofed 20-by-10 porch. Porch height is chosen, not stated by Kings. Three annex storeys stand beside the shared ground floor to 15 cubits; the inset gives 5/6/7 clear widths. Furnishings, structural thicknesses and corner/roof completion are outside this model.",
       "sha256": {

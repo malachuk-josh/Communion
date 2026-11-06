@@ -4,7 +4,7 @@
   "version": "6.1",
   "coverage": "296 curated illustrations: 143 Old Testament and 153 New Testament",
   "status": "reviewed_versioned_edition_external_re_review_open",
-  "asset_count": 316,
+  "asset_count": 332,
   "planned_asset_count": 296,
   "expansion": {
     "new_native_illustrations": 46,
@@ -106,7 +106,7 @@
     "pending_changed_master_ids": [],
     "package_publication": "canonical_latest_guide_records_archive_publication_and_verification"
   },
-  "app_note": "Narrative 6.1 plus the 20 audited pictures of the lives expansion (Jacob, Joseph, Joshua) released so far.",
+  "app_note": "Narrative 6.1 plus the 36 pictures of the lives expansion (Jacob, Joseph, Joshua), with the producer's audited corrections of 2026-11-06.",
   "assets": [
     {
       "id": "GEN-001",
@@ -2193,7 +2193,7 @@
         "joseph_family": "Reading sequence"
       },
       "theme_sequence": {
-        "joseph_family": 14
+        "joseph_family": 16
       },
       "depiction_kind": "passage scene",
       "mime_type": "image/webp",
@@ -2256,7 +2256,7 @@
         "joseph_family": "Reading sequence"
       },
       "theme_sequence": {
-        "joseph_family": 15
+        "joseph_family": 17
       },
       "depiction_kind": "passage scene",
       "mime_type": "image/webp",
@@ -22678,7 +22678,455 @@
         "life_joshua": 5
       },
       "depiction_kind": "passage scene",
-      "alt_text": "Moses and Joshua stand before the tabernacle as a cloud rests above its door.",
+      "alt_text": "Moses and Joshua stand before the tabernacle as a pillar of cloud stands at its door.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-040",
+      "title": "Jacob Sends Gifts to Esau",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 32,
+        "verse_start": 13,
+        "chapter_end": 32,
+        "verse_end": 21
+      },
+      "reference": "Genesis 32:13-21",
+      "themes": [
+        "life_jacob"
+      ],
+      "theme_sections": {
+        "life_jacob": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_jacob": 9
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Jacob instructs a servant as droves of goats and rams pass along the track, each drove by itself.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-041",
+      "title": "Jacob Returns to Bethel",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 35,
+        "verse_start": 1,
+        "chapter_end": 35,
+        "verse_end": 7
+      },
+      "reference": "Genesis 35:1-7",
+      "themes": [
+        "life_jacob"
+      ],
+      "theme_sections": {
+        "life_jacob": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_jacob": 10
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Jacob builds an altar of unhewn stones in the hill country, with women of his household beside him.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-042",
+      "title": "Jacob Mourns Joseph",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 37,
+        "verse_start": 31,
+        "chapter_end": 37,
+        "verse_end": 35
+      },
+      "reference": "Genesis 37:31-35",
+      "themes": [
+        "life_jacob"
+      ],
+      "theme_sections": {
+        "life_jacob": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_jacob": 11
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Aged Jacob, his garment torn, weeps over Joseph’s blood-stained coat inside a dark tent.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-043",
+      "title": "Jacob and Joseph Reunited",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 46,
+        "verse_start": 28,
+        "chapter_end": 46,
+        "verse_end": 30
+      },
+      "reference": "Genesis 46:28-30",
+      "themes": [
+        "life_jacob"
+      ],
+      "theme_sections": {
+        "life_jacob": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_jacob": 12
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Joseph, in Egyptian dress, falls on his father’s neck and weeps, his light chariot behind him in Goshen.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-051",
+      "title": "The Silver Cup Is Found",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 44,
+        "verse_start": 1,
+        "chapter_end": 44,
+        "verse_end": 13
+      },
+      "reference": "Genesis 44:1-13",
+      "themes": [
+        "joseph_family"
+      ],
+      "theme_sections": {
+        "joseph_family": "Reading sequence"
+      },
+      "theme_sequence": {
+        "joseph_family": 14
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Joseph’s steward lifts a silver bowl from an opened grain sack as the brothers look on in distress.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-052",
+      "title": "Judah Pleads for Benjamin",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 44,
+        "verse_start": 18,
+        "chapter_end": 44,
+        "verse_end": 34
+      },
+      "reference": "Genesis 44:18-34",
+      "themes": [
+        "joseph_family"
+      ],
+      "theme_sections": {
+        "joseph_family": "Reading sequence"
+      },
+      "theme_sequence": {
+        "joseph_family": 15
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Judah kneels with open hands before Joseph, who sits shaven and collared beside a painted column.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "GEN-053",
+      "title": "Joseph’s Promise of Deliverance",
+      "book": "Gen",
+      "book_name": "Genesis",
+      "testament": "OT",
+      "passage": {
+        "book": "Gen",
+        "chapter_start": 50,
+        "verse_start": 24,
+        "chapter_end": 50,
+        "verse_end": 26
+      },
+      "reference": "Genesis 50:24-26",
+      "themes": [
+        "joseph_family"
+      ],
+      "theme_sections": {
+        "joseph_family": "Reading sequence"
+      },
+      "theme_sequence": {
+        "joseph_family": 18
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Very old Joseph, on his bed, speaks to his kinsmen, with Nile palms beyond the window.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-005",
+      "title": "Joshua Orders Preparations",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 1,
+        "verse_start": 10,
+        "chapter_end": 1,
+        "verse_end": 11
+      },
+      "reference": "Joshua 1:10-11",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 6
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Grey-haired Joshua points the officers toward the Jordan as the people prepare food among dark tents.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-006",
+      "title": "The Spies Report to Joshua",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 2,
+        "verse_start": 23,
+        "chapter_end": 2,
+        "verse_end": 24
+      },
+      "reference": "Joshua 2:23-24",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 7
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Two spies report to seated Joshua by the Jordan, with dark tents behind.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-007",
+      "title": "The Memorial Stones at Gilgal",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 4,
+        "verse_start": 19,
+        "chapter_end": 4,
+        "verse_end": 24
+      },
+      "reference": "Joshua 4:19-24",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 8
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Joshua explains twelve stacked stones to children and families at Gilgal.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-008",
+      "title": "Joshua Meets the Captain",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 5,
+        "verse_start": 13,
+        "chapter_end": 5,
+        "verse_end": 15
+      },
+      "reference": "Joshua 5:13-15",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 9
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Near Jericho’s walls, a man with a drawn sword stands facing Joshua.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-009",
+      "title": "Rahab’s Family Is Rescued",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 6,
+        "verse_start": 22,
+        "chapter_end": 6,
+        "verse_end": 25
+      },
+      "reference": "Joshua 6:22-25",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 10
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "The two spies lead Rahab, her parents and her kin out of the ruined city toward the camp.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-010",
+      "title": "Joshua Reads the Law at Ebal",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 8,
+        "verse_start": 30,
+        "chapter_end": 8,
+        "verse_end": 35
+      },
+      "reference": "Joshua 8:30-35",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 11
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Joshua reads from a written sheet to men, women and children beside an altar of whole stones.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-011",
+      "title": "The Long Day at Gibeon",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 10,
+        "verse_start": 12,
+        "chapter_end": 10,
+        "verse_end": 14
+      },
+      "reference": "Joshua 10:12-14",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 12
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Joshua lifts his hand toward the sky, where the sun and a pale moon both stand above Gibeon.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-012",
+      "title": "Caleb Asks for Hebron",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 14,
+        "verse_start": 6,
+        "chapter_end": 14,
+        "verse_end": 14
+      },
+      "reference": "Joshua 14:6-14",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 13
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Vigorous, grey-haired Caleb appeals to Joshua before the elders.",
+      "depiction_note": "",
+      "source_collection": "bible-lives-jacob-joshua-joseph-36"
+    },
+    {
+      "id": "JOS-013",
+      "title": "Joshua’s Farewell",
+      "book": "Josh",
+      "book_name": "Joshua",
+      "testament": "OT",
+      "passage": {
+        "book": "Josh",
+        "chapter_start": 23,
+        "verse_start": 1,
+        "chapter_end": 23,
+        "verse_end": 11
+      },
+      "reference": "Joshua 23:1-11",
+      "themes": [
+        "life_joshua"
+      ],
+      "theme_sections": {
+        "life_joshua": "Reading sequence"
+      },
+      "theme_sequence": {
+        "life_joshua": 14
+      },
+      "depiction_kind": "passage scene",
+      "alt_text": "Aged Joshua addresses the elders under a shade, with a low flat-roofed town behind.",
       "depiction_note": "",
       "source_collection": "bible-lives-jacob-joshua-joseph-36"
     }

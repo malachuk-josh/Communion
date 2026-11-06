@@ -1,6 +1,4 @@
 {
   "about": "Pictures held back from the app until a corrected version passes the audit (the 'Claude audits' folder in Drive). Remove an entry once its fix is audited OK or minor, then re-run scripts/build-study-art.mjs or scripts/build-bible-art.mjs.",
-  "held": {
-    "ARCH-FIR-003": "fix: the v3.1 cutaway does not hold together as a building (no hall-to-porch wall, annex on one side, ticks off)"
-  }
+  "held": {}
 }
