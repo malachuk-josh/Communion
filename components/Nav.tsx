@@ -6,12 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
-import {
-  onScroll as onPageScroll,
-  scrollsSideways,
-  scrollToY,
-  scrollY,
-} from "@/lib/scroller";
+import { scrollsSideways, scrollToY } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
@@ -91,53 +86,8 @@ export default function Nav() {
   const [askSignIn, setAskSignIn] = useState(false);
   const chipRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
-  const [navHidden, setNavHidden] = useState(false);
   /** which way the last swipe went, read once by the animation after it lands */
   const swipeDir = useRef<number | null>(null);
-
-  /**
-   * In The Word, reading down tucks the bottom bar away, so nothing but the
-   * text and the chapter arrows is at the foot of the page; a brisk upward
-   * flick, or nearing the top, brings it back. A slow upward drift keeps it
-   * hidden — that is still reading, not reaching.
-   *
-   * This is the gesture that was here before, restored a second time. It was
-   * taken out when the bar went down to three tabs, on the reasoning that a
-   * bar that narrow could share the bottom edge with the chapter arrows and
-   * stay put. It could, but a bar that never leaves is one more thing in view
-   * on the one screen meant to be nothing but the text.
-   *
-   * The bar starts visible, so a reader who never flicks still learns it is
-   * there. The chapter arrows either side of it go and come back with it
-   * (html.navhide, below), so a page read down is the text and nothing else
-   * but the edge tab.
-   */
-  useEffect(() => {
-    // The Word, and a Bookshelf book, which is read the same way
-    if (pathname !== "/" && pathname !== "/bookshelf") {
-      setNavHidden(false);
-      return;
-    }
-    let lastY = scrollY();
-    let lastT = performance.now();
-    const onScroll = () => {
-      const y = scrollY();
-      const now = performance.now();
-      const dy = y - lastY;
-      const speed = -dy / Math.max(1, now - lastT); // px/ms, upward
-      if (y < 130) setNavHidden(false);
-      else if (dy > 4) setNavHidden(true);
-      else if (dy < 0 && (speed > 0.9 || -dy > 110)) setNavHidden(false);
-      lastY = y;
-      lastT = now;
-    };
-    return onPageScroll(onScroll);
-  }, [pathname]);
-
-  // the reader's chapter arrows leave and return with the bar
-  useEffect(() => {
-    document.documentElement.classList.toggle("navhide", navHidden);
-  }, [navHidden]);
 
   /*
    * A new screen starts at the top of itself.
@@ -524,13 +474,14 @@ export default function Nav() {
       </nav>
 
       <nav
-        className={`bottom-nav glass${navHidden ? " nav-hidden" : ""}`}
+        className="bottom-nav glass"
         aria-label="Primary"
       >
         {/* Three tabs, for reading on your own: Home first, the Journal,
             and the Word at the far right, at the end of the row. The Menu
-            lives in the header, reachable without a place in the bar. In The
-            Word it tucks away as the reader reads down (see above). */}
+            lives in the header, reachable without a place in the bar. It stays
+            put in The Word as everywhere else: a bar that never leaves is
+            one nobody has to know how to call back. */}
         <Link
           href="/discover"
           className={isDiscover ? "active" : ""}
