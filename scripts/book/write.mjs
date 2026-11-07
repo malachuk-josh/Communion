@@ -27,7 +27,10 @@ export function curl(s) {
     .replace(/'/g, "’");
 }
 
-const tidy = (s) => curl(s.replace(/<\/i> <i>/g, " ").replace(/<\/b> <b>/g, " ").replace(/\s+/g, " ").trim());
+const tidy = (s) => curl(s.replace(/<\/i> <i>/g, " ").replace(/<\/b> <b>/g, " ").replace(/\s+/g, " ").trim())
+  // a Markdown italic marker the edition left in print, just before a
+  // scripture reference: "<i>Behold, I make all things new.</i> *(Rev. 21:5)"
+  .replace(/(^|\s|<\/i>)\*(?=\()/g, "$1");
 
 /** the widest a full-size picture is kept; the editions' are well within it */
 const FULL_WIDTH = 2400;
