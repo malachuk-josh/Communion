@@ -69,6 +69,29 @@ export function useViewportInsets() {
       el.scrollIntoView({ block: "nearest", inline: "nearest" });
     };
 
+    // The document itself never scrolls: the header sits above the one
+    // scroller and the bar below it (see html, body in globals.css). iOS
+    // scrolls it anyway to lift a focused field over the keyboard, and does
+    // not always scroll it back when the keyboard goes: the header is left
+    // above the top of the screen and taps land a little off the buttons
+    // they were aimed at, until the app is reloaded. So once no field is
+    // being typed in and the keyboard is down, put the document back.
+    const typing = () =>
+      !!(document.activeElement as HTMLElement | null)?.matches?.(
+        "input, textarea, select, [contenteditable]"
+      );
+    const settleDocument = () => {
+      if (vv.scale > 1.01 || typing() || root.classList.contains("kb-up")) return;
+      const se = document.scrollingElement;
+      if (window.scrollY || window.scrollX || se?.scrollTop || se?.scrollLeft ||
+          document.body.scrollTop || document.body.scrollLeft) {
+        window.scrollTo(0, 0);
+        if (se) { se.scrollTop = 0; se.scrollLeft = 0; }
+        document.body.scrollTop = 0;
+        document.body.scrollLeft = 0;
+      }
+    };
+
     const measure = () => {
       frame = 0;
       // Pinch-zoom shrinks the visual viewport exactly as a keyboard does,
@@ -103,6 +126,7 @@ export function useViewportInsets() {
       // The keyboard was still on its way up when focus landed, so this is
       // the pass that actually gets the field on screen.
       reveal();
+      settleDocument();
     };
 
     // visualViewport fires on every frame of a scroll. Coalescing to one rAF
@@ -123,6 +147,13 @@ export function useViewportInsets() {
     // have both settled before anything is measured
     const onFocusIn = () => requestAnimationFrame(reveal);
     document.addEventListener("focusin", onFocusIn);
+    // leaving a field, and any scroll of the document itself (a
+    // scrollIntoView that reached past the scroller, or iOS's own reveal),
+    // get the same check; the keyboard closing is caught by measure()
+    const onFocusOut = () => window.setTimeout(settleDocument, 350);
+    document.addEventListener("focusout", onFocusOut);
+    window.addEventListener("scroll", settleDocument, { passive: true });
+    settleDocument();
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
@@ -130,6 +161,8 @@ export function useViewportInsets() {
       vv.removeEventListener("scroll", schedule);
       window.removeEventListener("orientationchange", schedule);
       document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      window.removeEventListener("scroll", settleDocument);
       root.style.removeProperty("--kb");
       root.style.removeProperty("--vv-top");
       root.style.removeProperty("--vvh");
