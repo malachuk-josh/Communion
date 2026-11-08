@@ -24,6 +24,7 @@ import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import PictureViewer from "@/components/PictureViewer";
 import { fetchAhead, mayFetchAhead, watchPictures } from "@/lib/pictures";
+import { useBookPictures } from "@/lib/bookPictures";
 import { getBook } from "@/lib/bible";
 import { BOOK_FONTS } from "@/lib/bookFonts";
 import {
@@ -397,6 +398,8 @@ function PartView({
   const [viewing, setViewing] = useState<BookImage | null>(null);
   const [verse, setVerse] = useState<BookRef | null>(null);
   const [pt, setPt] = useState(14);
+  // the reader's choice, for every book on the shelf (Settings has it too)
+  const [pics, setPics] = useBookPictures();
   const restored = useRef(false);
   const router = useRouter();
 
@@ -520,7 +523,7 @@ function PartView({
             <Rule />
           </header>
 
-          {part.image && (
+          {pics && part.image && (
             <figure className="bk-figure">
               <button
                 type="button"
@@ -541,7 +544,7 @@ function PartView({
           )}
 
           <div className="bk-text">
-            {part.blocks.map((b, i) => (
+            {part.blocks.filter((b) => pics || !("img" in b)).map((b, i) => (
               <BlockView
                 key={i}
                 block={b}
@@ -661,6 +664,20 @@ function PartView({
                 >
                   <Icon name="books" />
                 </Link>
+              </div>
+              {/* the editions' paintings and engravings, for a reader who
+                  would rather have the words alone */}
+              <div className="sp-pad sp-prefs">
+                <label className="toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={pics}
+                    onChange={(e) => setPics(e.target.checked)}
+                  />
+                  <span>
+                    <Icon name="picture" /> {t("shelf.pictures")}
+                  </span>
+                </label>
               </div>
             </div>
 

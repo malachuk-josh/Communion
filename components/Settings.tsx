@@ -17,6 +17,7 @@ import ReminderSettings from "@/components/ReminderSettings";
 import DeleteAccount from "@/components/DeleteAccount";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
 import { useTextPictures } from "@/lib/bibleArt";
+import { useBookPictures } from "@/lib/bookPictures";
 import { writeLocal } from "@/lib/storage";
 import { useDocumentTheme, type Theme } from "@/lib/theme";
 import {
@@ -89,6 +90,7 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [redLetter, setRedLetter] = useState(false);
   const [textPics, setTextPics] = useTextPictures();
+  const [bookPics, setBookPics] = useBookPictures();
   // how Scripture is set in The Word; see lib/readingText
   const [pt, setPt] = useState(PT_DEFAULT);
   const [weight, setWeight] = useState(WEIGHT_DEFAULT);
@@ -312,6 +314,17 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
           </span>
         </label>
         <p className="cal-hint">{t("settings.wordPicturesHint")}</p>
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={bookPics}
+            onChange={(e) => setBookPics(e.target.checked)}
+          />
+          <span>
+            <Icon name="picture" /> {t("settings.bookPictures")}
+          </span>
+        </label>
+        <p className="cal-hint">{t("settings.bookPicturesHint")}</p>
       </div>
 
       <div className="section-head">

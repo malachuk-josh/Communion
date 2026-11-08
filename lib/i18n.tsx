@@ -44,6 +44,9 @@ const dictionaries = {
     "settings.redLetter": "Christ’s words in red",
     "settings.redLetterHint":
       "The way most printed Bibles set them. Available in the King James, which is the only text here marked speech by speech; other translations read in one colour.",
+    "settings.bookPictures": "Illustrations in the Bookshelf",
+    "settings.bookPicturesHint":
+      "The books’ paintings and engravings. Turn off to read the words alone. The same switch as in a book’s navigator.",
     "settings.wordPictures": "Illustrations in The Word",
     "settings.wordPicturesHint":
       "A picture where a story begins; tap it to see it whole. The same switch as in The Word’s reading controls.",
@@ -489,6 +492,7 @@ const dictionaries = {
     "pics.story.letters_and_teaching": "The letters",
     "reader.textPictures": "Pictures in the text",
     "reader.textPicturesHint": "Illustrations where a story begins",
+    "shelf.pictures": "Pictures in the book",
     "shelf.title": "Bookshelf",
     "shelf.lead": "Books to read beside Scripture.",
     "shelf.open": "Open the book",
@@ -905,6 +909,9 @@ const dictionaries = {
     "settings.redLetter": "Las palabras de Cristo en rojo",
     "settings.redLetterHint":
       "Como las presentan casi todas las Biblias impresas. Disponible en la King James, el único texto aquí marcado discurso por discurso; las demás traducciones se leen en un solo color.",
+    "settings.bookPictures": "Ilustraciones en la Estantería",
+    "settings.bookPicturesHint":
+      "Las pinturas y grabados de los libros. Apágalo para leer solo el texto. Es el mismo interruptor que en el navegador de cada libro.",
     "settings.wordPictures": "Ilustraciones en La Palabra",
     "settings.wordPicturesHint":
       "Una imagen donde empieza una historia; tócala para verla entera. Es el mismo interruptor que en los controles de lectura de La Palabra.",
@@ -1353,6 +1360,7 @@ const dictionaries = {
     "pics.story.letters_and_teaching": "Las cartas",
     "reader.textPictures": "Imágenes en el texto",
     "reader.textPicturesHint": "Ilustraciones donde empieza una historia",
+    "shelf.pictures": "Imágenes en el libro",
     "shelf.title": "Estantería",
     "shelf.lead": "Libros para leer junto a las Escrituras.",
     "shelf.open": "Abrir el libro",
