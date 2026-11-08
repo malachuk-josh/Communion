@@ -35,7 +35,7 @@ import { signInNeeded, useAccount } from "@/lib/account";
 import PlanBuilder from "@/components/PlanBuilder";
 import Settings from "@/components/Settings";
 import { HOME_TAB_EVENT, HOME_TABS } from "@/lib/menuItems";
-import { scrollToY } from "@/lib/scroller";
+import { jumpToTop, scrollToY } from "@/lib/scroller";
 import {
   isCustomPlanId,
   type CustomPlanRow,
@@ -113,7 +113,7 @@ export default function Discover() {
         return;
       }
       setTab(wanted as (typeof DISCOVER_TABS)[number]);
-      scrollToY(0);
+      jumpToTop();
     };
     window.addEventListener(HOME_TAB_EVENT, onAsk);
     return () => window.removeEventListener(HOME_TAB_EVENT, onAsk);

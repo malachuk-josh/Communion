@@ -44,6 +44,36 @@ export function scrollToY(top: number, behavior?: ScrollBehavior): void {
   else if (typeof window !== "undefined") window.scrollTo({ top, behavior });
 }
 
+/**
+ * Start a new screen at its top, even mid-flick.
+ *
+ * On iOS a flick keeps the scroller gliding after the finger lifts, and a tap
+ * on the header or the bar is outside the scroller, so it does not stop the
+ * glide. WebKit lets a glide in progress win over a scrollTo: the new screen
+ * arrived at its top for one frame, then the glide went on through it and
+ * left it clamped at the bottom. Turning the overflow off for a moment is
+ * what ends a glide in WebKit; the position is then set, and set again on
+ * the next frames, in case one frame of the glide was already queued.
+ */
+export function jumpToTop(): void {
+  const el = scroller();
+  if (!el) {
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+    return;
+  }
+  el.style.overflowY = "hidden";
+  el.scrollTop = 0;
+  requestAnimationFrame(() => {
+    el.style.overflowY = "";
+    el.scrollTop = 0;
+    requestAnimationFrame(() => {
+      // a reader who has already started scrolling the new screen keeps it
+      if (el.scrollTop > 0 && el.scrollTop < 40) return;
+      el.scrollTop = 0;
+    });
+  });
+}
+
 export function scrollByY(dy: number): void {
   const el = scroller();
   if (el) el.scrollBy({ top: dy });

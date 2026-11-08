@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import { useI18n } from "@/lib/i18n";
 import { useReading } from "@/lib/reading";
-import { scrollsSideways, scrollToY } from "@/lib/scroller";
+import { jumpToTop, scrollsSideways } from "@/lib/scroller";
 import { getBook } from "@/lib/bible";
 import AuthControls from "@/components/AuthControls";
 import MenuMenu from "@/components/MenuMenu";
@@ -101,7 +101,7 @@ export default function Nav() {
    * path, and the reader places itself.
    */
   useEffect(() => {
-    scrollToY(0);
+    jumpToTop();
   }, [pathname]);
 
   /**
@@ -225,7 +225,7 @@ export default function Nav() {
         const to = here.tabs.indexOf(here.tab) + dir;
         if (to >= 0 && to < here.tabs.length) {
           here.choose(here.tabs[to]);
-          scrollToY(0);
+          jumpToTop();
           slideIn(document.querySelector<HTMLElement>(".page .tab-pane"), dir);
           return;
         }
