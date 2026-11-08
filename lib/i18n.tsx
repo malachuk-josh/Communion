@@ -44,6 +44,9 @@ const dictionaries = {
     "settings.redLetter": "Christ’s words in red",
     "settings.redLetterHint":
       "The way most printed Bibles set them. Available in the King James, which is the only text here marked speech by speech; other translations read in one colour.",
+    "settings.wordPictures": "Illustrations in The Word",
+    "settings.wordPicturesHint":
+      "A picture where a story begins; tap it to see it whole. The same switch as in The Word’s reading controls.",
     "settings.theme": "Theme",
     "settings.themeLight": "Parchment",
     "settings.themeDark": "Illuminated",
@@ -902,6 +905,9 @@ const dictionaries = {
     "settings.redLetter": "Las palabras de Cristo en rojo",
     "settings.redLetterHint":
       "Como las presentan casi todas las Biblias impresas. Disponible en la King James, el único texto aquí marcado discurso por discurso; las demás traducciones se leen en un solo color.",
+    "settings.wordPictures": "Ilustraciones en La Palabra",
+    "settings.wordPicturesHint":
+      "Una imagen donde empieza una historia; tócala para verla entera. Es el mismo interruptor que en los controles de lectura de La Palabra.",
     "settings.theme": "Tema",
     "settings.themeLight": "Pergamino",
     "settings.themeDark": "Iluminado",

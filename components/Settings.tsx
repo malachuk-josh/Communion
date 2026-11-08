@@ -16,6 +16,7 @@ import OfflineSettings from "@/components/OfflineSettings";
 import ReminderSettings from "@/components/ReminderSettings";
 import DeleteAccount from "@/components/DeleteAccount";
 import { readRedLetter, writeRedLetter } from "@/lib/redletter";
+import { useTextPictures } from "@/lib/bibleArt";
 import { writeLocal } from "@/lib/storage";
 import { useDocumentTheme, type Theme } from "@/lib/theme";
 import {
@@ -87,6 +88,7 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
   const [nameError, setNameError] = useState("");
   const [offlineOpen, setOfflineOpen] = useState(false);
   const [redLetter, setRedLetter] = useState(false);
+  const [textPics, setTextPics] = useTextPictures();
   // how Scripture is set in The Word; see lib/readingText
   const [pt, setPt] = useState(PT_DEFAULT);
   const [weight, setWeight] = useState(WEIGHT_DEFAULT);
@@ -297,6 +299,19 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
           <span className="wj">{t("settings.redLetter")}</span>
         </label>
         <p className="cal-hint">{t("settings.redLetterHint")}</p>
+        {/* the illustrated Bible in the text: the one setting the reading
+            controls also hold, kept in step with them (lib/bibleArt) */}
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={textPics}
+            onChange={(e) => setTextPics(e.target.checked)}
+          />
+          <span>
+            <Icon name="picture" /> {t("settings.wordPictures")}
+          </span>
+        </label>
+        <p className="cal-hint">{t("settings.wordPicturesHint")}</p>
       </div>
 
       <div className="section-head">
