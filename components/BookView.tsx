@@ -854,14 +854,23 @@ function Inline({ html, onRef }: { html: string; onRef: (r: BookRef) => void }) 
       else if (piece === "<b>") bold = true;
       else if (piece === "</b>") bold = false;
       else if (piece) {
-        // the references, in their brackets, as printed
-        for (const part of piece.split(/(\[[^\]]+\])/)) {
-          const inside = part.match(/^\[([^\]]+)\]$/);
-          if (!inside) {
+        // the references, in their brackets, as printed: square in Bunyan
+        // and Milton, round in Sion — "(Rev. 21:5)". Round brackets are also
+        // how prose sets an aside, so those count only when everything inside
+        // reads as a reference; "(for she was but young)" stays words.
+        for (const part of piece.split(/(\[[^\]]+\]|\([^()]+\))/)) {
+          const square = part.match(/^\[([^\]]+)\]$/);
+          const round = square ? null : part.match(/^\(([^()]+)\)$/);
+          const refs = square
+            ? readRefs(square[1])
+            : round
+              ? readRefs(round[1])
+              : null;
+          if (!refs || (round && refs.some((r) => typeof r === "string"))) {
             if (part) out.push(wrap(<Fragment key={key++}>{part}</Fragment>));
             continue;
           }
-          const refs = readRefs(inside[1]);
+          const [open, close] = round ? ["(", ")"] : ["[", "]"];
           out.push(
             <span key={key++} className="bk-refs">
               {refs.map((r, i) => (
@@ -870,7 +879,7 @@ function Inline({ html, onRef }: { html: string; onRef: (r: BookRef) => void }) 
                   {/* each reference keeps its own bracket or semicolon with
                       it, so a line never ends on a bare "[" */}
                   <span className="bk-ref-piece">
-                    {i === 0 && "["}
+                    {i === 0 && open}
                     {typeof r === "string" ? (
                       r
                     ) : (
@@ -878,7 +887,7 @@ function Inline({ html, onRef }: { html: string; onRef: (r: BookRef) => void }) 
                         {r.text}
                       </button>
                     )}
-                    {i === refs.length - 1 ? "]" : ";"}
+                    {i === refs.length - 1 ? close : ";"}
                   </span>
                 </Fragment>
               ))}
