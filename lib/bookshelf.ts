@@ -325,14 +325,23 @@ const ONE_CHAPTER = new Set([31, 57, 63, 64, 65]);
  * Read one bracket's worth of references — "Isa. 64:6; Luke 14:33" — into
  * pieces. A chapter on its own ("Rom. 3") is the whole chapter; a piece that
  * is only numbers ("16:21", or "25" after "Matt. 13") belongs to the book
- * before it; "2:11, 17" is two verses of one chapter. A piece that cannot be
- * read (a "see vv. 22–26") comes back as text, so it is still printed, just
- * not tappable.
+ * before it; "2:11, 17" is two verses of one chapter, and "see vv. 22-26" more
+ * verses of the chapter named before it. A piece that cannot be read comes
+ * back as text, so it is still printed, just not tappable.
  */
 export function readRefs(inside: string): Array<BookRef | string> {
   let lastBook = "";
+  let previous: BookRef | null = null;
   return inside.split(/;\s*/).map((raw) => {
     const piece = raw.trim();
+    // "see vv. 22-26" after "James 1:27": more verses of the chapter just named
+    const vv = piece.match(/^(?:see\s+)?vv?\.\s*(\d+)(?:[-–](\d+))?$/i);
+    if (vv) {
+      if (!previous) return piece;
+      const from = Number(vv[1]);
+      const to = vv[2] ? Number(vv[2]) : 0;
+      return { text: piece, b: previous.b, c: previous.c, v: from, ...(to > from ? { ve: to } : {}) };
+    }
     // book, chapter, then a verse, the end of a range and further verses — any
     // of them missing. "Jude 14-15" is a range with no colon at all; the
     // further verses may be a range of their own ("Ps. 2:2, 6–8").
@@ -350,13 +359,13 @@ export function readRefs(inside: string): Array<BookRef | string> {
     // "Jude 14", "3 John 5-6": a one-chapter book's numbers are its verses
     if (ONE_CHAPTER.has(found.bookNr) && !v) {
       const end = ve ? Number(ve) : 0;
-      return {
+      return (previous = {
         text: piece,
         b: found.bookNr,
         c: 1,
         v: Number(c),
         ...(end > Number(c) ? { ve: end } : {}),
-      };
+      });
     }
     const first = v ? Number(v) : undefined;
     // a range of whole chapters ("Matt. 5-7") opens at its first chapter
@@ -365,14 +374,14 @@ export function readRefs(inside: string): Array<BookRef | string> {
     for (const [, from, to] of list ? list.matchAll(/(\d+)(?:[-–](\d+))?/g) : []) {
       for (let n = Number(from); n <= Number(to ?? from); n++) more.push(n);
     }
-    return {
+    return (previous = {
       text: piece,
       b: found.bookNr,
       c: found.chapter,
       ...(first ? { v: first } : {}),
       ...(first && last && last > first ? { ve: last } : {}),
       ...(more.length ? { more } : {}),
-    };
+    });
   });
 }
 
