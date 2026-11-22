@@ -35,8 +35,9 @@ export interface TappedPlace {
  *  into countries, or -1), "book.chapter.verse …" for each chapter naming
  *  it, how many verses name it, the next best sites where it is uncertain]
  */
-type Card = [string, string, string, number, number, string, number, string[]?];
-interface Places {
+export type PlaceRecord = [string, string, string, number, number, string, number, string[]?];
+type Card = PlaceRecord;
+export interface Places {
   countries: [string, string][];
   places: Record<string, Card>;
   /** an entry that is the same spot as a better-known one, sent to it */
@@ -77,13 +78,18 @@ const KIND: Record<string, string> = {
   garden: "garden",
 };
 
+/** The reader's word for one of the dataset's kinds: the `place.kind.*` it is
+ *  named by, for a list of places as for a card (components/Atlas). */
+export const placeKindKey = (type: string): MessageKey =>
+  `place.kind.${KIND[type] ?? "place"}` as MessageKey;
+
 /** A region's site is only a point to draw it at, and a river's or a sea's is
  *  its modern name: neither is an identification anyone has argued over. */
-const AREA = new Set(["region", "people group"]);
+export const AREA = new Set(["region", "people group"]);
 const WATER = new Set(["river", "wadi", "valley", "body of water"]);
 
 /** "the Salt Sea" and "Salt Sea" are one name. */
-const bare = (s: string) => s.toLowerCase().replace(/^the\s+/, "").trim();
+export const bare = (s: string) => s.toLowerCase().replace(/^the\s+/, "").trim();
 
 function sureKey(score: number): MessageKey {
   if (score >= 800) return "place.sure.high";

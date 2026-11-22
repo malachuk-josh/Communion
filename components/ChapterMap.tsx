@@ -27,20 +27,21 @@ import PlaceCard, { type TappedPlace } from "@/components/PlaceCard";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { load } from "@/lib/mapData";
 
-interface Place {
+export interface Place {
   /** the name as the reader knows it */
   n: string;
   x: number;
   y: number;
-  /** the first verse in this chapter that names it */
-  v: number;
+  /** the first verse in this chapter that names it; none on a map that is
+   *  not of a chapter (components/AtlasMap) */
+  v?: number;
   /** settlement, region, river, mountain … */
   t: string;
   /** OpenBible's id for it, for its card; absent from files built before */
   id?: string;
 }
 
-interface ChapterMapData {
+export interface ChapterMapData {
   base: string;
   era: string;
   /** the part of the base window this chapter is in: [x, y, w, h] */
@@ -58,7 +59,7 @@ interface ChapterMapData {
  * an earlier one did; and its stops, numbered in order, a place passed through
  * twice carrying both numbers ("1·15").
  */
-interface Route {
+export interface Route {
   j: string;
   legs: { p: [number, number][]; s: 0 | 1; sea?: 1 }[];
   stops: { x: number; y: number; n: string; s: 0 | 1 }[];
@@ -69,7 +70,7 @@ interface Route {
  * toggle (scripts/build-maps.mjs): a settled border and a dashed one as a
  * path each, and [en, es, x, y, rank] for each name, most prominent first.
  */
-interface Modern {
+export interface Modern {
   borders: { d: string; k?: 1 }[];
   countries: [string, string, number, number, number][];
   cities: [string, string, number, number, number][];
@@ -145,7 +146,7 @@ function arrowOf(pts: [number, number][], size: number): string | null {
   return null;
 }
 
-interface Base {
+export interface Base {
   id: string;
   bounds: [number, number, number, number];
   width: number;
@@ -166,21 +167,21 @@ interface Base {
   }[];
 }
 
-interface Region {
+export interface Region {
   en: string;
   es: string;
   ll: [number, number];
   water?: boolean;
 }
 
-type Eras = Record<string, { regions: Region[] }>;
+export type Eras = Record<string, { regions: Region[] }>;
 
 /** [x, y, width, height] in the base window's own units. */
-type View = [number, number, number, number];
+export type View = [number, number, number, number];
 
 /** The same projection the build script used, so a region label lands where
  *  the coastline it belongs to was drawn. */
-function project(bounds: [number, number, number, number], width: number) {
+export function project(bounds: [number, number, number, number], width: number) {
   const [w, s, e, n] = bounds;
   const kx = Math.cos((((s + n) / 2) * Math.PI) / 180);
   const scale = width / ((e - w) * kx);
@@ -197,7 +198,7 @@ function project(bounds: [number, number, number, number], width: number) {
  * missing one would land as NaN in a viewBox, which draws a blank rather than
  * throwing — the worst of both.
  */
-function viewOf(data: ChapterMapData, base: Base): View {
+export function viewOf(data: ChapterMapData, base: Base): View {
   const f = data.focus;
   return Array.isArray(f) && f.length === 4 && f.every(Number.isFinite)
     ? (f as View)
@@ -1280,7 +1281,7 @@ const mid = (t: TouchList) => ({
  * a reader who zooms out of Bethlehem can wander up to Galilee and down to the
  * Negev — the whole map is there, and only the opening view was ever narrowed.
  */
-function MapViewer({
+export function MapViewer({
   base,
   data,
   focus,
@@ -1290,17 +1291,32 @@ function MapViewer({
   modern,
   now,
   onNow,
+  title,
+  subtitle,
+  resetLabel,
+  actions,
 }: {
   base: Base;
   data: ChapterMapData;
   /** already checked for four numbers — see viewOf */
   focus: View;
-  regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
+  regions: MapRegion[];
   onPlace: (place: TappedPlace) => void;
   onClose: () => void;
   modern: Modern | null;
   now: boolean;
   onNow: () => void;
+  /**
+   * What the map is of, where that is not a chapter's era and journey: a
+   * journey whole, a place, a chapter by name (components/AtlasMap). Given,
+   * it is the caption, and `subtitle` the line under it.
+   */
+  title?: string;
+  subtitle?: string;
+  /** what the button that undoes the zooming is called; "Back to the chapter" otherwise */
+  resetLabel?: string;
+  /** more to do from here, set beside the then-and-now toggle under the map */
+  actions?: React.ReactNode;
 }) {
   const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -1523,11 +1539,20 @@ function MapViewer({
     <div className="map-full">
       <div className="map-full-bar">
         <div className="map-full-title">
-          <p className="mp-era">{t(`map.era.${data.era}` as MessageKey)}</p>
-          {data.route && (
-            <p className="mp-journey">
-              {t(`map.journey.${data.route.j}` as MessageKey)}
-            </p>
+          {title !== undefined ? (
+            <>
+              <p className="mp-era">{title}</p>
+              {subtitle && <p className="mp-journey">{subtitle}</p>}
+            </>
+          ) : (
+            <>
+              <p className="mp-era">{t(`map.era.${data.era}` as MessageKey)}</p>
+              {data.route && (
+                <p className="mp-journey">
+                  {t(`map.journey.${data.route.j}` as MessageKey)}
+                </p>
+              )}
+            </>
           )}
         </div>
         <div className="map-full-tools">
@@ -1551,7 +1576,7 @@ function MapViewer({
             type="button"
             className="lex-close"
             onClick={reset}
-            aria-label={t("map.reset")}
+            aria-label={resetLabel ?? t("map.reset")}
           >
             <Icon name="globe" />
           </button>
@@ -1586,6 +1611,7 @@ function MapViewer({
         )}
       </div>
       <div className="map-full-note">
+        {actions}
         <NowToggle now={now} onNow={onNow} />
         <span>{t("map.pinchHint")}</span>
       </div>
@@ -1616,6 +1642,142 @@ function clamp(
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// What both callers need: the Context pop-up's map below, and the Maps tab's
+// (components/AtlasMap). Kept here, with the drawing they feed, so the two
+// cannot come to disagree about what a base window is or where a name goes.
+// ---------------------------------------------------------------------------
+
+/** A region's name, placed on a window. */
+export type MapRegion = { en: string; es: string; water?: boolean; x: number; y: number };
+
+/*
+ * What comes back over the wire is checked, not trusted.
+ *
+ * This app's service worker serves its datasets cache-first and on purpose,
+ * so new code meeting an older copy of a file is a normal state here rather
+ * than an exotic one: a reader who had opened a map before the gazetteer
+ * shipped had base maps in that cache with no `sites` in them, and the loop
+ * over it threw and took the whole reader down with it — Acts crashed while
+ * Genesis was fine, because only some of the six windows had been cached.
+ *
+ * So anything missing degrades to nothing rather than to an exception. A map
+ * without its gazetteer is a map with fewer names on it, which is what the
+ * reader had yesterday, and the next time the worker turns the cache over it
+ * fills in silently.
+ */
+export function checkedBase(b: Base | null): Base | null {
+  // the coastline is the one part a map cannot do without
+  return b && Array.isArray(b.land) && b.width > 0 && b.height > 0
+    ? {
+        ...b,
+        lakes: Array.isArray(b.lakes) ? b.lakes : [],
+        rivers: Array.isArray(b.rivers) ? b.rivers : [],
+        sites: Array.isArray(b.sites) ? b.sites : [],
+        terrain: Array.isArray(b.terrain) ? b.terrain : [],
+      }
+    : null;
+}
+
+/** The era's region names for a map, set where they belong and thinned. */
+export function regionsOf(
+  base: Base,
+  data: ChapterMapData,
+  eras: Eras,
+  lang: string
+): MapRegion[] {
+  const to = project(base.bounds, base.width);
+  const [w, s, e, n] = base.bounds;
+  const [fx, fy, fw, fh] = viewOf(data, base);
+  const kept: MapRegion[] = [];
+  for (const r of eras[data.era]?.regions ?? []) {
+    const [lon, lat] = r.ll;
+    // a name for a country off the edge of this window is a name nobody can
+    // place, so it is left off rather than pinned to the border
+    if (lon < w || lon > e || lat < s || lat > n) continue;
+    const [x, y] = to(lon, lat);
+    // and nothing far outside the crop this chapter opens at — with a
+    // margin, because the full-screen view can be panned past it
+    if (
+      x < fx - fw ||
+      x > fx + fw * 2 ||
+      y < fy - fh ||
+      y > fy + fh * 2
+    ) {
+      continue;
+    }
+    /*
+     * A region name gives way to the chapter's own places, always.
+     *
+     * Twice over: by name, because Matthew 2 names Judea and Galilee itself
+     * and the era would have written both again a few pixels away; and by
+     * position, because a country's name printed across a town's is two
+     * words in one place and neither of them readable.
+     */
+    const label = lang === "es" ? r.es : r.en;
+    if (data.places.some((p) => p.n.toLowerCase() === label.toLowerCase())) {
+      continue;
+    }
+    if (data.places.some((p) => Math.hypot(p.x - x, p.y - y) < fw * 0.16)) {
+      continue;
+    }
+    /*
+     * And no two names on top of each other.
+     *
+     * An era's regions are written for the window that era usually gets.
+     * Jonah reaches Tarshish, so his chapter is drawn on the whole known
+     * world — where Israel, Judah, Philistia, Moab and Edom all land inside
+     * a thumbnail of the Levant and print as one smudge. These are
+     * decoration, not the chapter's content, so the crowded ones are simply
+     * dropped; the places the chapter names are never dropped this way.
+     */
+    if (kept.some((k) => Math.hypot(k.x - x, k.y - y) < fw * 0.16)) continue;
+    kept.push({ ...r, x, y });
+  }
+  return kept;
+}
+
+/**
+ * Then, or now: whether today's borders and cities are drawn over the map, as
+ * the reader last left it, and that layer for the window in hand — fetched the
+ * first time it is asked for.
+ */
+export function useMapNow(base: Base | null): {
+  now: boolean;
+  toggleNow: () => void;
+  modern: Modern | null;
+} {
+  const [now, setNow] = useState(false);
+  useEffect(() => setNow(readNow()), []);
+  const [modern, setModern] = useState<Modern | null>(null);
+  const toggleNow = () =>
+    setNow((on) => {
+      writeNow(!on);
+      return !on;
+    });
+
+  useEffect(() => {
+    if (!now || !base) {
+      setModern(null);
+      return;
+    }
+    let cancelled = false;
+    load<Modern | null>(`/maps/modern/${base.id}.json`, null).then((m) => {
+      if (cancelled) return;
+      setModern(
+        m && Array.isArray(m.borders) && Array.isArray(m.countries) && Array.isArray(m.cities)
+          ? m
+          : null
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [now, base]);
+
+  return { now, toggleNow, modern };
+}
+
 export default function ChapterMap({
   bookNr,
   chapter,
@@ -1637,34 +1799,13 @@ export default function ChapterMap({
   /** the place whose card is open, over the panel or the full-screen map */
   const [card, setCard] = useState<TappedPlace | null>(null);
   /** today's borders and cities over the ancient map, as the reader last left it */
-  const [now, setNow] = useState(false);
-  useEffect(() => setNow(readNow()), []);
-  const [modern, setModern] = useState<Modern | null>(null);
-  const toggleNow = () =>
-    setNow((on) => {
-      writeNow(!on);
-      return !on;
-    });
+  const { now, toggleNow, modern } = useMapNow(base);
   /** the zoom button in the panel's corner, which names keep clear of */
   const expandRef = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  /*
-   * What comes back over the wire is checked, not trusted.
-   *
-   * This app's service worker serves its datasets cache-first and on purpose,
-   * so new code meeting an older copy of a file is a normal state here rather
-   * than an exotic one: a reader who had opened a map before the gazetteer
-   * shipped had base maps in that cache with no `sites` in them, and the loop
-   * over it threw and took the whole reader down with it — Acts crashed while
-   * Genesis was fine, because only some of the six windows had been cached.
-   *
-   * So anything missing degrades to nothing rather than to an exception. A map
-   * without its gazetteer is a map with fewer names on it, which is what the
-   * reader had yesterday, and the next time the worker turns the cache over it
-   * fills in silently.
-   */
+  // what comes back over the wire is checked, not trusted: see checkedBase
   useEffect(() => {
     let cancelled = false;
     load<Record<string, ChapterMapData>>(`/maps/${bookNr}.json`, {}).then(
@@ -1689,44 +1830,13 @@ export default function ChapterMap({
       load<Eras>("/maps/eras.json", {}),
     ]).then(([b, e]) => {
       if (cancelled) return;
-      // the coastline is the one part a map cannot do without
-      setBase(
-        b && Array.isArray(b.land) && b.width > 0 && b.height > 0
-          ? {
-              ...b,
-              lakes: Array.isArray(b.lakes) ? b.lakes : [],
-              rivers: Array.isArray(b.rivers) ? b.rivers : [],
-              sites: Array.isArray(b.sites) ? b.sites : [],
-              terrain: Array.isArray(b.terrain) ? b.terrain : [],
-            }
-          : null
-      );
+      setBase(checkedBase(b));
       setEras(e && typeof e === "object" ? e : {});
     });
     return () => {
       cancelled = true;
     };
   }, [data]);
-
-  // today's layer for this window, fetched the first time it is asked for
-  useEffect(() => {
-    if (!now || !base) {
-      setModern(null);
-      return;
-    }
-    let cancelled = false;
-    load<Modern | null>(`/maps/modern/${base.id}.json`, null).then((m) => {
-      if (cancelled) return;
-      setModern(
-        m && Array.isArray(m.borders) && Array.isArray(m.countries) && Array.isArray(m.cities)
-          ? m
-          : null
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [now, base]);
 
   /*
    * The panel's own shape, for the crop it opens at.
@@ -1778,59 +1888,10 @@ export default function ChapterMap({
     return [x, y, w, h];
   }, [base, data, frameAspect]);
 
-  const regions = useMemo(() => {
-    if (!base || !data) return [];
-    const to = project(base.bounds, base.width);
-    const [w, s, e, n] = base.bounds;
-    const [fx, fy, fw, fh] = viewOf(data, base);
-    const kept: { en: string; es: string; water?: boolean; x: number; y: number }[] =
-      [];
-    for (const r of eras[data.era]?.regions ?? []) {
-      const [lon, lat] = r.ll;
-      // a name for a country off the edge of this window is a name nobody can
-      // place, so it is left off rather than pinned to the border
-      if (lon < w || lon > e || lat < s || lat > n) continue;
-      const [x, y] = to(lon, lat);
-      // and nothing far outside the crop this chapter opens at — with a
-      // margin, because the full-screen view can be panned past it
-      if (
-        x < fx - fw ||
-        x > fx + fw * 2 ||
-        y < fy - fh ||
-        y > fy + fh * 2
-      ) {
-        continue;
-      }
-      /*
-       * A region name gives way to the chapter's own places, always.
-       *
-       * Twice over: by name, because Matthew 2 names Judea and Galilee itself
-       * and the era would have written both again a few pixels away; and by
-       * position, because a country's name printed across a town's is two
-       * words in one place and neither of them readable.
-       */
-      const label = lang === "es" ? r.es : r.en;
-      if (data.places.some((p) => p.n.toLowerCase() === label.toLowerCase())) {
-        continue;
-      }
-      if (data.places.some((p) => Math.hypot(p.x - x, p.y - y) < fw * 0.16)) {
-        continue;
-      }
-      /*
-       * And no two names on top of each other.
-       *
-       * An era's regions are written for the window that era usually gets.
-       * Jonah reaches Tarshish, so his chapter is drawn on the whole known
-       * world — where Israel, Judah, Philistia, Moab and Edom all land inside
-       * a thumbnail of the Levant and print as one smudge. These are
-       * decoration, not the chapter's content, so the crowded ones are simply
-       * dropped; the places the chapter names are never dropped this way.
-       */
-      if (kept.some((k) => Math.hypot(k.x - x, k.y - y) < fw * 0.16)) continue;
-      kept.push({ ...r, x, y });
-    }
-    return kept;
-  }, [base, data, eras, lang]);
+  const regions = useMemo(
+    () => (base && data ? regionsOf(base, data, eras, lang) : []),
+    [base, data, eras, lang]
+  );
 
   /*
    * Nothing at all until there is something to draw — not a heading over a
