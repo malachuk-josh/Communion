@@ -3192,6 +3192,15 @@ mark {
  * map. And the pinch is answered in JS — see components/ChapterMap — so the
  * browser must not answer it too.
  */
+/* the stage, and whatever is laid over its foot (an era's card) */
+.map-full-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .map-full-stage {
   flex: 1 1 auto;
   min-height: 0;
@@ -8099,4 +8108,83 @@ button.compare-pick:last-child {
   margin: 14px 0 0;
   color: var(--ink-faint);
   font-size: 0.8rem;
+}
+
+/* What an age was (components/AtlasMap, EraAbout), over the foot of its
+   map: open, a few sentences and the passages that tell it, never more than
+   half the map tall; folded, a heading in the corner. */
+.map-about {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  max-height: 52%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.map-about:not(.open) {
+  right: auto;
+}
+
+.map-about-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-about-head svg {
+  width: 15px;
+  height: 15px;
+}
+
+.map-about-head .bn-caret {
+  margin-left: auto;
+  color: var(--ink-faint);
+  transform: rotate(180deg);
+}
+
+.map-about-head .bn-caret.open {
+  transform: none;
+}
+
+.map-about-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 14px 14px;
+}
+
+.map-about-body p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.map-about-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.map-about-refs .chip {
+  cursor: pointer;
 }

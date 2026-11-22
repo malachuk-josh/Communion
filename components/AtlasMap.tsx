@@ -28,10 +28,14 @@ import {
 } from "@/components/ChapterMap";
 import Icon from "@/components/Icon";
 import PlaceCard, { type Places, type TappedPlace } from "@/components/PlaceCard";
+import VersePop from "@/components/VersePop";
 import { loadAtlas, type AtlasJourney, type MapTarget } from "@/lib/atlas";
 import { BOOKS } from "@/lib/bible";
+import type { BookRef } from "@/lib/bookshelf";
+import { ERA_REFS } from "@/lib/eras";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { load } from "@/lib/mapData";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 /** Everything a map needs, gathered: null where some of it could not be had. */
 interface Gathered {
@@ -216,6 +220,7 @@ export default function AtlasMap({
   let title: string;
   let subtitle: string | undefined;
   let actions: React.ReactNode = null;
+  let about: React.ReactNode = null;
   if (target.kind === "chapter") {
     const ref = `${bookName(target.book)} ${target.chapter}`;
     title = ref;
@@ -239,6 +244,7 @@ export default function AtlasMap({
     }
   } else if (target.kind === "era") {
     title = t(`map.era.${target.id}` as MessageKey);
+    about = <EraAbout era={target.id} />;
   } else {
     title = got.place?.n ?? "";
   }
@@ -261,6 +267,7 @@ export default function AtlasMap({
           subtitle={subtitle}
           resetLabel={t("maps.reset")}
           actions={actions}
+          about={about}
         />,
         document.body
       )}
@@ -375,5 +382,71 @@ function JourneyStops({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** Whether a reader last left the era card open: open until they fold it. */
+const ABOUT_KEY = "communion.mapAbout";
+
+/**
+ * What an age was, over the foot of its map: a few sentences, and the
+ * passages that tell it, each opening its verses over the map.
+ *
+ * Open when the map opens, because that is what it is for; folded to its
+ * heading with a tap, for a reader who wants the whole map, and left folded
+ * the next time they open an era until they unfold it again.
+ */
+function EraAbout({ era }: { era: string }) {
+  const { lang, t } = useI18n();
+  const [open, setOpen] = useState(true);
+  const [verse, setVerse] = useState<BookRef | null>(null);
+  // read in an effect: storage is not there to ask while the server renders
+  useEffect(() => {
+    if (readLocal(ABOUT_KEY) === "0") setOpen(false);
+  }, []);
+  const toggle = () =>
+    setOpen((was) => {
+      writeLocal(ABOUT_KEY, was ? "0" : "1");
+      return !was;
+    });
+
+  const refs = ERA_REFS[era] ?? [];
+  const label = ([b, c, v, last]: (typeof refs)[number]) =>
+    `${BOOKS[b - 1]?.[lang === "es" ? "es" : "en"] ?? ""} ${c}:${v}${last ? `–${last}` : ""}`;
+
+  return (
+    <div className={`map-about glass${open ? " open" : ""}`}>
+      <button type="button" className="map-about-head" aria-expanded={open} onClick={toggle}>
+        <Icon name="hourglass" />
+        <span>{t("maps.about")}</span>
+        <span className={`bn-caret${open ? " open" : ""}`} aria-hidden>
+          ⌄
+        </span>
+      </button>
+      {open && (
+        <div className="map-about-body">
+          <p>{t(`map.eraAbout.${era}` as MessageKey)}</p>
+          {refs.length > 0 && (
+            <div className="map-about-refs">
+              {refs.map((ref) => {
+                const [b, c, v, last] = ref;
+                const text = label(ref);
+                return (
+                  <button
+                    key={text}
+                    type="button"
+                    className="chip"
+                    onClick={() => setVerse({ text, b, c, v, ...(last ? { ve: last } : {}) })}
+                  >
+                    {text}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      {verse && <VersePop verse={verse} over onClose={() => setVerse(null)} />}
+    </div>
   );
 }

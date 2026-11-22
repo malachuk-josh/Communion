@@ -742,6 +742,7 @@ const dictionaries = {
     "maps.reset": "Back to the opening view",
     "maps.failed": "Maps need a connection the first time. Try again when you are online.",
     "maps.mapFailed": "This map could not be loaded.",
+    "maps.about": "About this era",
     "map.tapAPlace": "Tap a place to learn about it.",
     "map.andMore": "{n} more named than the map will hold",
     "map.credit": "Coastlines and borders from Natural Earth, heights from SRTM and GMTED by way of AWS Terrain Tiles (all public domain). Places from OpenBible.info, CC BY 4.0.",
@@ -762,6 +763,26 @@ const dictionaries = {
     "map.era.churches": "The seven churches of Asia",
     "map.now": "Today’s borders and cities",
     "map.nowNote": "Today’s borders and cities over the ancient map. Dashed lines are disputed or armistice lines.",
+    "map.eraAbout.patriarchs":
+      "God called Abram out of Ur of the Chaldees and Haran, and promised him a land and descendants as many as the stars. His son Isaac and grandson Jacob lived as strangers in Canaan, until famine, and Joseph’s rise in Egypt, brought Jacob’s family down to Goshen.",
+    "map.eraAbout.exodus":
+      "Jacob’s descendants grew into a nation and were made slaves in Egypt. God sent Moses to bring them out: they crossed the Red Sea, received the law at Mount Sinai, and wandered forty years in the wilderness before reaching the plains of Moab across the Jordan.",
+    "map.eraAbout.conquest":
+      "Under Joshua, Israel crossed the Jordan, took Jericho and settled Canaan, dividing the land among the twelve tribes. After him there was no king in Israel; as the people forgot God and cried to him again, he raised up judges such as Deborah, Gideon and Samson. In those days Ruth came from Moab to Bethlehem.",
+    "map.eraAbout.kingdom":
+      "Israel asked for a king. After Saul, David took Jerusalem and made it his city, and God promised that his throne would stand for ever. Under Solomon his son Israel and Judah dwelt safely from Dan to Beersheba, and the temple was built in Jerusalem.",
+    "map.eraAbout.divided":
+      "After Solomon the kingdom split. Ten tribes in the north followed Jeroboam as Israel, later ruled from Samaria; Judah kept David’s line in Jerusalem. Prophets such as Elijah, Amos and Isaiah called both back to God, until Assyria carried Israel away in 722 BC and Judah stood alone.",
+    "map.eraAbout.exile":
+      "Assyria had already taken the northern kingdom. Then Babylon, under Nebuchadnezzar, took Jerusalem, burned the temple in 586 BC and carried the people away. By the rivers of Babylon they wept; yet Jeremiah wrote that after seventy years God would bring them home, and Daniel and Ezekiel kept faith in a foreign land.",
+    "map.eraAbout.return":
+      "Cyrus of Persia took Babylon and let the Jews go home. Under Zerubbabel they rebuilt the temple; Ezra taught the law, and Nehemiah rebuilt the walls of Jerusalem in fifty-two days. In Shushan, a Persian capital, Queen Esther risked her life to save her people.",
+    "map.eraAbout.gospels":
+      "Under Rome and the house of Herod, Jesus was born in Bethlehem and grew up in Nazareth. He preached and healed through Galilee, went up to Jerusalem, and there was crucified and rose again. Judea, Samaria and Galilee lay west of the Jordan; Perea and the Decapolis to the east.",
+    "map.eraAbout.apostles":
+      "After Pentecost the gospel went out from Jerusalem into Judea, Samaria and beyond. Paul and his companions carried it across Asia Minor and into Greece, founding churches as they went, until Paul reached Rome itself, a prisoner still preaching the kingdom of God.",
+    "map.eraAbout.churches":
+      "Exiled on the island of Patmos, John received the Revelation and wrote to seven churches in the Roman province of Asia: Ephesus, Smyrna, Pergamos, Thyatira, Sardis, Philadelphia and Laodicea. Each letter says what Christ saw in that church, and ends with a promise to him that overcometh.",
     "map.journey.abraham": "Abraham’s journey",
     "map.journey.naomi": "Naomi and Ruth come home to Bethlehem",
     "map.journey.david": "David fleeing from Saul",
@@ -1628,6 +1649,7 @@ const dictionaries = {
     "maps.reset": "Volver a la vista inicial",
     "maps.failed": "Los mapas necesitan conexión la primera vez. Inténtalo de nuevo cuando tengas señal.",
     "maps.mapFailed": "No se pudo cargar este mapa.",
+    "maps.about": "Sobre esta época",
     "map.tapAPlace": "Toca un lugar para saber más de él.",
     "map.andMore": "{n} más de los que caben en el mapa",
     "map.credit": "Costas y fronteras de Natural Earth, relieve de SRTM y GMTED a través de AWS Terrain Tiles (todo de dominio público). Lugares de OpenBible.info, CC BY 4.0.",
@@ -1648,6 +1670,26 @@ const dictionaries = {
     "map.era.churches": "Las siete iglesias de Asia",
     "map.now": "Fronteras y ciudades de hoy",
     "map.nowNote": "Las fronteras y ciudades de hoy sobre el mapa antiguo. Las líneas discontinuas son fronteras en disputa o de armisticio.",
+    "map.eraAbout.patriarchs":
+      "Dios llamó a Abram de Ur de los caldeos y de Harán, y le prometió una tierra y una descendencia como las estrellas. Su hijo Isaac y su nieto Jacob vivieron como extranjeros en Canaán, hasta que el hambre, y el ascenso de José en Egipto, llevaron a la familia de Jacob a Gosén.",
+    "map.eraAbout.exodus":
+      "Los descendientes de Jacob llegaron a ser una nación y fueron hechos esclavos en Egipto. Dios envió a Moisés para sacarlos: cruzaron el Mar Rojo, recibieron la ley en el monte Sinaí y anduvieron cuarenta años por el desierto antes de llegar a las llanuras de Moab, al otro lado del Jordán.",
+    "map.eraAbout.conquest":
+      "Bajo Josué, Israel cruzó el Jordán, tomó Jericó y se estableció en Canaán, repartiendo la tierra entre las doce tribus. Después no hubo rey en Israel; cuando el pueblo olvidaba a Dios y volvía a clamar a él, él levantaba jueces como Débora, Gedeón y Sansón. En aquellos días Rut vino de Moab a Belén.",
+    "map.eraAbout.kingdom":
+      "Israel pidió un rey. Después de Saúl, David tomó Jerusalén y la hizo su ciudad, y Dios le prometió que su trono permanecería para siempre. Bajo Salomón, su hijo, Israel y Judá vivieron seguros desde Dan hasta Beerseba, y se edificó el templo en Jerusalén.",
+    "map.eraAbout.divided":
+      "Tras Salomón el reino se dividió. Las diez tribus del norte siguieron a Jeroboam como Israel, más tarde gobernado desde Samaria; Judá conservó el linaje de David en Jerusalén. Profetas como Elías, Amós e Isaías llamaron a ambos a volver a Dios, hasta que Asiria llevó cautivo a Israel en el 722 a. C. y Judá quedó solo.",
+    "map.eraAbout.exile":
+      "Asiria ya se había llevado el reino del norte. Después Babilonia, bajo Nabucodonosor, tomó Jerusalén, quemó el templo en el 586 a. C. y llevó cautivo al pueblo. Junto a los ríos de Babilonia lloraron; pero Jeremías escribió que a los setenta años Dios los haría volver, y Daniel y Ezequiel guardaron la fe en tierra extraña.",
+    "map.eraAbout.return":
+      "Ciro de Persia tomó Babilonia y dejó volver a los judíos a su tierra. Bajo Zorobabel reedificaron el templo; Esdras enseñó la ley y Nehemías reconstruyó los muros de Jerusalén en cincuenta y dos días. En Susán, una capital persa, la reina Ester arriesgó su vida para salvar a su pueblo.",
+    "map.eraAbout.gospels":
+      "Bajo Roma y la casa de Herodes, Jesús nació en Belén y se crió en Nazaret. Predicó y sanó por Galilea, subió a Jerusalén, y allí fue crucificado y resucitó. Judea, Samaria y Galilea quedaban al oeste del Jordán; Perea y Decápolis, al este.",
+    "map.eraAbout.apostles":
+      "Después de Pentecostés el evangelio salió de Jerusalén a Judea, Samaria y más allá. Pablo y sus compañeros lo llevaron por Asia Menor hasta Grecia, fundando iglesias a su paso, hasta que Pablo llegó a la misma Roma, preso y predicando aún el reino de Dios.",
+    "map.eraAbout.churches":
+      "Desterrado en la isla de Patmos, Juan recibió el Apocalipsis y escribió a siete iglesias de la provincia romana de Asia: Éfeso, Esmirna, Pérgamo, Tiatira, Sardis, Filadelfia y Laodicea. Cada carta dice lo que Cristo vio en esa iglesia y termina con una promesa para el que venciere.",
     "map.journey.abraham": "El viaje de Abraham",
     "map.journey.naomi": "Noemí y Rut vuelven a Belén",
     "map.journey.david": "David huye de Saúl",

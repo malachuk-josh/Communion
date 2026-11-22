@@ -1295,6 +1295,7 @@ export function MapViewer({
   subtitle,
   resetLabel,
   actions,
+  about,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -1317,6 +1318,13 @@ export function MapViewer({
   resetLabel?: string;
   /** more to do from here, set beside the then-and-now toggle under the map */
   actions?: React.ReactNode;
+  /**
+   * Words about the map, laid over its foot (components/AtlasMap's era
+   * card). Over the stage and not beside it, so the stage keeps the size the
+   * opening view was fitted to; and outside it, so a finger on the words is
+   * not a drag of the map.
+   */
+  about?: React.ReactNode;
 }) {
   const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -1590,25 +1598,28 @@ export function MapViewer({
           </button>
         </div>
       </div>
-      <div className="map-full-stage" ref={boxRef}>
-        {view && (
-          <MapArt
-            base={base}
-            data={data}
-            regions={regions}
-            view={view}
-            label={t("reader.ctxWhere")}
-            /* the gap names keep from each other on the glass, in pixels */
-            spacing={22}
-            crowd={150}
-            modern={modern}
-            onPlace={(place) => {
-              // a finger that panned is not a finger that tapped
-              if (travelled.current > 10) return;
-              onPlace(place);
-            }}
-          />
-        )}
+      <div className="map-full-body">
+        <div className="map-full-stage" ref={boxRef}>
+          {view && (
+            <MapArt
+              base={base}
+              data={data}
+              regions={regions}
+              view={view}
+              label={t("reader.ctxWhere")}
+              /* the gap names keep from each other on the glass, in pixels */
+              spacing={22}
+              crowd={150}
+              modern={modern}
+              onPlace={(place) => {
+                // a finger that panned is not a finger that tapped
+                if (travelled.current > 10) return;
+                onPlace(place);
+              }}
+            />
+          )}
+        </div>
+        {about}
       </div>
       <div className="map-full-note">
         {actions}

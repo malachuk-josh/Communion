@@ -22,10 +22,10 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import MenuMenu from "@/components/MenuMenu";
 import ThemeToggle from "@/components/ThemeToggle";
+import VersePop from "@/components/VersePop";
 import PictureViewer from "@/components/PictureViewer";
 import { fetchAhead, mayFetchAhead, watchPictures } from "@/lib/pictures";
 import { useBookPictures } from "@/lib/bookPictures";
-import { getBook } from "@/lib/bible";
 import { BOOK_FONTS } from "@/lib/bookFonts";
 import {
   bookHref,
@@ -59,7 +59,6 @@ import {
 } from "@/lib/offline";
 import { getPlan } from "@/lib/plans";
 import { readTextPt } from "@/lib/readingText";
-import { fetchChapter } from "@/lib/scripture";
 import { onScroll, scroller, scrollToY } from "@/lib/scroller";
 import { enqueue, readLocalState, writeLocalState } from "@/lib/sync";
 
@@ -595,7 +594,7 @@ function PartView({
           onClose={() => setViewing(null)}
         />
       )}
-      {verse && <VersePop verse={verse} lang={lang} onClose={() => setVerse(null)} />}
+      {verse && <VersePop verse={verse} onClose={() => setVerse(null)} />}
 
       {/* the tab, as The Word's: the grip above and below the icon */}
       <button
@@ -899,94 +898,6 @@ function Inline({ html, onRef }: { html: string; onRef: (r: BookRef) => void }) 
     return out;
   }, [html, onRef]);
   return <>{nodes}</>;
-}
-
-// ---- over the page ------------------------------------------------------------------
-
-/**
- * The verse a bracket points to, over the book, without leaving it — and the
- * way into The Word for anyone who wants the chapter round it.
- */
-function VersePop({ verse, lang, onClose }: { verse: BookRef; lang: string; onClose: () => void }) {
-  const { t } = useI18n();
-  const [text, setText] = useState<Array<{ verse: number; text: string }> | null>(null);
-  const [missing, setMissing] = useState(false);
-  const translation = lang === "es" ? "valera" : "kjv";
-  const book = getBook(verse.b);
-  const name = book ? (lang === "es" ? book.es : book.en) : "";
-  const label = `${name} ${verse.c}${
-    verse.v
-      ? `:${verse.v}${verse.ve ? `–${verse.ve}` : ""}${verse.more ? `, ${verse.more.join(", ")}` : ""}`
-      : ""
-  }`;
-
-  useEffect(() => {
-    let live = true;
-    fetchChapter(translation, verse.b, verse.c)
-      .then((data) => {
-        if (!live) return;
-        // a verse, a range, a verse and a few more — or the whole chapter
-        const from = verse.v ?? 1;
-        const to = verse.ve ?? verse.v ?? data.verses.length;
-        setText(
-          data.verses.filter(
-            (v) => (v.verse >= from && v.verse <= to) || verse.more?.includes(v.verse)
-          )
-        );
-      })
-      .catch(() => live && setMissing(true));
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", key);
-    return () => {
-      live = false;
-      window.removeEventListener("keydown", key);
-    };
-  }, [verse, translation, onClose]);
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="glass modal bk-verse-pop"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="bk-verse-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mh-head">
-          <h2 id="bk-verse-title">
-            {label} <span className="bk-pop-tr">{translation === "kjv" ? "KJV" : "RV1909"}</span>
-          </h2>
-          <button type="button" className="lex-close" onClick={onClose} aria-label={t("common.close")}>
-            ✕
-          </button>
-        </div>
-        {missing ? (
-          <p className="cal-hint">{t("shelf.verseOffline")}</p>
-        ) : text ? (
-          <p className="bk-pop-text">
-            {text.map((v) => (
-              <Fragment key={v.verse}>
-                {text.length > 1 && <sup>{v.verse}</sup>}
-                {v.text}{" "}
-              </Fragment>
-            ))}
-          </p>
-        ) : (
-          <div className="skeleton bk-pop-wait" />
-        )}
-        <div className="modal-actions">
-          <Link
-            className="btn btn-primary"
-            href={`/?b=${verse.b}&c=${verse.c}${verse.v ? `&v=${verse.v}` : ""}`}
-          >
-            <Icon name="book" /> {t("shelf.openInWord")}
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ---- the plan ---------------------------------------------------------------------
