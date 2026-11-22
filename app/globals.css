@@ -3085,6 +3085,211 @@ mark {
   opacity: 1;
 }
 
+/*
+ * An era's realms (components/AtlasMap, scripts/era-story.mjs): eight colours
+ * a wash can be told apart in and none of them the journeys' red, pale enough
+ * over the land that the hills and the names stay the subject. Dashed at the
+ * edges, because no one surveyed these borders; a realm that paid tribute to
+ * another fainter still; one the story is about lit, and the rest let fall
+ * back beside it.
+ */
+.map-full {
+  --realm-0: 226, 178, 74;
+  --realm-1: 224, 122, 143;
+  --realm-2: 79, 179, 165;
+  --realm-3: 154, 127, 224;
+  --realm-4: 93, 156, 224;
+  --realm-5: 166, 181, 74;
+  --realm-6: 217, 138, 74;
+  --realm-7: 214, 96, 88;
+  --realm-fill: 0.17;
+}
+
+:root[data-theme="light"] .map-full {
+  --realm-0: 176, 128, 16;
+  --realm-1: 181, 71, 106;
+  --realm-2: 36, 132, 118;
+  --realm-3: 107, 79, 181;
+  --realm-4: 47, 109, 179;
+  --realm-5: 112, 128, 26;
+  --realm-6: 181, 100, 42;
+  --realm-7: 178, 58, 51;
+  --realm-fill: 0.16;
+}
+
+/* quiet monochrome: the realms told apart by how light they are */
+:root[data-theme="grey"] .map-full {
+  --realm-0: 236, 236, 236;
+  --realm-1: 150, 150, 150;
+  --realm-2: 205, 205, 205;
+  --realm-3: 120, 120, 120;
+  --realm-4: 185, 185, 185;
+  --realm-5: 135, 135, 135;
+  --realm-6: 220, 220, 220;
+  --realm-7: 105, 105, 105;
+  --realm-fill: 0.15;
+}
+
+.mp-realms {
+  pointer-events: none;
+}
+
+.mp-realm {
+  --rgb: var(--realm-0);
+  fill: rgba(var(--rgb), var(--realm-fill));
+  stroke: rgba(var(--rgb), 0.62);
+  stroke-linejoin: round;
+  transition:
+    fill 0.6s ease,
+    stroke 0.6s ease;
+}
+
+.mp-realm.t1 { --rgb: var(--realm-1); }
+.mp-realm.t2 { --rgb: var(--realm-2); }
+.mp-realm.t3 { --rgb: var(--realm-3); }
+.mp-realm.t4 { --rgb: var(--realm-4); }
+.mp-realm.t5 { --rgb: var(--realm-5); }
+.mp-realm.t6 { --rgb: var(--realm-6); }
+.mp-realm.t7 { --rgb: var(--realm-7); }
+
+.mp-realm.sub {
+  fill: rgba(var(--rgb), calc(var(--realm-fill) * 0.55));
+  stroke: rgba(var(--rgb), 0.42);
+}
+
+.mp-realm.glow {
+  fill: rgba(var(--rgb), calc(var(--realm-fill) * 1.9));
+  stroke: rgba(var(--rgb), 0.9);
+}
+
+.mp-realm.dim {
+  fill: rgba(var(--rgb), calc(var(--realm-fill) * 0.4));
+  stroke: rgba(var(--rgb), 0.25);
+}
+
+/* the era's journeys, faint, in the journeys' own red; the chosen one bold */
+.mp-trail-leg {
+  fill: none;
+  stroke: var(--wj);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.2;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.mp-trail.on .mp-trail-leg {
+  opacity: 0.95;
+}
+
+.mp-trail.off .mp-trail-leg {
+  opacity: 0.08;
+}
+
+.mp-trail-arrow {
+  fill: var(--wj);
+  pointer-events: none;
+}
+
+.mp-trail-hit {
+  fill: none;
+  stroke: transparent;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/*
+ * A step's way, drawn on: each leg's stroke laid down from its start to its
+ * end in turn (pathLength 1, so the dash is the whole line whatever its
+ * length), and its arrow put down once it has got there. In the gold the
+ * places it joins are lit in, so the story reads as one thing.
+ */
+.mp-ways {
+  pointer-events: none;
+}
+
+.mp-way {
+  fill: none;
+  stroke: var(--gold);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.95;
+}
+
+.mp-way-draw {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation: mp-draw var(--mp-dur, 1s) ease-in-out var(--mp-delay, 0s) forwards;
+}
+
+.mp-way-mask {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+}
+
+.mp-way-head {
+  fill: var(--gold);
+  opacity: 0;
+  animation: mp-appear 0.3s ease calc(var(--mp-delay, 0s) + var(--mp-dur, 1s) * 0.7) forwards;
+}
+
+@keyframes mp-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mp-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+/* a lit place: a soft light under it that breathes */
+.mp-glows {
+  pointer-events: none;
+}
+
+.mp-glow {
+  fill: var(--gold);
+  opacity: 0.22;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mp-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes mp-breathe {
+  0%,
+  100% {
+    opacity: 0.14;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 0.32;
+    transform: scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-way-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .mp-way-head {
+    animation: none;
+    opacity: 1;
+  }
+  .mp-glow {
+    animation: none;
+    opacity: 0.24;
+  }
+  .mp-realm,
+  .mp-trail-leg {
+    transition: none;
+  }
+}
+
 /* the journey's name, under the era's */
 .mp-journey {
   margin: -2px 0 8px;
@@ -8187,4 +8392,177 @@ button.compare-pick:last-child {
 
 .map-about-refs .chip {
   cursor: pointer;
+}
+
+.map-about-refs .chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* an era's card: its small headings, its ways in, and its fine print */
+.map-about-body p.map-about-label {
+  margin: 16px 0 0;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.map-about-label + .map-about-refs {
+  margin-top: 8px;
+}
+
+.map-about-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.map-about-go svg {
+  width: 15px;
+  height: 15px;
+}
+
+.map-about-body p.map-about-note {
+  margin-top: 14px;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.map-about-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 8px -4px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.map-about-back svg {
+  width: 15px;
+  height: 15px;
+}
+
+.map-about-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.map-about-title svg {
+  width: 15px;
+  height: 15px;
+  color: var(--wj);
+  align-self: center;
+}
+
+.map-about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--gold);
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.map-about-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* the story, a step at a time: back, how far in, and the controls */
+.map-step-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-step-count {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-step-date {
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.map-step-tools {
+  display: flex;
+  gap: 6px;
+}
+
+.map-step-bar .lex-close {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.map-step-bar .lex-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.map-step-bar .lex-close:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* how far through: one mark for each step, the one shown bright */
+.map-step-dots {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 10px;
+}
+
+.map-step-dots span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--glass-border);
+  transition: background 0.3s ease;
+}
+
+.map-step-dots span.past {
+  background: rgba(212, 175, 55, 0.4);
+}
+
+.map-step-dots span.on {
+  background: var(--gold);
+}
+
+.map-about-body p.map-step-words {
+  animation: fade-in 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-about-body p.map-step-words {
+    animation: none;
+  }
 }

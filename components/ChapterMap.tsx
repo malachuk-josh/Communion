@@ -16,6 +16,7 @@
 
 import React, {
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -74,6 +75,46 @@ export interface Modern {
   borders: { d: string; k?: 1 }[];
   countries: [string, string, number, number, number][];
   cities: [string, string, number, number, number][];
+}
+
+/** A way drawn on a map: the points it runs through, and by sea, dashed. */
+export interface Way {
+  p: [number, number][];
+  sea?: 1;
+}
+
+/**
+ * A realm of an era, shaded (scripts/build-era-story.mjs): its outline, one
+ * of eight colours, fainter if it paid tribute to another, and its name and
+ * where to write it if it is named.
+ */
+export interface Realm {
+  id: string;
+  tone: number;
+  sub?: 1;
+  d: string;
+  en?: string;
+  es?: string;
+  x?: number;
+  y?: number;
+}
+
+/**
+ * What an era's map draws over its ground (components/AtlasMap): the realms
+ * of the age, the era's journeys faint with perhaps one chosen, and the way
+ * someone went at a step of its story, drawn on while the reader watches.
+ */
+export interface EraLayer {
+  realms: Realm[];
+  /** realms lit, the rest dimmed beside them */
+  glow?: string[];
+  trails: { id: string; legs: Way[] }[];
+  trail?: string | null;
+  ways: Way[];
+  /** a new key draws the ways, and lights the places, again */
+  key: string;
+  /** the places on the map are lit: a step's, or a passage's */
+  lit: boolean;
 }
 
 /** Whether the reader last left the maps showing today's borders. */
@@ -470,9 +511,15 @@ function MapArt({
   avoid,
   glance = false,
   modern = null,
+  layer = null,
+  onTrail,
 }: {
   base: Base;
   data: ChapterMapData;
+  /** an era's realms, journeys and story (components/AtlasMap) */
+  layer?: EraLayer | null;
+  /** one of the era's journeys tapped */
+  onTrail?: (id: string) => void;
   /** today's borders and cities, when the reader has asked for them */
   modern?: Modern | null;
   regions: { en: string; es: string; water?: boolean; x: number; y: number }[];
@@ -496,6 +543,9 @@ function MapArt({
   const { lang } = useI18n();
   const [vx, vy, vw, vh] = view;
   const svgRef = useRef<SVGSVGElement>(null);
+  // ids inside this one SVG: the coast the realms are cut to, and the masks
+  // the ways by sea are drawn on through. useId's colons are no use in url().
+  const uid = `mp${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   /*
    * How many of the map's own units go into one pixel on the glass.
@@ -997,6 +1047,37 @@ function MapArt({
           <path key={`t${t.n}${i}`} d={d} className={`mp-ground mp-${t.k}`} />
         ))
       )}
+      {/* The realms of the age, washed over the land and cut to its coast,
+          so an outline drawn by hand need only be right where it crosses
+          the land. Dashed at the edges: no one surveyed these borders.
+          Under the relief, so the hills still show through them; and gone
+          when today's borders are asked for, which are the other question. */}
+      {layer && layer.realms.length > 0 && !modern && (
+        <>
+          <defs>
+            <clipPath id={`${uid}c`}>
+              {base.land.map((d, i) => (
+                <path key={i} d={d} />
+              ))}
+            </clipPath>
+          </defs>
+          <g clipPath={`url(#${uid}c)`} className="mp-realms" aria-hidden>
+            {layer.realms.map((r) => {
+              const glow = !!layer.glow?.includes(r.id);
+              const dim = !glow && !!layer.glow?.length;
+              return (
+                <path
+                  key={r.id}
+                  d={r.d}
+                  className={`mp-realm t${r.tone}${r.sub ? " sub" : ""}${glow ? " glow" : ""}${dim ? " dim" : ""}`}
+                  strokeWidth={px * (glow ? 1.8 : 1.1)}
+                  strokeDasharray={glow ? undefined : `${px * 5} ${px * 3.5}`}
+                />
+              );
+            })}
+          </g>
+        </>
+      )}
       {/* The lie of the land (scripts/build-relief.mjs): slopes shaded as if
           lit from the north-west, blended into the map's own colours. Level
           ground is a middle grey the blend leaves alone, so the sea and the
@@ -1030,6 +1111,46 @@ function MapArt({
         />
       ))}
 
+      {/* The era's journeys, faint, under everything else: there to be
+          noticed and chosen. The one chosen is drawn as a journey is, bold
+          and with the way it went, and the rest fade further. */}
+      {layer?.trails.map((tr) => {
+        const on = layer.trail === tr.id;
+        const off = !!layer.trail && !on;
+        return (
+          <g key={tr.id} className={`mp-trail${on ? " on" : ""}${off ? " off" : ""}`}>
+            {tr.legs.map((l, i) => (
+              <path
+                key={i}
+                d={legPath(l.p)}
+                className="mp-trail-leg"
+                strokeWidth={px * (on ? 2.6 : 1.3)}
+                strokeDasharray={l.sea ? `${px * 6} ${px * 4.5}` : undefined}
+              />
+            ))}
+            {on &&
+              tr.legs.map((l, i) => {
+                const d = arrowOf(l.p, px * 4.5);
+                return d ? <path key={`a${i}`} d={d} className="mp-trail-arrow" /> : null;
+              })}
+            {/* a thumb's width of it answers a tap */}
+            {onTrail &&
+              tr.legs.map((l, i) => (
+                <path
+                  key={`h${i}`}
+                  d={legPath(l.p)}
+                  className="mp-trail-hit"
+                  strokeWidth={px * 14}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTrail(tr.id);
+                  }}
+                />
+              ))}
+          </g>
+        );
+      })}
+
       {/* the journey: over the ground, under every name. The earlier legs
           faint, this chapter's bold with the way it went; by sea, dashed. */}
       {data.route && (
@@ -1055,6 +1176,74 @@ function MapArt({
               cy={st.y}
               r={px * (st.s ? 2.4 : 1.8)}
               className={`mp-stop-dot${st.s ? " now" : ""}`}
+            />
+          ))}
+        </g>
+      )}
+
+      {/* The way someone went at this step of the era's story, drawn on as
+          the reader watches: one leg after another, each in its turn, and
+          the way it went marked once it is there. By sea it is dashed, and
+          drawn through a mask, since a dashed line cannot also be drawn on.
+          Keyed, so the next step draws its own afresh. */}
+      {layer && layer.ways.length > 0 && (
+        <g className="mp-ways" key={layer.key} aria-hidden>
+          {layer.ways.map((w, i) => {
+            const each = Math.max(0.18, Math.min(1.1, 2.6 / layer.ways.length));
+            const style = {
+              "--mp-delay": `${(i * each).toFixed(2)}s`,
+              "--mp-dur": `${each.toFixed(2)}s`,
+            } as React.CSSProperties;
+            const d = legPath(w.p);
+            const head = arrowOf(w.p, px * 5);
+            return (
+              <g key={i} style={style}>
+                {w.sea ? (
+                  <>
+                    <mask
+                      id={`${uid}w${i}`}
+                      maskUnits="userSpaceOnUse"
+                      x={-base.width}
+                      y={-base.height}
+                      width={base.width * 3}
+                      height={base.height * 3}
+                    >
+                      <path
+                        d={d}
+                        pathLength={1}
+                        className="mp-way-draw mp-way-mask"
+                        strokeWidth={px * 8}
+                      />
+                    </mask>
+                    <path
+                      d={d}
+                      className="mp-way"
+                      mask={`url(#${uid}w${i})`}
+                      strokeWidth={px * 2.6}
+                      strokeDasharray={`${px * 6} ${px * 4.5}`}
+                    />
+                  </>
+                ) : (
+                  <path d={d} pathLength={1} className="mp-way mp-way-draw" strokeWidth={px * 2.6} />
+                )}
+                {head && <path d={head} className="mp-way-head" />}
+              </g>
+            );
+          })}
+        </g>
+      )}
+
+      {/* the places lit, a soft light under each that breathes; wider under
+          a country than under a town */}
+      {layer?.lit && (
+        <g className="mp-glows" key={`g${layer.key}`} aria-hidden>
+          {data.places.map((p) => (
+            <circle
+              key={`${p.id ?? p.n}${p.x}`}
+              cx={p.x}
+              cy={p.y}
+              r={px * (markFor(p.t) === 0 ? 22 : 11)}
+              className="mp-glow"
             />
           ))}
         </g>
@@ -1297,6 +1486,9 @@ export function MapViewer({
   actions,
   about,
   fitAbove = false,
+  layer = null,
+  onTrail,
+  frame = null,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -1332,6 +1524,15 @@ export function MapViewer({
    * era's map is a ground to read the words over, and opens on all of it.
    */
   fitAbove?: boolean;
+  /** an era's realms, journeys and story, drawn over the ground */
+  layer?: EraLayer | null;
+  onTrail?: (id: string) => void;
+  /**
+   * Somewhere to go: the map glides there — a passage's places, a journey, a
+   * step of the story — fitted above the words when `above`. A new key is a
+   * new trip; the reader's own finger ends one under way.
+   */
+  frame?: { focus: View; above: boolean; key: string } | null;
 }) {
   const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -1357,7 +1558,7 @@ export function MapViewer({
    * has a sea to show there instead. Matching them on the way in means every
    * later zoom keeps them matched.
    */
-  const opening = (el: HTMLElement): View => {
+  const opening = (el: HTMLElement, crop: View = focus, above = fitAbove): View => {
     const rect = el.getBoundingClientRect();
     const height = Math.max(1, rect.height);
     // The part of the stage to fit the crop into: all of it, or, with
@@ -1365,12 +1566,12 @@ export function MapViewer({
     // after the stage, below). Never less than a third of it, whatever
     // covers the rest; the reader can fold the words away.
     let clear = height;
-    const over = fitAbove ? el.nextElementSibling?.getBoundingClientRect() : undefined;
+    const over = above ? el.nextElementSibling?.getBoundingClientRect() : undefined;
     if (over && over.height > 0 && over.top > rect.top) {
       clear = Math.min(height, Math.max(height / 3, over.top - rect.top - 8));
     }
     const aspect = rect.width / clear;
-    const [fx, fy, fw, fh] = focus;
+    const [fx, fy, fw, fh] = crop;
     let w = fw;
     let h = fh;
     if (w / h > aspect) h = w / aspect;
@@ -1438,6 +1639,8 @@ export function MapViewer({
     if (!el || !view) return;
 
     const onStart = (e: TouchEvent) => {
+      stopGlide();
+      settling.current = null;
       const rect = el.getBoundingClientRect();
       travelled.current = 0;
       if (e.touches.length === 2) {
@@ -1554,8 +1757,87 @@ export function MapViewer({
   const viewRef = useRef<View>(focus);
   if (view) viewRef.current = view;
 
+  /*
+   * The glide to a frame: a second or so, eased at both ends, the middle
+   * moving in a straight line and the zoom in equal ratios, so a long way out
+   * and back in feels like one movement rather than a slide and a lurch. Any
+   * finger on the map ends it where it is. Without motion, it simply arrives.
+   */
+  const glideRef = useRef(0);
+  const stopGlide = () => {
+    if (glideRef.current) cancelAnimationFrame(glideRef.current);
+    glideRef.current = 0;
+  };
+  const glideTo = (to: View, ms: number) => {
+    stopGlide();
+    const still =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (still) {
+      setView(to);
+      return;
+    }
+    const from = viewRef.current;
+    const start = performance.now();
+    const fc = [from[0] + from[2] / 2, from[1] + from[3] / 2];
+    const tc = [to[0] + to[2] / 2, to[1] + to[3] / 2];
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - start) / ms);
+      const e = k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+      const w = from[2] * (to[2] / from[2]) ** e;
+      const h = (w * to[3]) / to[2];
+      const cx = fc[0] + (tc[0] - fc[0]) * e;
+      const cy = fc[1] + (tc[1] - fc[1]) * e;
+      // the shape is the screen's throughout; only the last frame is exact
+      setView(k < 1 ? [cx - w / 2, cy - h / 2, w, h] : to);
+      glideRef.current = k < 1 ? requestAnimationFrame(tick) : 0;
+    };
+    glideRef.current = requestAnimationFrame(tick);
+  };
+
+  /*
+   * The words over the map can still be settling when the trip begins — a
+   * passage's verses arrive a moment after the card opens on them, and the
+   * card grows — so for a few seconds the frame follows the card, until the
+   * reader takes the map in hand — six seconds, long enough for a slow
+   * connection to bring the words.
+   */
+  const settling = useRef<{ focus: View; above: boolean; until: number } | null>(null);
+  const frameKey = frame?.key;
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!frame || !el || !view) return;
+    settling.current = frame.above
+      ? { focus: frame.focus, above: frame.above, until: performance.now() + 6000 }
+      : null;
+    glideTo(opening(el, frame.focus, frame.above), 1100);
+    return stopGlide;
+    // a frame is a trip, taken once, when its key is new
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frameKey, view !== null]);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    const over = el?.nextElementSibling;
+    if (!el || !over || typeof ResizeObserver === "undefined") return;
+    let last = over.getBoundingClientRect().height;
+    const ro = new ResizeObserver(() => {
+      const h = over.getBoundingClientRect().height;
+      const s = settling.current;
+      if (Math.abs(h - last) < 4) return;
+      last = h;
+      if (!s || performance.now() > s.until) return;
+      glideTo(opening(el, s.focus, s.above), 500);
+    });
+    ro.observe(over);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view !== null, about !== null]);
+
   /** A step of zoom about the middle, for a mouse and for a keyboard. */
   const step = (factor: number) => {
+    stopGlide();
+    settling.current = null;
     const v = viewRef.current;
     const { min, max } = limits.current;
     const w = Math.min(max, Math.max(min, v[2] * factor));
@@ -1568,6 +1850,8 @@ export function MapViewer({
   // back to the opening view, fitted to the words as they now are: above
   // them if they are open, to the whole stage if they have been folded
   const reset = () => {
+    stopGlide();
+    settling.current = null;
     const el = boxRef.current;
     if (el) setView(opening(el));
   };
@@ -1645,6 +1929,15 @@ export function MapViewer({
                 if (travelled.current > 10) return;
                 onPlace(place);
               }}
+              layer={layer}
+              onTrail={
+                onTrail
+                  ? (id) => {
+                      if (travelled.current > 10) return;
+                      onTrail(id);
+                    }
+                  : undefined
+              }
             />
           )}
         </div>

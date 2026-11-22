@@ -204,6 +204,11 @@ const PATHS = {
     "M8.5 21c0-4.2 3.5-6.4 3.5-6.4s3.5 2.2 3.5 6.4",
   ],
   check: ["M4.5 12.5l5 5 10-11"],
+  // a story played, paused, and stepped through
+  play: ["M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8a.8.8 0 0 0-1.2.7z"],
+  pause: ["M8 5v14", "M16 5v14"],
+  prev: ["M15 5.5L8.5 12l6.5 6.5"],
+  next: ["M9 5.5l6.5 6.5L9 18.5"],
   send: ["M12 19.5V5", "M6 11l6-6 6 6"],
   close: ["M5.5 5.5l13 13M18.5 5.5l-13 13"],
   // the way back from wherever a reference took you: an arrow that turns round

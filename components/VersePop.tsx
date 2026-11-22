@@ -17,18 +17,13 @@ import type { BookRef } from "@/lib/bookshelf";
 import { useI18n } from "@/lib/i18n";
 import { fetchChapter } from "@/lib/scripture";
 
-export default function VersePop({
-  verse,
-  onClose,
-  over = false,
-}: {
-  /** the passage: a verse, a range, a verse and a few more, or a chapter */
-  verse: BookRef;
-  onClose: () => void;
-  /** over something that is itself over the page — a full-screen map */
-  over?: boolean;
-}) {
-  const { lang, t } = useI18n();
+/**
+ * A passage's words in the reader's language, fetched: the verses while they
+ * come, nothing if they could not, and how to name it. Shared by the pop-up
+ * and by anything that shows the words in place (an era's card on a map).
+ */
+export function usePassage(verse: BookRef) {
+  const { lang } = useI18n();
   const [text, setText] = useState<Array<{ verse: number; text: string }> | null>(null);
   const [missing, setMissing] = useState(false);
   const translation = lang === "es" ? "valera" : "kjv";
@@ -57,6 +52,43 @@ export default function VersePop({
         );
       })
       .catch(() => live && setMissing(true));
+    return () => {
+      live = false;
+    };
+  }, [verse, translation]);
+
+  return { text, missing, label, translation: translation === "kjv" ? "KJV" : "RV1909" };
+}
+
+/** The words of a passage, numbered when there are more verses than one. */
+export function PassageWords({ text }: { text: Array<{ verse: number; text: string }> }) {
+  return (
+    <>
+      {text.map((v) => (
+        <Fragment key={v.verse}>
+          {text.length > 1 && <sup>{v.verse}</sup>}
+          {v.text}{" "}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+export default function VersePop({
+  verse,
+  onClose,
+  over = false,
+}: {
+  /** the passage: a verse, a range, a verse and a few more, or a chapter */
+  verse: BookRef;
+  onClose: () => void;
+  /** over something that is itself over the page — a full-screen map */
+  over?: boolean;
+}) {
+  const { t } = useI18n();
+  const { text, missing, label, translation } = usePassage(verse);
+
+  useEffect(() => {
     // Escape closes this and nothing under it: heard first, on the way down,
     // and kept from going further — a map under it closes on Escape too
     const key = (e: KeyboardEvent) => {
@@ -65,11 +97,8 @@ export default function VersePop({
       onClose();
     };
     window.addEventListener("keydown", key, true);
-    return () => {
-      live = false;
-      window.removeEventListener("keydown", key, true);
-    };
-  }, [verse, translation, onClose]);
+    return () => window.removeEventListener("keydown", key, true);
+  }, [onClose]);
 
   // On the page itself, never inside whatever cited it: a glass card (an
   // era's card on a map) holds anything fixed within its own bounds
@@ -84,7 +113,7 @@ export default function VersePop({
       >
         <div className="mh-head">
           <h2 id="bk-verse-title">
-            {label} <span className="bk-pop-tr">{translation === "kjv" ? "KJV" : "RV1909"}</span>
+            {label} <span className="bk-pop-tr">{translation}</span>
           </h2>
           <button type="button" className="lex-close" onClick={onClose} aria-label={t("common.close")}>
             ✕
@@ -94,12 +123,7 @@ export default function VersePop({
           <p className="cal-hint">{t("shelf.verseOffline")}</p>
         ) : text ? (
           <p className="bk-pop-text">
-            {text.map((v) => (
-              <Fragment key={v.verse}>
-                {text.length > 1 && <sup>{v.verse}</sup>}
-                {v.text}{" "}
-              </Fragment>
-            ))}
+            <PassageWords text={text} />
           </p>
         ) : (
           <div className="skeleton bk-pop-wait" />
