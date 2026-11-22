@@ -49,6 +49,7 @@ import {
 } from "@/lib/sync";
 import { readLocal, writeLocal } from "@/lib/storage";
 import { JOURNAL_TABS } from "@/lib/menuItems";
+import { SITE_URL } from "@/lib/site";
 
 /** The toggles, in the order the row shows them — see lib/menuItems. */
 type Tab = (typeof JOURNAL_TABS)[number];
@@ -729,7 +730,7 @@ export default function Journal() {
     });
   };
 
-  const SIGNATURE = "— Communion  https://communion-mu.vercel.app";
+  const SIGNATURE = `— Communion  ${SITE_URL}`;
   /** With a link of its own in the message, the signature need not repeat one. */
   const SIGNED = "— Communion";
 

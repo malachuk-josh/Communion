@@ -18,9 +18,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
+import ShareSheet from "@/components/ShareSheet";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import { MENU_ITEMS, announceHomeTab, shareCommunion } from "@/lib/menuItems";
+import { MENU_ITEMS, announceHomeTab } from "@/lib/menuItems";
 
 export default function MenuMenu({
   className = "theme-toggle settings-gear",
@@ -33,7 +34,6 @@ export default function MenuMenu({
   const { t } = useI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -69,13 +69,12 @@ export default function MenuMenu({
   // menu that did not do its job.
   useEffect(() => setOpen(false), [pathname]);
 
-  const share = async () => {
-    const copiedIt = await shareCommunion(
-      t("menu.shareMessage", { url: "https://communion-mu.vercel.app" })
-    );
-    if (!copiedIt) return;
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2500);
+  // Outside the popup, so it stays when the popup closes behind it: a QR
+  // code to show in person, and a link to send (components/ShareSheet).
+  const [sharing, setSharing] = useState(false);
+  const share = () => {
+    setOpen(false);
+    setSharing(true);
   };
 
   const leave = () => {
@@ -133,9 +132,7 @@ export default function MenuMenu({
             <Icon name="phone" />
             <span>
               <strong>{t("menu.share")}</strong>
-              <small>
-                {copied ? `✓ ${t("reader.shareCopied")}` : t("menu.shareDesc")}
-              </small>
+              <small>{t("menu.shareDesc")}</small>
             </span>
           </button>
           {isAdmin && (
@@ -154,6 +151,7 @@ export default function MenuMenu({
           )}
         </div>
       )}
+      {sharing && <ShareSheet onClose={() => setSharing(false)} />}
     </div>
   );
 }

@@ -12,8 +12,9 @@
 import Icon from "@/components/Icon";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { SITE_URL } from "@/lib/site";
 
-const TOUR_URL = "https://communion-mu.vercel.app/tour";
+const TOUR_URL = `${SITE_URL}/tour`;
 
 export default function ShareTour({ className = "tour-share" }: { className?: string }) {
   const { t } = useI18n();

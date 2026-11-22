@@ -8566,3 +8566,378 @@ button.compare-pick:last-child {
     animation: none;
   }
 }
+
+/* ---- keeping Communion on a Home Screen (components/Install*) ---- */
+
+/* the invitation at the top of Home: the app's own icon, one line, one button */
+.install-banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 4px 0 16px;
+  padding: 14px 40px 14px 14px;
+}
+
+.install-banner-icon img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.install-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.install-banner-body strong {
+  font-size: 0.98rem;
+}
+
+.install-banner-body small {
+  color: var(--ink-dim);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.install-banner-go {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 9px 16px;
+}
+
+.install-banner-go svg,
+.install-go svg,
+.install-alt svg,
+.share-actions svg,
+.install-sheet .mh-head h2 svg,
+.get-install h2 svg {
+  width: 17px;
+  height: 17px;
+}
+
+.install-banner-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.install-sheet .mh-head h2,
+.share-sheet .mh-head h2,
+.get-install h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.install-why {
+  margin: 0 0 16px;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* the steps, numbered, each with the button to look for drawn beside it */
+.install-steps {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.install-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.install-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.install-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+}
+
+.install-n {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--bg-0, #101113);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.install-text {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* the phone's own button, as the phone draws it: a blue glyph on a key */
+.install-key {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(10, 132, 255, 0.14);
+  color: #0a84ff;
+}
+
+:root[data-theme="light"] .install-key {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+}
+
+.install-key svg {
+  width: 24px;
+  height: 24px;
+}
+
+.install-note {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.install-go {
+  padding: 14px 20px;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.install-alt {
+  align-self: center;
+}
+
+.install-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.install-done svg {
+  width: 20px;
+  height: 20px;
+}
+
+.install-desktop {
+  align-items: center;
+}
+
+/* a QR code: dark on white in every theme, since that is what a camera reads */
+.qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+}
+
+/* On an iPhone in Safari the first button is in the toolbar below the page:
+   a pointer at the very foot of the page, just above it. */
+.install-pointer {
+  position: fixed;
+  left: 50%;
+  bottom: max(6px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  pointer-events: none;
+  animation: install-nudge 1.4s ease-in-out infinite;
+}
+
+.install-pointer svg {
+  width: 26px;
+  height: 26px;
+  padding: 6px;
+  border-radius: 10px;
+  background: #0a84ff;
+  box-sizing: content-box;
+}
+
+@keyframes install-nudge {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* the pointer needs the foot of the screen clear of the sheet */
+.install-overlay {
+  padding-bottom: 92px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-pointer {
+    animation: none;
+  }
+}
+
+/* sharing it: the code to show, the address, and the two ways to send it */
+.share-sheet {
+  text-align: center;
+}
+
+.share-qr {
+  margin: 4px auto 14px;
+  width: 220px;
+  height: 220px;
+}
+
+.share-scan {
+  margin: 0 auto 6px;
+  max-width: 36ch;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.share-url {
+  margin: 0 0 16px;
+  color: var(--gold);
+  font-size: 0.86rem;
+  word-break: break-all;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* the page a shared link opens (app/get) */
+.get-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+
+.get-hero {
+  text-align: center;
+  padding: 12px 0 18px;
+}
+
+.get-icon {
+  display: block;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 12px;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.get-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 2.1rem;
+  font-weight: 500;
+}
+
+.get-tag {
+  margin: 4px 0 10px;
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.get-lead {
+  margin: 0 auto;
+  max-width: 34ch;
+  color: var(--ink-dim);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.get-install {
+  padding: 18px;
+}
+
+.get-install h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.get-wait {
+  height: 120px;
+  border-radius: 14px;
+}
+
+.get-inside {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.get-inside li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+.get-inside svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--gold);
+}
+
+.get-links {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.get-links a {
+  color: var(--gold);
+}

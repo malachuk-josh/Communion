@@ -21,6 +21,7 @@
 // prompt starts its clock from that announcement instead.
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ShareTour from "@/components/ShareTour";
 import TourStrip from "@/components/TourStrip";
@@ -33,8 +34,12 @@ export const WELCOMED_EVENT = "communion:welcomed";
 export default function Welcome() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
+    // The page a shared link opens (app/get) is a welcome of its own, with
+    // one thing to do; the tour can wait for the app, where it belongs.
+    if (pathname?.startsWith("/get")) return;
     try {
       if (readLocal(WELCOMED_KEY) === "1") return;
     } catch {
@@ -43,7 +48,7 @@ export default function Welcome() {
       return;
     }
     setOpen(true);
-  }, []);
+  }, [pathname]);
 
   // The page behind this screen should not scroll under a settled thumb.
   useEffect(() => {

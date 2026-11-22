@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import InstallBanner from "@/components/InstallBanner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { readOutbox } from "@/lib/localStore";
@@ -124,6 +125,8 @@ export default function Discover() {
   return (
     <div>
       <h1 className="page-title">{t("discover.title")}</h1>
+      {/* to anyone reading in a browser: keep it on your Home Screen */}
+      <InstallBanner />
       {/* the Word, and the verses this reader has put up from it */}
       <div className="lang-toggle discover-tabs" role="group">
         <button

@@ -53,6 +53,8 @@ export default function PushPrompt() {
     if (
       !VAPID_PUBLIC ||
       typeof window === "undefined" ||
+      // not over the page a shared link opens: that page asks one thing
+      window.location.pathname.startsWith("/get") ||
       !("serviceWorker" in navigator) ||
       !("PushManager" in window) ||
       !("Notification" in window)

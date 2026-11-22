@@ -6,6 +6,7 @@
 
 import { createHash } from "crypto";
 import { db, keys } from "@/lib/db";
+import { SITE_URL } from "@/lib/site";
 
 function cleanEnv(value: string | undefined): string | undefined {
   if (!value) return undefined;
@@ -72,7 +73,7 @@ export async function sendPushToUser(
 
   const webpush = (await import("web-push")).default;
   webpush.setVapidDetails(
-    "https://communion-mu.vercel.app",
+    SITE_URL,
     publicKey,
     privateKey
   );

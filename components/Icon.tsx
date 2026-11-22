@@ -209,6 +209,17 @@ const PATHS = {
   pause: ["M8 5v14", "M16 5v14"],
   prev: ["M15 5.5L8.5 12l6.5 6.5"],
   next: ["M9 5.5l6.5 6.5L9 18.5"],
+  // the buttons a phone's browser uses, drawn as the phone draws them, for
+  // the steps that tell someone where to tap
+  iosShare: [
+    "M8.5 9.5H6.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2",
+    "M12 15V3.5",
+    "M8.5 7L12 3.5 15.5 7",
+  ],
+  addSquare: ["M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", "M12 8.5v7M8.5 12h7"],
+  dots: [circle(5.5, 12, 0.6), circle(12, 12, 0.6), circle(18.5, 12, 0.6)],
+  kebab: [circle(12, 5.5, 0.6), circle(12, 12, 0.6), circle(12, 18.5, 0.6)],
+  burger: ["M4.5 7h15M4.5 12h15M4.5 17h15"],
   send: ["M12 19.5V5", "M6 11l6-6 6 6"],
   close: ["M5.5 5.5l13 13M18.5 5.5l-13 13"],
   // the way back from wherever a reference took you: an arrow that turns round

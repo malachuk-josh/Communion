@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import ShareSheet from "@/components/ShareSheet";
 import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import { MENU_ITEMS, shareCommunion } from "@/lib/menuItems";
+import { MENU_ITEMS } from "@/lib/menuItems";
 
 // The /menu page: the same list as the ☰ dropdown, as tiles.
 //
@@ -17,7 +18,6 @@ import { MENU_ITEMS, shareCommunion } from "@/lib/menuItems";
 
 export default function MenuHub() {
   const { t } = useI18n();
-  const [copied, setCopied] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // The admin tile appears for the owner, and for anyone the owner has
@@ -29,14 +29,8 @@ export default function MenuHub() {
       .catch(() => {});
   }, []);
 
-  const shareApp = async () => {
-    const done = await shareCommunion(
-      t("menu.shareMessage", { url: "https://communion-mu.vercel.app" })
-    );
-    if (!done) return;
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
+  // a QR code to show in person, and a link to send: components/ShareSheet
+  const [sharing, setSharing] = useState(false);
 
   return (
     <div>
@@ -59,14 +53,12 @@ export default function MenuHub() {
               <button
                 type="button"
                 className="glass card menu-tile"
-                onClick={shareApp}
+                onClick={() => setSharing(true)}
               >
                 <span className="menu-tile-emoji"><Icon name="phone" /></span>
                 <span className="menu-tile-body">
                   <strong>{t("menu.share")}</strong>
-                  <small>
-                    {copied ? `✓ ${t("reader.shareCopied")}` : t("menu.shareDesc")}
-                  </small>
+                  <small>{t("menu.shareDesc")}</small>
                 </span>
                 <span className="menu-tile-arrow">→</span>
               </button>
@@ -84,6 +76,7 @@ export default function MenuHub() {
           </Link>
         )}
       </div>
+      {sharing && <ShareSheet onClose={() => setSharing(false)} />}
     </div>
   );
 }

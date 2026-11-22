@@ -7,14 +7,16 @@ import Nav from "@/components/Nav";
 import PullToRefresh from "@/components/PullToRefresh";
 import ViewportInsets from "@/lib/viewport";
 import PushPrompt from "@/components/PushPrompt";
+import InstallWatch from "@/components/InstallWatch";
 import Welcome from "@/components/Welcome";
 import OfflineReady from "@/components/OfflineReady";
 import ActingAs from "@/components/ActingAs";
 import PageBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://communion-mu.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: "Communion — Read the Word. Study the Word.",
   description:
     "A Bible app for reading and studying the Word: Scripture in multiple translations and languages, the Hebrew and Greek behind it, a journal and reading plans. John 1:1.",
@@ -101,6 +103,7 @@ export default function RootLayout({
             <ActingAs />
             <Welcome />
             <PushPrompt />
+            <InstallWatch />
             <OfflineReady />
           </ReadingProvider>
           </AccountProvider>
