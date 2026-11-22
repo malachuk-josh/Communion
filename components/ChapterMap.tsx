@@ -115,6 +115,8 @@ export interface EraLayer {
   key: string;
   /** the places on the map are lit: a step's, or a passage's */
   lit: boolean;
+  /** the ways in the journeys' red rather than the story's gold */
+  tone?: "wj";
 }
 
 /** Whether the reader last left the maps showing today's borders. */
@@ -1187,7 +1189,7 @@ function MapArt({
           drawn through a mask, since a dashed line cannot also be drawn on.
           Keyed, so the next step draws its own afresh. */}
       {layer && layer.ways.length > 0 && (
-        <g className="mp-ways" key={layer.key} aria-hidden>
+        <g className={`mp-ways${layer.tone === "wj" ? " wj" : ""}`} key={layer.key} aria-hidden>
           {layer.ways.map((w, i) => {
             const each = Math.max(0.18, Math.min(1.1, 2.6 / layer.ways.length));
             const style = {

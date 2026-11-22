@@ -38,7 +38,13 @@ import { BOOKS } from "@/lib/bible";
 import type { BookRef } from "@/lib/bookshelf";
 import { ERA_REFS, JOURNEY_REFS, type MapRef } from "@/lib/mapRefs";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import { loadEraStory, stepWays, type EraStory } from "@/lib/eraStory";
+import {
+  loadEraStory,
+  loadJourneyStory,
+  stepWays,
+  type EraStory,
+  type JourneyStory,
+} from "@/lib/eraStory";
 import { load } from "@/lib/mapData";
 import { readLocal, writeLocal } from "@/lib/storage";
 
@@ -188,8 +194,9 @@ export default function AtlasMap({
   const [stopsOpen, setStopsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  // an era's story, and where in it the reader is
+  // an era's story or a journey's, and where in it the reader is
   const [story, setStory] = useState<EraStory | null>(null);
+  const [jstory, setJstory] = useState<JourneyStory | null>(null);
   const [mode, setMode] = useState<EraMode>({ k: "home" });
   /** how many times the map has been sent somewhere, so each is a new trip */
   const [trip, setTrip] = useState(0);
@@ -207,19 +214,25 @@ export default function AtlasMap({
     setCard(null);
     setStopsOpen(false);
     setStory(null);
+    setJstory(null);
     setMode({ k: "home" });
     setTrip(0);
     setPlaying(false);
     Promise.all([
       gather(target),
       load<Eras>("/maps/eras.json", {}),
-      // an era's story comes with its map; without it the map is as it was
+      // an era's story, or a journey's, comes with its map; without it the
+      // map is as it was
       target.kind === "era" ? loadEraStory(target.id) : Promise.resolve(null),
+      target.kind === "journey" ? loadJourneyStory(target.id) : Promise.resolve(null),
     ])
-      .then(([g, e, st]) => {
+      .then(([g, e, st, js]) => {
         if (!live) return;
         setEras(e && typeof e === "object" ? e : {});
         setStory(st);
+        // one step for every stop the atlas draws, or none: a story from an
+        // older build that counts the stops differently would play the wrong legs
+        setJstory(js && g?.journey && js.stops.length === g.journey.visits.length ? js : null);
         setGot(g);
         // a place asked for by name is asked about: its card opens with it
         if (g?.place) setCard(g.place);
@@ -289,42 +302,108 @@ export default function AtlasMap({
     return { layer, places, frame };
   }, [target.kind, got, story, mode, trip]);
 
+  /*
+   * A journey's map, told the same way: its era's realms, a passage's places
+   * lit, and, played, a stop at a time — the road so far drawn bold, the leg
+   * to this stop drawn on as the reader watches, the road ahead faint, the
+   * stops reached numbered bright; the map gliding to each, above the card.
+   */
+  const jview = useMemo(() => {
+    if (target.kind !== "journey" || !got?.data.route || !jstory) return null;
+    const route = got.data.route;
+    const at = mode.k === "step" ? mode.i : -1;
+    const stop = at >= 0 ? jstory.stops[at] : undefined;
+    const places =
+      mode.k === "passage" ? (jstory.passages[mode.i] ?? []) : stop ? [stop] : [];
+    // the leg that reaches this stop; the first stop is where it all begins
+    const leg = at > 0 ? route.legs[at - 1] : undefined;
+    const ways = leg ? [{ p: leg.p, ...(leg.sea ? { sea: 1 as const } : {}) }] : [];
+    const key = `${modeKey(mode)}#${trip}`;
+    const layer: EraLayer = {
+      realms: jstory.lands.filter((l) => jstory.show.includes(l.id)),
+      trails: [],
+      ways,
+      key,
+      lit: places.length > 0,
+      tone: "wj",
+    };
+    /** a stop badge's visits, from its numbers: "1·15", "11–13" */
+    const visits = (n: string) =>
+      n.split("·").flatMap((part) => {
+        const [a, b] = part.split("–").map(Number);
+        return b ? Array.from({ length: b - a + 1 }, (_, k) => a + k) : [a];
+      });
+    const told =
+      at < 0
+        ? route
+        : {
+            ...route,
+            legs: route.legs.map((l, i) => ({ ...l, s: (i < at - 1 ? 1 : 0) as 0 | 1 })),
+            stops: route.stops.map((st) => ({
+              ...st,
+              s: (visits(st.n).some((v) => v <= at + 1) ? 1 : 0) as 0 | 1,
+            })),
+          };
+    let frame: { focus: View; above: boolean; key: string } | null = null;
+    if (mode.k !== "home") {
+      const points: [number, number][] = [
+        ...places.map((p): [number, number] => [p.x, p.y]),
+        ...ways.flatMap((w) => w.p),
+      ];
+      frame = { focus: frameOf(points, got.base), above: true, key };
+    } else if (trip > 0) {
+      frame = { focus: viewOf(got.data, got.base), above: true, key };
+    }
+    return { layer, places, frame, route: told };
+  }, [target.kind, got, jstory, mode, trip]);
+
+  /** what the map is telling now: an era's story or a journey's */
+  const told = era ?? jview;
+  const keep = era ? story?.keep : jview ? jstory?.keep : undefined;
+
   const data = useMemo(
-    () => (got ? (era ? { ...got.data, places: era.places } : got.data) : null),
-    [got, era]
+    () =>
+      got
+        ? jview
+          ? { ...got.data, places: jview.places, route: jview.route }
+          : era
+            ? { ...got.data, places: era.places }
+            : got.data
+        : null,
+    [got, era, jview]
   );
 
   const regions = useMemo((): MapRegion[] => {
     if (!got || !data) return [];
     const own = regionsOf(got.base, data, eras, lang);
-    if (!era || !story || era.layer.realms.length === 0) return own;
+    if (!told || !keep || told.layer.realms.length === 0) return own;
     // the realms name themselves; of the era's own names only those kept
     const named = (r: { en: string; es: string }) => (lang === "es" ? r.es : r.en).toLowerCase();
-    const kept = own.filter((r) => story.keep.includes(r.en));
-    const realms = era.layer.realms
+    const kept = own.filter((r) => keep.includes(r.en));
+    const realms = told.layer.realms
       .filter((r) => r.en && r.es && Number.isFinite(r.x) && Number.isFinite(r.y))
       .map((r) => ({ en: r.en!, es: r.es!, x: r.x!, y: r.y! }))
-      .filter((r) => !era.places.some((p) => p.n.toLowerCase() === named(r)));
+      .filter((r) => !told.places.some((p) => p.n.toLowerCase() === named(r)));
     return [...kept, ...realms];
-  }, [got, data, eras, lang, era, story]);
+  }, [got, data, eras, lang, told, keep]);
   const focus = useMemo(() => (got ? viewOf(got.data, got.base) : null), [got]);
 
   // Playing, the story moves on by itself: long enough at each step to read
-  // the words and watch the way drawn, and it stops at the end.
+  // the words and watch the way drawn, and it stops at the end. A journey's
+  // stop is a verse, read in the card, and a leg drawn: a steady pace.
+  const steps = story?.steps.length ?? jstory?.stops.length ?? 0;
   useEffect(() => {
-    if (!playing || mode.k !== "step" || !story) return;
-    const step = story.steps[mode.i];
-    if (!step) return;
-    const words = (lang === "es" ? step.es : step.en).length;
-    const ms = Math.max(6000, 2000 + words * 40);
+    if (!playing || mode.k !== "step" || !steps) return;
+    const step = story?.steps[mode.i];
+    const ms = step ? Math.max(6000, 2000 + (lang === "es" ? step.es : step.en).length * 40) : 7000;
     const timer = window.setTimeout(() => {
-      if (mode.i + 1 < story.steps.length) {
+      if (mode.i + 1 < steps) {
         setMode({ k: "step", i: mode.i + 1 });
         setTrip((n) => n + 1);
       } else setPlaying(false);
     }, ms);
     return () => window.clearTimeout(timer);
-  }, [playing, mode, story, lang]);
+  }, [playing, mode, story, steps, lang]);
 
   // while there is no viewer to hear it, Escape still closes
   useEffect(() => {
@@ -394,26 +473,75 @@ export default function AtlasMap({
     // atlas without them opens as it did before there were any
     const refs = JOURNEY_REFS[target.id];
     if (refs) {
+      const stops = jstory?.stops ?? [];
       about = (
-        <MapAbout
+        <StoryCard
           icon="runner"
           heading={t("maps.aboutJourney")}
           words={t(`map.journeyAbout.${target.id}` as MessageKey)}
+          playLabel={t("maps.playJourney")}
           refs={refs}
+          lights={!!jstory}
+          approx={!!jstory && jstory.lands.length > 0}
+          steps={stops.length}
+          mode={mode}
+          go={go}
+          playing={playing}
+          setPlaying={setPlaying}
+          step={(i) => {
+            const stop = stops[i];
+            const ref = lang === "es" && stop.refEs ? stop.refEs : stop.ref;
+            return (
+              <>
+                <p className="map-step-place">
+                  <Icon name="pin" /> {stop.n}
+                </p>
+                <EraPassage
+                  verse={{ text: "", b: ref[0], c: ref[1], v: ref[2] }}
+                  heading={false}
+                />
+              </>
+            );
+          }}
         />
       );
     }
   } else if (target.kind === "era") {
     title = t(`map.era.${target.id}` as MessageKey);
+    const era = target.id;
     about = (
-      <EraCard
-        era={target.id}
-        story={story}
+      <StoryCard
+        icon="hourglass"
+        heading={t("maps.about")}
+        words={t(`map.eraAbout.${era}` as MessageKey)}
+        playLabel={t("maps.play")}
+        refs={ERA_REFS[era] ?? []}
+        lights={!!story}
+        approx={!!story && story.lands.length > 0}
+        journeys={story?.journeys.map((j) => j.id)}
+        onOpenJourney={(id) => router.push(mapHref({ kind: "journey", id }))}
+        steps={story?.steps.length ?? 0}
+        stepDate={(i) => story?.steps[i]?.date?.[lang === "es" ? 1 : 0]}
         mode={mode}
         go={go}
         playing={playing}
         setPlaying={setPlaying}
-        onOpenJourney={(id) => router.push(mapHref({ kind: "journey", id }))}
+        step={(i, openVerse) => {
+          const step = story!.steps[i];
+          const ref = step.ref as MapRef;
+          return (
+            <>
+              <p key={i} className="map-step-words">
+                {lang === "es" ? step.es : step.en}
+              </p>
+              <div className="map-about-refs">
+                <button type="button" className="chip" onClick={() => openVerse(ref)}>
+                  <Icon name="book" /> {refLabel(ref, lang)}
+                </button>
+              </div>
+            </>
+          );
+        }}
       />
     );
   } else {
@@ -442,9 +570,9 @@ export default function AtlasMap({
           // a journey is to be seen whole, above its words; an era's map is
           // the ground they are read over
           fitAbove={target.kind === "journey"}
-          layer={era?.layer ?? null}
+          layer={told?.layer ?? null}
           onTrail={era ? (id) => go({ k: "journey", id }) : undefined}
-          frame={era?.frame ?? null}
+          frame={told?.frame ?? null}
         />,
         document.body
       )}
@@ -565,106 +693,65 @@ function JourneyStops({
 /** Whether a reader last left the card open: open until they fold it. */
 const ABOUT_KEY = "communion.mapAbout";
 
-/**
- * What a map is of, over its foot: an age, or a journey. A few sentences,
- * and the passages that tell it, each opening its verses over the map.
- *
- * Open when the map opens, because that is what it is for; folded to its
- * heading with a tap, for a reader who wants the whole map, and left folded
- * the next time they open one until they unfold it again. Asked for before
- * the first paint (the map is only ever drawn in the browser), so a journey's
- * map is fitted round the card as the reader will see it.
- */
-function MapAbout({
-  icon,
-  heading,
-  words,
-  refs,
-}: {
-  icon: "hourglass" | "runner";
-  heading: string;
-  words: string;
-  refs: MapRef[];
-}) {
-  const { lang } = useI18n();
-  const [open, setOpen] = useState(() => readLocal(ABOUT_KEY) !== "0");
-  const [verse, setVerse] = useState<BookRef | null>(null);
-  const toggle = () =>
-    setOpen((was) => {
-      writeLocal(ABOUT_KEY, was ? "0" : "1");
-      return !was;
-    });
-
-  const label = ([b, c, v, last]: MapRef) =>
-    `${BOOKS[b - 1]?.[lang === "es" ? "es" : "en"] ?? ""} ${c}:${v}${last ? `–${last}` : ""}`;
-
-  return (
-    <div className={`map-about glass${open ? " open" : ""}`}>
-      <button type="button" className="map-about-head" aria-expanded={open} onClick={toggle}>
-        <Icon name={icon} />
-        <span>{heading}</span>
-        <span className={`bn-caret${open ? " open" : ""}`} aria-hidden>
-          ⌄
-        </span>
-      </button>
-      {open && (
-        <div className="map-about-body">
-          <p>{words}</p>
-          {refs.length > 0 && (
-            <div className="map-about-refs">
-              {refs.map((ref) => {
-                const [b, c, v, last] = ref;
-                const text = label(ref);
-                return (
-                  <button
-                    key={text}
-                    type="button"
-                    className="chip"
-                    onClick={() => setVerse({ text, b, c, v, ...(last ? { ve: last } : {}) })}
-                  >
-                    {text}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-      {verse && <VersePop verse={verse} over onClose={() => setVerse(null)} />}
-    </div>
-  );
+/** A passage's name: "1 Kings 4:25", "Reyes 4:25–26". */
+function refLabel([b, c, v, last]: MapRef, lang: string): string {
+  return `${BOOKS[b - 1]?.[lang === "es" ? "es" : "en"] ?? ""} ${c}:${v}${last ? `–${last}` : ""}`;
 }
 
 /**
- * An era's card, over the foot of its map: what the age was, and the ways in.
+ * The card over the foot of an era's map or a journey's: what it is, and the
+ * ways in.
  *
- *   home      the words about the era; "Play this era"; the passages, each
- *             lighting where it happened; the era's journeys, each lit on
- *             the map and a tap from opening whole
+ *   home      the words about it; Play; the passages, each lighting where it
+ *             happened; for an era, its journeys, each lit on the map and a
+ *             tap from opening whole
  *   passage   the passage's words in place, while its places are lit
- *   journey   one journey lit, its words, and the way to open it
- *   step      the story a step at a time, by itself or by hand, each with
- *             its year where it has one, and its verse a tap away
+ *   journey   (an era's) one journey lit, its words, and the way to open it
+ *   step      the story a step at a time, by itself or by hand — an era's
+ *             with its year where it has one, a journey's stop by stop
  *
- * Folded like the journeys' card — one choice for both — and folding pauses
- * the story. Escape comes back here before it closes the map.
+ * Without a story (a file that did not arrive) the passages open over the
+ * map as they did before, and there is nothing to play. Folded, it pauses;
+ * one choice to fold it holds for every map. Escape comes back here before
+ * it closes the map.
  */
-function EraCard({
-  era,
-  story,
+function StoryCard({
+  icon,
+  heading,
+  words,
+  playLabel,
+  refs,
+  lights,
+  approx,
+  journeys,
+  onOpenJourney,
+  steps,
+  stepDate,
+  step,
   mode,
   go,
   playing,
   setPlaying,
-  onOpenJourney,
 }: {
-  era: string;
-  story: EraStory | null;
+  icon: "hourglass" | "runner";
+  heading: string;
+  words: string;
+  playLabel: string;
+  refs: MapRef[];
+  /** the story arrived: passages light the map, and there is a story to play */
+  lights: boolean;
+  /** realms are shaded, and the card says they are approximate */
+  approx: boolean;
+  journeys?: string[];
+  onOpenJourney?: (id: string) => void;
+  steps: number;
+  stepDate?: (i: number) => string | undefined;
+  /** step i's words, with a way to open a passage over the map */
+  step: (i: number, openVerse: (ref: MapRef) => void) => React.ReactNode;
   mode: EraMode;
   go: (m: EraMode) => void;
   playing: boolean;
   setPlaying: (on: boolean) => void;
-  onOpenJourney: (id: string) => void;
 }) {
   const { lang, t } = useI18n();
   const [open, setOpen] = useState(() => readLocal(ABOUT_KEY) !== "0");
@@ -676,17 +763,18 @@ function EraCard({
       return !was;
     });
 
-  const refs = ERA_REFS[era] ?? [];
-  const label = ([b, c, v, last]: MapRef) =>
-    `${BOOKS[b - 1]?.[lang === "es" ? "es" : "en"] ?? ""} ${c}:${v}${last ? `–${last}` : ""}`;
   const asVerse = (ref: MapRef): BookRef => {
     const [b, c, v, last] = ref;
-    return { text: label(ref), b, c, v, ...(last ? { ve: last } : {}) };
+    return { text: refLabel(ref, lang), b, c, v, ...(last ? { ve: last } : {}) };
+  };
+  const openVerse = (ref: MapRef) => {
+    setPlaying(false);
+    setVerse(asVerse(ref));
   };
 
-  // Escape goes back to the era's own card before it closes the map: heard
-  // on the way down, and kept from the map while there is somewhere to go back
-  // to (a verse open over it answers Escape itself)
+  // Escape goes back to the card's own opening before it closes the map:
+  // heard on the way down, and kept from the map while there is somewhere to
+  // go back to (a verse open over it answers Escape itself)
   useEffect(() => {
     if (mode.k === "home" || verse) return;
     const onKey = (e: KeyboardEvent) => {
@@ -720,20 +808,20 @@ function EraCard({
           <Icon name="runner" /> {t(`map.journey.${mode.id}` as MessageKey)}
         </h3>
         <p>{t(`map.journeyAbout.${mode.id}` as MessageKey)}</p>
-        <button
-          type="button"
-          className="btn btn-primary map-about-go"
-          onClick={() => onOpenJourney(mode.id)}
-        >
-          <Icon name="runner" /> {t("maps.openJourney")}
-        </button>
+        {onOpenJourney && (
+          <button
+            type="button"
+            className="btn btn-primary map-about-go"
+            onClick={() => onOpenJourney(mode.id)}
+          >
+            <Icon name="runner" /> {t("maps.openJourney")}
+          </button>
+        )}
       </>
     );
-  } else if (mode.k === "step" && story?.steps[mode.i]) {
-    const step = story.steps[mode.i];
-    const total = story.steps.length;
-    const last = mode.i === total - 1;
-    const ref = step.ref as MapRef;
+  } else if (mode.k === "step" && mode.i < steps) {
+    const last = mode.i === steps - 1;
+    const date = stepDate?.(mode.i);
     body = (
       <>
         <div className="map-step-bar">
@@ -746,8 +834,8 @@ function EraCard({
             <Icon name="back" />
           </button>
           <span className="map-step-count">
-            {t("maps.step", { n: String(mode.i + 1), total: String(total) })}
-            {step.date && <span className="map-step-date">{step.date[lang === "es" ? 1 : 0]}</span>}
+            {t("maps.step", { n: String(mode.i + 1), total: String(steps) })}
+            {date && <span className="map-step-date">{date}</span>}
           </span>
           <div className="map-step-tools">
             <button
@@ -793,81 +881,63 @@ function EraCard({
             </button>
           </div>
         </div>
-        <div className="map-step-dots" aria-hidden>
-          {story.steps.map((_, i) => (
+        <div className={`map-step-dots${steps > 12 ? " many" : ""}`} aria-hidden>
+          {Array.from({ length: steps }, (_, i) => (
             <span key={i} className={i === mode.i ? "on" : i < mode.i ? "past" : ""} />
           ))}
         </div>
-        <p key={mode.i} className="map-step-words">
-          {lang === "es" ? step.es : step.en}
-        </p>
-        <div className="map-about-refs">
-          <button
-            type="button"
-            className="chip"
-            onClick={() => {
-              setPlaying(false);
-              setVerse(asVerse(ref));
-            }}
-          >
-            <Icon name="book" /> {label(ref)}
-          </button>
-        </div>
+        {step(mode.i, openVerse)}
       </>
     );
   } else {
     body = (
       <>
-        <p>{t(`map.eraAbout.${era}` as MessageKey)}</p>
-        {story && story.steps.length > 0 && (
+        {/* first, where a card that has to scroll still shows it */}
+        {lights && steps > 0 && (
           <button
             type="button"
-            className="btn btn-primary map-about-go"
+            className="btn btn-primary map-about-go map-about-play"
             onClick={() => {
               go({ k: "step", i: 0 });
               setPlaying(true);
             }}
           >
-            <Icon name="play" /> {t("maps.play")}
+            <Icon name="play" /> {playLabel}
           </button>
         )}
+        <p>{words}</p>
         {refs.length > 0 && (
           <>
             <p className="map-about-label">{t("maps.passages")}</p>
             <div className="map-about-refs">
               {refs.map((ref, i) => (
                 <button
-                  key={label(ref)}
+                  key={refLabel(ref, lang)}
                   type="button"
                   className="chip"
                   // without the story the map has nowhere to light, so the
                   // passage opens over the map as it did before
-                  onClick={() => (story ? go({ k: "passage", i }) : setVerse(asVerse(ref)))}
+                  onClick={() => (lights ? go({ k: "passage", i }) : setVerse(asVerse(ref)))}
                 >
-                  {label(ref)}
+                  {refLabel(ref, lang)}
                 </button>
               ))}
             </div>
           </>
         )}
-        {story && story.journeys.length > 0 && (
+        {journeys && journeys.length > 0 && (
           <>
             <p className="map-about-label">{t("maps.journeys")}</p>
             <div className="map-about-refs">
-              {story.journeys.map((j) => (
-                <button
-                  key={j.id}
-                  type="button"
-                  className="chip"
-                  onClick={() => go({ k: "journey", id: j.id })}
-                >
-                  <Icon name="runner" /> {t(`map.journey.${j.id}` as MessageKey)}
+              {journeys.map((id) => (
+                <button key={id} type="button" className="chip" onClick={() => go({ k: "journey", id })}>
+                  <Icon name="runner" /> {t(`map.journey.${id}` as MessageKey)}
                 </button>
               ))}
             </div>
           </>
         )}
-        {story && story.lands.length > 0 && <p className="map-about-note">{t("maps.approx")}</p>}
+        {approx && <p className="map-about-note">{t("maps.approx")}</p>}
       </>
     );
   }
@@ -875,8 +945,8 @@ function EraCard({
   return (
     <div className={`map-about glass${open ? " open" : ""}`}>
       <button type="button" className="map-about-head" aria-expanded={open} onClick={toggle}>
-        <Icon name="hourglass" />
-        <span>{t("maps.about")}</span>
+        <Icon name={icon} />
+        <span>{heading}</span>
         <span className={`bn-caret${open ? " open" : ""}`} aria-hidden>
           ⌄
         </span>
@@ -894,7 +964,7 @@ function EraCard({
 }
 
 /** A passage's words in the card, and the way into The Word for the chapter round it. */
-function EraPassage({ verse: given }: { verse: BookRef }) {
+function EraPassage({ verse: given, heading = true }: { verse: BookRef; heading?: boolean }) {
   const { t } = useI18n();
   // one passage is one fetch, however often the card above is drawn again
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -902,9 +972,16 @@ function EraPassage({ verse: given }: { verse: BookRef }) {
   const { text, missing, label, translation } = usePassage(verse);
   return (
     <>
-      <h3 className="map-about-title">
-        {label} <span className="bk-pop-tr">{translation}</span>
-      </h3>
+      {heading ? (
+        <h3 className="map-about-title">
+          {label} <span className="bk-pop-tr">{translation}</span>
+        </h3>
+      ) : (
+        // under a stop's name, the reference is the small print
+        <p className="map-step-ref">
+          {label} <span className="bk-pop-tr">{translation}</span>
+        </p>
+      )}
       {missing ? (
         <p className="cal-hint">{t("shelf.verseOffline")}</p>
       ) : text ? (

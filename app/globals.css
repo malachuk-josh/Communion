@@ -3246,6 +3246,15 @@ mark {
   }
 }
 
+/* a journey's way, drawn on in the journeys' own red */
+.mp-ways.wj .mp-way {
+  stroke: var(--wj);
+}
+
+.mp-ways.wj .mp-way-head {
+  fill: var(--wj);
+}
+
 /* a lit place: a soft light under it that breathes */
 .mp-glows {
   pointer-events: none;
@@ -8421,6 +8430,10 @@ button.compare-pick:last-child {
   margin-top: 14px;
 }
 
+.map-about-play {
+  margin: 0 0 12px;
+}
+
 .map-about-go svg {
   width: 15px;
   height: 15px;
@@ -8559,6 +8572,37 @@ button.compare-pick:last-child {
 
 .map-about-body p.map-step-words {
   animation: fade-in 0.5s ease;
+}
+
+/* a journey's stop: the place, then its verse, the reference in small print */
+.map-about-body p.map-step-place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--ink);
+  animation: fade-in 0.5s ease;
+}
+
+.map-step-place svg {
+  width: 16px;
+  height: 16px;
+  color: var(--wj);
+}
+
+.map-about-body p.map-step-ref {
+  margin: 0 0 6px;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+/* many stops: the marks closer, so a long journey's still fit one line */
+.map-step-dots.many {
+  gap: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

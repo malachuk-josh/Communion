@@ -26,8 +26,16 @@
 
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
-import { ERA_REFS } from "../lib/mapRefs.ts";
-import { KEEP, LANDS, PASSAGE_PLACES, SHOW, STORY } from "./era-story.mjs";
+import { ERA_REFS, JOURNEY_REFS } from "../lib/mapRefs.ts";
+import {
+  JOURNEY_PASSAGE_PLACES,
+  KEEP,
+  LANDS,
+  PASSAGE_PLACES,
+  SHOW,
+  STOP_VERSES,
+  STORY,
+} from "./era-story.mjs";
 
 const ROOT = process.cwd();
 const MAPS = path.join(ROOT, "public", "maps");
@@ -179,17 +187,34 @@ function ways(b, go, journeys, where) {
 // ---- the two Bibles -----------------------------------------------------
 
 /**
- * Passages in a chapter the two Bibles number differently, read side by side
- * and found to be the same words: the difference is at the other end of the
- * chapter (1 Samuel 23 ends a verse early; Acts 19 joins its last two).
+ * Chapters the two Bibles number differently (here, or in the chapter before),
+ * read side by side: "book.chapter" → the last verse that is the same words
+ * in both. The difference is at the far end: 1 Samuel 23 and Hosea 11 each end
+ * a verse early in the Reina-Valera, and Acts 19 joins its last two — after
+ * which Acts 20 is numbered alike throughout.
  */
-const READ_ALIKE = new Set(["9.23.14", "44.20.31"]);
+const READ_ALIKE = { "9.23": 28, "28.11": 11, "44.19": 39, "44.20": Infinity };
 
 const bibles = { kjv: new Map(), valera: new Map() };
 function verses(tr, b, c) {
   if (!bibles[tr].has(b)) bibles[tr].set(b, read(path.join(ROOT, "public", "bible", tr, `${b}.json`)));
   return bibles[tr].get(b)[String(c)] ?? null;
 }
+/** One translation's verses, or a complaint; the words, to read over. */
+function checkOne(tr, [b, c, v, last], where) {
+  const ch = verses(tr, b, c);
+  if (!ch) {
+    fail(`${where}: ${tr} has no chapter ${b} ${c}`);
+    return "";
+  }
+  const have = new Map(ch.map(([n, t]) => [n, t]));
+  const want = [];
+  for (let n = v; n <= (last ?? v); n++) want.push(n);
+  const missing = want.filter((n) => !have.has(n));
+  if (missing.length) fail(`${where}: ${tr} ${b} ${c} has no verse ${missing.join(", ")}`);
+  return want.map((n) => have.get(n) ?? "").join(" ");
+}
+
 /** The passage in both, or a complaint; the King James words, to read over. */
 function checkRef(ref, where) {
   const [b, c, v, last] = ref;
@@ -212,7 +237,8 @@ function checkRef(ref, where) {
   // the same numbers may not be the same words: the Reina-Valera follows the
   // Hebrew numbering in places (1 Samuel 24, Numbers 13). Choose another, or,
   // having read the two side by side, list it in READ_ALIKE.
-  if (READ_ALIKE.has(`${b}.${c}.${v}`)) return words;
+  const alike = READ_ALIKE[`${b}.${c}`];
+  if (alike !== undefined && (last ?? v) <= alike) return words;
   for (const ch of [c - 1, c]) {
     if (ch < 1) continue;
     const k = verses("kjv", b, ch);
@@ -224,21 +250,16 @@ function checkRef(ref, where) {
   return words;
 }
 
-// ---- each era -------------------------------------------------------------
 
-const out = { v: 1, eras: {} };
-const reading = [];
-for (const era of Object.keys(eras)) {
-  const windowId = atlas.eras.find((e) => e.id === era)?.base;
-  if (!windowId) {
-    fail(`${era}: atlas.json has no window for it`);
-    continue;
-  }
-  const b = base(windowId);
+// ---- what eras and journeys share --------------------------------------
+
+/**
+ * An era's realms, drawn on a window: the era's own, or a journey's, which
+ * may be wider or narrower. On the era's own window a name off the map is a
+ * mistake; on a journey's it is simply not written.
+ */
+function realmsOn(b, era, where, strict) {
   const proj = projection(b);
-  const where = (what) => `${era} ${what}`;
-
-  // the realms
   const lands = [];
   const ids = new Set();
   for (const land of LANDS[era] ?? []) {
@@ -247,8 +268,11 @@ for (const era of Object.keys(eras)) {
     if (!(land.tone >= 0 && land.tone <= 7)) fail(where(`realm "${land.id}" tone ${land.tone}`));
     if ((land.en && !land.es) || (!land.en && land.es)) fail(where(`realm "${land.id}" needs a name in both languages`));
     const d = land.ll.map((q, i) => `${i ? "L" : "M"}${pt(proj.to(q)).join(" ")}`).join("") + "Z";
-    const label = land.at ? pt(proj.to(land.at)) : null;
-    if (label && !inside(b, label)) fail(where(`realm "${land.id}" has its name off the map`));
+    let label = land.at ? pt(proj.to(land.at)) : null;
+    if (label && !inside(b, label)) {
+      if (strict) fail(where(`realm "${land.id}" has its name off the map`));
+      label = null;
+    }
     lands.push({
       id: land.id,
       tone: land.tone,
@@ -257,21 +281,18 @@ for (const era of Object.keys(eras)) {
       ...(land.en && label ? { en: land.en, es: land.es, x: label[0], y: label[1] } : {}),
     });
   }
-  const realm = (id, what) => {
-    if (!ids.has(id)) fail(where(`${what}: no realm "${id}"`));
-  };
-  for (const id of SHOW[era] ?? []) realm(id, "shown");
-  for (const name of KEEP[era] ?? []) {
-    if (!eras[era].regions.some((r) => r.en === name)) fail(where(`keeps "${name}", which eras.json does not name`));
-  }
+  return { lands, ids };
+}
 
-  // the era's journeys, faint under everything until one is chosen
-  const journeys = atlas.journeys
-    .filter((j) => j.era === era)
-    .map((j) => ({ id: j.id, legs: journeyLegs(b, j.id, undefined, undefined, where(`journey ${j.id}`)) }));
-
-  // the card's passages, and where each happened
-  const passages = (ERA_REFS[era] ?? []).map(([bk, c, v, last]) => {
+/**
+ * Where each passage on a card happened, on a window: the places the
+ * chapter's own map puts at those verses, and any written in by hand
+ * (PASSAGE_PLACES). For a journey, a passage that names none of its places
+ * lights the journey's stops in that chapter instead.
+ */
+function passagesOn(b, refs, where, strict, visitsAt) {
+  const proj = projection(b);
+  return refs.map(([bk, c, v, last]) => {
     const key = `${bk}.${c}.${v}`;
     checkRef([bk, c, v, last], where(`passage ${key}`));
     const found = [];
@@ -299,10 +320,44 @@ for (const era of Object.keys(eras)) {
         }
       }
     }
-    for (const spec of PASSAGE_PLACES[key] ?? []) add(place(b, spec, where(`passage ${key}`)));
+    const extra = strict ? PASSAGE_PLACES : JOURNEY_PASSAGE_PLACES;
+    if (found.length === 0 || strict) for (const spec of extra[key] ?? []) add(place(b, spec, where(`passage ${key}`)));
+    if (found.length === 0 && visitsAt) for (const p of visitsAt(bk, c)) add(p);
     if (found.length === 0) fail(where(`passage ${key} lights nothing`));
     return found;
   });
+}
+
+// ---- each era -------------------------------------------------------------
+
+const out = { v: 1, eras: {} };
+const reading = [];
+for (const era of Object.keys(eras)) {
+  const windowId = atlas.eras.find((e) => e.id === era)?.base;
+  if (!windowId) {
+    fail(`${era}: atlas.json has no window for it`);
+    continue;
+  }
+  const b = base(windowId);
+  const proj = projection(b);
+  const where = (what) => `${era} ${what}`;
+
+  const { lands, ids } = realmsOn(b, era, where, true);
+  const realm = (id, what) => {
+    if (!ids.has(id)) fail(where(`${what}: no realm "${id}"`));
+  };
+  for (const id of SHOW[era] ?? []) realm(id, "shown");
+  for (const name of KEEP[era] ?? []) {
+    if (!eras[era].regions.some((r) => r.en === name)) fail(where(`keeps "${name}", which eras.json does not name`));
+  }
+
+  // the era's journeys, faint under everything until one is chosen
+  const journeys = atlas.journeys
+    .filter((j) => j.era === era)
+    .map((j) => ({ id: j.id, legs: journeyLegs(b, j.id, undefined, undefined, where(`journey ${j.id}`)) }));
+
+  // the card's passages, and where each happened
+  const passages = passagesOn(b, ERA_REFS[era] ?? [], where, true);
   for (const key of Object.keys(PASSAGE_PLACES)) {
     const known = Object.values(ERA_REFS).some((refs) => refs.some(([bk, c, v]) => `${bk}.${c}.${v}` === key));
     if (!known) fail(`PASSAGE_PLACES "${key}" is no passage on any era's card`);
@@ -341,13 +396,93 @@ for (const era of Object.keys(eras)) {
   };
 }
 
+
+// ---- each journey ----------------------------------------------------------
+//
+// On the journey's own window: its era's realms, where its passages
+// happened, and for "Play this journey" a stop at a time — the place, and the
+// verse that names it.
+
+const journeyOut = { v: 1, journeys: {} };
+for (const j of atlas.journeys) {
+  const b = base(j.base);
+  const where = (what) => `journey ${j.id} ${what}`;
+  const { lands } = realmsOn(b, j.era, where, false);
+  /** each visit: its place, where the drawn road reaches it */
+  const stops = j.visits.map((visit, i) => {
+    const at = i === 0 ? j.legs[0]?.p[0] : j.legs[i - 1]?.p.at(-1);
+    if (!at) {
+      fail(where(`stop ${i} (${visit.name}) has no leg to it`));
+      return null;
+    }
+    const site = visit.id ? b.sites.find((s) => s[5] === visit.id) : null;
+    const [bk, c] = visit.at;
+    const given = STOP_VERSES[`${j.id}#${i}`];
+    // a verse numbered apart in the two Bibles is given for each
+    let ref = Array.isArray(given) ? given : given?.en;
+    const refEs = Array.isArray(given) ? undefined : given?.es;
+    if (!ref) {
+      let row = null;
+      try {
+        row = read(path.join(MAPS, `${bk}.json`))[String(c)];
+      } catch {
+        // no maps for the book
+      }
+      const p =
+        row?.places?.find((q) => visit.id && q.id === visit.id) ??
+        row?.places?.find((q) => q.n.toLowerCase() === visit.name.toLowerCase());
+      if (p?.v) ref = [bk, c, p.v];
+    }
+    if (!ref) {
+      fail(where(`stop ${i} (${visit.name}, ${bk} ${c}) has no verse — add one to STOP_VERSES`));
+      return null;
+    }
+    let words;
+    if (refEs) {
+      words = checkOne("kjv", ref, where(`stop ${i} (${visit.name})`));
+      checkOne("valera", refEs, where(`stop ${i} (${visit.name})`));
+    } else words = checkRef(ref, where(`stop ${i} (${visit.name})`));
+    reading.push(`${j.id} ${i} ${visit.name} ${ref.join(".")}: ${words.slice(0, 120)}`);
+    return {
+      n: visit.name,
+      x: r1(at[0]),
+      y: r1(at[1]),
+      t: site ? (KIND[site[4]] ?? "settlement") : "settlement",
+      ...(visit.id ? { id: visit.id } : {}),
+      ref,
+      ...(refEs ? { refEs } : {}),
+    };
+  });
+  const visitsAt = (bk, c) =>
+    stops.filter((s, i) => s && j.visits[i].at[0] === bk && j.visits[i].at[1] === c).map(({ ref, refEs, ...p }) => p);
+  const passages = passagesOn(b, JOURNEY_REFS[j.id] ?? [], where, false, visitsAt);
+  journeyOut.journeys[j.id] = {
+    lands,
+    show: SHOW[j.era] ?? [],
+    keep: KEEP[j.era] ?? [],
+    passages,
+    stops: stops.filter(Boolean),
+  };
+}
+for (const key of Object.keys(JOURNEY_PASSAGE_PLACES)) {
+  const known = Object.values(JOURNEY_REFS).some((refs) => refs.some(([bk, c, v]) => `${bk}.${c}.${v}` === key));
+  if (!known) fail(`JOURNEY_PASSAGE_PLACES "${key}" is no passage on any journey's card`);
+}
+for (const key of Object.keys(STOP_VERSES)) {
+  const [id, i] = key.split("#");
+  const j = atlas.journeys.find((x) => x.id === id);
+  if (!j || !j.visits[Number(i)]) fail(`STOP_VERSES "${key}" is no stop of any journey`);
+}
+
 if (process.argv.includes("--read")) console.log(reading.join("\n"));
 if (problems.length) {
   console.error(`era-story: ${problems.length} problem${problems.length > 1 ? "s" : ""}\n  ${problems.join("\n  ")}`);
   process.exit(1);
 }
-const file = path.join(MAPS, "era-story.json");
-writeFileSync(file, JSON.stringify(out));
-const size = (JSON.stringify(out).length / 1024).toFixed(1);
+writeFileSync(path.join(MAPS, "era-story.json"), JSON.stringify(out));
+writeFileSync(path.join(MAPS, "journey-story.json"), JSON.stringify(journeyOut));
+const kb = (o) => (JSON.stringify(o).length / 1024).toFixed(1);
 const counts = Object.entries(out.eras).map(([e, d]) => `${e} ${d.steps.length}/${d.lands.length}/${d.journeys.length}`).join(", ");
-console.log(`era-story.json ${size} KB — steps/realms/journeys: ${counts}`);
+console.log(`era-story.json ${kb(out)} KB — steps/realms/journeys: ${counts}`);
+const stopsAll = Object.values(journeyOut.journeys).reduce((n, j) => n + j.stops.length, 0);
+console.log(`journey-story.json ${kb(journeyOut)} KB — ${Object.keys(journeyOut.journeys).length} journeys, ${stopsAll} stops`);

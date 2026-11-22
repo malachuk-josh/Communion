@@ -20,7 +20,8 @@
 ### 🗺️ Maps
 - An atlas of its own in the nav bar: 22 journeys drawn whole, from Abraham's to Paul's voyage to Rome
 - Every named place searched and shown on the map, ten eras, and a map for any chapter that names somewhere
-- Each era told on its map: the realms of the age shaded, its journeys drawn faint, its passages lighting where they happened, and "Play this era" stepping through its story with the ways travelled drawn on (written in `scripts/era-story.mjs`; `node scripts/build-era-story.mjs` checks every place and verse and writes `public/maps/era-story.json`)
+- Each journey played stop by stop: the leg to each stop drawn on as you watch, the road so far bold, and the verse that names the stop; its era's realms shaded, and its passages lighting where they happened
+- Each era told on its map: the realms of the age shaded, its journeys drawn faint, its passages lighting where they happened, and "Play this era" stepping through its story with the ways travelled drawn on (written in `scripts/era-story.mjs`; `node scripts/build-era-story.mjs` checks every place and verse and writes `public/maps/era-story.json` and `journey-story.json`)
 
 ### ✨ AI (Claude, by Anthropic), turned on per reader
 - Ask about a verse, from Compare

@@ -769,3 +769,97 @@ export const PASSAGE_PLACES = {
   "66.2.7": ["Ephesus"],
   "66.3.20": ["Laodicea"],
 };
+
+// ---------------------------------------------------------------------------
+// The journeys' own maps play too, a stop at a time: the leg to each stop
+// drawn on, and the verse that names the stop shown — the verse the chapter's
+// own map puts that place at (public/maps/<book>.json). Where the chapter
+// tells of a stop without naming it there (Malta is Melita; Capernaum is
+// "his own city"), the verse is chosen here, by journey and stop, counting
+// from 0 in the order of atlas.json's visits.
+
+export const STOP_VERSES = {
+  "exodus#13": [4, 21, 10], // pitched in Oboth
+  "exodus#14": [4, 21, 11], // pitched at Ije-abarim
+  "exodus#15": [4, 21, 12], // the valley of Zared
+  "exodus#17": [4, 21, 16], // from thence they went to Beer
+  "david#0": [9, 19, 12], // Michal let David down through a window
+  "david#9": [9, 23, 24], // in the wilderness of Maon
+  // dwelt in strong holds at En-gedi: the last verse of 1 Samuel 23 in the
+  // King James, and the first of 24 in the Reina-Valera
+  "david#10": { en: [9, 23, 29], es: [9, 24, 1] },
+  "exodus#11": [4, 32, 8], // sent from Kadesh-barnea (Numbers 13 is numbered apart)
+  "elijah#0": [11, 17, 1], // Elijah said unto Ahab
+  "return#0": [15, 8, 1], // went up with me from Babylon
+  "nehemiah#0": [16, 1, 1], // as I was in Shushan the palace
+  "jesusMatthew#0": [40, 3, 13], // from Galilee to Jordan
+  "jesusMatthew#4": [40, 8, 28], // the country of the Gergesenes
+  "jesusMatthew#5": [40, 9, 1], // came into his own city
+  "jesusMatthew#7": [40, 14, 13], // departed thence by ship into a desert place
+  "jesusMark#3": [41, 5, 1], // the country of the Gadarenes
+  "jesusMark#4": [41, 5, 21], // passed over again by ship
+  "jesusLuke#0": [42, 3, 23], // about thirty years of age
+  "jesusLuke#5": [42, 8, 26], // the country of the Gadarenes
+  "jesusLuke#6": [42, 8, 40], // when Jesus was returned
+  "jesusJohn#0": [43, 1, 28], // Bethabara beyond Jordan
+  "jesusJohn#7": [43, 6, 1], // over the sea of Galilee
+  "jesusJohn#10": [43, 10, 40], // beyond Jordan, where John at first baptized
+  "paul2#0": [44, 15, 40], // Paul chose Silas, and departed
+  "paul2#13": [44, 18, 18], // shorn his head in Cenchrea
+  "paul3#0": [44, 18, 23], // went over all the country of Galatia
+  "paul3#3": [44, 20, 2], // he came into Greece
+  "rome#0": [44, 27, 2], // entering into a ship of Adramyttium
+  "rome#2": [44, 27, 5], // we came to Myra, a city of Lycia
+  "rome#6": [44, 28, 1], // the island was called Melita
+
+  // And where the first verse to name a stop is not the one that tells it —
+  // or is the same verse as the stop before, the second time through a place.
+  "abraham#0": [1, 15, 7], // brought thee out of Ur of the Chaldees
+  "abraham#10": [1, 21, 33], // planted a grove in Beer-sheba
+  "exodus#0": [2, 1, 11], // they built for Pharaoh treasure cities
+  "naomi#1": [8, 1, 22], // came to Bethlehem in the beginning of barley harvest
+  "elijah2#4": [12, 2, 18], // he tarried at Jericho
+  "elijah2#5": [12, 2, 23], // he went up from thence unto Beth-el
+  "exile#2": [12, 25, 7], // carried him to Babylon
+  "return#1": [15, 8, 32], // we came to Jerusalem
+  "childhood#1": [42, 2, 7], // she brought forth her firstborn son
+  "childhood#3": [42, 2, 39], // returned into Galilee, to their own city Nazareth
+  "childhood#4": [42, 2, 42], // they went up to Jerusalem after the custom
+  "childhood#5": [42, 2, 51], // he went down with them, and came to Nazareth
+  "jesusMark#17": [41, 11, 11], // Jesus entered into Jerusalem
+  "jesusMark#18": [41, 14, 3], // being in Bethany in the house of Simon
+  "jesusLuke#3": [42, 4, 31], // came down to Capernaum
+  "jesusLuke#11": [42, 19, 41], // he beheld the city, and wept over it
+  "jesusLuke#13": [42, 24, 33], // returned to Jerusalem
+  "jesusJohn#14": [43, 12, 12], // Jesus was coming to Jerusalem
+  "philip#1": [44, 8, 5], // went down to the city of Samaria
+  "saul#1": [44, 9, 8], // brought him into Damascus
+  "saul#2": [44, 9, 26], // when Saul was come to Jerusalem
+  "saul#4": [44, 11, 25], // Barnabas to Tarsus, for to seek Saul
+  "saul#5": [44, 11, 26], // called Christians first in Antioch
+  "paul1#8": [44, 14, 20], // he departed with Barnabas to Derbe
+  "paul1#9": [44, 14, 21], // they returned again to Lystra
+  "paul1#10": [44, 14, 22], // confirming the souls of the disciples
+  "paul1#11": [44, 14, 23], // ordained them elders in every church
+  "paul3#2": [44, 20, 1], // departed for to go into Macedonia
+  "paul3#17": [44, 21, 17], // when we were come to Jerusalem
+  "rome#12": [44, 28, 16], // when we came to Rome
+};
+
+/**
+ * "book.chapter.verse" of a passage on a journey's card → places on that
+ * journey's map to light, where the verse names none of them itself.
+ */
+export const JOURNEY_PASSAGE_PLACES = {
+  "58.11.8": ["Ur", "Haran"],
+  "1.47.27": ["Goshen#a60f092"],
+  "4.14.33": ["Kadesh-barnea"],
+  "8.4.17": ["Bethlehem#a112427"],
+  "24.29.5": ["Babylon"],
+  "15.3.11": ["Jerusalem"],
+  "15.7.9": ["Babylon", "Jerusalem"],
+  "16.1.3": ["Jerusalem"],
+  "16.4.17": ["Jerusalem"],
+  "16.6.15": ["Jerusalem"],
+  "44.15.36": ["Antioch#ae41ab4"],
+};

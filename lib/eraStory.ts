@@ -103,3 +103,51 @@ export function stepWays(story: EraStory, step: EraStep): Way[] {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// A journey's story (public/maps/journey-story.json, from the same script):
+// its era's realms on the journey's own window, where its passages happened,
+// and one stop at a time — the place, where the drawn road reaches it, and
+// the verse that names it there (a Spanish one besides where the Reina-Valera
+// numbers that verse apart).
+
+export interface JourneyStop extends Place {
+  ref: [number, number, number];
+  refEs?: [number, number, number];
+}
+
+export interface JourneyStory {
+  lands: Realm[];
+  show: string[];
+  keep: string[];
+  passages: Place[][];
+  stops: JourneyStop[];
+}
+
+const isRef = (r: unknown): r is [number, number, number] =>
+  isList(r) && r.length >= 3 && r.slice(0, 3).every(Number.isFinite);
+
+/** One journey's story, or null where the file is missing, old or damaged. */
+export async function loadJourneyStory(id: string): Promise<JourneyStory | null> {
+  const file = await load<{ v?: number; journeys?: Record<string, unknown> } | null>(
+    "/maps/journey-story.json",
+    null
+  );
+  if (!file || file.v !== 1 || !file.journeys || typeof file.journeys !== "object") return null;
+  const raw = file.journeys[id] as Partial<JourneyStory> | undefined;
+  if (!raw || !isList(raw.lands) || !isList(raw.stops) || !isList(raw.passages)) return null;
+  const stops = raw.stops.filter(
+    (s): s is JourneyStop => isPlace(s) && isRef((s as JourneyStop).ref)
+  );
+  // a stop lost from the middle would put every later one at the wrong leg
+  if (stops.length !== raw.stops.length) return null;
+  return {
+    lands: raw.lands.filter(
+      (l): l is Realm => !!l && typeof l.d === "string" && typeof l.id === "string"
+    ),
+    show: isList(raw.show) ? raw.show.filter((s): s is string => typeof s === "string") : [],
+    keep: isList(raw.keep) ? raw.keep.filter((s): s is string => typeof s === "string") : [],
+    passages: raw.passages.map((list) => (isList(list) ? list.filter(isPlace) : [])),
+    stops: stops.map((s) => (isRef(s.refEs) ? s : { ...s, refEs: undefined })),
+  };
+}
