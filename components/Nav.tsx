@@ -21,7 +21,7 @@ import ThemeToggle from "@/components/ThemeToggle";
  * and the desktop row are written from the same order by hand — if they ever
  * disagree, a swipe would go somewhere the reader cannot see it went.
  */
-const TAB_ORDER = ["/discover", "/menu/journal", "/"] as const;
+const TAB_ORDER = ["/discover", "/menu/journal", "/maps", "/"] as const;
 
 /*
  * What counts as a swipe across the tabs.
@@ -141,9 +141,10 @@ export default function Nav() {
   /**
    * Swipe across the page: a flick left or right moves one step along the
    * bar — and through the tabs of a page that has them on the way. Home's
-   * Discover, My wall and Settings, and the Journal's Bookmarks, Notes and
-   * Plans, are stops in the same row as The Word, so a swipe from Settings
-   * goes on to the Journal, arriving on its first tab, a swipe on from Plans
+   * Discover, My wall and Settings, the Journal's Bookmarks, Notes and Plans,
+   * and Maps' Journeys, Places, Eras and Chapters, are stops in the same row
+   * as The Word, so a swipe from Settings goes on to the Journal, arriving on
+   * its first tab, a swipe on from Plans reaches Maps, one on from Chapters
    * reaches The Word at the end, and a swipe back from Bookmarks returns to
    * Home on its last. Tapping the Journal still opens it on the tab it was
    * left on (Home's button always means Discover); only a swipe arriving from
@@ -192,8 +193,10 @@ export default function Nav() {
         // swipe across it changed the tab underneath, so a first-time reader
         // brushing sideways over the tour dismissed nothing and silently
         // moved the app to a screen they could not see.
+        // …or a map with the screen to itself (the Maps tab opens one with
+        // no dialog under it), where a drag is how the map is moved
         document.querySelector(
-          ".modal-overlay, .lex-sheet, .side-panel, .conc-panel, .welcome"
+          ".modal-overlay, .lex-sheet, .side-panel, .conc-panel, .welcome, .map-full"
         )
       ) {
         from = null;
@@ -365,6 +368,7 @@ export default function Nav() {
   // the Bookshelf's books open from the Discover tab, and belong to Home
   const isDiscover = pathname.startsWith("/discover") || pathname.startsWith("/bookshelf");
   const isJournal = pathname.startsWith("/menu/journal");
+  const isMaps = pathname.startsWith("/maps");
 
   // The Home button always means the top of the Discover tab. From anywhere
   // else it opens there, whichever tab Home was left on (the new screen starts
@@ -405,6 +409,12 @@ export default function Nav() {
               className={`nav-link${isJournal ? " active" : ""}`}
             >
               {t("nav.journal")}
+            </Link>
+            <Link
+              href="/maps"
+              className={`nav-link${isMaps ? " active" : ""}`}
+            >
+              {t("nav.maps")}
             </Link>
             <Link
               href="/"
@@ -477,11 +487,12 @@ export default function Nav() {
         className="bottom-nav glass"
         aria-label="Primary"
       >
-        {/* Three tabs, for reading on your own: Home first, the Journal,
-            and the Word at the far right, at the end of the row. The Menu
-            lives in the header, reachable without a place in the bar. It stays
-            put in The Word as everywhere else: a bar that never leaves is
-            one nobody has to know how to call back. */}
+        {/* Four tabs, for reading on your own: Home first, the Journal, the
+            Maps, and the Word at the far right, at the end of the row, where
+            it has always been. The Menu lives in the header, reachable
+            without a place in the bar. It stays put in The Word as
+            everywhere else: a bar that never leaves is one nobody has to
+            know how to call back. */}
         <Link
           href="/discover"
           className={isDiscover ? "active" : ""}
@@ -497,6 +508,10 @@ export default function Nav() {
         >
           <span className="bn-icon"><Icon name="scroll" /></span>
           <span>{t("nav.journal")}</span>
+        </Link>
+        <Link href="/maps" className={isMaps ? "active" : ""}>
+          <span className="bn-icon"><Icon name="compass" /></span>
+          <span>{t("nav.maps")}</span>
         </Link>
         <Link href="/" className={isWord ? "active" : ""} onClick={wordClick}>
           <span className="bn-icon"><Icon name="book" /></span>

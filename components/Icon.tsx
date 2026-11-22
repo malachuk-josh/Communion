@@ -179,6 +179,13 @@ const PATHS = {
     "M5 5l3.5 3.5",
   ],
   lock: ["M7 10.5V8a5 5 0 0 1 10 0v2.5", "M5.5 10.5h13V20h-13z", "M12 14v2.5"],
+  // a compass: the Maps tab. The globe is Home's and the pin is Context's,
+  // and a folded map at this size is three upright strips (see `pin`); a dial
+  // with its needle is the one mark left that says "find your way".
+  compass: [
+    "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
+    "M15.7 8.3l-2.1 5.3-5.3 2.1 2.1-5.3z",
+  ],
   globe: [
     "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
     "M3.2 12h17.6",

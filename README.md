@@ -17,6 +17,10 @@
 - A concordance, cross-references, maps in context, and translations compared verse by verse
 - Matthew Henry on every chapter, and Spurgeon's Treasury of David on the Psalms
 
+### 🗺️ Maps
+- An atlas of its own in the nav bar: 22 journeys drawn whole, from Abraham's to Paul's voyage to Rome
+- Every named place searched and shown on the map, ten eras, and a map for any chapter that names somewhere
+
 ### ✨ AI (Claude, by Anthropic), turned on per reader
 - Ask about a verse, from Compare
 - Ask the scholars, from Commentary: seven teachers of the church, answered in their manner

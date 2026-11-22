@@ -18,9 +18,10 @@ export interface MenuItem {
   key: string;
 }
 
-/** Home's tabs and the Journal's, in the order their rows show them. */
+/** Home's tabs, the Journal's and Maps', in the order their rows show them. */
 export const HOME_TABS = ["scripture", "wall", "settings"] as const;
 export const JOURNAL_TABS = ["bookmarks", "notes", "plans"] as const;
+export const MAP_TABS = ["journeys", "places", "eras", "chapters"] as const;
 
 /**
  * The screens on the bar that have tabs of their own, by path, and the name
@@ -30,6 +31,7 @@ export const JOURNAL_TABS = ["bookmarks", "notes", "plans"] as const;
 export const TABS_AT: Record<string, { page: string; tabs: readonly string[] }> = {
   "/discover": { page: "discover", tabs: HOME_TABS },
   "/menu/journal": { page: "journal", tabs: JOURNAL_TABS },
+  "/maps": { page: "maps", tabs: MAP_TABS },
 };
 
 export const MENU_ITEMS: MenuItem[] = [

@@ -88,6 +88,9 @@ const SHELL_ROUTES = [
   "/discover",
   "/menu",
   "/menu/journal",
+  // the atlas: its lists and maps are data under /maps/ (DATA_PATHS above),
+  // and this is the page that draws them
+  "/maps",
   "/menu/settings",
   // one page for every Bookshelf book and every part of one, so a book saved
   // for offline reading opens with no signal (see components/BookView)

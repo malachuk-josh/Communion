@@ -1,9 +1,12 @@
 # Maps tab: action plan
 
-A hand-off plan for adding a dedicated **Maps** tab to Communion's nav bar.
-It is written for an engineer (or model) who has not seen this codebase. Read
-all of it before starting: sections 2 and 7 hold the facts and traps that are
-expensive to rediscover.
+The plan the **Maps** tab in Communion's nav bar was built from, kept as the
+record of what was decided and why. It was written for an engineer (or model)
+who had not seen this codebase; sections 2 and 7 hold the facts and traps
+that are expensive to rediscover.
+
+**Status: built.** The tab is live. Where the build departed from the plan,
+the plan below has been corrected to say what was built.
 
 ## 1. What is being built, and the decisions already made
 
@@ -126,7 +129,8 @@ Four tabs, in a row styled like the Journal's, remembered with `useStickyTab("ma
 2. **Places**. A search field, and under it:
    - with nothing typed, the 30 most-named places (by verse count);
    - while typing, up to 50 matches. Match without regard to case or accents;
-     names that start with the query first, then by verse count. Skip ids
+     names that start with the query first, then by verse count. Only when no
+     name matches is the modern site searched ("Jebel Musa" finds Sinai). Skip ids
      that appear as keys in `same`. Each row: name, kind, and the modern site
      and country, so the two Antiochs can be told apart.
 3. **Eras**. The ten eras in `eras.json` order, by their existing titles.
@@ -148,10 +152,10 @@ Every map is the existing `MapViewer`, fed a `ChapterMapData`-shaped object:
 | Era | from `atlas.json` | the era | the whole window | `[]` | none | the era's title |
 | Place | the tightest window holding it | none | a box a quarter of the window wide, centred on the place and kept inside the window | that one place | none | the place's name |
 
-Extra controls in the viewer's bar, beside the existing ones:
+Extra controls under the map, beside the then-and-now toggle:
 
 - **Chapter map:** "Read Genesis 12", which goes to `/?b=1&c=12`.
-- **Journey map:** "Stops", which opens a list of the visits in order
+- **Journey map:** "13 stops", which opens a list of the visits in order
   (number, name, and the chapter that tells of it). Tapping a visit's chapter
   goes to The Word at that chapter. Tapping its name opens the place's card
   when the stop has an id.
@@ -212,8 +216,9 @@ Write:
     "era": "patriarchs",            // the era of the chapter the route was read from
     "focus": [x, y, w, h],          // the route's bounding box, padded 8%, kept inside the window
     "legs": [{ "p": [[x, y]], "sea": 1 }],   // in "base" units; "sea" only where the source has it
-    "stops": [{ "x": 0, "y": 0, "n": "4·8", "id": "a…" }],   // one per dot; "id" where known
-    "visits": [{ "name": "Ur", "at": [1, 11], "stop": 0 }],  // in order; "stop" indexes "stops"
+    "stops": [{ "x": 0, "y": 0, "n": "4·8" }],               // one per dot
+    "visits": [{ "name": "Ur", "id": "a…", "at": [1, 11], "stop": 0 }],  // in order; "id" where the
+                                    // gazetteer has the place; "stop" indexes "stops"
     "chapters": [[1, 11], [1, 12]]  // every chapter whose map carries this journey
   }],
   "eras": [{ "id": "patriarchs", "base": "near-east" }],
@@ -235,10 +240,12 @@ How to compute it:
   first chapter. A visit's stop is the one whose `n` (split on `·`) contains
   its number. **Assert** for every journey that the highest visit number
   equals `1 + steps.length`, and stop with an error if not.
-- **Stop ids.** In `world.json` (which has every place), look among the sites
-  within about 2 units of the stop for one whose name equals the visit's name,
-  ignoring case and a leading "the ". Leave `id` out when there is none. Log
-  how many stops got an id.
+- **Visit ids.** For each visit, in `world.json` (which has every place),
+  look among the sites within about 3 units of its stop for one whose name
+  equals the visit's name, ignoring case and a leading "the ". Leave `id` out
+  when there is none. Each visit is looked up on its own, not once per dot:
+  one dot can be three visits (Gilead, Mahanaim and Penuel are drawn as one).
+  All 235 visits found their place.
 - **Eras.** Hard-code the window for each, in `eras.json` order:
   patriarchs `near-east`, exodus `egypt-sinai`, conquest `levant`, kingdom
   `levant`, divided `levant`, exile `near-east`, return `near-east`, gospels
@@ -273,7 +280,8 @@ changes that let a second caller use them:
     `modern/<window>.json`.
 - Give `MapViewer` three optional props: `title` and `subtitle` (replacing the
   era and journey lines in `.map-full-title` when given), and `actions`
-  (extra buttons rendered in `.map-full-tools`). Render the era line only
+  (extra chips rendered under the map in `.map-full-note`, beside the
+  then-and-now toggle, where a labelled button has room). Render the era line only
   when `data.era` is set. Let the reset button's label be overridden; it
   reads "Back to the chapter" today.
 - Allow a place with no verse: a place map has no chapter. Read
@@ -337,8 +345,8 @@ link opens the map over the atlas.
   dragging a full-screen map never changes tab.
 - `public/sw.js`: add `"/maps"` to `SHELL_ROUTES`.
 - **Make four tabs fit narrow phones.** The bar is about 196px wide with three
-  tabs and will be about 254px with four. In The Word and in a Bookshelf
-  chapter, a 44px chapter arrow sits 10px from each edge, which leaves
+  tabs and will be about 254px with four. In The Word (the only screen with
+  chapter arrows), a 44px chapter arrow sits 10px from each edge, which leaves
   `screen width − 108px` for the bar: 285px at 393 wide, 267px at 375, 252px
   at 360, 212px at 320. So at 360 and below the bar would touch or cover the
   arrows. Add a narrow-screen rule (for example at `max-width: 380px`) that

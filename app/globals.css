@@ -872,6 +872,37 @@ nav.bottom-nav.glass {
 }
 
 /*
+ * Four tabs on a narrow phone.
+ *
+ * In The Word the bar shares the bottom edge with the two chapter arrows,
+ * 44px each and 10px in from the corners, which leaves the bar the screen's
+ * width less 108. Three tabs were about 196px and
+ * fitted anything; with Maps the bar is about 254px, and a 360px screen has
+ * 252 to give and a 320px one 212 — the bar's ends would lie under the
+ * arrows. So below 380 the tabs give up the padding they could spare, and at
+ * 340 and under the arrows give up a little too. ("La Palabra" is the widest
+ * label there is, and these are sized for it.)
+ */
+@media (max-width: 380px) {
+  .bottom-nav {
+    gap: 0;
+    padding: 5px;
+  }
+
+  .bottom-nav a {
+    min-width: 48px;
+    padding: 7px 6px;
+  }
+}
+
+@media (max-width: 340px) {
+  .bottom-nav a {
+    min-width: 42px;
+    padding: 7px 4px;
+  }
+}
+
+/*
  * The header takes the width it is given.
  *
  * It was pinned to 880px to line its wordmark up with the column of the page
@@ -2443,6 +2474,24 @@ mark {
 
 .chap-arrow-r {
   right: 10px;
+}
+
+/* on the narrowest phones, room for the bar's fourth tab between them: see
+   the note under .bottom-nav */
+@media (max-width: 340px) {
+  .chap-arrow {
+    width: 38px;
+    height: 38px;
+    font-size: 1.4rem;
+  }
+
+  .chap-arrow-l {
+    left: 4px;
+  }
+
+  .chap-arrow-r {
+    right: 4px;
+  }
 }
 
 .chap-arrow:disabled {
@@ -7825,4 +7874,229 @@ button.compare-pick:last-child {
 .text-pic button:focus-visible img {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+/* ---- the Maps tab (components/Atlas.tsx, components/AtlasMap.tsx) --------
+   The atlas: four ways into the maps, each a list of rows, and a row opens
+   its map full screen. The rows are the app's own glass cards; the chapters
+   are The Word's navigator, set on a page rather than in a panel. */
+
+/* four segments where the Journal has three, so each gives up its side
+   padding: "Capítulos" still has to fit a quarter of a 320px screen */
+.atlas-tabs button {
+  min-width: 0;
+  padding-inline: 2px;
+  font-size: 0.8rem;
+}
+
+.atlas-wait {
+  height: 220px;
+  margin-top: 18px;
+  border-radius: 18px;
+}
+
+.atlas-group .section-head {
+  margin-top: 22px;
+}
+
+.atlas-list {
+  display: grid;
+  gap: 10px;
+}
+
+.atlas-list-first {
+  margin-top: 18px;
+}
+
+/* the sibling rule that spaces stacked cards would fight the grid gap */
+.atlas-list .card + .card {
+  margin-top: 0;
+}
+
+.atlas-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 14px 14px 18px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.atlas-row:hover {
+  border-color: var(--glass-border-bright);
+}
+
+.atlas-row-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.atlas-row-title {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.atlas-row-sub {
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.atlas-row-go {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* how many verses name a place: the Journal's count, beside the row */
+.atlas-count {
+  flex: 0 0 auto;
+  min-width: 2.4em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.atlas-search {
+  margin: 18px 0 0;
+}
+
+.atlas-search svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  color: var(--ink-faint);
+}
+
+.atlas-none {
+  margin: 18px 4px;
+  color: var(--ink-dim);
+}
+
+.atlas-hint {
+  margin: 16px 4px 6px;
+}
+
+.atlas-books .bn-testament {
+  padding-inline: 4px;
+}
+
+.atlas-books .bn-book {
+  padding-inline: 14px 4px;
+}
+
+.atlas-books .bn-chapters {
+  padding-inline: 10px 0;
+}
+
+/* one grid for the whole book: nothing opens between two rows of it here, so
+   it need not be drawn a row at a time, and a wide screen gets more across */
+.atlas-ch-grid {
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+}
+
+/* a chapter that names nowhere, and a book of them: there, and not a button */
+.atlas-books .bn-book:disabled,
+.atlas-books .bn-ch:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.atlas-books .bn-book:disabled:hover {
+  color: var(--ink-dim);
+}
+
+.atlas-books .bn-ch:disabled:hover {
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+/* what the map's own bar has under it while the map is on its way, or when it
+   could not be had */
+.atlas-map-wait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--ink-dim);
+  text-align: center;
+  touch-action: auto;
+}
+
+/* what there is to do from a map, beside the then-and-now toggle */
+.map-full-note .chip {
+  cursor: pointer;
+}
+
+.map-full-note .chip svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* a journey's stops, in order: the number it has on the map, the place, and
+   the chapter that tells of it */
+.atlas-visits {
+  display: grid;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atlas-visits li {
+  display: grid;
+  grid-template-columns: 1.9em 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.atlas-visits li:last-child {
+  border-bottom: 0;
+}
+
+.atlas-visit-n {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.atlas-visit-name {
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.atlas-visit-at {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.atlas-stops-note {
+  margin: 14px 0 0;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
 }
