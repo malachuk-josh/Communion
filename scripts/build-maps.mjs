@@ -34,6 +34,9 @@
 // chapter maps for each book, and places.json for the place cards. Run when
 // the sources change; output committed.
 //
+// Then run scripts/build-atlas.mjs, which indexes what this wrote for the Maps
+// tab (public/maps/atlas.json) and needs neither source.
+//
 // Since the place cards and the then-and-now toggle it also reads, from
 // Natural Earth's geojson/, ne_10m_admin_0_map_subunits (which country a site
 // is in today, and the countries' names), ne_10m_admin_0_boundary_lines_land
