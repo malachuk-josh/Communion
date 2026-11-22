@@ -32,7 +32,7 @@ import VersePop from "@/components/VersePop";
 import { loadAtlas, type AtlasJourney, type MapTarget } from "@/lib/atlas";
 import { BOOKS } from "@/lib/bible";
 import type { BookRef } from "@/lib/bookshelf";
-import { ERA_REFS } from "@/lib/eras";
+import { ERA_REFS, JOURNEY_REFS, type MapRef } from "@/lib/mapRefs";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { load } from "@/lib/mapData";
 import { readLocal, writeLocal } from "@/lib/storage";
@@ -242,9 +242,29 @@ export default function AtlasMap({
         </button>
       );
     }
+    // the words and the passages come together: a journey added to the
+    // atlas without them opens as it did before there were any
+    const refs = JOURNEY_REFS[target.id];
+    if (refs) {
+      about = (
+        <MapAbout
+          icon="runner"
+          heading={t("maps.aboutJourney")}
+          words={t(`map.journeyAbout.${target.id}` as MessageKey)}
+          refs={refs}
+        />
+      );
+    }
   } else if (target.kind === "era") {
     title = t(`map.era.${target.id}` as MessageKey);
-    about = <EraAbout era={target.id} />;
+    about = (
+      <MapAbout
+        icon="hourglass"
+        heading={t("maps.about")}
+        words={t(`map.eraAbout.${target.id}` as MessageKey)}
+        refs={ERA_REFS[target.id] ?? []}
+      />
+    );
   } else {
     title = got.place?.n ?? "";
   }
@@ -268,6 +288,9 @@ export default function AtlasMap({
           resetLabel={t("maps.reset")}
           actions={actions}
           about={about}
+          // a journey is to be seen whole, above its words; an era's map is
+          // the ground they are read over
+          fitAbove={target.kind === "journey"}
         />,
         document.body
       )}
@@ -385,47 +408,54 @@ function JourneyStops({
   );
 }
 
-/** Whether a reader last left the era card open: open until they fold it. */
+/** Whether a reader last left the card open: open until they fold it. */
 const ABOUT_KEY = "communion.mapAbout";
 
 /**
- * What an age was, over the foot of its map: a few sentences, and the
- * passages that tell it, each opening its verses over the map.
+ * What a map is of, over its foot: an age, or a journey. A few sentences,
+ * and the passages that tell it, each opening its verses over the map.
  *
  * Open when the map opens, because that is what it is for; folded to its
  * heading with a tap, for a reader who wants the whole map, and left folded
- * the next time they open an era until they unfold it again.
+ * the next time they open one until they unfold it again. Asked for before
+ * the first paint (the map is only ever drawn in the browser), so a journey's
+ * map is fitted round the card as the reader will see it.
  */
-function EraAbout({ era }: { era: string }) {
-  const { lang, t } = useI18n();
-  const [open, setOpen] = useState(true);
+function MapAbout({
+  icon,
+  heading,
+  words,
+  refs,
+}: {
+  icon: "hourglass" | "runner";
+  heading: string;
+  words: string;
+  refs: MapRef[];
+}) {
+  const { lang } = useI18n();
+  const [open, setOpen] = useState(() => readLocal(ABOUT_KEY) !== "0");
   const [verse, setVerse] = useState<BookRef | null>(null);
-  // read in an effect: storage is not there to ask while the server renders
-  useEffect(() => {
-    if (readLocal(ABOUT_KEY) === "0") setOpen(false);
-  }, []);
   const toggle = () =>
     setOpen((was) => {
       writeLocal(ABOUT_KEY, was ? "0" : "1");
       return !was;
     });
 
-  const refs = ERA_REFS[era] ?? [];
-  const label = ([b, c, v, last]: (typeof refs)[number]) =>
+  const label = ([b, c, v, last]: MapRef) =>
     `${BOOKS[b - 1]?.[lang === "es" ? "es" : "en"] ?? ""} ${c}:${v}${last ? `–${last}` : ""}`;
 
   return (
     <div className={`map-about glass${open ? " open" : ""}`}>
       <button type="button" className="map-about-head" aria-expanded={open} onClick={toggle}>
-        <Icon name="hourglass" />
-        <span>{t("maps.about")}</span>
+        <Icon name={icon} />
+        <span>{heading}</span>
         <span className={`bn-caret${open ? " open" : ""}`} aria-hidden>
           ⌄
         </span>
       </button>
       {open && (
         <div className="map-about-body">
-          <p>{t(`map.eraAbout.${era}` as MessageKey)}</p>
+          <p>{words}</p>
           {refs.length > 0 && (
             <div className="map-about-refs">
               {refs.map((ref) => {

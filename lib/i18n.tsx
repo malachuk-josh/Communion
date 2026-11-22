@@ -743,6 +743,7 @@ const dictionaries = {
     "maps.failed": "Maps need a connection the first time. Try again when you are online.",
     "maps.mapFailed": "This map could not be loaded.",
     "maps.about": "About this era",
+    "maps.aboutJourney": "About this journey",
     "map.tapAPlace": "Tap a place to learn about it.",
     "map.andMore": "{n} more named than the map will hold",
     "map.credit": "Coastlines and borders from Natural Earth, heights from SRTM and GMTED by way of AWS Terrain Tiles (all public domain). Places from OpenBible.info, CC BY 4.0.",
@@ -805,6 +806,50 @@ const dictionaries = {
     "map.journey.paul2": "Paul’s second journey",
     "map.journey.paul3": "Paul’s third journey",
     "map.journey.rome": "Paul’s voyage to Rome",
+    "map.journeyAbout.abraham":
+      "Abram’s father Terah took the family from Ur of the Chaldees as far as Haran. At God’s word Abram went on into Canaan, built altars at Shechem and Bethel, went down to Egypt in a famine and came back to settle by Mamre at Hebron. Years later he took Isaac to the land of Moriah, and came home to Beersheba.",
+    "map.journeyAbout.jacob":
+      "Jacob fled from Beersheba to his mother’s family in Haran, and on the way, at Bethel, dreamed of a ladder reaching to heaven. He served Laban twenty years and married Leah and Rachel, then came home by Mahanaim and Penuel, where he wrestled until daybreak and was named Israel. Rachel died on the road to Ephrath; in his old age Jacob went down to Egypt and settled in Goshen.",
+    "map.journeyAbout.exodus":
+      "Israel set out from Rameses for Succoth, led by a pillar of cloud by day and of fire by night, crossed the sea and came to Mount Sinai, where God gave the law. From Kadesh-barnea spies went into Canaan, but the people would not go up, and they wandered forty years. Moses saw the land from the top of Pisgah on Mount Nebo, and died there in Moab.",
+    "map.journeyAbout.naomi":
+      "In a famine in the days of the judges, Elimelech took his wife Naomi and their two sons from Bethlehem to Moab. The men died there, and when Naomi heard that God had given his people bread again she went home; her Moabite daughter-in-law Ruth would not leave her. They came to Bethlehem as the barley harvest began. Ruth married Boaz, and their son Obed was David’s grandfather.",
+    "map.journeyAbout.david":
+      "Saul grew jealous of David and tried to kill him, and David fled: to Samuel at Naioth, to the priests at Nob, even to the Philistines at Gath. In the cave of Adullam some four hundred men gathered to him, and he hid in the wilderness of Ziph, Maon and Engedi, where twice he spared Saul’s life. At last Achish king of Gath gave him the town of Ziklag.",
+    "map.journeyAbout.elijah":
+      "Elijah told King Ahab there would be neither dew nor rain, then hid by the brook Cherith, where ravens fed him, and with a widow at Zarephath. On Mount Carmel the fire of the Lord fell at his prayer, before all the prophets of Baal. Fleeing Jezebel, he went south past Beersheba to Horeb, heard the still small voice, and came back to cast his mantle on Elisha.",
+    "map.journeyAbout.elijah2":
+      "On the day the Lord took Elijah up, Elisha would not leave him: from Gilgal to Bethel, to Jericho, and over the Jordan, which Elijah parted with his mantle. A chariot of fire came between them, and Elijah went up by a whirlwind into heaven. Elisha took up the mantle that fell from him, parted the Jordan himself, and went back by Jericho and Bethel to Mount Carmel and Samaria.",
+    "map.journeyAbout.exile":
+      "When Jerusalem fell to Nebuchadnezzar’s army, King Zedekiah fled by night and was taken in the plains of Jericho. At Riblah the king of Babylon killed his sons before his eyes, blinded him and carried him in chains to Babylon. The temple was burned and the people led away. Jeremiah had already written to the exiles there: build houses, plant gardens, and seek the peace of the city.",
+    "map.journeyAbout.return":
+      "When Cyrus let the Jews go home, nearly fifty thousand went up from Babylon with Zerubbabel and laid the foundation of the temple again: the people shouted for joy, and the old men who had seen the first house wept. Some eighty years later Ezra the scribe led another company, setting out from the river Ahava with fasting and prayer, and reached Jerusalem four months after leaving Babylon, to teach the law.",
+    "map.journeyAbout.nehemiah":
+      "Nehemiah was cupbearer to King Artaxerxes at Shushan when word came that the wall of Jerusalem was broken down and its gates burned. He wept and prayed, and the king sent him with letters and an escort of horsemen. He went round the ruins by night, and the people rebuilt the wall in fifty-two days, working with one hand and holding a weapon in the other.",
+    "map.journeyAbout.egypt":
+      "After the wise men had gone, an angel warned Joseph in a dream that Herod would seek the young child to destroy him. He took Mary and Jesus by night into Egypt, and they stayed there until Herod died. On the way back he was afraid to settle in Judea, where Herod’s son reigned, and went instead to Nazareth in Galilee.",
+    "map.journeyAbout.childhood":
+      "Joseph and Mary went up from Nazareth to Bethlehem to be taxed, and there Jesus was born. When the days of purifying were done they presented him in the temple at Jerusalem, then went home to Nazareth. When he was twelve they took him up for the Passover, and after three days found him in the temple among the teachers; he went home with them, and grew in wisdom and stature.",
+    "map.journeyAbout.jesusMatthew":
+      "Matthew follows Jesus from his baptism in the Jordan to Capernaum, where he made his home, and through the towns of Galilee: across the lake to the country of the Gergesenes, north to the coasts of Tyre and Sidon, and to Caesarea Philippi, where Peter confessed him the Christ. Then he went up by Jericho to Jerusalem, where the crowds cried Hosanna, and lodged at Bethany.",
+    "map.journeyAbout.jesusMark":
+      "Mark tells it at speed, one thing after another ‘straightway’: from the Jordan to Capernaum and round the Sea of Galilee, north to Tyre and Sidon and back through the Decapolis, then out to the towns of Caesarea Philippi. From there Jesus went up to Jerusalem, healed blind Bartimaeus at Jericho on the way, and came to the city by Bethphage and Bethany, at the Mount of Olives.",
+    "map.journeyAbout.jesusLuke":
+      "Luke begins in the synagogue at Nazareth, where Jesus read from Isaiah and the town thrust him out, and follows him to Capernaum, and to Nain, where he raised a widow’s only son. Then ‘he stedfastly set his face to go to Jerusalem’, and much of the gospel is that long road, through Samaria and by Jericho. It ends at Emmaus on the evening he rose, and at Bethany, where he was carried up into heaven.",
+    "map.journeyAbout.jesusJohn":
+      "John follows Jesus up to Jerusalem from one feast to the next, and back to Galilee between them: the water made wine at Cana, the woman at Jacob’s well by Sychar in Samaria, the nobleman’s son healed by a word spoken at Cana. At Bethany he called Lazarus out of the grave; then he withdrew to a town called Ephraim near the wilderness, and came back to Bethany six days before the Passover.",
+    "map.journeyAbout.philip":
+      "When persecution scattered the church after Stephen’s death, Philip, one of the seven, went down to Samaria and preached Christ there. An angel sent him to the desert road from Jerusalem to Gaza, where he met an Ethiopian official reading Isaiah, and baptized him. Then Philip was found at Azotus, the old Ashdod, and preached in every town up the coast to Caesarea, where he still lived years later.",
+    "map.journeyAbout.saul":
+      "Saul set out for Damascus to arrest the followers of Jesus. Near the city a light from heaven shone round him; he fell to the earth and heard Jesus speak to him. Soon he was preaching Christ in the synagogues, and had to escape over the wall in a basket. The brethren sent him home to Tarsus, and Barnabas later brought him to Antioch, where the disciples were first called Christians.",
+    "map.journeyAbout.paul1":
+      "Sent out from Antioch, Barnabas and Saul sailed to Cyprus and crossed it to Paphos, where the Roman deputy believed. Inland, at Antioch in Pisidia, they turned to the Gentiles; at Lystra the crowd took them for gods, then stoned Paul and left him for dead. They went back the way they had come, strengthening the new churches, and sailed home to tell how God had opened the door of faith to the Gentiles.",
+    "map.journeyAbout.paul2":
+      "Paul set out again with Silas, took young Timothy with him at Lystra, and at Troas saw in a vision a man of Macedonia asking for help. So the gospel crossed into Europe: Lydia believed at Philippi, where Paul and Silas sang in prison at midnight, and they went on to Thessalonica, Berea and Athens, where Paul spoke on Mars’ hill. He stayed a year and a half at Corinth before sailing home.",
+    "map.journeyAbout.paul3":
+      "Paul went through Galatia and Phrygia to Ephesus and stayed some three years, until all Asia had heard the word and the silversmiths raised a riot for Diana. He went on through Macedonia into Greece, came back by Troas, where he preached until midnight, and at Miletus said farewell to the elders of Ephesus. Warned in every city that bonds awaited him, he sailed on to Jerusalem.",
+    "map.journeyAbout.rome":
+      "Having appealed to Caesar, Paul was sent to Rome under guard. Late in the year a great storm caught the ship off Crete and drove it for fourteen days, until it ran aground at Malta and broke up; all 276 aboard came safe to land. After the winter they sailed on to Puteoli, and the brethren came out as far as the Forum of Appius and the Three Taverns to meet him.",
     "map.routeNote": "This chapter’s part of the journey is drawn bold, by sea dashed. The routes between stops are approximate.",
     "place.kind.town": "Town or city",
     "place.kind.region": "Region",
@@ -1650,6 +1695,7 @@ const dictionaries = {
     "maps.failed": "Los mapas necesitan conexión la primera vez. Inténtalo de nuevo cuando tengas señal.",
     "maps.mapFailed": "No se pudo cargar este mapa.",
     "maps.about": "Sobre esta época",
+    "maps.aboutJourney": "Sobre este viaje",
     "map.tapAPlace": "Toca un lugar para saber más de él.",
     "map.andMore": "{n} más de los que caben en el mapa",
     "map.credit": "Costas y fronteras de Natural Earth, relieve de SRTM y GMTED a través de AWS Terrain Tiles (todo de dominio público). Lugares de OpenBible.info, CC BY 4.0.",
@@ -1712,6 +1758,50 @@ const dictionaries = {
     "map.journey.paul2": "Segundo viaje de Pablo",
     "map.journey.paul3": "Tercer viaje de Pablo",
     "map.journey.rome": "El viaje de Pablo a Roma",
+    "map.journeyAbout.abraham":
+      "Taré, padre de Abram, sacó a la familia de Ur de los caldeos y llegó hasta Harán. Por la palabra de Dios, Abram siguió hasta Canaán, edificó altares en Siquem y en Bet-el, bajó a Egipto en tiempo de hambre y volvió a asentarse junto a Mamre, en Hebrón. Años después llevó a Isaac a la tierra de Moriah, y volvió a Beerseba.",
+    "map.journeyAbout.jacob":
+      "Jacob huyó de Beerseba a la familia de su madre en Harán, y en el camino, en Bet-el, soñó con una escalera que llegaba al cielo. Sirvió a Labán veinte años y se casó con Lea y con Raquel; al volver pasó por Mahanaim y Penuel, donde luchó hasta el alba y recibió el nombre de Israel. Raquel murió en el camino de Efrata; ya anciano, Jacob bajó a Egipto y se estableció en Gosén.",
+    "map.journeyAbout.exodus":
+      "Israel partió de Ramesés hacia Sucot, guiado por una columna de nube de día y de fuego de noche; cruzó el mar y llegó al monte Sinaí, donde Dios dio la ley. Desde Cades-barnea los espías entraron en Canaán, pero el pueblo no quiso subir, y anduvo errante cuarenta años. Moisés vio la tierra desde la cumbre del Pisga, en el monte Nebo, y murió allí, en Moab.",
+    "map.journeyAbout.naomi":
+      "En un tiempo de hambre, en los días de los jueces, Elimelec llevó a su mujer Noemí y a sus dos hijos de Belén a Moab. Allí murieron los hombres, y cuando Noemí oyó que Dios había vuelto a dar pan a su pueblo, volvió a su tierra; su nuera moabita, Rut, no quiso dejarla. Llegaron a Belén al comenzar la siega de la cebada. Rut se casó con Booz, y su hijo Obed fue abuelo de David.",
+    "map.journeyAbout.david":
+      "Saúl tuvo celos de David y quiso matarlo, y David huyó: a Samuel en Naiot, a los sacerdotes de Nob, y hasta a los filisteos de Gat. En la cueva de Adulam se le juntaron unos cuatrocientos hombres, y se escondió en los desiertos de Zif, de Maón y de En-gadi, donde dos veces perdonó la vida a Saúl. Al fin Aquis, rey de Gat, le dio la ciudad de Siclag.",
+    "map.journeyAbout.elijah":
+      "Elías anunció al rey Acab que no habría rocío ni lluvia, y se escondió junto al arroyo de Querit, donde lo alimentaban los cuervos, y después en casa de una viuda en Sarepta. En el monte Carmelo cayó el fuego de Dios a su oración, delante de todos los profetas de Baal. Huyendo de Jezabel, fue al sur, pasando por Beerseba, hasta Horeb; oyó el silbo apacible y delicado, y volvió para echar su manto sobre Eliseo.",
+    "map.journeyAbout.elijah2":
+      "El día en que Dios alzó a Elías, Eliseo no quiso dejarlo: de Gilgal a Bet-el, a Jericó y al otro lado del Jordán, que Elías abrió con su manto. Un carro de fuego los apartó, y Elías subió al cielo en un torbellino. Eliseo alzó el manto que se le había caído, abrió él mismo el Jordán y volvió por Jericó y Bet-el al monte Carmelo y a Samaria.",
+    "map.journeyAbout.exile":
+      "Cuando Jerusalén cayó ante el ejército de Nabucodonosor, el rey Sedequías huyó de noche y fue apresado en los llanos de Jericó. En Ribla el rey de Babilonia degolló a sus hijos delante de él, le sacó los ojos y lo llevó encadenado a Babilonia. El templo fue quemado y el pueblo llevado cautivo. Jeremías ya había escrito a los desterrados: edificad casas, plantad huertos y procurad la paz de la ciudad.",
+    "map.journeyAbout.return":
+      "Cuando Ciro dejó volver a los judíos, casi cincuenta mil subieron de Babilonia con Zorobabel y echaron de nuevo los cimientos del templo: el pueblo gritaba de alegría, y los ancianos que habían visto la primera casa lloraban. Unos ochenta años después, Esdras el escriba guió a otro grupo; partieron del río Ahava con ayuno y oración, y llegaron a Jerusalén cuatro meses después de salir de Babilonia, para enseñar la ley.",
+    "map.journeyAbout.nehemiah":
+      "Nehemías era copero del rey Artajerjes en Susán cuando le llegó la noticia de que el muro de Jerusalén estaba derribado y sus puertas quemadas. Lloró y oró, y el rey lo envió con cartas y una escolta de gente de a caballo. Recorrió de noche las ruinas, y el pueblo reedificó el muro en cincuenta y dos días, trabajando con una mano y sosteniendo un arma con la otra.",
+    "map.journeyAbout.egypt":
+      "Cuando se fueron los magos, un ángel avisó en sueños a José que Herodes buscaría al niño para matarlo. Tomó de noche a María y a Jesús y se fue a Egipto, y allí estuvieron hasta la muerte de Herodes. Al volver tuvo miedo de quedarse en Judea, donde reinaba el hijo de Herodes, y fue a vivir a Nazaret de Galilea.",
+    "map.journeyAbout.childhood":
+      "José y María subieron de Nazaret a Belén para ser empadronados, y allí nació Jesús. Cumplidos los días de la purificación, lo presentaron en el templo de Jerusalén y volvieron a su casa en Nazaret. A los doce años lo llevaron a la fiesta de la Pascua, y tres días después lo hallaron en el templo entre los doctores; volvió con ellos, y crecía en sabiduría y en estatura.",
+    "map.journeyAbout.jesusMatthew":
+      "Mateo sigue a Jesús desde su bautismo en el Jordán hasta Capernaum, donde hizo su morada, y por las ciudades de Galilea: al otro lado del lago, a la tierra de los gergesenos; al norte, a la región de Tiro y de Sidón; y a Cesarea de Filipo, donde Pedro lo confesó como el Cristo. Después subió por Jericó a Jerusalén, donde las multitudes aclamaban «¡Hosanna!», y se hospedó en Betania.",
+    "map.journeyAbout.jesusMark":
+      "Marcos lo cuenta con prisa, una cosa tras otra: del Jordán a Capernaum y alrededor del mar de Galilea, al norte hasta Tiro y Sidón y de vuelta por Decápolis, y luego a las aldeas de Cesarea de Filipo. De allí Jesús subió a Jerusalén, sanó en Jericó al ciego Bartimeo, y llegó a la ciudad por Betfagé y Betania, junto al monte de los Olivos.",
+    "map.journeyAbout.jesusLuke":
+      "Lucas comienza en la sinagoga de Nazaret, donde Jesús leyó de Isaías y el pueblo lo echó fuera, y lo sigue a Capernaum, y a Naín, donde resucitó al hijo único de una viuda. Después «afirmó su rostro para ir a Jerusalén», y gran parte del evangelio es ese largo camino, por Samaria y por Jericó. Termina en Emaús, la tarde del día en que resucitó, y en Betania, donde fue llevado arriba al cielo.",
+    "map.journeyAbout.jesusJohn":
+      "Juan sigue a Jesús, que sube a Jerusalén de una fiesta a otra y vuelve a Galilea entre ellas: el agua hecha vino en Caná, la mujer junto al pozo de Jacob en Sicar de Samaria, el hijo del oficial del rey sanado con una palabra dicha en Caná. En Betania llamó a Lázaro fuera del sepulcro; luego se retiró a una ciudad llamada Efraín, junto al desierto, y volvió a Betania seis días antes de la Pascua.",
+    "map.journeyAbout.philip":
+      "Cuando la persecución dispersó a la iglesia tras la muerte de Esteban, Felipe, uno de los siete, descendió a Samaria y les predicó a Cristo. Un ángel lo envió al camino desierto que baja de Jerusalén a Gaza, donde encontró a un funcionario etíope que leía a Isaías, y lo bautizó. Después Felipe se halló en Azoto, la antigua Asdod, y anunció el evangelio en todas las ciudades hasta Cesarea, donde aún vivía años después.",
+    "map.journeyAbout.saul":
+      "Saulo salió hacia Damasco para prender a los seguidores de Jesús. Cerca de la ciudad lo rodeó una luz del cielo; cayó en tierra y oyó a Jesús hablarle. Pronto predicaba a Cristo en las sinagogas, y tuvo que escapar por el muro en una canasta. Los hermanos lo enviaron a Tarso, su tierra, y más tarde Bernabé lo trajo a Antioquía, donde los discípulos fueron llamados cristianos por primera vez.",
+    "map.journeyAbout.paul1":
+      "Enviados desde Antioquía, Bernabé y Saulo navegaron a Chipre y la cruzaron hasta Pafos, donde creyó el procónsul romano. Tierra adentro, en Antioquía de Pisidia, se volvieron a los gentiles; en Listra la multitud los tomó por dioses, y después apedreó a Pablo y lo dejó por muerto. Volvieron por el mismo camino, confirmando a las nuevas iglesias, y navegaron de regreso para contar cómo Dios había abierto a los gentiles la puerta de la fe.",
+    "map.journeyAbout.paul2":
+      "Pablo salió de nuevo con Silas, tomó consigo al joven Timoteo en Listra, y en Troas vio en visión a un varón macedonio que le pedía ayuda. Así el evangelio pasó a Europa: en Filipos creyó Lidia, y allí Pablo y Silas cantaban en la cárcel a medianoche; siguieron a Tesalónica, Berea y Atenas, donde Pablo habló en el Areópago. Se quedó un año y medio en Corinto antes de volver.",
+    "map.journeyAbout.paul3":
+      "Pablo recorrió Galacia y Frigia hasta Éfeso, y se quedó allí unos tres años, hasta que toda Asia oyó la palabra y los plateros alborotaron la ciudad por Diana. Siguió por Macedonia hasta Grecia, volvió por Troas, donde predicó hasta medianoche, y en Mileto se despidió de los ancianos de Éfeso. Avisado en cada ciudad de que le esperaban prisiones, navegó hasta Jerusalén.",
+    "map.journeyAbout.rome":
+      "Habiendo apelado al César, Pablo fue enviado preso a Roma. Ya entrado el otoño, una gran tempestad sorprendió a la nave frente a Creta y la arrastró catorce días, hasta que encalló en Malta y se deshizo; las 276 personas a bordo llegaron a salvo a tierra. Pasado el invierno navegaron hasta Puteoli, y los hermanos salieron a recibirlo hasta el Foro de Apio y las Tres Tabernas.",
     "map.routeNote": "La parte del viaje que narra este capítulo va en trazo grueso, por mar en línea discontinua. Las rutas entre paradas son aproximadas.",
     "place.kind.town": "Ciudad o pueblo",
     "place.kind.region": "Región",

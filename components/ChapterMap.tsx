@@ -1296,6 +1296,7 @@ export function MapViewer({
   resetLabel,
   actions,
   about,
+  fitAbove = false,
 }: {
   base: Base;
   data: ChapterMapData;
@@ -1319,12 +1320,18 @@ export function MapViewer({
   /** more to do from here, set beside the then-and-now toggle under the map */
   actions?: React.ReactNode;
   /**
-   * Words about the map, laid over its foot (components/AtlasMap's era
-   * card). Over the stage and not beside it, so the stage keeps the size the
+   * Words about the map, laid over its foot (components/AtlasMap's card
+   * for an era or a journey). Over the stage and not beside it, so the stage keeps the size the
    * opening view was fitted to; and outside it, so a finger on the words is
    * not a drag of the map.
    */
   about?: React.ReactNode;
+  /**
+   * Open with the crop in the part of the stage the words leave clear, not
+   * under them: for a map whose subject has to be seen whole, a journey. An
+   * era's map is a ground to read the words over, and opens on all of it.
+   */
+  fitAbove?: boolean;
 }) {
   const { t } = useI18n();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -1350,23 +1357,53 @@ export function MapViewer({
    * has a sea to show there instead. Matching them on the way in means every
    * later zoom keeps them matched.
    */
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el) return;
+  const opening = (el: HTMLElement): View => {
     const rect = el.getBoundingClientRect();
-    const aspect = rect.width / Math.max(1, rect.height);
+    const height = Math.max(1, rect.height);
+    // The part of the stage to fit the crop into: all of it, or, with
+    // `fitAbove`, what is above the words laid over its foot (rendered right
+    // after the stage, below). Never less than a third of it, whatever
+    // covers the rest; the reader can fold the words away.
+    let clear = height;
+    const over = fitAbove ? el.nextElementSibling?.getBoundingClientRect() : undefined;
+    if (over && over.height > 0 && over.top > rect.top) {
+      clear = Math.min(height, Math.max(height / 3, over.top - rect.top - 8));
+    }
+    const aspect = rect.width / clear;
     const [fx, fy, fw, fh] = focus;
     let w = fw;
     let h = fh;
     if (w / h > aspect) h = w / aspect;
     else w = h * aspect;
+    // h is the clear part's height on the map; the stage runs on below it
+    const view = clamp(
+      [fx - (w - fw) / 2, fy - (h - fh) / 2, w, (h * height) / clear],
+      base,
+      limits.current
+    );
+    if (clear === height) return view;
+    // Placed up and down by the clear part alone: what runs on under the
+    // words may run past the foot of the map, where no one sees it. Kept to
+    // the map is only what is seen — or, taller than the map, centred in it.
+    const [x, , vw, vh] = view;
+    const seen = (vh * clear) / height;
+    const y =
+      seen >= base.height
+        ? (base.height - seen) / 2
+        : Math.min(Math.max(fy + fh / 2 - seen / 2, 0), base.height - seen);
+    return [x, y, vw, vh];
+  };
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const aspect = rect.width / Math.max(1, rect.height);
     limits.current = {
       min: base.width / MAX_ZOOM,
       max: Math.max(base.width, base.height * aspect),
     };
-    setView(
-      clamp([fx - (w - fw) / 2, fy - (h - fh) / 2, w, h], base, limits.current)
-    );
+    setView(opening(el));
     // opening measurement only — the view is the reader's from here on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, focus]);
@@ -1528,19 +1565,11 @@ export function MapViewer({
     );
   };
 
+  // back to the opening view, fitted to the words as they now are: above
+  // them if they are open, to the whole stage if they have been folded
   const reset = () => {
     const el = boxRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const aspect = rect.width / Math.max(1, rect.height);
-    const [fx, fy, fw, fh] = focus;
-    let w = fw;
-    let h = fh;
-    if (w / h > aspect) h = w / aspect;
-    else w = h * aspect;
-    setView(
-      clamp([fx - (w - fw) / 2, fy - (h - fh) / 2, w, h], base, limits.current)
-    );
+    if (el) setView(opening(el));
   };
 
   return (
