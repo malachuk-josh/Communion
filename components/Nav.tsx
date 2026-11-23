@@ -187,7 +187,8 @@ export default function Nav() {
         touch.clientX > window.innerWidth - SWIPE_EDGE ||
         scrollsSideways(e.target) ||
         (e.target instanceof Element &&
-          !!e.target.closest("input, textarea, select, [contenteditable]")) ||
+          // the timeline's ribbon is dragged along to scrub through time
+          !!e.target.closest("input, textarea, select, [contenteditable], .tl-ribbon")) ||
         // `.welcome` belongs on this list and was missing from it. It is the
         // front door — a full-screen overlay shown before the app — and a
         // swipe across it changed the tab underneath, so a first-time reader

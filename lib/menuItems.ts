@@ -21,7 +21,7 @@ export interface MenuItem {
 /** Home's tabs, the Journal's and Maps', in the order their rows show them. */
 export const HOME_TABS = ["scripture", "wall", "settings"] as const;
 export const JOURNAL_TABS = ["bookmarks", "notes", "plans"] as const;
-export const MAP_TABS = ["journeys", "places", "eras", "chapters"] as const;
+export const MAP_TABS = ["journeys", "places", "eras", "timeline"] as const;
 
 /**
  * The screens on the bar that have tabs of their own, by path, and the name

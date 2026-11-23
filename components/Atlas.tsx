@@ -6,12 +6,14 @@
 // The maps were only ever reachable from a chapter's Context pop-up, which
 // answers "where did this happen" and nothing else. Readers asked the other
 // questions: which journeys are there, where is Bethel, what did the land
-// look like under the kings. Four tabs, one for each way in —
+// look like under the kings, when did it happen. Four tabs, one for each way
+// in —
 //
 //   Journeys   the twenty-two drawn on the chapter maps, each whole
 //   Places     every named place, searched, each on the map with its card
 //   Eras       the ten ages, each on the window its title describes
-//   Chapters   any chapter that names somewhere, without opening it first
+//   Timeline   the whole Bible on one line, from Creation to Patmos
+//              (components/Timeline)
 //
 // — and each row opens its map full screen (components/AtlasMap), at an
 // address of its own (/maps?j=paul2), so that Back closes it and a link can
@@ -29,12 +31,12 @@ import {
   type Atlas as AtlasData,
   type MapTarget,
 } from "@/lib/atlas";
+import Timeline from "@/components/Timeline";
 import { BOOKS, LAST_OT_BOOK } from "@/lib/bible";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { load } from "@/lib/mapData";
 import { MAP_TABS } from "@/lib/menuItems";
 import { useStickyTab } from "@/lib/stickyTab";
-import { readLocal } from "@/lib/storage";
 
 type MapTab = (typeof MAP_TABS)[number];
 
@@ -42,10 +44,10 @@ const TABS: { id: MapTab; icon: IconName; key: MessageKey }[] = [
   { id: "journeys", icon: "runner", key: "maps.tab.journeys" },
   { id: "places", icon: "pin", key: "maps.tab.places" },
   { id: "eras", icon: "hourglass", key: "maps.tab.eras" },
-  { id: "chapters", icon: "book", key: "maps.tab.chapters" },
+  { id: "timeline", icon: "timeline", key: "maps.tab.timeline" },
 ];
 
-type Open = (target: MapTarget) => void;
+export type Open = (target: MapTarget) => void;
 
 export default function Atlas() {
   const { t } = useI18n();
@@ -126,7 +128,7 @@ export default function Atlas() {
         {atlas && tab === "journeys" && <Journeys atlas={atlas} open={open} />}
         {atlas && tab === "places" && <PlaceSearch open={open} />}
         {atlas && tab === "eras" && <Eras atlas={atlas} open={open} />}
-        {atlas && tab === "chapters" && <Chapters atlas={atlas} open={open} />}
+        {atlas && tab === "timeline" && <Timeline atlas={atlas} open={open} />}
       </div>
 
       {target && <AtlasMap target={target} onClose={close} />}
@@ -384,112 +386,5 @@ function Eras({ atlas, open }: { atlas: AtlasData; open: Open }) {
         );
       })}
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Chapters
-// ---------------------------------------------------------------------------
-
-function Chapters({ atlas, open }: { atlas: AtlasData; open: Open }) {
-  const { lang, t } = useI18n();
-  /** the chapter last read in The Word, where this device remembers one */
-  const [reading, setReading] = useState<{ book: number; chapter: number } | null>(null);
-  const [openTestaments, setOpenTestaments] = useState({ ot: true, nt: false });
-  const [openBook, setOpenBook] = useState<number | null>(null);
-
-  // Opens on the book being read, as The Word's own navigator does. Read in
-  // an effect: storage is not there to ask while the server renders.
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(readLocal("communion.reading") ?? "null");
-      const book = Number(saved?.bookNr);
-      const chapter = Number(saved?.chapter);
-      if (!Number.isInteger(book) || book < 1 || book > 66 || !Number.isInteger(chapter)) return;
-      setReading({ book, chapter });
-      setOpenBook(book);
-      setOpenTestaments({ ot: book <= LAST_OT_BOOK, nt: book > LAST_OT_BOOK });
-    } catch {
-      // nothing remembered, or nothing readable: it opens on the Old Testament
-    }
-  }, []);
-
-  const name = (nr: number) => BOOKS[nr - 1]?.[lang === "es" ? "es" : "en"] ?? "";
-  const mapped = (book: number) => atlas.books[String(book)] ?? [];
-  const hasMap = reading !== null && mapped(reading.book).includes(reading.chapter);
-
-  const testament = (key: "ot" | "nt", label: string, books: typeof BOOKS) => (
-    <div key={key}>
-      <button
-        type="button"
-        className="bn-testament"
-        aria-expanded={openTestaments[key]}
-        onClick={() => setOpenTestaments((o) => ({ ...o, [key]: !o[key] }))}
-      >
-        <span>{label}</span>
-        <span className={`bn-caret${openTestaments[key] ? " open" : ""}`}>⌄</span>
-      </button>
-      {openTestaments[key] &&
-        books.map((book) => {
-          const chapters = mapped(book.nr);
-          const isOpen = openBook === book.nr;
-          const here = reading?.book === book.nr;
-          return (
-            <div key={book.nr}>
-              <button
-                type="button"
-                className={`bn-book${here ? " current" : ""}`}
-                aria-expanded={isOpen}
-                // five short letters name no place at all, and have no maps
-                disabled={chapters.length === 0}
-                onClick={() => setOpenBook(isOpen ? null : book.nr)}
-              >
-                <span>{name(book.nr)}</span>
-                {chapters.length > 0 && (
-                  <span className={`bn-caret${isOpen ? " open" : ""}`}>{isOpen ? "⌄" : "›"}</span>
-                )}
-              </button>
-              {isOpen && (
-                <div className="bn-chapters">
-                  <div className="bn-ch-row atlas-ch-grid">
-                    {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        className={`bn-ch${here && reading?.chapter === c ? " current" : ""}`}
-                        // a chapter that names nowhere has nothing to draw
-                        disabled={!chapters.includes(c)}
-                        aria-label={`${name(book.nr)} ${c}`}
-                        onClick={() => open({ kind: "chapter", book: book.nr, chapter: c })}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-    </div>
-  );
-
-  return (
-    <>
-      {reading && hasMap && (
-        <div className="atlas-list atlas-list-first">
-          <Row
-            title={`${name(reading.book)} ${reading.chapter}`}
-            sub={t("maps.reading")}
-            onClick={() => open({ kind: "chapter", book: reading.book, chapter: reading.chapter })}
-          />
-        </div>
-      )}
-      <p className="cal-hint atlas-hint">{t("maps.chaptersHint")}</p>
-      <div className="atlas-books">
-        {testament("ot", t("reader.oldTestament"), BOOKS.filter((b) => b.nr <= LAST_OT_BOOK))}
-        {testament("nt", t("reader.newTestament"), BOOKS.filter((b) => b.nr > LAST_OT_BOOK))}
-      </div>
-    </>
   );
 }

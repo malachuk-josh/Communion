@@ -863,3 +863,218 @@ export const JOURNEY_PASSAGE_PLACES = {
   "16.6.15": ["Jerusalem"],
   "44.15.36": ["Antioch#ae41ab4"],
 };
+
+// ---------------------------------------------------------------------------
+// The timeline (the Maps tab's Timeline, from public/maps/timeline.json): the
+// whole Bible on one line, in the order it happened.
+//
+// Each step of an era's story, placed at its year with a short title — the
+// step itself, opened on its era's map, is the timeline's "on the map". A
+// year is negative before Christ; `c` marks it approximate. Before the kings
+// the dates follow the usual study-Bible chronology (the exodus in 1446 BC),
+// which is one reckoning among several; the page says the dates are
+// approximate. A step left out (null) is told by another era already, or is
+// not a moment in time (the letters to the seven churches, one by one).
+
+const C = true; // circa
+
+export const TIMELINE = {
+  patriarchs: [
+    [-2100, C, "Terah and Abram leave Ur", "Taré y Abram salen de Ur"],
+    [-2091, C, "Abram comes into Canaan", "Abram llega a Canaán"],
+    [-2090, C, "Abram goes down to Egypt", "Abram baja a Egipto"],
+    [-2066, C, "Isaac, and the ram on Moriah", "Isaac, y el carnero en Moriah"],
+    [-2026, C, "Rebekah comes to Isaac", "Rebeca llega a Isaac"],
+    [-1929, C, "Jacob in Haran, and named Israel", "Jacob en Harán, llamado Israel"],
+    [-1876, C, "Jacob’s family goes down to Egypt", "La familia de Jacob baja a Egipto"],
+  ],
+  exodus: [
+    [-1550, C, "Israel enslaved in Egypt", "Israel, esclavo en Egipto"],
+    [-1446, C, "The burning bush", "La zarza ardiente"],
+    [-1446, C, "The exodus from Egypt", "La salida de Egipto"],
+    [-1446, C, "Through the Red Sea", "A través del mar Rojo"],
+    [-1446, C, "The law given at Sinai", "La ley dada en el Sinaí"],
+    [-1444, C, "The spies at Kadesh-barnea", "Los espías en Cades-barnea"],
+    [-1406, C, "Moses sees the land from Nebo", "Moisés ve la tierra desde el Nebo"],
+  ],
+  conquest: [
+    [-1406, C, "Israel crosses the Jordan", "Israel cruza el Jordán"],
+    [-1406, C, "Jericho falls", "Cae Jericó"],
+    [-1405, C, "The sun stands still over Gibeon", "El sol se detiene sobre Gabaón"],
+    [-1400, C, "Hazor burned", "Hazor, quemada"],
+    [-1399, C, "The land divided at Shiloh", "La tierra repartida en Silo"],
+    [-1200, C, "Deborah and Barak", "Débora y Barac"],
+    [-1100, C, "Ruth comes to Bethlehem", "Rut llega a Belén"],
+  ],
+  kingdom: [
+    [-1050, C, "Saul, the first king", "Saúl, el primer rey"],
+    [-1025, C, "David and Goliath", "David y Goliat"],
+    [-1020, C, "David flees from Saul", "David huye de Saúl"],
+    [-1010, C, "Saul dies on Gilboa", "Saúl muere en Gilboa"],
+    [-1003, C, "David takes Jerusalem", "David toma Jerusalén"],
+    [-990, C, "David’s kingdom at its height", "El reino de David en su apogeo"],
+    [-966, C, "Solomon builds the temple", "Salomón edifica el templo"],
+  ],
+  divided: [
+    [-931, false, "The kingdom divides", "El reino se divide"],
+    [-930, C, "Golden calves at Bethel and Dan", "Becerros de oro en Bet-el y en Dan"],
+    [-880, C, "Omri builds Samaria", "Omri edifica Samaria"],
+    [-860, C, "Elijah on Mount Carmel", "Elías en el monte Carmelo"],
+    [-850, C, "Samaria besieged by Syria", "Samaria sitiada por Siria"],
+    [-722, false, "Samaria falls to Assyria", "Samaria cae ante Asiria"],
+    [-701, false, "Jerusalem delivered from Sennacherib", "Jerusalén librada de Senaquerib"],
+  ],
+  exile: [
+    null, // Samaria's fall: the divided kingdom tells it
+    null, // Sennacherib: the divided kingdom tells it
+    [-612, false, "Nineveh falls", "Cae Nínive"],
+    [-605, false, "Babylon wins at Carchemish", "Babilonia vence en Carquemis"],
+    [-597, false, "Jehoiachin taken to Babylon", "Joaquín llevado a Babilonia"],
+    [-586, false, "Jerusalem and the temple destroyed", "Jerusalén y el templo destruidos"],
+    [-539, C, "Daniel prays toward Jerusalem", "Daniel ora hacia Jerusalén"],
+  ],
+  return: [
+    [-539, false, "Cyrus takes Babylon", "Ciro toma Babilonia"],
+    [-538, false, "The first return, with Zerubbabel", "El primer regreso, con Zorobabel"],
+    [-516, false, "The second temple finished", "Se termina el segundo templo"],
+    [-474, C, "Queen Esther saves her people", "La reina Ester salva a su pueblo"],
+    [-458, false, "Ezra goes up to Jerusalem", "Esdras sube a Jerusalén"],
+    [-445, false, "Nehemiah rebuilds the wall", "Nehemías reedifica el muro"],
+  ],
+  gospels: [
+    [-5, C, "Jesus is born in Bethlehem", "Jesús nace en Belén"],
+    [-4, C, "The flight into Egypt", "La huida a Egipto"],
+    [27, C, "Jesus is baptized", "Jesús es bautizado"],
+    [28, C, "Preaching through Galilee", "Predicando por Galilea"],
+    [29, C, "Peter’s confession", "La confesión de Pedro"],
+    [30, C, "Jesus enters Jerusalem", "Jesús entra en Jerusalén"],
+    [30, C, "The cross and the empty tomb", "La cruz y el sepulcro vacío"],
+  ],
+  apostles: [
+    [30, C, "Pentecost", "Pentecostés"],
+    [34, C, "Saul meets Christ", "Saulo se encuentra con Cristo"],
+    [46, C, "Paul’s first journey", "Primer viaje de Pablo"],
+    [49, C, "Paul’s second journey", "Segundo viaje de Pablo"],
+    [53, C, "Paul’s third journey", "Tercer viaje de Pablo"],
+    [59, C, "Shipwreck, and on to Rome", "Naufragio, y rumbo a Roma"],
+    [60, C, "Paul preaching in Rome", "Pablo predica en Roma"],
+  ],
+  churches: [
+    [95, C, "John on Patmos", "Juan en Patmos"],
+    [95, C, "Letters to the seven churches", "Cartas a las siete iglesias"],
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ],
+};
+
+/** A journey to play from a step whose own ways are not one already. */
+export const TIMELINE_JOURNEY = {
+  "divided#3": "elijah",
+  "gospels#3": "jesusMark",
+};
+
+/**
+ * Moments the eras' stories do not tell, placed on the line among theirs:
+ * before Abraham (no year), and a few prophets and apostles. `map` is the
+ * chapter whose map to open, where its map shows the moment; `sort` places a
+ * moment that shares its year with another before or after it.
+ */
+export const TIMELINE_MORE = [
+  {
+    era: "beginnings", year: null,
+    title: ["In the beginning", "En el principio"],
+    words: ["God creates the heaven and the earth, and makes man in his own image.", "Dios crea los cielos y la tierra, y hace al hombre a su imagen."],
+    ref: [1, 1, 27],
+  },
+  {
+    era: "beginnings", year: null,
+    title: ["Eden, and the fall", "El Edén y la caída"],
+    words: ["Adam and Eve are set in a garden eastward in Eden, where four rivers part, and sent out of it after the fall.", "Adán y Eva son puestos en un huerto al oriente, en Edén, donde se reparten cuatro ríos, y son echados de él tras la caída."],
+    ref: [1, 3, 23], map: [1, 2],
+  },
+  {
+    era: "beginnings", year: null,
+    title: ["The flood, and the ark on Ararat", "El diluvio, y el arca sobre Ararat"],
+    words: ["The waters cover the earth, and the ark comes to rest on the mountains of Ararat.", "Las aguas cubren la tierra, y el arca reposa sobre los montes de Ararat."],
+    ref: [1, 8, 4], map: [1, 8],
+  },
+  {
+    era: "beginnings", year: null,
+    title: ["The tower of Babel", "La torre de Babel"],
+    words: ["In the land of Shinar men build a tower to reach heaven, and the Lord confounds their language.", "En la tierra de Sinar los hombres edifican una torre que llegue al cielo, y Dios confunde su lengua."],
+    ref: [1, 11, 9], map: [1, 11],
+  },
+  {
+    era: "divided", year: -760, c: true,
+    title: ["Jonah preaches at Nineveh", "Jonás predica en Nínive"],
+    words: ["Jonah runs from God toward Tarshish, is brought back, and preaches in Nineveh — which repents.", "Jonás huye de Dios hacia Tarsis, es devuelto y predica en Nínive, que se arrepiente."],
+    ref: [32, 3, 5], map: [32, 3],
+  },
+  {
+    era: "divided", year: -740, c: true,
+    title: ["Isaiah sees the Lord", "Isaías ve al Señor"],
+    words: ["In the year King Uzziah dies, Isaiah sees the Lord high and lifted up, and answers: Here am I; send me.", "El año en que muere el rey Uzías, Isaías ve al Señor alto y sublime, y responde: Heme aquí, envíame a mí."],
+    ref: [23, 6, 8],
+  },
+  {
+    era: "divided", year: -622, c: false,
+    title: ["Josiah finds the book of the law", "Josías halla el libro de la ley"],
+    words: ["Repairing the temple, Hilkiah finds the book of the law, and King Josiah turns Judah back to God.", "Al reparar el templo, Hilcías halla el libro de la ley, y el rey Josías hace volver a Judá a Dios."],
+    ref: [12, 22, 8], map: [12, 22],
+  },
+  {
+    era: "exile", year: -605, c: false,
+    title: ["Daniel taken to Babylon", "Daniel llevado a Babilonia"],
+    words: ["Among the first captives from Jerusalem are Daniel and his friends, chosen to serve in the king’s palace.", "Entre los primeros cautivos de Jerusalén están Daniel y sus amigos, escogidos para servir en el palacio del rey."],
+    ref: [27, 1, 6], map: [27, 1],
+  },
+  {
+    era: "exile", year: -593, c: false,
+    title: ["Ezekiel’s vision by the Chebar", "La visión de Ezequiel junto al Quebar"],
+    words: ["Among the captives by the river Chebar, the heavens are opened and Ezekiel sees visions of God.", "Entre los cautivos junto al río Quebar, los cielos se abren y Ezequiel ve visiones de Dios."],
+    ref: [26, 1, 1], map: [26, 1],
+  },
+  {
+    era: "return", year: -430, c: true,
+    title: ["Malachi, the last of the prophets", "Malaquías, el último de los profetas"],
+    words: ["The Old Testament closes with a promise: I will send you Elijah the prophet.", "El Antiguo Testamento se cierra con una promesa: Yo os envío a Elías el profeta."],
+    ref: [39, 4, 5],
+  },
+  {
+    era: "apostles", year: 34, c: true, sort: 33.5, // before Saul, whom it scattered
+    title: ["Stephen, the first martyr", "Esteban, el primer mártir"],
+    words: ["Stephen is stoned outside Jerusalem, praying for those who stone him, and the church is scattered abroad.", "Esteban es apedreado fuera de Jerusalén, orando por los que lo apedrean, y la iglesia es esparcida."],
+    ref: [44, 7, 60],
+  },
+  {
+    era: "apostles", year: 49, c: true, sort: 48.5, // Acts 15, before the second journey
+    title: ["The council at Jerusalem", "El concilio de Jerusalén"],
+    words: ["Apostles and elders meet at Jerusalem, and agree that the Gentiles need not keep the law of Moses to be saved.", "Los apóstoles y los ancianos se reúnen en Jerusalén, y acuerdan que los gentiles no tienen que guardar la ley de Moisés para ser salvos."],
+    ref: [44, 15, 6], map: [44, 15],
+  },
+];
+
+/**
+ * The eras along the ribbon at the top of the timeline, to scale: the span
+ * each covers, and its colour (the realms' eight, no two neighbours alike).
+ * "beginnings" has no years and gets a short stub of its own; the silence
+ * between Malachi and the gospels is the gap between "return" and "gospels".
+ */
+export const TIMELINE_ERAS = [
+  { id: "beginnings", tone: 5 },
+  { id: "patriarchs", from: -2100, to: -1876, tone: 0 },
+  { id: "exodus", from: -1876, to: -1406, tone: 6 },
+  { id: "conquest", from: -1406, to: -1050, tone: 5 },
+  { id: "kingdom", from: -1050, to: -931, tone: 3 },
+  { id: "divided", from: -931, to: -586, tone: 1 },
+  { id: "exile", from: -586, to: -539, tone: 7 },
+  { id: "return", from: -539, to: -430, tone: 4 },
+  { id: "gospels", from: -5, to: 30, tone: 2 },
+  { id: "apostles", from: 30, to: 62, tone: 0 },
+  { id: "churches", from: 62, to: 95, tone: 3 },
+];

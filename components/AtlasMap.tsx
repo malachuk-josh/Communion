@@ -230,6 +230,12 @@ export default function AtlasMap({
         if (!live) return;
         setEras(e && typeof e === "object" ? e : {});
         setStory(st);
+        // asked for at a step of its story (from the timeline): it opens
+        // there, paused, the map going to it as if the reader had stepped
+        if (st && target.kind === "era" && target.step !== undefined && target.step < st.steps.length) {
+          setMode({ k: "step", i: target.step });
+          setTrip(1);
+        }
         // one step for every stop the atlas draws, or none: a story from an
         // older build that counts the stops differently would play the wrong legs
         setJstory(js && g?.journey && js.stops.length === g.journey.visits.length ? js : null);

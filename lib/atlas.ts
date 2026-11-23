@@ -61,7 +61,8 @@ export function loadAtlas(): Promise<Atlas | null> {
 export type MapTarget =
   | { kind: "chapter"; book: number; chapter: number }
   | { kind: "journey"; id: string }
-  | { kind: "era"; id: string }
+  /** an era, opened at a step of its story (the timeline's "on the map") */
+  | { kind: "era"; id: string; step?: number }
   | { kind: "place"; id: string };
 
 /** The address a map opens at, so that Back closes it and a link can name it. */
@@ -72,7 +73,9 @@ export function mapHref(target: MapTarget): string {
     case "journey":
       return `/maps?j=${encodeURIComponent(target.id)}`;
     case "era":
-      return `/maps?era=${encodeURIComponent(target.id)}`;
+      return `/maps?era=${encodeURIComponent(target.id)}${
+        target.step !== undefined ? `&s=${target.step}` : ""
+      }`;
     case "place":
       return `/maps?p=${encodeURIComponent(target.id)}`;
   }
@@ -83,7 +86,12 @@ export function mapTargetOf(params: URLSearchParams): MapTarget | null {
   const j = params.get("j");
   if (j) return { kind: "journey", id: j };
   const era = params.get("era");
-  if (era) return { kind: "era", id: era };
+  if (era) {
+    const step = Number(params.get("s"));
+    return Number.isInteger(step) && step >= 0 && params.has("s")
+      ? { kind: "era", id: era, step }
+      : { kind: "era", id: era };
+  }
   const p = params.get("p");
   if (p) return { kind: "place", id: p };
   const book = Number(params.get("b"));

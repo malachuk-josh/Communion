@@ -35,6 +35,10 @@ import {
   SHOW,
   STOP_VERSES,
   STORY,
+  TIMELINE,
+  TIMELINE_ERAS,
+  TIMELINE_JOURNEY,
+  TIMELINE_MORE,
 } from "./era-story.mjs";
 
 const ROOT = process.cwd();
@@ -474,6 +478,91 @@ for (const key of Object.keys(STOP_VERSES)) {
   if (!j || !j.visits[Number(i)]) fail(`STOP_VERSES "${key}" is no stop of any journey`);
 }
 
+// ---- the timeline ------------------------------------------------------------
+//
+// Every era's story on one line, in the order it happened, with the moments
+// the eras do not tell placed among them: public/maps/timeline.json, for the
+// Maps tab's Timeline (components/Timeline.tsx). Each moment keeps what it
+// needs to open — its era's map at its step, a journey to play, or a
+// chapter's map — and its verse.
+
+const timeline = { v: 1, eras: TIMELINE_ERAS, events: [] };
+const ERA_ORDER = TIMELINE_ERAS.map((e) => e.id);
+for (const e of TIMELINE_ERAS) {
+  if (e.id !== "beginnings" && !eras[e.id]) fail(`timeline era "${e.id}" is no era`);
+  if (!(e.tone >= 0 && e.tone <= 7)) fail(`timeline era "${e.id}" tone ${e.tone}`);
+}
+const checkTitle = (t, where) => {
+  if (!Array.isArray(t) || t.length !== 2 || !t[0] || !t[1]) fail(`${where}: needs a title in both languages`);
+};
+for (const era of Object.keys(eras)) {
+  const rows = TIMELINE[era] ?? [];
+  const steps = STORY[era] ?? [];
+  if (rows.length !== steps.length) fail(`timeline ${era}: ${rows.length} rows for ${steps.length} steps`);
+  rows.forEach((row, i) => {
+    if (!row) return;
+    const [year, c, en, es] = row;
+    const where = `timeline ${era} step ${i + 1}`;
+    if (!Number.isInteger(year)) fail(`${where}: year ${year}`);
+    checkTitle([en, es], where);
+    const step = steps[i];
+    const journey =
+      TIMELINE_JOURNEY[`${era}#${i}`] ?? (step.go ?? []).find((g) => g && !Array.isArray(g) && g.j)?.j;
+    if (journey && !atlas.journeys.some((j) => j.id === journey)) fail(`${where}: no journey "${journey}"`);
+    timeline.events.push({
+      era,
+      step: i,
+      year,
+      ...(c ? { c: 1 } : {}),
+      title: [en, es],
+      words: [step.en, step.es],
+      ref: step.ref,
+      ...(journey ? { journey } : {}),
+    });
+  });
+}
+for (const key of Object.keys(TIMELINE_JOURNEY)) {
+  const [era, i] = key.split("#");
+  if (!TIMELINE[era]?.[Number(i)]) fail(`TIMELINE_JOURNEY "${key}" is no step on the timeline`);
+}
+TIMELINE_MORE.forEach((m, k) => {
+  const where = `timeline extra ${k + 1} (${m.title?.[0]})`;
+  if (!ERA_ORDER.includes(m.era)) fail(`${where}: era "${m.era}"`);
+  if (m.year !== null && !Number.isInteger(m.year)) fail(`${where}: year ${m.year}`);
+  checkTitle(m.title, where);
+  checkTitle(m.words, where);
+  checkRef(m.ref, where);
+  if (m.map && !(atlas.books[String(m.map[0])] ?? []).includes(m.map[1])) fail(`${where}: ${m.map.join(" ")} has no map`);
+  timeline.events.push({
+    era: m.era,
+    year: m.year,
+    ...(m.c ? { c: 1 } : {}),
+    title: m.title,
+    words: m.words,
+    ref: m.ref,
+    ...(m.map ? { map: m.map } : {}),
+    more: k,
+    ...(m.sort !== undefined ? { sort: m.sort } : {}),
+  });
+});
+// Before Abraham first, as written; then by year, and a year shared by era,
+// then by the order each era tells it
+timeline.events.sort((a, b) => {
+  if (a.year === null || b.year === null) {
+    if (a.year === null && b.year === null) return (a.more ?? 0) - (b.more ?? 0);
+    return a.year === null ? -1 : 1;
+  }
+  return (
+    (a.sort ?? a.year) - (b.sort ?? b.year) ||
+    ERA_ORDER.indexOf(a.era) - ERA_ORDER.indexOf(b.era) ||
+    (a.step ?? 99) - (b.step ?? 99)
+  );
+});
+timeline.events.forEach((e) => {
+  delete e.more;
+  delete e.sort;
+});
+
 if (process.argv.includes("--read")) console.log(reading.join("\n"));
 if (problems.length) {
   console.error(`era-story: ${problems.length} problem${problems.length > 1 ? "s" : ""}\n  ${problems.join("\n  ")}`);
@@ -481,8 +570,10 @@ if (problems.length) {
 }
 writeFileSync(path.join(MAPS, "era-story.json"), JSON.stringify(out));
 writeFileSync(path.join(MAPS, "journey-story.json"), JSON.stringify(journeyOut));
+writeFileSync(path.join(MAPS, "timeline.json"), JSON.stringify(timeline));
 const kb = (o) => (JSON.stringify(o).length / 1024).toFixed(1);
 const counts = Object.entries(out.eras).map(([e, d]) => `${e} ${d.steps.length}/${d.lands.length}/${d.journeys.length}`).join(", ");
 console.log(`era-story.json ${kb(out)} KB — steps/realms/journeys: ${counts}`);
 const stopsAll = Object.values(journeyOut.journeys).reduce((n, j) => n + j.stops.length, 0);
 console.log(`journey-story.json ${kb(journeyOut)} KB — ${Object.keys(journeyOut.journeys).length} journeys, ${stopsAll} stops`);
+console.log(`timeline.json ${kb(timeline)} KB — ${timeline.events.length} moments`);

@@ -204,6 +204,13 @@ const PATHS = {
     "M8.5 21c0-4.2 3.5-6.4 3.5-6.4s3.5 2.2 3.5 6.4",
   ],
   check: ["M4.5 12.5l5 5 10-11"],
+  // moments along a line: the Bible's timeline
+  timeline: [
+    "M2.5 12h2M8.5 12h1.5M14 12h1.5M19.5 12h2",
+    circle(6.5, 12, 2),
+    circle(12, 12, 2),
+    circle(17.5, 12, 2),
+  ],
   // a story played, paused, and stepped through
   play: ["M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8a.8.8 0 0 0-1.2.7z"],
   pause: ["M8 5v14", "M16 5v14"],

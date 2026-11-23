@@ -56,6 +56,8 @@ export default function PullToRefresh() {
        * swipe and made the row feel as if it dragged.
        */
       if (scrollsSideways(e.target)) return;
+      // nor is a drag along the timeline's ribbon (components/Timeline)
+      if (e.target instanceof Element && e.target.closest(".tl-ribbon")) return;
       startY.current = e.touches[0].clientY;
     };
 
